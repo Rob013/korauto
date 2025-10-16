@@ -431,21 +431,36 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Cog className="h-2.5 w-2.5" />
-                    Grada/Motori
+                    Gjenerata
                   </Label>
                   <Select value={filters.grade_iaai || 'all'} onValueChange={(value) => updateFilter('grade_iaai', value)} disabled={!filters.model_id || isLoadingGrades}>
                     <SelectTrigger className="filter-control h-8 text-xs">
-                      <SelectValue placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"} />
+                      <SelectValue placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gjeneratën"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover border-border">
                       {!(isStrictMode && filters.grade_iaai) && (
-                        <SelectItem value="all">Të gjitha gradat</SelectItem>
+                        <SelectItem value="all">Të gjitha gjeneratat</SelectItem>
                       )}
                       {grades.map((grade) => (
-                        <SelectItem key={grade.value} value={grade.value}>{grade.label}</SelectItem>
+                        <SelectItem key={grade.value} value={grade.value}>{grade.label} {grade.count ? `(${grade.count})` : ''}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-1 filter-section">
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Settings className="h-2.5 w-2.5" />
+                    Madhësia e Motorit
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="p.sh. 2.0 TDI, 520d, 35 TFSI"
+                    value={(filters as any).engine_spec || ''}
+                    onChange={(e) => updateFilter('engine_spec', e.target.value)}
+                    className="filter-control h-8 text-xs"
+                    disabled={!filters.model_id}
+                  />
                 </div>
 
                 <div className="space-y-1 filter-section">

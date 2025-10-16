@@ -33,11 +33,9 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement
 
-    // Add transitioning class before switching themes to prevent flicker
-    root.classList.add('theme-transitioning')
-    
-    // Use requestAnimationFrame to ensure smooth transition
+    // Optimized theme switching without flicker
     requestAnimationFrame(() => {
+      // Remove old theme immediately
       root.classList.remove("light", "dark")
 
       if (theme === "system") {
@@ -50,11 +48,6 @@ export function ThemeProvider({
       } else {
         root.classList.add(theme)
       }
-      
-      // Remove transitioning class after transition completes
-      setTimeout(() => {
-        root.classList.remove('theme-transitioning')
-      }, 300)
     })
   }, [theme])
 

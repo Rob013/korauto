@@ -8,16 +8,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Smooth theme transitions - Flicker-free dark/light mode */
+/* Smooth theme transitions - Optimized for flicker-free experience */
 html {
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-html.theme-transitioning * {
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Prevent content flickering during loads */
@@ -417,26 +411,17 @@ All colors MUST be HSL.
                 color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  /* Apply smooth transitions to all elements during theme change */
-  html.theme-transitioning * {
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                fill 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
 
   #root {
     width: 100%;
     overflow-x: hidden;
   }
 
-  /* Smooth transitions globally - Optimized timing */
+  /* Smooth transitions globally - Optimized for performance */
   * {
-    transition: background-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Hardware acceleration for animations - 120fps ready */
@@ -2562,5 +2547,92 @@ body {
     bottom: 16px !important;
     right: 16px !important;
   }
+}
+
+/* ============================================= */
+/* PERFORMANCE OPTIMIZATIONS - FLICKER-FREE UI */
+/* ============================================= */
+
+/* Optimize dropdown and popup rendering */
+[role="dialog"],
+[role="menu"],
+[role="listbox"],
+[data-radix-popper-content-wrapper],
+[data-radix-select-viewport] {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  z-index: 9999 !important;
+  background: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Prevent filter panel flicker */
+[data-filter-panel] {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Smooth loading states without flicker */
+[data-loading="true"] {
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimize card rendering */
+.group {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize select/input components */
+select, input, button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Prevent iOS zoom on input focus */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Smooth year preset buttons */
+.year-buttons button {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.year-buttons button:hover {
+  transform: translateZ(0) scale(1.05);
+}
+
+/* Filter section smooth transitions */
+.filter-section {
+  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-control {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: border-color;
+}
+
+.filter-control:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+/* Glass panel optimization */
+.glass-panel {
+  background: hsl(var(--card) / 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.5);
+  will-change: transform;
+  transform: translateZ(0);
 }
 

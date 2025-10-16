@@ -9,10 +9,12 @@ const PageTransition = ({ children }: PageTransitionProps) => {
     <div 
       className="animate-fade-in"
       style={{
-        willChange: 'opacity, transform',
-        transform: 'translate3d(0, 0, 0)',
+        willChange: 'opacity',
+        transform: 'translateZ(0)',
         backfaceVisibility: 'hidden',
-        perspective: 1000
+        WebkitBackfaceVisibility: 'hidden',
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale'
       }}
     >
       {children}

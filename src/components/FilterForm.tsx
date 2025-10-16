@@ -437,26 +437,39 @@ const FilterForm = memo<FilterFormProps>(({
         <div className="border-t pt-3 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             <div className="space-y-1">
-              <Label htmlFor="grade" className="text-xs font-medium">Grada/Motori</Label>
+              <Label htmlFor="generation" className="text-xs font-medium">Gjenerata</Label>
               <AdaptiveSelect 
                 value={filters.grade_iaai || 'all'} 
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
-                disabled={!filters.model_id || isLoading}
-                placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : "Të gjitha Gradat"}
+                disabled={!filters.model_id || isLoading || isLoadingGrades}
+                placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGrades ? "Po ngarkon..." : "Të gjitha Gjeneratat"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
-                  { value: 'all', label: 'Të gjitha Gradat' },
+                  { value: 'all', label: 'Të gjitha Gjeneratat' },
                   ...(grades.length === 0 && isLoadingGrades ? 
-                    [{ value: 'loading', label: 'Po ngarkon gradat...', disabled: true }] :
+                    [{ value: 'loading', label: 'Po ngarkon...', disabled: true }] :
                     grades.length === 0 && filters.model_id ? 
-                    [{ value: 'no-grades', label: 'Nuk u gjetën grada', disabled: true }] :
+                    [{ value: 'no-grades', label: 'Nuk u gjetën gjenerata', disabled: true }] :
                     grades.map((grade) => ({
                       value: grade.value,
                       label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`,
-                      disabled: grade.value.startsWith('separator-') // Disable separator items
+                      disabled: grade.value.startsWith('separator-')
                     }))
                   )
                 ]}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="engine" className="text-xs font-medium">Madhësia e Motorit</Label>
+              <Input
+                id="engine"
+                type="text"
+                placeholder="p.sh. 2.0 TDI, 520d, 35 TFSI"
+                value={(filters as any).engine_spec || ''}
+                onChange={(e) => updateFilter('engine_spec', e.target.value)}
+                className="h-8 text-xs sm:text-sm"
+                disabled={!filters.model_id || isLoading}
               />
             </div>
 
