@@ -47,6 +47,7 @@ interface FilterFormProps {
   filters: APIFilters;
   manufacturers: Manufacturer[];
   models?: Model[];
+  engineVariants?: Array<{ value: string; label: string; count: number }>;
   filterCounts?: FilterCounts;
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
@@ -63,6 +64,7 @@ const FilterForm = memo<FilterFormProps>(({
   filters,
   manufacturers,
   models = [],
+  engineVariants = [],
   filterCounts,
   loadingCounts = false,
   onFiltersChange,
@@ -97,27 +99,20 @@ const FilterForm = memo<FilterFormProps>(({
     // Handle special "all" values by converting them to undefined
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
     
-    // Set loading state for better UX
-    setIsLoading(true);
-    
-    // Handle cascading filters - avoid duplicate API calls
+    // Handle cascading filters - instant response, no loading state
     if (key === 'manufacturer_id') {
-      // Reset model and grade when manufacturer changes
-      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined });
+      // Reset model, grade, and engine when manufacturer changes
+      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined, engine_spec: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
-      // Reset grade when model changes
-      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined });
+      // Reset grade and engine when model changes
+      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined, engine_spec: undefined });
       onModelChange?.(actualValue || '');
     } else {
       // For other filters, use the standard filter change handler
       const updatedFilters = { ...filters, [key]: actualValue };
       onFiltersChange(updatedFilters);
     }
-    
-    // Clear loading state after a shorter delay for year filters
-    const delay = (key === 'from_year' || key === 'to_year') ? 25 : 50;
-    setTimeout(() => setIsLoading(false), delay);
   }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   const handleBrandChange = async (value: string) => {
@@ -461,15 +456,23 @@ const FilterForm = memo<FilterFormProps>(({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="engine" className="text-xs font-medium">Madhësia e Motorit</Label>
-              <Input
-                id="engine"
-                type="text"
-                placeholder="p.sh. 2.0 TDI, 520d, 35 TFSI"
-                value={(filters as any).engine_spec || ''}
-                onChange={(e) => updateFilter('engine_spec', e.target.value)}
-                className="h-8 text-xs sm:text-sm"
+              <Label htmlFor="engine" className="text-xs font-medium">Motori</Label>
+              <AdaptiveSelect 
+                value={(filters as any).engine_spec || 'all'} 
+                onValueChange={(value) => updateFilter('engine_spec', value)}
                 disabled={!filters.model_id || isLoading}
+                placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : "Të gjithë Motorët"}
+                className="h-8 text-xs sm:text-sm"
+                options={[
+                  { value: 'all', label: 'Të gjithë Motorët' },
+                  ...(engineVariants && engineVariants.length > 0 ? 
+                    engineVariants.map((engine) => ({
+                      value: engine.value,
+                      label: engine.label
+                    })) : 
+                    [{ value: 'no-engines', label: 'Zgjidhni modelin për motorët', disabled: true }]
+                  )
+                ]}
               />
             </div>
 

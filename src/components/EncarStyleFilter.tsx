@@ -68,6 +68,7 @@ interface EncarStyleFilterProps {
   filters: APIFilters;
   manufacturers: Manufacturer[];
   models?: Model[];
+  engineVariants?: Array<{ value: string; label: string; count: number }>;
   filterCounts?: FilterCounts;
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
@@ -88,6 +89,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   filters,
   manufacturers,
   models = [],
+  engineVariants = [],
   filterCounts,
   loadingCounts = false,
   onFiltersChange,
@@ -147,27 +149,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const updateFilter = useCallback((key: string, value: string) => {
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
 
-    // Avoid flicker: only show loading if it would take longer; year changes usually instant
-    if (key !== 'from_year' && key !== 'to_year') {
-      startLoadingWithDelay(180);
-    }
-
+    // Instant response - no loading delays
     if (key === 'manufacturer_id') {
-      // Reset model and grade when manufacturer changes
-      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined });
+      // Reset model, grade, and engine when manufacturer changes
+      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined, engine_spec: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
-      // Reset grade when model changes
-      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined });
+      // Reset grade and engine when model changes
+      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined, engine_spec: undefined });
       onModelChange?.(actualValue || '');
     } else {
       const updatedFilters = { ...filters, [key]: actualValue };
       onFiltersChange(updatedFilters);
     }
-
-    // Stop loading on next frames to ensure UI stays responsive without flicker
-    requestAnimationFrame(() => requestAnimationFrame(() => stopLoading()));
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange, startLoadingWithDelay, stopLoading]);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
 
   const handleSearchClick = useCallback(() => {
     if (onSearchCars) {
@@ -451,16 +446,27 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <div className="space-y-1 filter-section">
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Settings className="h-2.5 w-2.5" />
-                    Madhësia e Motorit
+                    Motori
                   </Label>
-                  <Input
-                    type="text"
-                    placeholder="p.sh. 2.0 TDI, 520d, 35 TFSI"
-                    value={(filters as any).engine_spec || ''}
-                    onChange={(e) => updateFilter('engine_spec', e.target.value)}
-                    className="filter-control h-8 text-xs"
-                    disabled={!filters.model_id}
-                  />
+                  <Select value={(filters as any).engine_spec || 'all'} onValueChange={(value) => updateFilter('engine_spec', value)} disabled={!filters.model_id}>
+                    <SelectTrigger className="filter-control h-8 text-xs">
+                      <SelectValue placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : "Zgjidhni motorin"} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border">
+                      {!(isStrictMode && (filters as any).engine_spec) && (
+                        <SelectItem value="all">Të gjithë motorët</SelectItem>
+                      )}
+                      {engineVariants && engineVariants.length > 0 ? (
+                        engineVariants.map((engine) => (
+                          <SelectItem key={engine.value} value={engine.value}>{engine.label}</SelectItem>
+                        ))
+                      ) : filters.model_id ? (
+                        <SelectItem value="no-engines" disabled>Nuk u gjetën motorë</SelectItem>
+                      ) : (
+                        <SelectItem value="loading" disabled>Zgjidhni modelin së pari</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1 filter-section">

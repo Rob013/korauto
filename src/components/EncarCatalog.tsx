@@ -17,7 +17,7 @@ import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
-import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce } from "@/utils/catalog-filter";
+import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce, extractUniqueEngineSpecs, matchesEngineFilter } from "@/utils/catalog-filter";
 import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -147,15 +147,32 @@ const EncarCatalog = ({
     return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && !filters.model_id && !filters.generation_id && !filters.color && !filters.fuel_type && !filters.transmission && !filters.body_type && !filters.odometer_from_km && !filters.odometer_to_km && !filters.from_year && !filters.to_year && !filters.buy_now_price_from && !filters.buy_now_price_to && !filters.search && !filters.seats_count && (!filters.grade_iaai || filters.grade_iaai === 'all');
   }, [filters]);
 
-  // Memoized client-side grade filtering for better performance - now using utility with fallback data
+  // Memoized client-side grade and engine filtering for better performance
   const filteredCars = useMemo(() => {
     // Use fallback data when there's an error and no cars loaded
     const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
+    
+    // Apply grade filter
     const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+    
+    // Apply engine filter if specified
+    const engineSpec = (filters as any)?.engine_spec;
+    const engineFiltered = engineSpec 
+      ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec))
+      : gradeFiltered;
+    
     // Filter to show only cars with real buy_now pricing data
-    return filterCarsWithBuyNowPricing(gradeFiltered);
-  }, [cars, filters?.grade_iaai, error]);
+    return filterCarsWithBuyNowPricing(engineFiltered);
+  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
+
+  // Extract engine variants from filtered cars for the dropdown
+  const engineVariants = useMemo(() => {
+    if (!filters?.model_id || filteredCars.length === 0) {
+      return [];
+    }
+    return extractUniqueEngineSpecs(filteredCars);
+  }, [filteredCars, filters?.model_id]);
 
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -410,48 +427,36 @@ const EncarCatalog = ({
     filters
   });
 
-  // Debounced version for performance - Reduced debounce time for year filters - using catalog utility
-  const debouncedApplyFilters = useCallback(catalogDebounce(applyFiltersInternal, 150),
-  // Reduced from 300ms for faster response
-  [applyFiltersInternal]);
+  // Apply filters instantly without debouncing
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
-    // Set filter loading state immediately for better UX
-    setIsFilterLoading(true);
+    // Update UI immediately for instant response
+    setFilters(newFilters);
 
     // Reset "Show All" mode when filters change
     setShowAllCars(false);
     setAllCarsData([]);
 
-    // Keep current sort preference
-    // Don't reset sorting
-
-    // Update UI immediately for responsiveness
-    setFilters(newFilters);
-
     // Clear global sorting when filters change
     clearGlobalSorting();
 
-    // Check if this is a year range change - use optimized filtering for better UX - using utility
-    const isYearChange = isYearRangeChange(newFilters, filters);
-    if (isYearChange) {
-      console.log('🚀 Using optimized year filtering for instant response');
+    // Apply filters immediately - no debouncing
+    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
+    const filtersWithSort = hasUserSelectedSort && sortBy ? {
+      ...filtersWithPagination,
+      sort_by: sortBy
+    } : filtersWithPagination;
+    
+    fetchCars(1, filtersWithSort, true);
+    setCurrentPage(1);
 
-      // Use optimized year filtering for instant feedback
-      const result = await handleOptimizedYearFilter(newFilters.from_year, newFilters.to_year, newFilters);
+    // Update URL
+    const searchParams = filtersToURLParams(newFilters);
+    searchParams.set('page', '1');
+    setSearchParams(searchParams);
+    
+    setIsFilterLoading(false);
+  }, [fetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
 
-      // If we got instant results, temporarily show them
-      if (result && result.data.length > 0) {
-        setCars(result.data);
-        setTotalCount(result.totalCount);
-      }
-    } else {
-      // Clear previous data immediately to show loading state for non-year filters
-      setCars([]);
-
-      // Apply other filters with debouncing to reduce API calls
-      debouncedApplyFilters(newFilters);
-    }
-  }, [debouncedApplyFilters, handleOptimizedYearFilter, filters, setCars, setFilters, setTotalCount, clearGlobalSorting]);
   const handleClearFilters = useCallback(() => {
     setFilters({});
     setSearchTerm("");
@@ -1068,7 +1073,23 @@ const EncarCatalog = ({
         
         <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
           <div className={`${isMobile ? '' : ''}`}>
-            <EncarStyleFilter filters={filters} manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} models={models} filterCounts={filterCounts} loadingCounts={loadingCounts} onFiltersChange={handleFiltersChange} onClearFilters={handleClearFilters} onManufacturerChange={handleManufacturerChange} onModelChange={handleModelChange} showAdvanced={showAdvancedFilters} onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)} onFetchGrades={fetchGrades} onFetchTrimLevels={fetchTrimLevels} compact={true} onSearchCars={() => {
+            <EncarStyleFilter 
+              filters={filters} 
+              manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
+              models={models} 
+              engineVariants={engineVariants}
+              filterCounts={filterCounts} 
+              loadingCounts={loadingCounts} 
+              onFiltersChange={handleFiltersChange} 
+              onClearFilters={handleClearFilters} 
+              onManufacturerChange={handleManufacturerChange} 
+              onModelChange={handleModelChange} 
+              showAdvanced={showAdvancedFilters} 
+              onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)} 
+              onFetchGrades={fetchGrades} 
+              onFetchTrimLevels={fetchTrimLevels} 
+              compact={true} 
+              onSearchCars={() => {
             console.log("Search button clicked, isMobile:", isMobile);
             // Apply search/filters with current sort preference
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';

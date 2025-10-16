@@ -15,6 +15,7 @@ export interface APIFilters {
   generation_id?: string;
   grade_iaai?: string;
   trim_level?: string;
+  engine_spec?: string;
   color?: string;
   fuel_type?: string;
   transmission?: string;
@@ -47,6 +48,38 @@ export interface FilterCounts {
   transmissions: { [key: string]: number };
   years: { [key: string]: number };
 }
+
+/**
+ * Extracts engine specifications from car title
+ * Returns normalized engine variants (e.g., "2.0 TDI", "520d", "35 TFSI")
+ */
+export const extractEngineSpecs = (title: string): string[] => {
+  const engines: string[] = [];
+  const patterns = [
+    // BMW style: 520d, 530i, 535xi
+    /\b(\d{3}[dix]+)\b/gi,
+    // Audi style: 35 TDI, 40 TFSI, 45 quattro
+    /\b(\d+)\s+(TDI|TFSI|FSI|TSI|quattro)\b/gi,
+    // VW/Audi traditional: 2.0 TDI, 1.5 TSI, 3.0 diesel
+    /\b(\d+\.?\d*)\s+(TDI|TFSI|FSI|TSI|CDI|diesel|petrol|hybrid)\b/gi,
+    // Mercedes style: 220d, 300 CDI
+    /\b(\d{3}[dh]?)\s*(CDI|diesel|petrol)?\b/gi,
+  ];
+  
+  patterns.forEach(pattern => {
+    const matches = title.match(pattern);
+    if (matches) {
+      matches.forEach(match => {
+        const cleaned = match.trim();
+        if (cleaned && !engines.includes(cleaned)) {
+          engines.push(cleaned);
+        }
+      });
+    }
+  });
+  
+  return engines;
+};
 
 /**
  * Extracts grade information from a car title using various patterns
@@ -140,6 +173,70 @@ export const matchesGradeFilter = (car: Car, gradeFilter: string): boolean => {
     
     return false;
   });
+};
+
+/**
+ * Extracts unique engine specifications from a list of cars
+ */
+export const extractUniqueEngineSpecs = (cars: Car[]): Array<{ value: string; label: string; count: number }> => {
+  const engineCounts = new Map<string, number>();
+  
+  cars.forEach(car => {
+    if (car.title) {
+      const engines = extractEngineSpecs(car.title);
+      engines.forEach(engine => {
+        engineCounts.set(engine, (engineCounts.get(engine) || 0) + 1);
+      });
+    }
+    
+    // Also check engine field
+    if (car.engine && car.engine.name) {
+      const engines = extractEngineSpecs(car.engine.name);
+      engines.forEach(engine => {
+        engineCounts.set(engine, (engineCounts.get(engine) || 0) + 1);
+      });
+    }
+  });
+  
+  // Convert to array and sort by count (most common first)
+  return Array.from(engineCounts.entries())
+    .map(([engine, count]) => ({
+      value: engine,
+      label: `${engine} (${count})`,
+      count
+    }))
+    .sort((a, b) => b.count - a.count);
+};
+
+/**
+ * Checks if a car matches an engine specification filter
+ */
+export const matchesEngineFilter = (car: Car, engineFilter: string): boolean => {
+  if (!engineFilter || engineFilter === 'all') {
+    return true;
+  }
+
+  const filterEngine = engineFilter.toLowerCase().trim();
+  const carEngines: string[] = [];
+  
+  // Extract from title
+  if (car.title) {
+    const titleEngines = extractEngineSpecs(car.title);
+    carEngines.push(...titleEngines.map(e => e.toLowerCase()));
+  }
+  
+  // Extract from engine field
+  if (car.engine && car.engine.name) {
+    const engineFieldSpecs = extractEngineSpecs(car.engine.name);
+    carEngines.push(...engineFieldSpecs.map(e => e.toLowerCase()));
+  }
+  
+  // Strict matching - must contain the exact engine spec
+  return carEngines.some(engine => 
+    engine === filterEngine || 
+    engine.includes(filterEngine) ||
+    filterEngine.includes(engine)
+  );
 };
 
 /**
