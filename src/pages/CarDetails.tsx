@@ -618,7 +618,6 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
-  const [showVin, setShowVin] = useState(false);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -1335,11 +1334,11 @@ const CarDetails = memo(() => {
 
             {/* Car Title with Price - Compact mobile design */}
             <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
-                <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight flex-1 min-w-0">
                   {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` && ` ${car.title}`}
                 </h1>
-                <div className="text-left sm:text-right flex-shrink-0">
+                <div className="text-right flex-shrink-0">
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                     €{car.price.toLocaleString()}
                   </div>
@@ -1537,12 +1536,9 @@ const CarDetails = memo(() => {
                         </div>
                       </div>
                       <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
-                        {!showVin && <Button size="sm" variant="outline" className="h-6 md:h-8 px-1.5 md:px-2 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={() => setShowVin(true)}>
-                          Shfaq
-                        </Button>}
-                        {showVin && <span className="text-muted-foreground font-medium font-mono text-xs md:text-sm text-right leading-tight whitespace-normal break-words min-w-0">
+                        <span className="text-muted-foreground font-medium font-mono text-xs md:text-sm text-right leading-tight whitespace-normal break-words min-w-0">
                           {car.vin}
-                        </span>}
+                        </span>
                       </div>
                     </div>}
                 </div>
