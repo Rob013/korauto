@@ -543,7 +543,7 @@ const EquipmentOptionsSection = memo(({
                   <div className="flex-1 h-px bg-border"></div>
                   <span className="text-xs text-muted-foreground font-medium">{options.choice.length} opsione</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
                     const itemLower = option.toString().toLowerCase();
                     let OptionIcon = CheckCircle;
@@ -555,18 +555,39 @@ const EquipmentOptionsSection = memo(({
                     else if (itemLower.includes('audio') || itemLower.includes('multimedia')) OptionIcon = Settings;
                     else if (itemLower.includes('leather') || itemLower.includes('lëkur')) OptionIcon = Users;
                     return (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-accent/5 to-accent/10 border border-accent/20 rounded-lg hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/15 hover:border-accent/30 transition-all duration-200 group">
-                        <div className="flex-shrink-0">
-                          <OptionIcon className="h-4 w-4 text-accent" />
+                      <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-r from-accent/5 to-accent/10 border border-accent/20 rounded-lg sm:rounded-xl hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/15 hover:border-accent/30 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-accent/10 group-hover:-translate-y-0.5">
+                          <div className="flex-shrink-0">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-accent/25 transition-all duration-300">
+                              <OptionIcon className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-accent transition-colors duration-300 leading-tight line-clamp-2">
+                              {option}
+                            </span>
+                          </div>
+                          <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-accent"></div>
+                          </div>
                         </div>
-                        <span className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">{option}</span>
                       </div>
                     );
                   })}
                 </div>
-                {options.choice.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-9 px-4 text-sm text-accent hover:bg-accent/10 font-medium border-accent/30">
-                    {showAllChoice ? `Më pak` : `Shiko të gjitha (${options.choice.length - INITIAL_SHOW_COUNT} më shumë)`}
+                {options.choice.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
+                  <Button variant="outline" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-10 px-6 text-sm font-semibold text-accent hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/100 dark:hover:from-accent/900/20 dark:hover:to-accent/800/20 border-accent/30 dark:border-accent/600/60 hover:border-accent/40/80 dark:hover:border-accent/500/80 transition-all duration-300 hover:shadow-md hover:shadow-accent/10">
+                    {showAllChoice ? (
+                      <div className="flex items-center gap-2">
+                        <span>Më pak</span>
+                        <div className="w-1 h-1 rounded-full bg-accent"></div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>Shiko të gjitha ({options.choice.length - INITIAL_SHOW_COUNT} më shumë)</span>
+                        <div className="w-1 h-1 rounded-full bg-accent"></div>
+                      </div>
+                    )}
                   </Button>
                 </div>}
               </div>}
