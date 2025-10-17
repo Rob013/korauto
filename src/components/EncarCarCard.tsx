@@ -162,7 +162,7 @@ const EncarCarCard = ({
 
   return (
     <Card 
-      className="group cursor-pointer bg-white border border-gray-200 hover:border-primary/50 hover:shadow-lg transition-all duration-300 overflow-hidden rounded-xl compact-card"
+      className="group cursor-pointer bg-white border border-gray-200 transition-all duration-300 overflow-hidden rounded-xl compact-card car-card-container"
       onClick={handleCardClick}
     >
       {/* Large Image Section - Enhanced for mobile with bigger thumbnail */}
@@ -203,11 +203,11 @@ const EncarCarCard = ({
         </div>
 
         {/* Modern Action buttons */}
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+        <div className="absolute top-3 right-3 flex gap-2 opacity-0 transition-all duration-300 transform translate-y-2">
           <Button
             size="sm"
             variant="secondary"
-            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
+            className="h-9 w-9 p-0 bg-white/95 shadow-lg backdrop-blur-sm"
             onClick={handleLikeClick}
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
@@ -215,7 +215,7 @@ const EncarCarCard = ({
           <Button
             size="sm"
             variant="secondary"
-            className="h-9 w-9 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm"
+            className="h-9 w-9 p-0 bg-white/95 shadow-lg backdrop-blur-sm"
             onClick={handleShareClick}
           >
             <Share2 className="h-4 w-4 text-gray-600" />
@@ -298,7 +298,7 @@ const EncarCarCard = ({
             trigger={
               <Button 
                 size="sm"
-                className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-9 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
+                className="flex-1 bg-primary text-white font-semibold h-9 text-xs sm:text-sm shadow-md transition-all"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Kërkoni inspektim për ${year} ${make} ${model}`}
               >
@@ -314,7 +314,7 @@ const EncarCarCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold h-9 text-xs sm:text-sm transition-all"
+            className="flex-1 border-2 border-primary text-primary font-semibold h-9 text-xs sm:text-sm transition-all"
             onClick={handleContactWhatsApp}
             aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${make} ${model}`}
           >

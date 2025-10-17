@@ -412,7 +412,7 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps"
+      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps car-card-container"
       onClick={handleCardClick}
       style={{
         // Prevent layout shifts by setting fixed dimensions

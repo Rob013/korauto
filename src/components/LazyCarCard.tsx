@@ -287,7 +287,7 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card"
+      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl transition-all duration-500 mobile-card-compact compact-modern-card car-card-container"
       onClick={handleCardClick}
       style={{
         willChange: 'transform, opacity',
@@ -336,7 +336,7 @@ const LazyCarCard = memo(({
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 hover:bg-black/80"
+            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 transition-all duration-200 z-10"
           >
             <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>

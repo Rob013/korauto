@@ -895,6 +895,58 @@ All colors MUST be HSL.
     transform: scale(1.02);
   }
 
+  /* Car card background light animation */
+  .car-card-container {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .car-card-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 30%,
+      transparent 70%
+    );
+    animation: light-sweep 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .dark .car-card-container::before {
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.03) 30%,
+      transparent 70%
+    );
+  }
+
+  @keyframes light-sweep {
+    0%, 100% {
+      transform: translateX(-100%) translateY(-100%) rotate(0deg);
+      opacity: 0.3;
+    }
+    25% {
+      transform: translateX(0%) translateY(-50%) rotate(90deg);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translateX(50%) translateY(0%) rotate(180deg);
+      opacity: 0.4;
+    }
+    75% {
+      transform: translateX(0%) translateY(50%) rotate(270deg);
+      opacity: 0.5;
+    }
+  }
+
   /* Enhanced Glass morphism effect with gradient background */
   .glass-card {
     background: linear-gradient(135deg, 

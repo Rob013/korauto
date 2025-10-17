@@ -55,7 +55,7 @@ const CarCardSkeleton: React.FC = () => (
 // Individual car card component
 const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, onClick }) => (
   <Card 
-    className="w-full h-full cursor-pointer transition-all duration-200 hover:shadow-lg"
+    className="w-full h-full cursor-pointer transition-all duration-200 car-card-container"
     onClick={onClick}
   >
     <CardContent className="p-4">
