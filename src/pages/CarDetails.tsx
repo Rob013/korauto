@@ -1332,6 +1332,48 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
+            {/* Compact Thumbnail Gallery - Mobile optimized */}
+            {images.length > 1 && (
+              <div className="animate-fade-in" style={{animationDelay: '150ms'}}>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {images.slice(0, 5).map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`flex-shrink-0 w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                        selectedImageIndex === index 
+                          ? 'border-primary shadow-lg scale-105' 
+                          : 'border-border hover:border-primary/50 hover:scale-102'
+                      }`}
+                      aria-label={`View image ${index + 1}`}
+                    >
+                      <img
+                        src={image}
+                        alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
+                      />
+                    </button>
+                  ))}
+                  {images.length > 5 && (
+                    <button
+                      onClick={handleGalleryClick}
+                      className="flex-shrink-0 w-16 h-12 sm:w-20 sm:h-14 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex items-center justify-center transition-all duration-200"
+                      aria-label="View all images"
+                    >
+                      <div className="text-center">
+                        <Camera className="h-4 w-4 text-primary mx-auto mb-1" />
+                        <span className="text-xs text-primary font-medium">+{images.length - 5}</span>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Car Title with Price - Compact mobile design */}
             <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
               <div className="flex items-center justify-between gap-2 mb-3">
