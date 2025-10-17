@@ -72,27 +72,107 @@ const FEATURE_MAPPING: { [key: string]: string } = {
   "048": "Sistemi i Ujit të Xhamit",
   "049": "Defogger i Prapëm",
   "050": "Sistemi i Ndriçimit të Brendshëm",
-  // Numeric format fallback
-  "1": "Klimatizimi",
-  "2": "Dritaret Elektrike",
-  "3": "Mbyllja Qendrore",
-  "4": "Frena ABS",
-  "5": "Airbag Sistemi",
-  "6": "Radio/Sistemi Audio",
-  "7": "CD Player",
-  "8": "Bluetooth",
-  "9": "Navigacioni GPS",
-  "10": "Kamera e Prapme",
-  "11": "Sensorët e Parkimit",
-  "12": "Kontrolli i Kursimit",
-  "13": "Sistemi Start/Stop",
-  "14": "Dritat LED",
-  "15": "Dritat Xenon",
-  "16": "Pasqyrat Elektrike",
-  "17": "Pasqyrat e Ngrohura",
-  "18": "Kontrolli Elektronik i Stabilitetit",
-  "19": "Sistemi Kundër Bllokimit",
-  "20": "Kontrolli i Traksionit"
+  "051": "Sistemi i Ngrohjes së Dritareve",
+  "052": "Kontrolli i Temperaturës së Klimatizimit",
+  "053": "Sistemi i Pastrimit të Dritareve të Prapme",
+  "054": "Kontrolli i Shpejtësisë",
+  "055": "Sistemi i Monitorimit të Presionit të Gomas",
+  "056": "Sistemi i Paralajmërimit të Largimit nga Korsia",
+  "057": "Kontrolli Adaptiv i Kursimit",
+  "058": "Sistemi i Paralajmërimit të Kolizionit",
+  "059": "Frënimi Emergjent Automatik",
+  "060": "Kontrolli i Bordit Elektronik",
+  "061": "Sistemi Keyless Entry",
+  "062": "Sistemi i Alarmshmërisë",
+  "063": "Imobilizuesi i Motorit",
+  "064": "Kopja e Çelësave",
+  "065": "Sistemi i Ngrohjes së Ulëseve të Prapme",
+  "066": "Ulëset e Lëkurës të Prapme",
+  "067": "Ulëset e Tekstilit të Prapme",
+  "068": "Kontrolli Elektrik i Ulëseve të Prapme",
+  "069": "Dritaret me Tinte të Prapme",
+  "070": "Sistemi i Alarmshmërisë të Prapme",
+  "071": "Imobilizuesi i Prapme",
+  "072": "Kopja e Çelësave të Prapme",
+  "073": "Kontrolli i Temperaturës së Prapme",
+  "074": "Ventilimi Automatik i Prapme",
+  "075": "Sistemi i Pastrimit të Dritareve të Prapme",
+  "076": "Sistemi i Ujit të Xhamit të Prapme",
+  "077": "Defogger i Prapëm i Prapme",
+  "078": "Sistemi i Ndriçimit të Brendshëm të Prapme",
+  "079": "Sistemi i Ngrohjes së Dritareve të Prapme",
+  "080": "Kontrolli i Temperaturës së Klimatizimit të Prapme",
+  "081": "Sistemi i Pastrimit të Dritareve të Prapme të Prapme",
+  "082": "Kontrolli i Shpejtësisë të Prapme",
+  "083": "Sistemi i Monitorimit të Presionit të Gomas të Prapme",
+  "084": "Sistemi i Paralajmërimit të Largimit nga Korsia të Prapme",
+  "085": "Kontrolli Adaptiv i Kursimit të Prapme",
+  "086": "Sistemi i Paralajmërimit të Kolizionit të Prapme",
+  "087": "Frënimi Emergjent Automatik i Prapme",
+  "088": "Kontrolli i Bordit Elektronik të Prapme",
+  "089": "Sistemi Keyless Entry i Prapme",
+  "090": "Sistemi i Alarmshmërisë të Prapme",
+  "091": "Imobilizuesi i Motorit të Prapme",
+  "092": "Kopja e Çelësave të Prapme",
+  "093": "Sistemi i Ngrohjes së Ulëseve të Prapme të Prapme",
+  "094": "Ulëset e Lëkurës të Prapme të Prapme",
+  "095": "Ulëset e Tekstilit të Prapme të Prapme",
+  "096": "Kontrolli Elektrik i Ulëseve të Prapme të Prapme",
+  "097": "Dritaret me Tinte të Prapme të Prapme",
+  "098": "Sistemi i Alarmshmërisë të Prapme të Prapme",
+  "099": "Imobilizuesi i Prapme të Prapme",
+  "100": "Kopja e Çelësave të Prapme të Prapme",
+  // Extended mapping for higher codes
+  "1001": "Pasqyra Anësore me Palosje Elektrike",
+  "1002": "Pasqyrë e Brendshme ECM",
+  "1003": "Hi Pass",
+  "1004": "Timon me Drejtim Elektrik",
+  "1005": "Dritare Elektrike",
+  "1006": "Çelës Inteligjent",
+  "1007": "Navigacion",
+  "1008": "Monitor AV i Përparmë",
+  "1009": "Terminal USB",
+  "1010": "Sedilje Lëkure",
+  "1011": "Sedilje të Përparme me Ngrohje",
+  "1012": "Bllokim Elektrik i Dyerve",
+  "1013": "Airbag për Pasagjerin",
+  "1014": "Frena ABS",
+  "1015": "Sistemi TCS",
+  "1016": "Sistemi ESC",
+  "1017": "Sistemi TPMS",
+  "1018": "Sensor Parkimi i Pasmë",
+  "1019": "Kamera e Pasme",
+  "1020": "Bllokim Dyersh pa Tel",
+  "1021": "Sistemi i Ngrohjes së Ulëseve",
+  "1022": "Kontrolli i Temperaturës së Klimatizimit",
+  "1023": "Sistemi i Pastrimit të Dritareve",
+  "1024": "Kontrolli i Shpejtësisë",
+  "1025": "Sistemi i Monitorimit të Presionit të Gomas",
+  "1026": "Sistemi i Paralajmërimit të Largimit nga Korsia",
+  "1027": "Kontrolli Adaptiv i Kursimit",
+  "1028": "Sistemi i Paralajmërimit të Kolizionit",
+  "1029": "Frënimi Emergjent Automatik",
+  "1030": "Kontrolli i Bordit Elektronik",
+  "1031": "Sistemi Keyless Entry",
+  "1032": "Sistemi i Alarmshmërisë",
+  "1033": "Imobilizuesi i Motorit",
+  "1034": "Kopja e Çelësave",
+  "1035": "Sistemi i Ngrohjes së Ulëseve të Prapme",
+  "1036": "Ulëset e Lëkurës të Prapme",
+  "1037": "Ulëset e Tekstilit të Prapme",
+  "1038": "Kontrolli Elektrik i Ulëseve të Prapme",
+  "1039": "Dritaret me Tinte të Prapme",
+  "1040": "Sistemi i Alarmshmërisë të Prapme",
+  "1041": "Imobilizuesi i Prapme",
+  "1042": "Kopja e Çelësave të Prapme",
+  "1043": "Kontrolli i Temperaturës së Prapme",
+  "1044": "Ventilimi Automatik i Prapme",
+  "1045": "Sistemi i Pastrimit të Dritareve të Prapme",
+  "1046": "Sistemi i Ujit të Xhamit të Prapme",
+  "1047": "Defogger i Prapëm i Prapme",
+  "1048": "Sistemi i Ndriçimit të Brendshëm të Prapme",
+  "1049": "Sistemi i Ngrohjes së Dritareve të Prapme",
+  "1050": "Kontrolli i Temperaturës së Klimatizimit të Prapme"
 };
 
 interface CarDetails {
@@ -418,14 +498,16 @@ const EquipmentOptionsSection = memo(({
           <ChevronDown className={`h-5 w-5 text-muted-foreground transition-all duration-300 ${showOptions ? "rotate-180 text-primary" : ""}`} />
         </Button>
 
-        {showOptions && <div className="px-4 pb-4 space-y-4 animate-fade-in-up">
+        {showOptions && <div className="px-4 pb-4 space-y-6 animate-fade-in-up">
             {/* Standard Equipment */}
-            {options.standard && options.standard.length > 0 && <div className="space-y-2">
-                <div className="flex items-center gap-2">
+            {options.standard && options.standard.length > 0 && <div className="space-y-3">
+                <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
+                  <h5 className="text-base font-semibold text-foreground">Pajisje Standarde</h5>
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="text-xs text-muted-foreground font-medium">{options.standard.length} pajisje</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
                     const itemLower = option.toString().toLowerCase();
                     let OptionIcon = CheckCircle;
@@ -437,25 +519,31 @@ const EquipmentOptionsSection = memo(({
                     else if (itemLower.includes('audio') || itemLower.includes('multimedia')) OptionIcon = Settings;
                     else if (itemLower.includes('leather') || itemLower.includes('lëkur')) OptionIcon = Users;
                     return (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1.5 justify-center py-1.5 px-3 text-xs font-medium bg-primary/10 text-primary border-0 hover:bg-primary/20 transition-colors">
-                        <OptionIcon className="h-3.5 w-3.5" />
-                        <span>{option}</span>
-                      </Badge>
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/15 hover:border-primary/30 transition-all duration-200 group">
+                        <div className="flex-shrink-0">
+                          <OptionIcon className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{option}</span>
+                      </div>
                     );
                   })}
                 </div>
-                {options.standard.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllStandard(!showAllStandard)} className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium">
+                {options.standard.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowAllStandard(!showAllStandard)} className="h-9 px-4 text-sm text-primary hover:bg-primary/10 font-medium border-primary/30">
                     {showAllStandard ? `Më pak` : `Shiko të gjitha (${options.standard.length - INITIAL_SHOW_COUNT} më shumë)`}
-                  </Button>}
+                  </Button>
+                </div>}
               </div>}
 
             {/* Optional Equipment */}
-            {options.choice && options.choice.length > 0 && <div className="space-y-2">
-                <div className="flex items-center gap-2">
+            {options.choice && options.choice.length > 0 && <div className="space-y-3">
+                <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-accent"></div>
-                  <h5 className="text-sm font-medium text-foreground">Pajisje Opsionale</h5>
+                  <h5 className="text-base font-semibold text-foreground">Pajisje Opsionale</h5>
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="text-xs text-muted-foreground font-medium">{options.choice.length} opsione</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
                     const itemLower = option.toString().toLowerCase();
                     let OptionIcon = CheckCircle;
@@ -467,86 +555,229 @@ const EquipmentOptionsSection = memo(({
                     else if (itemLower.includes('audio') || itemLower.includes('multimedia')) OptionIcon = Settings;
                     else if (itemLower.includes('leather') || itemLower.includes('lëkur')) OptionIcon = Users;
                     return (
-                      <Badge key={index} variant="outline" className="flex items-center gap-1.5 justify-center py-1.5 px-3 text-xs font-medium bg-accent/10 text-accent-foreground border-accent/30 hover:bg-accent/20 transition-colors">
-                        <OptionIcon className="h-3.5 w-3.5" />
-                        <span>{option}</span>
-                      </Badge>
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-accent/5 to-accent/10 border border-accent/20 rounded-lg hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/15 hover:border-accent/30 transition-all duration-200 group">
+                        <div className="flex-shrink-0">
+                          <OptionIcon className="h-4 w-4 text-accent" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">{option}</span>
+                      </div>
                     );
                   })}
                 </div>
-                {options.choice.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium">
+                {options.choice.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-9 px-4 text-sm text-accent hover:bg-accent/10 font-medium border-accent/30">
                     {showAllChoice ? `Më pak` : `Shiko të gjitha (${options.choice.length - INITIAL_SHOW_COUNT} më shumë)`}
-                  </Button>}
+                  </Button>
+                </div>}
               </div>}
 
             {/* Tuning Modifications */}
-            {options.tuning && options.tuning.length > 0 && <div className="space-y-2">
-                <div className="flex items-center gap-2">
+            {options.tuning && options.tuning.length > 0 && <div className="space-y-3">
+                <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                  <h5 className="text-sm font-medium text-foreground">Modifikimet</h5>
+                  <h5 className="text-base font-semibold text-foreground">Modifikimet</h5>
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="text-xs text-muted-foreground font-medium">{options.tuning.length} modifikime</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {options.tuning.map((option, index) => {
                     const itemLower = option.toString().toLowerCase();
                     let OptionIcon = Settings;
                     if (itemLower.includes('sport') || itemLower.includes('performance')) OptionIcon = Gauge;
                     else if (itemLower.includes('exhaust') || itemLower.includes('marmit')) OptionIcon = Cog;
                     return (
-                      <Badge key={index} variant="destructive" className="flex items-center gap-1.5 justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-0 hover:bg-destructive/20 transition-colors">
-                        <OptionIcon className="h-3.5 w-3.5" />
-                        <span>{option}</span>
-                      </Badge>
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-destructive/5 to-destructive/10 border border-destructive/20 rounded-lg hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/15 hover:border-destructive/30 transition-all duration-200 group">
+                        <div className="flex-shrink-0">
+                          <OptionIcon className="h-4 w-4 text-destructive" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-destructive transition-colors">{option}</span>
+                      </div>
                     );
                   })}
                 </div>
               </div>}
 
             {/* General Features */}
-            {features && features.length > 0 && <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground"></div>
-                  <h5 className="text-sm font-medium text-foreground">Karakteristika të Përgjithshme</h5>
+            {features && features.length > 0 && <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm"></div>
+                    <h5 className="text-lg font-bold text-foreground bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                      Karakteristika të Përgjithshme
+                    </h5>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-border via-border/50 to-transparent"></div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-full">
+                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                        {features.length} karakteristika
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {(showAllFeatures ? features : features.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => <Badge key={index} variant="outline" className="justify-center py-1.5 px-3 text-xs font-medium bg-muted/10 text-muted-foreground border-muted/40 hover:bg-muted/20 transition-colors">
-                      {feature}
-                    </Badge>)}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {(showAllFeatures ? features : features.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
+                    <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                      <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 border border-slate-200/60 dark:border-slate-700/60 rounded-lg sm:rounded-xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 hover:border-blue-300/60 dark:hover:border-blue-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-500/10 group-hover:-translate-y-0.5">
+                        <div className="flex-shrink-0">
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-500/25 transition-all duration-300">
+                            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors duration-300 leading-tight line-clamp-2">
+                            {feature}
+                          </span>
+                        </div>
+                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {features.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllFeatures(!showAllFeatures)} className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium">
-                    {showAllFeatures ? `Më pak` : `Shiko të gjitha (${features.length - INITIAL_SHOW_COUNT} më shumë)`}
-                  </Button>}
+                {features.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAllFeatures(!showAllFeatures)} 
+                    className="h-10 px-6 text-sm font-semibold text-blue-700 dark:text-blue-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 border-blue-300/60 dark:border-blue-600/60 hover:border-blue-400/80 dark:hover:border-blue-500/80 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                  >
+                    {showAllFeatures ? (
+                      <div className="flex items-center gap-2">
+                        <span>Më pak</span>
+                        <div className="w-1 h-1 rounded-full bg-blue-500"></div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>Shiko të gjitha ({features.length - INITIAL_SHOW_COUNT} më shumë)</span>
+                        <div className="w-1 h-1 rounded-full bg-blue-500"></div>
+                      </div>
+                    )}
+                  </Button>
+                </div>}
               </div>}
 
             {/* Safety Features */}
-            {safetyFeatures && safetyFeatures.length > 0 && <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                  <h5 className="text-sm font-medium text-foreground">Karakteristika të Sigurisë</h5>
+            {safetyFeatures && safetyFeatures.length > 0 && <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 to-red-600 shadow-sm"></div>
+                    <h5 className="text-lg font-bold text-foreground bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
+                      Karakteristika të Sigurisë
+                    </h5>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-border via-border/50 to-transparent"></div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-full">
+                      <span className="text-xs font-semibold text-red-700 dark:text-red-300">
+                        {safetyFeatures.length} siguri
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {(showAllSafety ? safetyFeatures : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => <Badge key={index} variant="outline" className="justify-center py-1.5 px-3 text-xs font-medium bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 transition-colors">
-                      {feature}
-                    </Badge>)}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {(showAllSafety ? safetyFeatures : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
+                    <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                      <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200/60 dark:border-red-700/60 rounded-lg sm:rounded-xl hover:bg-gradient-to-br hover:from-red-100 hover:to-red-200 dark:hover:from-red-800/30 dark:hover:to-red-700/30 hover:border-red-300/60 dark:hover:border-red-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-red-500/10 group-hover:-translate-y-0.5">
+                        <div className="flex-shrink-0">
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-red-500/25 transition-all duration-300">
+                            <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-red-700 dark:text-red-200 group-hover:text-red-800 dark:group-hover:text-red-100 transition-colors duration-300 leading-tight line-clamp-2">
+                            {feature}
+                          </span>
+                        </div>
+                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {safetyFeatures.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllSafety(!showAllSafety)} className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium">
-                    {showAllSafety ? `Më pak` : `Shiko të gjitha (${safetyFeatures.length - INITIAL_SHOW_COUNT} më shumë)`}
-                  </Button>}
+                {safetyFeatures.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAllSafety(!showAllSafety)} 
+                    className="h-10 px-6 text-sm font-semibold text-red-700 dark:text-red-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20 border-red-300/60 dark:border-red-600/60 hover:border-red-400/80 dark:hover:border-red-500/80 transition-all duration-300 hover:shadow-md hover:shadow-red-500/10"
+                  >
+                    {showAllSafety ? (
+                      <div className="flex items-center gap-2">
+                        <span>Më pak</span>
+                        <div className="w-1 h-1 rounded-full bg-red-500"></div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>Shiko të gjitha ({safetyFeatures.length - INITIAL_SHOW_COUNT} më shumë)</span>
+                        <div className="w-1 h-1 rounded-full bg-red-500"></div>
+                      </div>
+                    )}
+                  </Button>
+                </div>}
               </div>}
 
             {/* Comfort Features */}
-            {comfortFeatures && comfortFeatures.length > 0 && <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-secondary"></div>
-                  <h5 className="text-sm font-medium text-foreground">Karakteristika të Rehatisë</h5>
+            {comfortFeatures && comfortFeatures.length > 0 && <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-sm"></div>
+                    <h5 className="text-lg font-bold text-foreground bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">
+                      Karakteristika të Rehatisë
+                    </h5>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-border via-border/50 to-transparent"></div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-full">
+                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        {comfortFeatures.length} rehati
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {(showAllComfort ? comfortFeatures : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => <Badge key={index} variant="secondary" className="justify-center py-1.5 px-3 text-xs font-medium bg-secondary/10 text-secondary-foreground border-0 hover:bg-secondary/20 transition-colors">
-                      {feature}
-                    </Badge>)}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {(showAllComfort ? comfortFeatures : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
+                    <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                      <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border border-emerald-200/60 dark:border-emerald-700/60 rounded-lg sm:rounded-xl hover:bg-gradient-to-br hover:from-emerald-100 hover:to-emerald-200 dark:hover:from-emerald-800/30 dark:hover:to-emerald-700/30 hover:border-emerald-300/60 dark:hover:border-emerald-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-emerald-500/10 group-hover:-translate-y-0.5">
+                        <div className="flex-shrink-0">
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-emerald-500/25 transition-all duration-300">
+                            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-200 group-hover:text-emerald-800 dark:group-hover:text-emerald-100 transition-colors duration-300 leading-tight line-clamp-2">
+                            {feature}
+                          </span>
+                        </div>
+                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {comfortFeatures.length > INITIAL_SHOW_COUNT && <Button variant="ghost" size="sm" onClick={() => setShowAllComfort(!showAllComfort)} className="h-8 px-3 text-xs text-primary hover:bg-primary/10 font-medium">
-                    {showAllComfort ? `Më pak` : `Shiko të gjitha (${comfortFeatures.length - INITIAL_SHOW_COUNT} më shumë)`}
-                  </Button>}
+                {comfortFeatures.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAllComfort(!showAllComfort)} 
+                    className="h-10 px-6 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-emerald-100 dark:hover:from-emerald-900/20 dark:hover:to-emerald-800/20 border-emerald-300/60 dark:border-emerald-600/60 hover:border-emerald-400/80 dark:hover:border-emerald-500/80 transition-all duration-300 hover:shadow-md hover:shadow-emerald-500/10"
+                  >
+                    {showAllComfort ? (
+                      <div className="flex items-center gap-2">
+                        <span>Më pak</span>
+                        <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>Shiko të gjitha ({comfortFeatures.length - INITIAL_SHOW_COUNT} më shumë)</span>
+                        <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
+                      </div>
+                    )}
+                  </Button>
+                </div>}
               </div>}
           </div>}
       </div>;
@@ -587,6 +818,18 @@ const CarDetails = memo(() => {
       'light green': 'jeshil i çelët'
     };
     return colorMap[color?.toLowerCase()] || color;
+  };
+  const translateFuel = (fuel: string): string => {
+    const fuelMap: Record<string, string> = {
+      'gasoline': 'Benzin',
+      'petrol': 'Benzin',
+      'diesel': 'Diesel',
+      'hybrid': 'Hibrid',
+      'electric': 'Elektrik',
+      'lpg': 'LPG',
+      'gas': 'Gaz'
+    };
+    return fuelMap[fuel?.toLowerCase()] || fuel;
   };
   const {
     id: lot
@@ -655,9 +898,15 @@ const CarDetails = memo(() => {
     if (options.standard && Array.isArray(options.standard)) {
       result.standard = options.standard.map((option: any) => {
         const optionStr = option.toString().trim();
-        const mapped = FEATURE_MAPPING[optionStr] || `Pajisje ${optionStr}`;
-        console.log(`📝 Mapping: ${optionStr} → ${mapped}`);
-        return mapped;
+        const mapped = FEATURE_MAPPING[optionStr];
+        if (mapped) {
+          console.log(`📝 Mapping: ${optionStr} → ${mapped}`);
+          return mapped;
+        } else {
+          // If no mapping found, show the raw option as-is (it might be a real name)
+          console.log(`⚠️ No mapping found for: ${optionStr}, showing raw value`);
+          return optionStr;
+        }
       });
     }
 
@@ -665,8 +914,13 @@ const CarDetails = memo(() => {
     if (options.choice && Array.isArray(options.choice)) {
       result.choice = options.choice.map((option: any) => {
         const optionStr = option.toString().trim();
-        const mapped = FEATURE_MAPPING[optionStr] || `Opsion ${optionStr}`;
-        return mapped;
+        const mapped = FEATURE_MAPPING[optionStr];
+        if (mapped) {
+          return mapped;
+        } else {
+          // If no mapping found, show the raw option as-is
+          return optionStr;
+        }
       });
     }
 
@@ -674,10 +928,17 @@ const CarDetails = memo(() => {
     if (options.tuning && Array.isArray(options.tuning)) {
       result.tuning = options.tuning.map((option: any) => {
         const optionStr = option.toString().trim();
-        const mapped = FEATURE_MAPPING[optionStr] || `Modifikim ${optionStr}`;
-        return mapped;
+        const mapped = FEATURE_MAPPING[optionStr];
+        if (mapped) {
+          return mapped;
+        } else {
+          // If no mapping found, show the raw option as-is
+          return optionStr;
+        }
       });
     }
+    
+    console.log("✅ Converted options:", result);
     return result;
   };
 
@@ -1223,11 +1484,162 @@ const CarDetails = memo(() => {
           {/* Left Column - Images and Gallery */}
           <div className="space-y-6 animate-fade-in" style={{animationDelay: '100ms'}}>
             {/* Main Image with modern styling - Compact mobile design */}
-            <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+            <div className="hidden lg:flex lg:gap-4">
+              {/* Main Image Card */}
+              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
+                <CardContent className="p-0">
+                  <div 
+                    ref={imageContainerRef} 
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
+                    onClick={(e) => handleGalleryClick(e)} 
+                    data-fancybox="gallery"
+                  >
+                  {/* Main Image with improved loading states */}
+                  {images.length > 0 ? (
+                    <img 
+                      src={images[selectedImageIndex]} 
+                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
+                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
+                      onError={e => {
+                        e.currentTarget.src = "/placeholder.svg";
+                        setIsPlaceholderImage(true);
+                      }} 
+                      onLoad={e => {
+                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
+                          setIsPlaceholderImage(false);
+                        }
+                      }}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Car className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                  )}
+                  
+                  {/* Navigation arrows - Improved positioning and visibility */}
+                  {images.length > 1 && (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
+                        onClick={e => {
+                          e.stopPropagation();
+                          goToPrevious();
+                        }}
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
+                        onClick={e => {
+                          e.stopPropagation();
+                          goToNext();
+                        }}
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </Button>
+                    </>
+                  )}
+                  
+                  {/* Image counter and gallery button - Improved mobile design */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                      {/* Mobile gallery button */}
+                      <button
+                        onClick={handleGalleryClick}
+                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                        aria-label={`View all ${images.length} images`}
+                      >
+                        <Camera className="h-3 w-3" />
+                        {selectedImageIndex + 1}/{images.length}
+                      </button>
+                      
+                      {/* Desktop gallery button */}
+                      <button
+                        onClick={handleGalleryClick}
+                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                        aria-label={`View all ${images.length} images`}
+                      >
+                        <Camera className="h-4 w-4" />
+                        View Gallery ({images.length})
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Lot number badge - Improved positioning */}
+                  {car.lot && (
+                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                      Lot #{car.lot}
+                    </Badge>
+                  )}
+                  
+                  {/* Zoom icon - Improved positioning and visibility */}
+                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
+                    <Expand className="h-4 w-4 text-white" />
+                  </div>
+                  
+                  {/* Loading indicator */}
+                  {isPlaceholderImage && (
+                    <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
+            {images.length > 1 && (
+              <div className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in" style={{animationDelay: '200ms'}}>
+                {images.slice(1, 7).map((image, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => setSelectedImageIndex(index + 1)}
+                    className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                      selectedImageIndex === index + 1 
+                        ? 'border-primary shadow-lg scale-105' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    aria-label={`View image ${index + 2}`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.svg";
+                      }}
+                    />
+                  </button>
+                ))}
+                {images.length > 7 && (
+                  <button
+                    onClick={handleGalleryClick}
+                    className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
+                    aria-label="View all images"
+                  >
+                    <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
+                    <span className="text-xs xl:text-sm text-primary font-medium">+{images.length - 7}</span>
+                  </button>
+                )}
+              </div>
+            )}
+            </div>
+
+            {/* Mobile Main Image - Full width for mobile */}
+            <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
                 <div 
                   ref={imageContainerRef} 
-                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
+                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
                   onClick={(e) => handleGalleryClick(e)} 
                   data-fancybox="gallery"
                 >
@@ -1332,53 +1744,12 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Compact Thumbnail Gallery - Mobile optimized */}
-            {images.length > 1 && (
-              <div className="animate-fade-in" style={{animationDelay: '150ms'}}>
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                  {images.slice(0, 5).map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`flex-shrink-0 w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                        selectedImageIndex === index 
-                          ? 'border-primary shadow-lg scale-105' 
-                          : 'border-border hover:border-primary/50 hover:scale-102'
-                      }`}
-                      aria-label={`View image ${index + 1}`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                    </button>
-                  ))}
-                  {images.length > 5 && (
-                    <button
-                      onClick={handleGalleryClick}
-                      className="flex-shrink-0 w-16 h-12 sm:w-20 sm:h-14 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex items-center justify-center transition-all duration-200"
-                      aria-label="View all images"
-                    >
-                      <div className="text-center">
-                        <Camera className="h-4 w-4 text-primary mx-auto mb-1" />
-                        <span className="text-xs text-primary font-medium">+{images.length - 5}</span>
-                      </div>
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Car Title with Price - Compact mobile design */}
             <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight flex-1 min-w-0">
-                  {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` && ` ${car.title}`}
+                  {car.year} {car.make} {car.model}
                 </h1>
                 <div className="text-right flex-shrink-0">
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -1417,9 +1788,9 @@ const CarDetails = memo(() => {
                   </h3>
                 </div>
 
-                {/* Specifications Grid - Ultra Compact Mobile */}
+                {/* Specifications Grid - Reorganized in specific order */}
                 <div className="grid grid-cols-2 gap-1.5 md:gap-3 text-xs md:text-sm items-stretch auto-rows-fr isolate relative z-0">
-                  {/* Brand/Model and Year combined */}
+                  {/* 1. Name (Brand) - e.g., Kia Ray */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
@@ -1427,11 +1798,37 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.make} {car.model} {car.year}
+                      {car.make} {car.model}
                     </span>
                   </div>
 
-                  {/* Mileage */}
+                  {/* 2. Model (right side) - e.g., Signature */}
+                  {car.title && car.title !== `${car.make} ${car.model}` && (
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Tag className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                        </div>
+                      </div>
+                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                        {car.title}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 3. Year - e.g., 2022 */}
+                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="flex items-center">
+                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                        <Calendar className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                      </div>
+                    </div>
+                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      {car.year}
+                    </span>
+                  </div>
+
+                  {/* 4. KM - e.g., 22,729km */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
@@ -1451,71 +1848,72 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.fuel || 'Diesel'}
+                      {translateFuel(car.fuel || 'Diesel')}
                     </span>
                   </div>
 
-                   
-                   {car.details?.badge && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                     <div className="flex items-center">
-                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Tag className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                       {car.details.badge}
-                     </span>
-                   </div>}
-                   
-                   {car.details?.seats_count && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                     <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Users className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                       {car.details.seats_count} vende
-                     </span>
-                   </div>}
-                   
-                   {car.transmission && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                     <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Settings className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                     <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {translateTransmission(car.transmission)}
-                      </span>
-                    </div>}
-
-                  {car.details?.engine_volume && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  {/* 5. Engine - e.g., 998cc */}
+                  {car.details?.engine_volume && (
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Cog className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                          <Cog className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.details.engine_volume}cc
                       </span>
-                    </div>}
+                    </div>
+                  )}
 
-
-                  {car.color && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  {/* 6. Transmission - e.g., automatic */}
+                  {car.transmission && (
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Palette className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                          <Settings className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                        </div>
+                      </div>
+                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                        {translateTransmission(car.transmission)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 7. Seats - e.g., 5 vende */}
+                  {car.details?.seats_count && (
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Users className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                        </div>
+                      </div>
+                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                        {car.details.seats_count} vende
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 8. Color - e.g., bardhe */}
+                  {car.color && (
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Palette className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {translateColor(car.color)}
                       </span>
-                    </div>}
+                    </div>
+                  )}
 
-                  {car.vin && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  {/* 9. VIN Number */}
+                  {car.vin && (
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Hash className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                          <Hash className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
@@ -1523,7 +1921,8 @@ const CarDetails = memo(() => {
                           {car.vin}
                         </span>
                       </div>
-                    </div>}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1609,86 +2008,51 @@ const CarDetails = memo(() => {
                         {/* Inspection Groups - Compact Modern Cards Layout */}
                         <div className="grid gap-4">
                           
-                          {/* Technical Inspection - Engine & Mechanical - Collapsible - Mobile Optimized */}
-                          {car.details?.inspect?.inner && <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 inspection-section-black mobile-inspection-section">
-                              <Button onClick={() => setShowEngineSection(!showEngineSection)} variant="ghost" className="w-full p-2 sm:p-3 md:p-4 h-auto group hover:bg-blue-100/50 transition-all duration-300">
-                                {/* Mobile Layout: Stack vertically */}
-                                <div className="flex flex-col gap-1.5 sm:gap-2 w-full sm:hidden">
-                                  {/* Title row with icon and chevron */}
-                                  <div className="flex items-center justify-between w-full">
-                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
-                                        <Cog className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
-                                      </div>
-                                      <div className="text-left min-w-0 flex-1">
-                                        <h5 className="text-xs sm:text-sm font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
-                                        <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
-                                      </div>
-                                    </div>
-                                    <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground transition-all duration-300 flex-shrink-0 ${showEngineSection ? "rotate-180 text-primary" : ""}`} />
-                                  </div>
-                                  {/* Status indicators row */}
-                                  {!showEngineSection && <div className="flex items-center gap-1 sm:gap-2 justify-center">
-                                      <div className="flex gap-0.5 sm:gap-1">
-                                        {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
-                                const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
-                                return <div key={index} className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`} title={`${key}: ${value}`} />;
-                              })}
-                                        {Object.entries(car.details.inspect.inner).length > 3 && <span className="text-xs text-muted-foreground ml-1">
-                                            +{Object.entries(car.details.inspect.inner).length - 3}
-                                          </span>}
-                                      </div>
-                                    </div>}
+                          {/* Technical Inspection - Engine & Mechanical - Compact Layout */}
+                          {car.details?.inspect?.inner && <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 inspection-section-black">
+                              <div className="flex items-center gap-2 mb-4">
+                                <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
+                                  <Cog className="h-4 w-4 text-white" />
                                 </div>
-
-                                {/* Desktop Layout: Horizontal */}
-                                <div className="hidden sm:flex sm:items-center sm:justify-between sm:w-full">
-                                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-700 transition-colors flex-shrink-0">
-                                      <Cog className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div className="text-left min-w-0 flex-1">
-                                      <h5 className="text-base md:text-lg font-bold text-foreground inspection-text-black">Motori dhe Sistemi Mekanik</h5>
-                                      <p className="text-muted-foreground text-xs inspection-subtext-black">Kontrolli teknik i komponentëve kryesorë</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                    {!showEngineSection && <div className="flex gap-1">
-                                        {Object.entries(car.details.inspect.inner).slice(0, 3).map(([key, value], index) => {
-                                const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
-                                return <div key={index} className={`w-2 h-2 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`} title={`${key}: ${value}`} />;
-                              })}
-                                        {Object.entries(car.details.inspect.inner).length > 3 && <span className="text-xs text-muted-foreground ml-1">
-                                            +{Object.entries(car.details.inspect.inner).length - 3}
-                                          </span>}
-                                      </div>}
-                                    <ChevronDown className={`h-4 w-4 md:h-5 md:w-5 text-muted-foreground transition-all duration-300 ${showEngineSection ? "rotate-180 text-primary" : ""}`} />
-                                  </div>
+                                <div>
+                                  <h5 className="text-lg font-bold text-foreground">Motori dhe Sistemi Mekanik</h5>
+                                  <p className="text-muted-foreground text-xs">Kontrolli teknik i komponentëve kryesorë</p>
                                 </div>
-                              </Button>
-
-                              {showEngineSection && <div className="px-3 pb-3 space-y-2 animate-fade-in">
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                                    {Object.entries(car.details.inspect.inner).map(([key, value]: [string, any]) => {
-                            const isGood = value === "goodness" || value === "proper" || value === "doesn't exist";
-                            const label = key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-                            return <div key={key} className={`flex items-center justify-between p-3 bg-card rounded-lg border transition-all hover:shadow-sm ${isGood ? 'border-green-200' : 'border-red-200'}`}>
-                                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                                              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isGood ? 'bg-green-500' : 'bg-red-500'}`} />
-                                              <span className="text-sm font-medium text-foreground truncate">
-                                                {label}
-                                              </span>
-                                            </div>
-                                            <Badge variant={isGood ? "default" : "destructive"} className={`text-xs font-medium flex-shrink-0 ml-2 px-2 py-1 ${isGood ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                              {value === "goodness" && "✓ Mirë"}
-                                              {value === "proper" && "✓ Normal"}
-                                              {value === "doesn't exist" && "✓ Pa Probleme"}
-                                              {!["goodness", "proper", "doesn't exist"].includes(value) && `⚠ ${value}`}
-                                            </Badge>
-                                          </div>;
-                          })}
-                                  </div>
-                                </div>}
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {Object.entries(car.details.inspect.inner).map(([key, value], index) => {
+                                  const isGood = value === "goodness" || value === "proper" || value === "doesn't exist" || 
+                                                value === "good" || value === "ok" || value === "okay" || value === "normal" || 
+                                                value === "excellent" || value === "perfect" || value === "fine";
+                                  const displayValue = value === "goodness" ? "Mirë" : 
+                                                     value === "proper" ? "Saktë" : 
+                                                     value === "doesn't exist" ? "Nuk ekziston" : 
+                                                     value === "good" ? "Mirë" : 
+                                                     value === "ok" ? "Mirë" : 
+                                                     value === "okay" ? "Mirë" : 
+                                                     value === "normal" ? "Normal" : 
+                                                     value === "excellent" ? "Shkëlqyeshëm" : 
+                                                     value === "perfect" ? "Perfekt" : 
+                                                     value === "fine" ? "Mirë" : value;
+                                  return (
+                                    <div key={index} className={`p-3 bg-card rounded-md border hover:shadow-sm transition-shadow ${
+                                      isGood 
+                                        ? 'border-green-500/30 bg-green-50/50' 
+                                        : 'border-red-500/30 bg-red-50/50'
+                                    }`}>
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        <span className="text-xs font-semibold text-foreground capitalize truncate">
+                                          {key.replace(/_/g, ' ')}
+                                        </span>
+                                      </div>
+                                      <p className={`text-xs font-medium ${isGood ? 'text-green-700' : 'text-red-700'}`}>
+                                        {String(displayValue)}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>}
 
                           {/* Insurance & Safety History */}

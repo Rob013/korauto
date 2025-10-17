@@ -88,7 +88,7 @@ export const extractGradesFromTitle = (title: string): string[] => {
   const grades: string[] = [];
   const patterns = [
     /\b(\d+\.?\d*)\s*(?:TDI|TFSI|FSI|TSI|CDI)\b/gi, // Engine tech abbreviations
-    /\b(\d+\.?\d*)\s*(?:diesel|petrol|gasoline|hybrid|electric)\b/gi, // Full fuel type words
+    /\b(\d+\.?\d*)\s*(?:diesel|petrol|benzin|hybrid|electric)\b/gi, // Full fuel type words
     /\b(\d+\.?\d*)\s*(?:turbo|liter?|l)\s*(?:diesel|petrol|gasoline|hybrid|electric)?\b/gi, // Engine displacement and turbo
   ];
   

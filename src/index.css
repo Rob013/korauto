@@ -167,13 +167,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Fixed floating widgets - Contact card and Smartsupp */
-#smartsupp-widget-container {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  z-index: 9999 !important;
-}
+/* Fixed floating widgets - Contact card */
 
 /* Ensure contact card is properly positioned on mobile */
 @media (max-width: 1023px) {
@@ -2516,38 +2510,6 @@ body {
   }
 }
 
-/* Smartsupp enforced bottom-right fixed bubble */
-#chat-application, 
-#chat-application:not([style*="position: fixed"]) {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  top: auto !important;
-  left: auto !important;
-  transform: none !important;
-  z-index: 2147483647 !important; /* max safe */
-  pointer-events: auto !important;
-}
-
-/* Guard against internal wrappers changing layout */
-#chat-application *,
-#chat-application > div {
-  inset: auto !important;
-}
-
-@media (min-width: 1025px) {
-  #chat-application {
-    bottom: 28px !important;
-    right: 28px !important;
-  }
-}
-
-@media (max-width: 768px) {
-  #chat-application {
-    bottom: 16px !important;
-    right: 16px !important;
-  }
-}
 
 /* ============================================= */
 /* PERFORMANCE OPTIMIZATIONS - FLICKER-FREE UI */
