@@ -2636,3 +2636,37 @@ select, input, button {
   transform: translateZ(0);
 }
 
+/* Mobile car details ultra-compact layout */
+@media (max-width: 640px) {
+  .mobile-specs-card {
+    @apply shadow-xl;
+  }
+  
+  .mobile-specs-card .grid {
+    gap: 0.375rem !important;
+  }
+  
+  .mobile-spec-item {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+    min-height: 2.5rem;
+  }
+  
+  .mobile-detailed-info-card {
+    @apply p-2;
+  }
+  
+  .mobile-info-section {
+    @apply p-2 space-y-2;
+  }
+  
+  .mobile-detail-item {
+    @apply text-xs p-2;
+  }
+  
+  .mobile-inspection-section {
+    @apply text-xs;
+  }
+}
+
+

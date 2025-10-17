@@ -143,7 +143,7 @@ export const extractCarGrades = (car: Car): string[] => {
 };
 
 /**
- * Checks if a car matches a grade filter
+ * Checks if a car matches a grade filter - STRICT matching
  */
 export const matchesGradeFilter = (car: Car, gradeFilter: string): boolean => {
   if (!gradeFilter || gradeFilter === 'all') {
@@ -153,23 +153,20 @@ export const matchesGradeFilter = (car: Car, gradeFilter: string): boolean => {
   const filterGrade = gradeFilter.toLowerCase().trim();
   const carGrades = extractCarGrades(car);
   
-  // More comprehensive matching for grades
+  // STRICT matching - exact match or filter is contained in car grade
   return carGrades.some(grade => {
-    // Exact match
-    if (grade === filterGrade) return true;
+    const gradeNormalized = grade.toLowerCase().trim();
     
-    // Partial match - both directions
-    if (grade.includes(filterGrade) || filterGrade.includes(grade)) return true;
+    // Exact match (highest priority)
+    if (gradeNormalized === filterGrade) return true;
     
-    // Remove spaces and try again
-    const gradeNoSpaces = grade.replace(/\s+/g, '');
+    // Car grade contains the filter (e.g., "2.0 TDI quattro" contains "2.0 TDI")
+    if (gradeNormalized.includes(filterGrade)) return true;
+    
+    // Remove spaces for comparison (e.g., "2.0TDI" matches "2.0 TDI")
+    const gradeNoSpaces = gradeNormalized.replace(/\s+/g, '');
     const filterNoSpaces = filterGrade.replace(/\s+/g, '');
-    if (gradeNoSpaces === filterNoSpaces) return true;
-    
-    // Handle special cases like "30 TDI" vs "30"
-    const gradeParts = grade.split(/\s+/);
-    const filterParts = filterGrade.split(/\s+/);
-    if (gradeParts.some(part => filterParts.includes(part))) return true;
+    if (gradeNoSpaces === filterNoSpaces || gradeNoSpaces.includes(filterNoSpaces)) return true;
     
     return false;
   });
@@ -209,7 +206,7 @@ export const extractUniqueEngineSpecs = (cars: Car[]): Array<{ value: string; la
 };
 
 /**
- * Checks if a car matches an engine specification filter
+ * Checks if a car matches an engine specification filter - STRICT matching
  */
 export const matchesEngineFilter = (car: Car, engineFilter: string): boolean => {
   if (!engineFilter || engineFilter === 'all') {
@@ -231,12 +228,23 @@ export const matchesEngineFilter = (car: Car, engineFilter: string): boolean => 
     carEngines.push(...engineFieldSpecs.map(e => e.toLowerCase()));
   }
   
-  // Strict matching - must contain the exact engine spec
-  return carEngines.some(engine => 
-    engine === filterEngine || 
-    engine.includes(filterEngine) ||
-    filterEngine.includes(engine)
-  );
+  // STRICT matching - exact match or car engine contains filter
+  return carEngines.some(engine => {
+    const engineNormalized = engine.toLowerCase().trim();
+    
+    // Exact match (highest priority)
+    if (engineNormalized === filterEngine) return true;
+    
+    // Car engine contains filter (e.g., "520d xDrive" contains "520d")
+    if (engineNormalized.includes(filterEngine)) return true;
+    
+    // Remove spaces for comparison
+    const engineNoSpaces = engineNormalized.replace(/\s+/g, '');
+    const filterNoSpaces = filterEngine.replace(/\s+/g, '');
+    if (engineNoSpaces === filterNoSpaces || engineNoSpaces.includes(filterNoSpaces)) return true;
+    
+    return false;
+  });
 };
 
 /**

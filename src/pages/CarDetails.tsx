@@ -1223,12 +1223,12 @@ const CarDetails = memo(() => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
           <div className="space-y-6 animate-fade-in" style={{animationDelay: '100ms'}}>
-            {/* Main Image with modern styling - Improved responsive design */}
-            <Card className="border-0 shadow-2xl overflow-hidden rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+            {/* Main Image with modern styling - Compact mobile design */}
+            <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
                 <div 
                   ref={imageContainerRef} 
-                  className="relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer" 
+                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[16/9] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
                   onClick={(e) => handleGalleryClick(e)} 
                   data-fancybox="gallery"
                 >
@@ -1333,18 +1333,18 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Car Title - Modern Style - Same on all devices */}
+            {/* Car Title - Compact mobile design */}
             <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
-              <h1 className="text-2xl font-bold text-foreground mb-3 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              <h1 className="text-lg md:text-2xl font-bold text-foreground mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight">
                 {car.year} {car.make} {car.model} {car.title && car.title !== `${car.year} ${car.make} ${car.model}` && ` ${car.title}`}
               </h1>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-medium">{car.year}/ model {car.year}</span>
+              <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
+                <span className="font-medium">{car.year}</span>
                 <span className="text-primary">•</span>
                 <span className="font-medium">{formatMileage(car.mileage)}</span>
                 <span className="text-primary">•</span>
                 <span className="font-medium">{car.fuel || 'Diesel'}</span>
-                <a href="#specifications" className="ml-auto text-primary hover:underline font-medium hover-scale inline-block">Detajet →</a>
+                <a href="#specifications" className="ml-auto text-primary hover:underline font-medium hover-scale inline-block text-xs md:text-sm">Detajet →</a>
               </div>
             </div>
 
@@ -1387,35 +1387,36 @@ const CarDetails = memo(() => {
               </div>
             )}
 
-            {/* Vehicle Specifications - Modern Card */}
-            <Card id="specifications" className="border-0 shadow-2xl rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in" style={{animationDelay: '400ms'}}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
-                  <h3 className="text-lg sm:text-xl font-bold flex items-center text-foreground">
-                    <div className="p-2 bg-primary/10 rounded-lg mr-3">
-                      <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            {/* Vehicle Specifications - Compact Mobile Card */}
+            <Card id="specifications" className="border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in" style={{animationDelay: '400ms'}}>
+              <CardContent className="p-3 md:p-6">
+                <div className="flex flex-col gap-2 md:gap-4 mb-3 md:mb-6">
+                  <h3 className="text-base md:text-xl font-bold flex items-center text-foreground">
+                    <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg mr-2 md:mr-3">
+                      <Settings className="h-4 w-4 md:h-6 md:w-6 text-primary" />
                     </div>
                     Specifikimet Teknike
                   </h3>
 
-                  {/* Price and Actions - Modern Layout */}
-                  <div className="flex flex-col gap-4 sm:gap-4 p-4 sm:p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  {/* Price and Actions - Compact Mobile Layout */}
+                  <div className="flex flex-col gap-2 md:gap-4 p-3 md:p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg md:rounded-xl border border-primary/20">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-3">
                       <div className="text-center sm:text-left">
-                        <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                        <div className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                           €{car.price.toLocaleString()}
                         </div>
-                        <div className="text-sm text-muted-foreground font-medium mt-1">
+                        <div className="text-xs md:text-sm text-muted-foreground font-medium mt-0.5 md:mt-1">
                           +350€ deri në Prishtinë
                         </div>
                       </div>
-                      <div className="flex gap-2 flex-col sm:flex-row">
-                        <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-10 text-sm hover-scale shadow-md">
-                              <FileText className="h-4 w-4 mr-2" />
-                              Kërko Inspektim
+                      <div className="flex gap-1.5 md:gap-2 flex-col sm:flex-row">
+                        <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto h-8 md:h-10 text-xs md:text-sm hover-scale shadow-md">
+                              <FileText className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                              <span className="hidden sm:inline">Kërko Inspektim</span>
+                              <span className="sm:hidden">Inspektim</span>
                             </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
-                        <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white w-full sm:w-auto h-10 text-sm hover-scale shadow-md">
-                          <MessageCircle className="h-4 w-4 mr-2" />
+                        <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white w-full sm:w-auto h-8 md:h-10 text-xs md:text-sm hover-scale shadow-md">
+                          <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                           WhatsApp
                         </Button>
                       </div>
@@ -1423,97 +1424,97 @@ const CarDetails = memo(() => {
                   </div>
                 </div>
 
-                {/* Specifications Grid - Modern Cards - 2 Columns Compact */}
-                <div className="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4 text-sm items-stretch auto-rows-fr isolate relative z-0">
-                  {/* Basic Info */}
-                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                {/* Specifications Grid - Ultra Compact Mobile */}
+                <div className="grid grid-cols-2 gap-1.5 md:gap-3 text-xs md:text-sm items-stretch auto-rows-fr isolate relative z-0">
+                  {/* Basic Info - Compact */}
+                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="flex items-center">
+                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                        <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
-                    <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {car.make} {car.model}
                     </span>
                    </div>
                    
-                   {car.details?.badge && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                     <div className="flex items-center gap-2 sm:gap-3">
-                       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                   {car.details?.badge && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                     <div className="flex items-center">
+                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Tag className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                     <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                        {car.details.badge}
                      </span>
                    </div>}
                    
-                   {car.details?.seats_count && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                     <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                   {car.details?.seats_count && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                     <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                           <Users className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                     <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                        {car.details.seats_count} vende
                      </span>
                    </div>}
                    
-                   {car.transmission && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                     <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                   {car.transmission && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                     <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                           <Settings className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                     <span className="text-muted-foreground font-medium capitalize text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                     <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {translateTransmission(car.transmission)}
                       </span>
                     </div>}
 
-                  {car.details?.engine_volume && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Cog className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  {car.details?.engine_volume && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                           <Cog className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.details.engine_volume}cc
                       </span>
                     </div>}
 
-                  {car.fuel && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Fuel className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  {car.fuel && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                           <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.fuel}
                       </span>
                     </div>}
 
-                  {car.color && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Palette className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  {car.color && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                           <Palette className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {translateColor(car.color)}
                       </span>
                     </div>}
 
-                  {car.vin && <div className="group grid grid-cols-[auto,1fr] items-start gap-x-3 sm:gap-x-4 p-3 sm:p-4 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                           <Hash className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  {car.vin && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                           <Hash className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-2 min-w-0">
-                        {!showVin && <Button size="sm" variant="outline" className="h-8 px-2 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={() => setShowVin(true)}>
-                          Shfaq VIN
+                      <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
+                        {!showVin && <Button size="sm" variant="outline" className="h-6 md:h-8 px-1.5 md:px-2 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={() => setShowVin(true)}>
+                          Shfaq
                         </Button>}
-                        {showVin && <span className="text-muted-foreground font-medium font-mono text-sm text-left sm:text-right leading-tight whitespace-normal break-words min-w-0">
+                        {showVin && <span className="text-muted-foreground font-medium font-mono text-xs md:text-sm text-right leading-tight whitespace-normal break-words min-w-0">
                           {car.vin}
                         </span>}
                       </div>
