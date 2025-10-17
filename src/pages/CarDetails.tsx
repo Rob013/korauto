@@ -1404,44 +1404,6 @@ const CarDetails = memo(() => {
               </div>
             </div>
 
-            {/* Image Thumbnails - Improved responsive grid */}
-            {images.length > 1 && (
-              <div className="hidden md:block animate-fade-in" style={{animationDelay: '300ms'}}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-foreground">Gallery</h3>
-                  <span className="text-sm text-muted-foreground">{images.length} images</span>
-                </div>
-                <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-16 gap-2">
-                  {images.slice(0, 24).map((image, index) => (
-                    <button 
-                      key={index} 
-                      onClick={() => setSelectedImageIndex(index)} 
-                      aria-label={`View image ${index + 1} of ${images.length}`}
-                      className={`relative aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                        selectedImageIndex === index 
-                          ? "border-primary shadow-lg ring-2 ring-primary/50 scale-105" 
-                          : "border-border hover:border-primary/70 hover:shadow-md"
-                      }`}
-                    >
-                      <img 
-                        src={image} 
-                        alt={`Thumbnail ${index + 1}`} 
-                        className="w-full h-full object-cover transition-transform duration-300" 
-                        onError={e => {
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                        loading="lazy"
-                      />
-                      {selectedImageIndex === index && (
-                        <div className="absolute inset-0 bg-primary/20 backdrop-blur-[1px] flex items-center justify-center">
-                          <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Vehicle Specifications - Compact Mobile Card */}
             <Card id="specifications" className="border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in" style={{animationDelay: '400ms'}}>
