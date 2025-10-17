@@ -1926,6 +1926,61 @@ All colors MUST be HSL.
   width: 100%;
 }
 
+/* Screenshot mode styles for mobile car details page */
+.screenshot-mode {
+  /* Hide all elements except main image and technical specifications */
+}
+
+.screenshot-mode .screenshot-hide {
+  display: none !important;
+}
+
+.screenshot-mode .screenshot-show {
+  display: block !important;
+}
+
+.screenshot-mode .screenshot-show-flex {
+  display: flex !important;
+}
+
+.screenshot-mode .screenshot-show-grid {
+  display: grid !important;
+}
+
+/* Ensure main image and technical specs are always visible in screenshot mode */
+.screenshot-mode .main-image-container {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+.screenshot-mode .technical-specs-container {
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Hide navigation, buttons, and other UI elements during screenshot */
+.screenshot-mode .navigation-buttons,
+.screenshot-mode .action-buttons,
+.screenshot-mode .header-actions,
+.screenshot-mode .gallery-button,
+.screenshot-mode .favorite-button,
+.screenshot-mode .share-button,
+.screenshot-mode .back-button,
+.screenshot-mode .home-button,
+.screenshot-mode .lot-badge,
+.screenshot-mode .zoom-icon,
+.screenshot-mode .image-counter,
+.screenshot-mode .thumbnail-gallery,
+.screenshot-mode .detailed-info-section,
+.screenshot-mode .inspection-section,
+.screenshot-mode .contact-section,
+.screenshot-mode .price-section,
+.screenshot-mode .equipment-section,
+.screenshot-mode .safety-section {
+  display: none !important;
+}
+
 /* Apply to commonly problematic elements on mobile */
 @media (max-width: 768px) {
   .container, .grid, .flex, [class*="grid"], [class*="flex"] {
