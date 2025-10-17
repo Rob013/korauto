@@ -477,7 +477,7 @@ export const generateYearPresets = (currentYear?: number) => {
     { label: '2022+', from: 2022, to: year + 2 },
     { label: '2020+', from: 2020, to: 2022 },
     { label: '2018+', from: 2018, to: 2020 },
-    { label: '2015+', from: 2015, to: 2018 },
+    { label: '2016+', from: 2016, to: 2018 },
     { label: '2010+', from: 2010, to: year + 2 },
     { label: '2005+', from: 2005, to: year + 2 },
     { label: '2000+', from: 2000, to: year + 2 },

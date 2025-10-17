@@ -1457,15 +1457,15 @@ const CarDetails = memo(() => {
 
                 {/* Specifications Grid - Ultra Compact Mobile */}
                 <div className="grid grid-cols-2 gap-1.5 md:gap-3 text-xs md:text-sm items-stretch auto-rows-fr isolate relative z-0">
-                  {/* Year */}
+                  {/* Brand/Model and Year combined */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Calendar className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                        <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.year}
+                      {car.make} {car.model} {car.year}
                     </span>
                   </div>
 
@@ -1493,17 +1493,6 @@ const CarDetails = memo(() => {
                     </span>
                   </div>
 
-                  {/* Basic Info - Make/Model */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                    <div className="flex items-center">
-                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                      </div>
-                    </div>
-                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.make} {car.model}
-                    </span>
-                   </div>
                    
                    {car.details?.badge && <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                      <div className="flex items-center">
