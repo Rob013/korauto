@@ -427,7 +427,7 @@ const CarCard = ({
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full group-hover:scale-105 transition-transform duration-300 ease-out"
+            className="w-full h-full transition-transform duration-300 ease-out"
             width={280}
             priority={false}
             enableLazyLoad={true}
@@ -510,12 +510,12 @@ const CarCard = ({
               size="sm"
               variant="ghost"
               onClick={handleFavoriteToggle}
-              className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element hover:scale-110 transition-all duration-200"
+              className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element transition-all duration-200"
               style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <Heart
                 className={`h-4 w-4 transition-all duration-200 ${
-                  isFavorite ? "fill-red-500 text-red-500 animate-bounce-in" : "hover:text-red-400"
+                  isFavorite ? "fill-red-500 text-red-500" : "hover:text-red-400"
                 }`}
               />
             </Button>

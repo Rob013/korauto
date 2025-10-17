@@ -171,7 +171,7 @@ const EncarCarCard = ({
           <img
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover object-center transition-transform duration-300"
             onError={(e) => {
               e.currentTarget.src = "https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image";
             }}

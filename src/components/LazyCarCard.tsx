@@ -287,7 +287,7 @@ const LazyCarCard = memo(({
   return (
     <div 
       ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card animate-slide-in-up"
+      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl hover:shadow-2xl transition-all duration-500 mobile-card-compact compact-modern-card"
       onClick={handleCardClick}
       style={{
         willChange: 'transform, opacity',
@@ -305,7 +305,7 @@ const LazyCarCard = memo(({
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
             className={`w-full h-full object-cover transition-all duration-700 ease-out ${
-              imageLoaded ? 'opacity-100 animate-image-reveal' : 'opacity-0'
+              imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
