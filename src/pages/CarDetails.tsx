@@ -1597,7 +1597,7 @@ const CarDetails = memo(() => {
                   {/* Lot number badge - Improved positioning */}
                   {car.lot && (
                     <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                      Lot #{car.lot}
+                      {car.lot}
                     </Badge>
                   )}
                   
@@ -1746,7 +1746,7 @@ const CarDetails = memo(() => {
                   {/* Lot number badge - Improved positioning */}
                   {car.lot && (
                     <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                      Lot #{car.lot}
+                      {car.lot}
                     </Badge>
                   )}
                   

@@ -304,7 +304,7 @@ const LazyCarCard = memo(({
           <img 
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-700 ease-out ${
+            className={`w-full h-full object-cover transition-all duration-700 ease-out ${
               imageLoaded ? 'opacity-100 animate-image-reveal' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}

@@ -1232,11 +1232,6 @@ All colors MUST be HSL.
     @apply bg-accent text-accent-foreground active:bg-accent-hover active:text-accent-hover-foreground transition-colors duration-200;
   }
 
-  /* Car highlight animation */
-  .car-highlight {
-    @apply ring-4 ring-blue-500 ring-opacity-75 rounded-lg;
-    animation: highlight-pulse 3s ease-in-out;
-  }
 
   @keyframes highlight-pulse {
     0% {
