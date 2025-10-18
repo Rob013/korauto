@@ -33,8 +33,11 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement
 
-    // Apple-like instant theme switching without flicker
+    // Smooth theme switching with transitions
     const applyTheme = () => {
+      // Add transition class
+      root.classList.add('theme-transitioning')
+      
       // Remove old theme class
       root.classList.remove("light", "dark")
 
@@ -48,9 +51,13 @@ export function ThemeProvider({
       } else {
         root.classList.add(theme)
       }
+
+      // Remove transition class after animation completes
+      setTimeout(() => {
+        root.classList.remove('theme-transitioning')
+      }, 300)
     }
 
-    // Apply theme immediately without animation frame delay
     applyTheme()
   }, [theme])
 
