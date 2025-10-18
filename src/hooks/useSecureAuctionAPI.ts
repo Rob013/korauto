@@ -770,6 +770,54 @@ export const useSecureAuctionAPI = () => {
 
       console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
+      
+      // Also fetch cars from the new Auctions API and merge them
+      let auctionsApiCars: any[] = [];
+      try {
+        console.log(`🔄 Fetching additional cars from Auctions API...`);
+        const { data: auctionsData, error: auctionsError } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('source_api', 'auctions_api')
+          .eq('is_archived', false)
+          .eq('is_active', true)
+          .order('last_synced_at', { ascending: false })
+          .limit(100); // Limit to prevent overwhelming the existing system
+        
+        if (!auctionsError && auctionsData) {
+          // Transform Auctions API cars to match the existing Car interface
+          auctionsApiCars = auctionsData.map(car => ({
+            id: car.id,
+            title: car.title || `${car.year} ${car.make} ${car.model}`,
+            year: car.year,
+            manufacturer: { name: car.make },
+            model: { name: car.model },
+            vin: car.vin,
+            lot_number: car.lot_number,
+            status: car.is_live ? 1 : 2, // 1 = active, 2 = pending
+            sale_status: car.is_live ? 'active' : 'pending',
+            lots: [{
+              buy_now: car.buy_now_price || car.price || 0,
+              images: {
+                normal: car.image_url ? [car.image_url] : []
+              },
+              odometer: { km: car.mileage || 0 },
+              status: car.is_live ? 1 : 2
+            }],
+            fuel: { name: car.fuel || 'Unknown' },
+            transmission: { name: car.transmission || 'Unknown' },
+            color: { name: car.color || 'Unknown' },
+            location: car.location || 'South Korea',
+            source_api: 'auctions_api', // Add source indicator
+            last_synced_at: car.last_synced_at
+          }));
+          
+          console.log(`✅ Fetched ${auctionsApiCars.length} additional cars from Auctions API`);
+        }
+      } catch (auctionsErr) {
+        console.log(`⚠️ Could not fetch Auctions API cars:`, auctionsErr);
+        // Continue without Auctions API cars if there's an error
+      }
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
@@ -847,20 +895,23 @@ export const useSecureAuctionAPI = () => {
         console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
+      // Merge Auctions API cars with existing cars
+      const mergedCars = [...filteredCars, ...auctionsApiCars];
+      
       // Always use server-side total count regardless of client-side filtering
       // Client-side filtering should not affect the total count or pagination logic
-      setTotalCount(data.meta?.total || 0);
+      setTotalCount((data.meta?.total || 0) + auctionsApiCars.length);
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, server total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
+        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, ${auctionsApiCars.length} from Auctions API, server total: ${data.meta?.total || 0}, merged total: ${mergedCars.length}`
       );
 
       if (resetList || page === 1) {
-        setCars(filteredCars);
+        setCars(mergedCars);
         setCurrentPage(page); // Set the actual requested page, not always 1
       } else {
-        setCars((prev) => [...prev, ...filteredCars]);
+        setCars((prev) => [...prev, ...mergedCars]);
         setCurrentPage(page);
       }
     } catch (err: any) {
