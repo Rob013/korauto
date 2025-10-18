@@ -1,0 +1,194 @@
+import React, { memo, useMemo, useState, useCallback } from "react";
+import { useUnifiedCars } from "@/hooks/useUnifiedCars";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Car, Calendar, Fuel, Gauge, Settings, ArrowRight, ArrowUpDown } from "lucide-react";
+import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+
+interface CarCardProps {
+  car: any;
+}
+
+const CarCard = memo(({ car }: CarCardProps) => {
+  const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
+
+  const price = useMemo(() => {
+    return convertUSDtoEUR(car.price || 0, exchangeRate.rate);
+  }, [car.price, convertUSDtoEUR, exchangeRate.rate]);
+
+  return (
+    <div className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 group rounded-lg overflow-hidden bg-white dark:bg-gray-800 border">
+      <div className="p-0">
+        <div className="aspect-w-16 aspect-h-12 bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          {car.image_url ? (
+            <img
+              src={car.image_url}
+              alt={`${car.year} ${car.make} ${car.model}`}
+              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+            />
+          ) : (
+            <div className="w-full h-48 flex items-center justify-center">
+              <Car className="h-16 w-16 text-gray-400" />
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 space-y-3">
+          <div className="space-y-1">
+            <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-1">
+              {car.year} {car.make} {car.model}
+            </h3>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                €{price.toLocaleString()}
+              </span>
+              {car.is_live && (
+                <Badge variant="destructive" className="animate-pulse">
+                  Live
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center space-x-1">
+              <Gauge className="h-4 w-4" />
+              <span>{car.mileage ? `${Number(car.mileage).toLocaleString()} km` : 'N/A'}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Calendar className="h-4 w-4" />
+              <span>{car.year}</span>
+            </div>
+            {car.fuel && (
+              <div className="flex items-center space-x-1">
+                <Fuel className="h-4 w-4" />
+                <span className="capitalize">{car.fuel}</span>
+              </div>
+            )}
+            {car.transmission && (
+              <div className="flex items-center space-x-1">
+                <Settings className="h-4 w-4" />
+                <span className="capitalize">{car.transmission}</span>
+              </div>
+            )}
+          </div>
+
+          {car.source_api && (
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="text-xs">
+                {car.source_api === 'auctions_api' ? 'Auctions API' :
+                 car.source_api === 'auctionapis' ? 'Auction APIs' :
+                 car.source_api === 'encar' ? 'Encar' : car.source_api}
+              </Badge>
+              {car.lot_number && (
+                <span className="text-xs text-gray-500">#{car.lot_number}</span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+CarCard.displayName = "UnifiedCarCard";
+
+const UnifiedCatalog = () => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
+  const [sortBy, setSortBy] = useState<'last_synced_at' | 'price' | 'year' | 'mileage'>('last_synced_at');
+
+  const { cars, total, totalPages, loading, error } = useUnifiedCars({
+    page,
+    pageSize,
+    sortBy,
+    sortOrder: 'desc'
+  });
+
+  const nextPage = useCallback(() => {
+    setPage(p => Math.min(p + 1, Math.max(1, totalPages)));
+  }, [totalPages]);
+
+  const prevPage = useCallback(() => {
+    setPage(p => Math.max(1, p - 1));
+  }, []);
+
+  return (
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Katalogu i makinave</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {loading ? 'Duke ngarkuar...' : `${total.toLocaleString()} makina nga të dy API-të`}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4" />
+            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Rendit sipas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="last_synced_at">Sapo shtuar</SelectItem>
+                <SelectItem value="price">Çmimi (më i lartë)</SelectItem>
+                <SelectItem value="year">Viti (më i ri)</SelectItem>
+                <SelectItem value="mileage">Kilometrazhi (më i ulët)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Madhësia" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24">24 / faqe</SelectItem>
+                <SelectItem value="48">48 / faqe</SelectItem>
+                <SelectItem value="96">96 / faqe</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded p-3 mb-6">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {(loading && cars.length === 0) ? (
+          Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-lg border bg-white dark:bg-gray-800 h-64 animate-pulse" />
+          ))
+        ) : (
+          cars.map((car) => (
+            <CarCard key={car.id} car={car} />
+          ))
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-8">
+          <Button variant="outline" onClick={prevPage} disabled={page === 1 || loading}>
+            Mbrapa
+          </Button>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Faqja {page} nga {totalPages}
+          </span>
+          <Button variant="outline" onClick={nextPage} disabled={page >= totalPages || loading}>
+            Para <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UnifiedCatalog;
+
+
