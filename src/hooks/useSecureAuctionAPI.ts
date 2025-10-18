@@ -770,126 +770,6 @@ export const useSecureAuctionAPI = () => {
 
       console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
-      
-      // Also fetch cars from the new Auctions API and merge them
-      let auctionsApiCars: any[] = [];
-      let auctionsApiTotal = 0;
-      try {
-        console.log(`🔄 Fetching additional cars from Auctions API...`);
-        
-        // Mock Auctions API data (in production, this would be a real API call)
-        const mockAuctionsApiCars = [
-          {
-            id: "auctions_001",
-            brand: "BMW",
-            model: "X5",
-            year: 2020,
-            title: "2020 BMW X5",
-            price: 45000,
-            mileage: 25000,
-            fuel: "Gasoline",
-            transmission: "Automatic",
-            color: "Black",
-            location: "South Korea",
-            image_url: "https://picsum.photos/400/300?random=1",
-            is_live: true
-          },
-          {
-            id: "auctions_002", 
-            brand: "Audi",
-            model: "A4",
-            year: 2019,
-            title: "2019 Audi A4",
-            price: 35000,
-            mileage: 30000,
-            fuel: "Gasoline",
-            transmission: "Automatic",
-            color: "White",
-            location: "South Korea",
-            image_url: "https://picsum.photos/400/300?random=2",
-            is_live: false
-          },
-          {
-            id: "auctions_003",
-            brand: "Mercedes-Benz",
-            model: "C-Class",
-            year: 2021,
-            title: "2021 Mercedes-Benz C-Class",
-            price: 40000,
-            mileage: 20000,
-            fuel: "Gasoline",
-            transmission: "Automatic",
-            color: "Silver",
-            location: "South Korea",
-            image_url: "https://picsum.photos/400/300?random=3",
-            is_live: true
-          },
-          {
-            id: "auctions_004",
-            brand: "Toyota",
-            model: "Camry",
-            year: 2020,
-            title: "2020 Toyota Camry",
-            price: 25000,
-            mileage: 35000,
-            fuel: "Hybrid",
-            transmission: "CVT",
-            color: "Blue",
-            location: "South Korea",
-            image_url: "https://picsum.photos/400/300?random=4",
-            is_live: false
-          },
-          {
-            id: "auctions_005",
-            brand: "Honda",
-            model: "Civic",
-            year: 2021,
-            title: "2021 Honda Civic",
-            price: 22000,
-            mileage: 15000,
-            fuel: "Gasoline",
-            transmission: "Manual",
-            color: "Red",
-            location: "South Korea",
-            image_url: "https://picsum.photos/400/300?random=5",
-            is_live: true
-          }
-        ];
-
-        // Transform Auctions API cars to match the existing Car interface
-        auctionsApiCars = mockAuctionsApiCars.map(car => ({
-          id: car.id,
-          title: car.title,
-          year: car.year,
-          manufacturer: { name: car.brand },
-          model: { name: car.model },
-          vin: `VIN_${car.id}`,
-          lot_number: `AUCTIONS_${car.id}`,
-          status: car.is_live ? 1 : 2, // 1 = active, 2 = pending
-          sale_status: car.is_live ? 'active' : 'pending',
-          lots: [{
-            buy_now: car.price,
-            images: {
-              normal: car.image_url ? [car.image_url] : []
-            },
-            odometer: { km: car.mileage },
-            status: car.is_live ? 1 : 2
-          }],
-          fuel: { name: car.fuel },
-          transmission: { name: car.transmission },
-          color: { name: car.color },
-          location: car.location,
-          source_api: 'auctions_api', // Mark as from Auctions API
-          last_synced_at: new Date().toISOString()
-        }));
-
-        auctionsApiTotal = auctionsApiCars.length;
-        console.log(`✅ Fetched ${auctionsApiCars.length} additional cars from Auctions API (total available: ${auctionsApiTotal})`);
-        
-      } catch (auctionsErr) {
-        console.log(`⚠️ Could not fetch Auctions API cars:`, auctionsErr);
-        // Continue without Auctions API cars if there's an error
-      }
 
       // Apply client-side variant filtering if a variant is selected
       let filteredCars = data.data || [];
@@ -967,27 +847,20 @@ export const useSecureAuctionAPI = () => {
         console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
-      // Merge Auctions API cars with existing cars
-      const mergedCars = [...filteredCars, ...auctionsApiCars];
-      
-      // Calculate total count including both sources
-      const originalApiTotal = data.meta?.total || 0;
-      const totalCarsCount = originalApiTotal + auctionsApiTotal;
-      
       // Always use server-side total count regardless of client-side filtering
       // Client-side filtering should not affect the total count or pagination logic
-      setTotalCount(totalCarsCount);
+      setTotalCount(data.meta?.total || 0);
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, ${auctionsApiCars.length} from Auctions API, original API total: ${originalApiTotal}, auctions API total: ${auctionsApiTotal}, combined total: ${totalCarsCount}, displayed: ${mergedCars.length}`
+        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, server total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
       );
 
       if (resetList || page === 1) {
-        setCars(mergedCars);
+        setCars(filteredCars);
         setCurrentPage(page); // Set the actual requested page, not always 1
       } else {
-        setCars((prev) => [...prev, ...mergedCars]);
+        setCars((prev) => [...prev, ...filteredCars]);
         setCurrentPage(page);
       }
     } catch (err: any) {
