@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy load components for better initial load performance
 const HomeSection = lazy(() => import("@/components/HomeSection"));
-const HomeCarsSection = lazy(() => import("@/components/HomeCarsSection"));
+const HomeCarsSection = lazy(() => import("@/components/UnifiedHomeCarsSection"));
 const InspectionSection = lazy(() => import("@/components/InspectionSection"));
 const ContactSection = lazy(() => import("@/components/ContactSection"));
 const Footer = lazy(() => import("@/components/Footer"));
