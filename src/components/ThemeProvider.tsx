@@ -33,9 +33,9 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement
 
-    // Optimized theme switching without flicker
-    requestAnimationFrame(() => {
-      // Remove old theme immediately
+    // Apple-like instant theme switching without flicker
+    const applyTheme = () => {
+      // Remove old theme class
       root.classList.remove("light", "dark")
 
       if (theme === "system") {
@@ -48,7 +48,10 @@ export function ThemeProvider({
       } else {
         root.classList.add(theme)
       }
-    })
+    }
+
+    // Apply theme immediately without animation frame delay
+    applyTheme()
   }, [theme])
 
   const value = {

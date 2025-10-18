@@ -40,13 +40,13 @@ const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"))
 const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
-  <div className="min-h-screen bg-background">
-    <div className="animate-pulse">
+  <div className="min-h-screen bg-background optimize-rendering">
+    <div className="animate-pulse" style={{ willChange: 'opacity' }}>
       {/* Header skeleton */}
       <header className="border-b">
         <div className="container-responsive py-4">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-8 w-32" style={{ transform: 'translate3d(0,0,0)' }} />
             <div className="flex items-center space-x-4">
               <Skeleton className="h-8 w-20" />
               <Skeleton className="h-8 w-20" />
@@ -63,7 +63,7 @@ const PageSkeleton = () => (
           <Skeleton className="h-6 w-1/2" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
+              <Skeleton key={i} className="h-48 w-full" style={{ transform: 'translate3d(0,0,0)' }} />
             ))}
           </div>
         </div>

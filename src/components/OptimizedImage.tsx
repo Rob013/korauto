@@ -56,7 +56,9 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center"
           style={{ 
             aspectRatio: `${width}/160`,
-            minHeight: '160px'
+            minHeight: '160px',
+            willChange: 'opacity',
+            transform: 'translate3d(0, 0, 0)'
           }}
         >
           {isLoading && (
@@ -83,15 +85,18 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         ref={imgRef}
         src={!enableLazyLoad || priority ? optimizedSrc : ''}
         alt={alt}
-        className={`w-full h-full object-cover transition-opacity duration-300 optimized-image ${
+        className={`w-full h-full object-cover transition-opacity duration-200 optimized-image ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         style={{ 
           aspectRatio: `${width}/160`,
           objectFit: 'cover',
-          // Prevent layout shifts
           minHeight: '160px',
-          backgroundColor: 'hsl(var(--muted))'
+          backgroundColor: 'hsl(var(--muted))',
+          transform: 'translate3d(0, 0, 0)',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          imageRendering: 'crisp-edges'
         }}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"

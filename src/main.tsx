@@ -7,6 +7,7 @@ import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'
 import { inject120FPSStyles } from '@/utils/frameRateOptimizer'
 import initSmoothRuntime from '@/utils/runtimeSmoothness'
+import initAntiFlicker from '@/utils/antiFlicker'
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {
@@ -56,8 +57,9 @@ if ('serviceWorker' in navigator) {
   cacheManager.setupPeriodicRefresh(30);
 }
 
-// Initialize smoothness helpers before first render
+// Initialize anti-flicker and smoothness helpers before first render
 try {
+  initAntiFlicker();
   inject120FPSStyles();
   initSmoothRuntime();
 } catch (e) {

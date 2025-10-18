@@ -7,14 +7,15 @@ interface PageTransitionProps {
 const PageTransition = ({ children }: PageTransitionProps) => {
   return (
     <div 
-      className="animate-fade-in"
+      className="animate-fade-in optimize-rendering"
       style={{
-        willChange: 'opacity',
-        transform: 'translateZ(0)',
+        willChange: 'opacity, transform',
+        transform: 'translate3d(0, 0, 0)',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
         WebkitFontSmoothing: 'antialiased',
-        MozOsxFontSmoothing: 'grayscale'
+        MozOsxFontSmoothing: 'grayscale',
+        isolation: 'isolate'
       }}
     >
       {children}
