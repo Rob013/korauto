@@ -18,6 +18,7 @@ import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
+import { useUnifiedCarDetails, UnifiedCarDetails } from "@/hooks/useUnifiedCarDetails";
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -871,9 +872,8 @@ const CarDetails = memo(() => {
     processFloodDamageText,
     exchangeRate
   } = useCurrencyAPI();
-  const [car, setCar] = useState<CarDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use unified car details hook
+  const { car, loading, error, refetch } = useUnifiedCarDetails(lot || '');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -1020,10 +1020,9 @@ const CarDetails = memo(() => {
     };
     checkAdminStatus();
   }, []);
+  // Remove old fetchCarDetails logic - now handled by useUnifiedCarDetails hook
   useEffect(() => {
-    let isMounted = true;
-    const fetchCarDetails = async () => {
-      if (!lot) return;
+    if (!lot) return;
       try {
         // Try to fetch from cache using OR condition for all possible matches
         console.log("Searching for car with lot:", lot);

@@ -57,14 +57,64 @@ interface StagingCar extends CarData {
 }
 
 /**
- * Transform API car data to staging format
+ * Transform Auctions API car data to match existing car schema
  */
 function transformCarData(apiCar: CarData): StagingCar {
+  // Extract basic information
+  const carId = apiCar.id?.toString() || `auctions_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const make = apiCar.brand?.toString()?.trim() || 'Unknown';
+  const model = apiCar.model?.toString()?.trim() || 'Unknown';
+  const year = apiCar.year && Number(apiCar.year) > 1900 ? Number(apiCar.year) : 2020;
+  
+  // Generate a lot number if not provided
+  const lotNumber = `AUCTIONS_${carId}`;
+  
+  // Set default values for missing fields
+  const price = 0; // Auctions API doesn't provide price in basic response
+  const mileage = 0; // Default mileage
+  
   return {
-    ...apiCar,
+    id: carId,
+    external_id: carId,
+    make,
+    model,
+    year,
+    price,
+    mileage,
+    
+    // Basic car info
+    title: `${make} ${model} ${year}`,
+    vin: null,
+    color: null,
+    fuel: null,
+    transmission: null,
+    condition: 'good',
+    location: 'South Korea',
+    
+    // Auction/Sale info
+    lot_number: lotNumber,
+    current_bid: 0,
+    buy_now_price: 0,
+    final_bid: 0,
+    sale_date: null,
+    
+    // Images and media
+    image_url: null,
+    images: JSON.stringify([]),
+    
+    // Source tracking
     source_api: 'auctions_api',
-    last_synced_at: new Date().toISOString(),
-    is_archived: false
+    domain_name: 'auctionsapi_com',
+    
+    // Status and metadata
+    status: 'active',
+    is_active: true,
+    is_live: false,
+    is_archived: false,
+    keys_available: true,
+    
+    // Timestamps
+    last_synced_at: new Date().toISOString()
   };
 }
 
@@ -120,7 +170,48 @@ async function upsertCars(cars: StagingCar[]): Promise<void> {
 }
 
 /**
- * Move data from staging to main cars table
+ * Merge data from staging to main cars table (preserve existing cars)
+ */
+async function mergeStagingToMain(): Promise<void> {
+  console.log('🔄 Merging auctions_api data from staging to main cars table...');
+  
+  // Get all non-archived auctions_api cars from staging
+  const { data: stagingCars, error: stagingError } = await supabase
+    .from('cars_staging')
+    .select('*')
+    .eq('source_api', 'auctions_api')
+    .eq('is_archived', false);
+  
+  if (stagingError) {
+    console.error('❌ Error fetching staging cars:', stagingError);
+    throw stagingError;
+  }
+  
+  if (!stagingCars || stagingCars.length === 0) {
+    console.log('⚠️ No auctions_api cars to merge');
+    return;
+  }
+  
+  console.log(`📊 Merging ${stagingCars.length} auctions_api cars to main table...`);
+  
+  // Upsert cars to main table (this will update existing or insert new)
+  const { error: upsertError } = await supabase
+    .from('cars')
+    .upsert(stagingCars, {
+      onConflict: 'id',
+      ignoreDuplicates: false
+    });
+  
+  if (upsertError) {
+    console.error('❌ Error upserting cars to main table:', upsertError);
+    throw upsertError;
+  }
+  
+  console.log('✅ Successfully merged auctions_api data to main table');
+}
+
+/**
+ * Move data from staging to main cars table (legacy function)
  */
 async function moveStagingToMain(): Promise<void> {
   console.log('🔄 Moving data from staging to main cars table...');
@@ -213,15 +304,15 @@ async function syncCars(): Promise<void> {
     // Step 1: Archive old cars
     const archivedCount = await archiveOldCars();
     
-    // Step 2: Clear staging table for fresh data
-    console.log('🧹 Clearing staging table for fresh sync...');
+    // Step 2: Clear only auctions_api data from staging table
+    console.log('🧹 Clearing auctions_api data from staging table...');
     const { error: clearError } = await supabase
       .from('cars_staging')
       .delete()
       .eq('source_api', 'auctions_api');
     
     if (clearError) {
-      console.error('❌ Error clearing staging table:', clearError);
+      console.error('❌ Error clearing auctions_api data from staging table:', clearError);
       throw clearError;
     }
     
@@ -245,8 +336,8 @@ async function syncCars(): Promise<void> {
       console.log(`📈 Progress: ${progress}% (${i + batch.length}/${transformedCars.length} cars)`);
     }
     
-    // Step 5: Move data from staging to main table
-    await moveStagingToMain();
+    // Step 5: Merge data from staging to main table (don't replace existing cars)
+    await mergeStagingToMain();
     
     // Step 6: Get final statistics
     const stats = await getSyncStats();
