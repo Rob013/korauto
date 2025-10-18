@@ -5,7 +5,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useUnifiedCars, UnifiedCarsFilters } from "@/hooks/useUnifiedCars";
 import { useUnifiedCarDetails } from "@/hooks/useUnifiedCarDetails";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
