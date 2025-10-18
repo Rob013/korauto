@@ -16,6 +16,7 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
+import { useScreenshotDetection } from "@/hooks/useScreenshotDetection";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 
@@ -871,6 +872,7 @@ const CarDetails = memo(() => {
     processFloodDamageText,
     exchangeRate
   } = useCurrencyAPI();
+  const { isScreenshotMode, isMobile } = useScreenshotDetection();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1451,12 +1453,12 @@ const CarDetails = memo(() => {
       </div>;
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
+    <div className={`min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in ${isScreenshotMode ? 'screenshot-mode' : ''}`}>
       <div className="container-responsive py-6 max-w-[1600px]">
         {/* Header with Actions - Modern Layout with animations */}
-        <div className="flex flex-col gap-3 mb-6">
+        <div className={`flex flex-col gap-3 mb-6 ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
           {/* Navigation and Action Buttons with hover effects */}
-          <div className="flex flex-wrap items-center gap-2"
+          <div className="flex flex-wrap items-center gap-2 navigation-buttons"
             style={{
               animation: 'fadeIn 0.3s ease-out forwards',
               animationDelay: '0.1s',
@@ -1478,22 +1480,33 @@ const CarDetails = memo(() => {
               console.log("🔙 Using goBack fallback");
               goBack();
             }
-          }} className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+          }} className={`flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group back-button ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
               <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
               <span className="hidden sm:inline font-medium">Kthehu te Makinat</span>
               <span className="sm:hidden font-medium">Kthehu</span>
             </Button>
-            <Button variant="outline" onClick={() => navigate("/")} className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+            <Button variant="outline" onClick={() => navigate("/")} className={`flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group home-button ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
               <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
               <span className="hidden sm:inline font-medium">Kryefaqja</span>
               <span className="sm:hidden font-medium">Home</span>
             </Button>
             <div className="flex-1"></div>
-            <Button variant="outline" size="sm" onClick={handleLike} className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+            {/* Debug button for testing screenshot mode - remove in production */}
+            {isMobile && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsScreenshotMode(!isScreenshotMode)} 
+                className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+              >
+                {isScreenshotMode ? 'Exit Screenshot' : 'Screenshot Mode'}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleLike} className={`hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group favorite-button ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
               <Heart className={`h-4 w-4 mr-2 transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "group-hover:scale-110"}`} />
               <span className="hidden sm:inline font-medium">Pëlqej</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+            <Button variant="outline" size="sm" onClick={handleShare} className={`hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group share-button ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
               <Share2 className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
               <span className="hidden sm:inline font-medium">Ndaj</span>
             </Button>
@@ -1505,7 +1518,7 @@ const CarDetails = memo(() => {
           {/* Left Column - Images and Gallery */}
           <div className="space-y-6 animate-fade-in" style={{animationDelay: '100ms'}}>
             {/* Main Image with modern styling - Compact mobile design */}
-            <div className="hidden lg:flex lg:gap-4">
+            <div className={`hidden lg:flex lg:gap-4 main-image-container ${isScreenshotMode ? 'screenshot-show' : ''}`}>
               {/* Main Image Card */}
               <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
                 <CardContent className="p-0">
@@ -1575,7 +1588,7 @@ const CarDetails = memo(() => {
                       {/* Mobile gallery button */}
                       <button
                         onClick={handleGalleryClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                        className={`gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2 ${isScreenshotMode ? 'screenshot-hide' : ''}`}
                         aria-label={`View all ${images.length} images`}
                       >
                         <Camera className="h-3 w-3" />
@@ -1585,7 +1598,7 @@ const CarDetails = memo(() => {
                       {/* Desktop gallery button */}
                       <button
                         onClick={handleGalleryClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                        className={`gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm ${isScreenshotMode ? 'screenshot-hide' : ''}`}
                         aria-label={`View all ${images.length} images`}
                       >
                         <Camera className="h-4 w-4" />
@@ -1596,13 +1609,13 @@ const CarDetails = memo(() => {
                   
                   {/* Lot number badge - Improved positioning */}
                   {car.lot && (
-                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                    <Badge className={`absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg lot-badge ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
                       {car.lot}
                     </Badge>
                   )}
                   
                   {/* Zoom icon - Improved positioning and visibility */}
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
+                  <div className={`absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 zoom-icon ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
                     <Expand className="h-4 w-4 text-white" />
                   </div>
                   
@@ -1618,7 +1631,7 @@ const CarDetails = memo(() => {
 
             {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
             {images.length > 1 && (
-              <div className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in" style={{animationDelay: '200ms'}}>
+              <div className={`hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in thumbnail-gallery ${isScreenshotMode ? 'screenshot-hide' : ''}`} style={{animationDelay: '200ms'}}>
                 {images.slice(1, 7).map((image, index) => (
                   <button
                     key={index + 1}
@@ -1656,7 +1669,7 @@ const CarDetails = memo(() => {
             </div>
 
             {/* Mobile Main Image - Full width for mobile */}
-            <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+            <Card className={`lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm main-image-container ${isScreenshotMode ? 'screenshot-show' : ''}`}>
               <CardContent className="p-0">
                 <div 
                   ref={imageContainerRef} 
@@ -1724,7 +1737,7 @@ const CarDetails = memo(() => {
                       {/* Mobile gallery button */}
                       <button
                         onClick={handleGalleryClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                        className={`gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2 ${isScreenshotMode ? 'screenshot-hide' : ''}`}
                         aria-label={`View all ${images.length} images`}
                       >
                         <Camera className="h-3 w-3" />
@@ -1734,7 +1747,7 @@ const CarDetails = memo(() => {
                       {/* Desktop gallery button */}
                       <button
                         onClick={handleGalleryClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                        className={`gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm ${isScreenshotMode ? 'screenshot-hide' : ''}`}
                         aria-label={`View all ${images.length} images`}
                       >
                         <Camera className="h-4 w-4" />
@@ -1745,13 +1758,13 @@ const CarDetails = memo(() => {
                   
                   {/* Lot number badge - Improved positioning */}
                   {car.lot && (
-                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                    <Badge className={`absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg lot-badge ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
                       {car.lot}
                     </Badge>
                   )}
                   
                   {/* Zoom icon - Improved positioning and visibility */}
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
+                  <div className={`absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 zoom-icon ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
                     <Expand className="h-4 w-4 text-white" />
                   </div>
                   
@@ -1798,7 +1811,7 @@ const CarDetails = memo(() => {
 
 
             {/* Vehicle Specifications - Compact Mobile Card */}
-            <Card id="specifications" className="border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in" style={{animationDelay: '400ms'}}>
+            <Card id="specifications" className={`border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in technical-specs-container ${isScreenshotMode ? 'screenshot-show' : ''}`} style={{animationDelay: '400ms'}}>
               <CardContent className="p-3 md:p-6">
                 <div className="flex flex-col gap-2 md:gap-4 mb-3 md:mb-6">
                   <h3 className="text-base md:text-xl font-bold flex items-center text-foreground">
@@ -1947,7 +1960,7 @@ const CarDetails = memo(() => {
             </Card>
 
             {/* Enhanced Detailed Information Section */}
-            <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
+            <Card className={`glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card detailed-info-section ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4">
                   
@@ -2280,7 +2293,7 @@ const CarDetails = memo(() => {
           </div>
 
           {/* Right Column - Enhanced Contact Card */}
-          <div className="space-y-4">
+          <div className={`space-y-4 contact-section ${isScreenshotMode ? 'screenshot-hide' : ''}`}>
             {/* Enhanced Contact & Inspection Card */}
             <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-[calc(100%-2rem)] lg:w-auto max-w-sm lg:max-w-none">
               <CardContent className="p-4">
