@@ -773,46 +773,35 @@ export const useSecureAuctionAPI = () => {
       
       // Also fetch cars from the new Auctions API and merge them
       let auctionsApiCars: any[] = [];
+      let auctionsApiTotal = 0;
       try {
         console.log(`🔄 Fetching additional cars from Auctions API...`);
-        const { data: auctionsData, error: auctionsError } = await supabase
-          .from('cars')
-          .select('*')
-          .eq('source_api', 'auctions_api')
-          .eq('is_archived', false)
-          .eq('is_active', true)
-          .order('last_synced_at', { ascending: false })
-          .limit(100); // Limit to prevent overwhelming the existing system
         
-        if (!auctionsError && auctionsData) {
-          // Transform Auctions API cars to match the existing Car interface
-          auctionsApiCars = auctionsData.map(car => ({
-            id: car.id,
-            title: car.title || `${car.year} ${car.make} ${car.model}`,
-            year: car.year,
-            manufacturer: { name: car.make },
-            model: { name: car.model },
-            vin: car.vin,
-            lot_number: car.lot_number,
-            status: car.is_live ? 1 : 2, // 1 = active, 2 = pending
-            sale_status: car.is_live ? 'active' : 'pending',
-            lots: [{
-              buy_now: car.buy_now_price || car.price || 0,
-              images: {
-                normal: car.image_url ? [car.image_url] : []
-              },
-              odometer: { km: car.mileage || 0 },
-              status: car.is_live ? 1 : 2
-            }],
-            fuel: { name: car.fuel || 'Unknown' },
-            transmission: { name: car.transmission || 'Unknown' },
-            color: { name: car.color || 'Unknown' },
-            location: car.location || 'South Korea',
-            source_api: 'auctions_api', // Add source indicator
-            last_synced_at: car.last_synced_at
-          }));
-          
-          console.log(`✅ Fetched ${auctionsApiCars.length} additional cars from Auctions API`);
+        // Use the new dedicated endpoint for Auctions API cars
+        const { data: auctionsResponse, error: auctionsError } = await supabase.functions.invoke('auctions-cars-api', {
+          body: {
+            page: 1,
+            per_page: 100, // Get more cars from Auctions API
+            make: newFilters.manufacturer_id && newFilters.manufacturer_id !== 'all' ? 
+              (await supabase.from('manufacturers').select('name').eq('id', newFilters.manufacturer_id).single()).data?.name : undefined,
+            model: newFilters.model_id && newFilters.model_id !== 'all' ? 
+              (await supabase.from('models').select('name').eq('id', newFilters.model_id).single()).data?.name : undefined,
+            yearMin: newFilters.from_year ? parseInt(newFilters.from_year) : undefined,
+            yearMax: newFilters.to_year ? parseInt(newFilters.to_year) : undefined,
+            priceMin: newFilters.buy_now_price_from ? parseFloat(newFilters.buy_now_price_from) : undefined,
+            priceMax: newFilters.buy_now_price_to ? parseFloat(newFilters.buy_now_price_to) : undefined,
+            fuel: newFilters.fuel_type,
+            transmission: newFilters.transmission,
+            search: newFilters.search,
+            sortBy: 'last_synced_at',
+            sortOrder: 'desc'
+          }
+        });
+        
+        if (!auctionsError && auctionsResponse?.data) {
+          auctionsApiCars = auctionsResponse.data;
+          auctionsApiTotal = auctionsResponse.meta?.total || 0;
+          console.log(`✅ Fetched ${auctionsApiCars.length} additional cars from Auctions API (total available: ${auctionsApiTotal})`);
         }
       } catch (auctionsErr) {
         console.log(`⚠️ Could not fetch Auctions API cars:`, auctionsErr);
@@ -898,13 +887,17 @@ export const useSecureAuctionAPI = () => {
       // Merge Auctions API cars with existing cars
       const mergedCars = [...filteredCars, ...auctionsApiCars];
       
+      // Calculate total count including both sources
+      const originalApiTotal = data.meta?.total || 0;
+      const totalCarsCount = originalApiTotal + auctionsApiTotal;
+      
       // Always use server-side total count regardless of client-side filtering
       // Client-side filtering should not affect the total count or pagination logic
-      setTotalCount((data.meta?.total || 0) + auctionsApiCars.length);
+      setTotalCount(totalCarsCount);
       setHasMorePages(page < (data.meta?.last_page || 1));
 
       console.log(
-        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, ${auctionsApiCars.length} from Auctions API, server total: ${data.meta?.total || 0}, merged total: ${mergedCars.length}`
+        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, ${auctionsApiCars.length} from Auctions API, original API total: ${originalApiTotal}, auctions API total: ${auctionsApiTotal}, combined total: ${totalCarsCount}, displayed: ${mergedCars.length}`
       );
 
       if (resetList || page === 1) {
