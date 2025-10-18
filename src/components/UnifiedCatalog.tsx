@@ -1,5 +1,6 @@
-import React, { memo, useMemo, useState, useCallback } from "react";
-import { useUnifiedCars } from "@/hooks/useUnifiedCars";
+import React, { memo, useMemo, useState, useCallback, useEffect } from "react";
+import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
+import { useAuctionsApiSupabase } from "@/hooks/useAuctionsApiSupabase";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -99,12 +100,100 @@ const UnifiedCatalog = () => {
   const [pageSize, setPageSize] = useState(24);
   const [sortBy, setSortBy] = useState<'last_synced_at' | 'price' | 'year' | 'mileage'>('last_synced_at');
 
-  const { cars, total, totalPages, loading, error } = useUnifiedCars({
-    page,
-    pageSize,
-    sortBy,
-    sortOrder: 'desc'
-  });
+  // External API 1: Existing Auction APIs (secure)
+  const {
+    cars: secureCars,
+    loading: secureLoading,
+    error: secureError,
+    totalCount: secureTotal,
+    fetchCars: fetchSecureCars
+  } = useSecureAuctionAPI();
+
+  // External API 2: New Auctions API (scroll)
+  const {
+    cars: auctionsCars,
+    isLoading: auctionsLoading,
+    error: auctionsError,
+    startScroll
+  } = useAuctionsApiSupabase({ autoStart: false });
+
+  // Initial loads
+  useEffect(() => {
+    // Fetch first page from secure API
+    fetchSecureCars(1, { per_page: String(Math.max(50, pageSize)) }, true)
+      .catch(() => {});
+    // Fetch an initial batch from new Auctions API (no full scroll for responsiveness)
+    startScroll(5, Math.max(200, pageSize))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Transform Auctions API cars to a unified shape
+  const transformedAuctionsCars = useMemo(() => {
+    return (auctionsCars || []).map((car: any) => ({
+      id: car.id,
+      make: car.brand,
+      model: car.model,
+      year: car.year,
+      price: car.price || 0,
+      mileage: car.mileage || 0,
+      title: car.title || `${car.brand || ''} ${car.model || ''} ${car.year || ''}`.trim(),
+      image_url: car.image_url || (car.images?.[0] || undefined),
+      fuel: car.fuel,
+      transmission: car.transmission,
+      location: car.location,
+      lot_number: car.lot_number,
+      source_api: 'auctions_api',
+      domain_name: 'auctionsapi_com',
+      is_active: true,
+      is_archived: false,
+      last_synced_at: car.last_synced_at || new Date().toISOString()
+    }));
+  }, [auctionsCars]);
+
+  // Merge both external sources (avoid duplicates by id)
+  const mergedCars = useMemo(() => {
+    const result: any[] = [];
+    const seen = new Set<string>();
+    const add = (list: any[]) => {
+      for (const c of list || []) {
+        if (!seen.has(c.id)) {
+          seen.add(c.id);
+          result.push(c);
+        }
+      }
+    };
+    add(secureCars);
+    add(transformedAuctionsCars);
+    return result;
+  }, [secureCars, transformedAuctionsCars]);
+
+  // Client-side sort
+  const sortedCars = useMemo(() => {
+    const arr = [...mergedCars];
+    switch (sortBy) {
+      case 'price':
+        return arr.sort((a, b) => (b.price || 0) - (a.price || 0));
+      case 'year':
+        return arr.sort((a, b) => (b.year || 0) - (a.year || 0));
+      case 'mileage':
+        return arr.sort((a, b) => (a.mileage || Infinity) - (b.mileage || Infinity));
+      case 'last_synced_at':
+      default:
+        return arr.sort((a, b) => new Date(b.last_synced_at || 0).getTime() - new Date(a.last_synced_at || 0).getTime());
+    }
+  }, [mergedCars, sortBy]);
+
+  // Pagination
+  const total = sortedCars.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedCars.slice(start, start + pageSize);
+  }, [sortedCars, page, pageSize]);
+
+  const loading = secureLoading || auctionsLoading;
+  const error = secureError || auctionsError;
 
   const nextPage = useCallback(() => {
     setPage(p => Math.min(p + 1, Math.max(1, totalPages)));
@@ -160,12 +249,12 @@ const UnifiedCatalog = () => {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {(loading && cars.length === 0) ? (
+        {(loading && paginated.length === 0) ? (
           Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="rounded-lg border bg-white dark:bg-gray-800 h-64 animate-pulse" />
           ))
         ) : (
-          cars.map((car) => (
+          paginated.map((car) => (
             <CarCard key={car.id} car={car} />
           ))
         )}
