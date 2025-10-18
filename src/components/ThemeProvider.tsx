@@ -33,29 +33,32 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement
 
-    // Smooth theme switching with transitions
+    // Butter-smooth theme switching
     const applyTheme = () => {
-      // Add transition class
+      // Add transition class for smooth animation
       root.classList.add('theme-transitioning')
       
-      // Remove old theme class
-      root.classList.remove("light", "dark")
+      // Small delay to ensure transition class is applied
+      requestAnimationFrame(() => {
+        // Remove old theme class
+        root.classList.remove("light", "dark")
 
-      if (theme === "system") {
-        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-          .matches
-          ? "dark"
-          : "light"
+        if (theme === "system") {
+          const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+            .matches
+            ? "dark"
+            : "light"
 
-        root.classList.add(systemTheme)
-      } else {
-        root.classList.add(theme)
-      }
+          root.classList.add(systemTheme)
+        } else {
+          root.classList.add(theme)
+        }
+      })
 
       // Remove transition class after animation completes
       setTimeout(() => {
         root.classList.remove('theme-transitioning')
-      }, 300)
+      }, 400)
     }
 
     applyTheme()
