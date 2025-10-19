@@ -900,7 +900,7 @@ const CarDetails = memo(() => {
   }, [car, hasAutoExpanded]);
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
-
+  
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
     console.log("🔧 Converting options:", options);
@@ -1025,166 +1025,7 @@ const CarDetails = memo(() => {
     const fetchCarDetails = async () => {
       if (!lot) return;
       try {
-        // Try to fetch from cache using OR condition for all possible matches
-        console.log("Searching for car with lot:", lot);
-        const {
-          data: cachedCar,
-          error: cacheError
-        } = await supabase.from("cars_cache").select("*").or(`id.eq.${lot},api_id.eq.${lot},lot_number.eq.${lot}`).maybeSingle();
-        console.log("Cache query result:", {
-          cachedCar,
-          cacheError
-        });
-        if (!cacheError && cachedCar && isMounted) {
-          console.log("Found car in cache:", cachedCar);
-
-          // Transform cached car data to CarDetails format
-          const carData = typeof cachedCar.car_data === "string" ? JSON.parse(cachedCar.car_data) : cachedCar.car_data;
-          const lotData = typeof cachedCar.lot_data === "string" ? JSON.parse(cachedCar.lot_data || "{}") : cachedCar.lot_data || {};
-          const images = typeof cachedCar.images === "string" ? JSON.parse(cachedCar.images || "[]") : cachedCar.images || [];
-          const basePrice = lotData.buy_now || cachedCar.price;
-          if (!basePrice) {
-            console.log("Car doesn't have buy_now pricing, redirecting to catalog");
-            navigate('/catalog');
-            return;
-          }
-          const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
-          const transformedCar: CarDetails = {
-            id: cachedCar.id,
-            make: cachedCar.make || "Unknown",
-            model: cachedCar.model || "Unknown",
-            year: cachedCar.year || 2020,
-            price,
-            image: images[0] || "/placeholder.svg",
-            images: images || [],
-            vin: cachedCar.vin || carData.vin,
-            mileage: cachedCar.mileage || lotData.odometer?.km,
-            transmission: cachedCar.transmission || carData.transmission?.name,
-            fuel: cachedCar.fuel || carData.fuel?.name,
-            color: cachedCar.color || carData.color?.name,
-            condition: cachedCar.condition || lotData.condition?.name?.replace("run_and_drives", "Good Condition"),
-            lot: cachedCar.lot_number || lotData.lot,
-            title: `${cachedCar.year} ${cachedCar.make} ${cachedCar.model}`,
-            odometer: lotData.odometer,
-            engine: carData.engine,
-            cylinders: carData.cylinders,
-            drive_wheel: carData.drive_wheel,
-            body_type: carData.body_type,
-            damage: lotData.damage,
-            keys_available: lotData.keys_available,
-            airbags: lotData.airbags,
-            grade_iaai: lotData.grade_iaai,
-            seller: lotData.seller,
-            seller_type: lotData.seller_type,
-            sale_date: lotData.sale_date,
-            bid: lotData.bid,
-            buy_now: lotData.buy_now,
-            final_bid: lotData.final_bid,
-            features: getCarFeatures(carData, lotData),
-            safety_features: getSafetyFeatures(carData, lotData),
-            comfort_features: getComfortFeatures(carData, lotData),
-            performance_rating: 4.5,
-            popularity_score: 85,
-            // Enhanced API data
-            insurance: lotData.insurance,
-            insurance_v2: lotData.insurance_v2,
-            location: lotData.location,
-            inspect: lotData.inspect,
-            details: lotData.details
-          };
-          setCar(transformedCar);
-          setLoading(false);
-
-          // Track car view analytics
-          trackCarView(cachedCar.id || cachedCar.api_id, transformedCar);
-          return;
-        }
-
-        // If not found in cache, try Supabase edge function with lot number search
-        try {
-          const secureResponse = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eXlpcWlta3lzbWpuYW9jc3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MzkxMzQsImV4cCI6MjA2OTAxNTEzNH0.lyRCHiShhW4wrGHL3G7pK5JBUHNAtgSUQACVOBGRpL8`
-            },
-            body: JSON.stringify({
-              endpoint: "search-lot",
-              lotNumber: lot
-            })
-          });
-          if (secureResponse.ok) {
-            const carData = await secureResponse.json();
-            if (carData && carData.lots && carData.lots[0] && isMounted) {
-              const lotData = carData.lots[0];
-              const basePrice = lotData.buy_now;
-              if (!basePrice) {
-                console.log("Car doesn't have buy_now pricing, redirecting to catalog");
-                navigate('/catalog');
-                return;
-              }
-              const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
-              const transformedCar: CarDetails = {
-                id: carData.id?.toString() || lotData.lot,
-                make: carData.manufacturer?.name || "Unknown",
-                model: carData.model?.name || "Unknown",
-                year: carData.year || 2020,
-                price,
-                image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
-                images: lotData.images?.normal || lotData.images?.big || [],
-                vin: carData.vin,
-                mileage: lotData.odometer?.km,
-                transmission: carData.transmission?.name,
-                fuel: carData.fuel?.name,
-                color: carData.color?.name,
-                condition: lotData.condition?.name?.replace("run_and_drives", "Good Condition"),
-                lot: lotData.lot,
-                title: lotData.title || carData.title,
-                odometer: lotData.odometer,
-                engine: carData.engine,
-                cylinders: carData.cylinders,
-                drive_wheel: carData.drive_wheel,
-                body_type: carData.body_type,
-                damage: lotData.damage,
-                keys_available: lotData.keys_available,
-                airbags: lotData.airbags,
-                grade_iaai: lotData.grade_iaai,
-                seller: lotData.seller,
-                seller_type: lotData.seller_type,
-                sale_date: lotData.sale_date,
-                bid: lotData.bid,
-                buy_now: lotData.buy_now,
-                final_bid: lotData.final_bid,
-                features: getCarFeatures(carData, lotData),
-                safety_features: getSafetyFeatures(carData, lotData),
-                comfort_features: getComfortFeatures(carData, lotData),
-                performance_rating: 4.5,
-                popularity_score: 85,
-                insurance: lotData.insurance,
-                insurance_v2: lotData.insurance_v2,
-                location: lotData.location,
-                inspect: lotData.inspect,
-                details: lotData.details
-              };
-              setCar(transformedCar);
-              setLoading(false);
-              trackCarView(carData.id || lot, transformedCar);
-              return;
-            }
-          } else {
-            // Handle specific error cases from edge function
-            const errorData = await secureResponse.json().catch(() => ({}));
-            if (secureResponse.status === 404 || errorData.error?.includes("404")) {
-              setError(`Car with ID ${lot} is not available in our database. This car may have been sold or removed from the auction.`);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch (edgeFunctionError) {
-          console.log("Edge function failed:", edgeFunctionError);
-        }
-
-        // If edge function fails, try external API with both lot ID and as lot number
+        // Use external API directly with API key
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -1240,7 +1081,7 @@ const CarDetails = memo(() => {
           color: carData.color?.name,
           condition: lotData.condition?.name?.replace("run_and_drives", "Good Condition"),
           lot: lotData.lot,
-          title: lotData.title || carData.title,
+          title: carData.title || lotData.title,
           odometer: lotData.odometer,
           engine: carData.engine,
           cylinders: carData.cylinders,

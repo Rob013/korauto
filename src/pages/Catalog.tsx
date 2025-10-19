@@ -2,7 +2,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
 import Header from "@/components/Header";
-import UnifiedCatalog from "@/components/UnifiedCatalog";
+import EncarCatalog from "@/components/EncarCatalog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Footer = lazy(() => import("@/components/Footer"));
@@ -42,7 +42,7 @@ const Catalog = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="animate-fade-in">
-        <UnifiedCatalog />
+        <EncarCatalog highlightCarId={highlightCarId} />
       </div>
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />

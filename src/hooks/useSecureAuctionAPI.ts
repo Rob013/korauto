@@ -624,88 +624,57 @@ export const useSecureAuctionAPI = () => {
     filters: any = {},
     carId?: string
   ): Promise<any> => {
+    // Direct external API call using provided key
+    const API_BASE_URL = 'https://auctionsapi.com/api';
+    const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
+
+    // Small delay to avoid burst
+    const now = Date.now();
+    if (now - lastFetchTime < 50) {
+      await delay(50 - (now - lastFetchTime));
+    }
+    setLastFetchTime(Date.now());
+
+    // Build URL
+    let url: string;
+    if (carId && (endpoint === 'cars' || endpoint === 'car')) {
+      url = `${API_BASE_URL}/cars/${encodeURIComponent(carId)}`;
+    } else if (endpoint.includes('/')) {
+      // e.g., models/{id}/cars or generations/{id}
+      const params = new URLSearchParams();
+      Object.entries(filters || {}).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && String(v).trim() !== '') params.append(k, String(v));
+      });
+      url = `${API_BASE_URL}/${endpoint}${params.toString() ? `?${params.toString()}` : ''}`;
+    } else {
+      const params = new URLSearchParams();
+      // default per_page
+      if (!filters?.per_page) params.append('per_page', '200');
+      Object.entries(filters || {}).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && String(v).trim() !== '') params.append(k, String(v));
+      });
+      url = `${API_BASE_URL}/${endpoint}?${params.toString()}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
-      console.log("🔐 Making secure API call:", { endpoint, filters, carId });
-
-      // Add a minimal delay to prevent rapid successive calls
-      const now = Date.now();
-      if (now - lastFetchTime < 50) {
-        // 50ms minimum between calls (optimized for faster loading)
-        await delay(50 - (now - lastFetchTime));
+      const res = await fetch(url, {
+        headers: {
+          accept: 'application/json',
+          'x-api-key': API_KEY,
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        throw new Error(`API ${res.status}`);
       }
-      setLastFetchTime(Date.now());
-
-      console.log("🔐 Calling Supabase function with body:", { endpoint, filters, carId });
-      const { data, error: functionError } = await supabase.functions.invoke(
-        "secure-cars-api",
-        {
-          body: { endpoint, filters, carId },
-        }
-      );
-      
-      console.log("🔐 Supabase function response:", { data, error: functionError });
-
-      if (functionError) {
-        console.error("❌ Edge function error:", functionError);
-        console.error("❌ Function error details:", {
-          message: functionError.message,
-          name: functionError.name,
-          stack: functionError.stack,
-          endpoint,
-          filters,
-          carId
-        });
-        
-        // Provide more user-friendly error messages
-        let userMessage = "Failed to send request to the server.";
-        if (functionError.message?.includes('timeout')) {
-          userMessage = "Request timed out. Please try again.";
-        } else if (functionError.message?.includes('network')) {
-          userMessage = "Network error. Please check your connection.";
-        } else if (functionError.message?.includes('401') || functionError.message?.includes('unauthorized')) {
-          userMessage = "Authentication error. Please refresh the page.";
-        } else if (functionError.message?.includes('404')) {
-          userMessage = "No data found for your search criteria.";
-        } else if (functionError.message?.includes('429') || functionError.message?.includes('rate limit')) {
-          userMessage = "Too many requests. Please wait a moment and try again.";
-        }
-        
-        throw new Error(userMessage);
-      }
-
-      if (data?.error) {
-        console.error("❌ API returned error:", data.error);
-        console.error("❌ Error details:", {
-          error: data.error,
-          details: data.details,
-          endpoint,
-          filters,
-          carId,
-          data
-        });
-        
-        if (data.retryAfter) {
-          console.log("⏳ Rate limited, waiting...");
-          await delay(data.retryAfter);
-          throw new Error("RATE_LIMITED");
-        }
-        
-        // Use the improved error message from the edge function if available
-        const errorMessage = data.error || "An error occurred while fetching data";
-        throw new Error(errorMessage);
-      }
-
+      const data = await res.json();
       return data;
-    } catch (err) {
-      console.error("❌ Secure API call error:", err);
-      
-      // If it's already a processed error with a user-friendly message, re-throw it
-      if (err instanceof Error && err.message && !err.message.includes('Error:')) {
-        throw err;
-      }
-      
-      // Otherwise, provide a generic user-friendly message
-      throw new Error("Unable to connect to the server. Please check your internet connection and try again.");
+    } catch (e: any) {
+      clearTimeout(timeoutId);
+      throw new Error(e?.message || 'External API request failed');
     }
   };
 
