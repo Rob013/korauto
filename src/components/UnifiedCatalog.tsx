@@ -15,8 +15,8 @@ const CarCard = memo(({ car }: CarCardProps) => {
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
 
   const price = useMemo(() => {
-    return convertUSDtoEUR(car.price || 0, exchangeRate.rate);
-  }, [car.price, convertUSDtoEUR, exchangeRate.rate]);
+    return convertUSDtoEUR(car.price || 0);
+  }, [car.price, convertUSDtoEUR]);
 
   return (
     <div className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 group rounded-lg overflow-hidden bg-white dark:bg-gray-800 border">
@@ -120,11 +120,9 @@ const UnifiedCatalog = () => {
   // Initial loads
   useEffect(() => {
     // Fetch first page from secure API
-    fetchSecureCars(1, { per_page: String(Math.max(50, pageSize)) }, true)
-      .catch(() => {});
+    fetchSecureCars(1, { per_page: String(Math.max(50, pageSize)) }, true);
     // Fetch an initial batch from new Auctions API (no full scroll for responsiveness)
-    startScroll(5, Math.max(200, pageSize))
-      .catch(() => {});
+    startScroll(5, Math.max(200, pageSize));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
