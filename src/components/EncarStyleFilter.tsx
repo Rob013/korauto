@@ -373,15 +373,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <Input
                 type="number"
                 placeholder="Nga"
-                value={(filters as any).mileage_from || ''}
-                onChange={(e) => updateFilter('mileage_from', e.target.value)}
+                value={(filters as any).odometer_from_km || (filters as any).mileage_from || ''}
+                onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
                 className="filter-control h-8 text-xs"
               />
               <Input
                 type="number"
                 placeholder="Deri"
-                value={(filters as any).mileage_to || ''}
-                onChange={(e) => updateFilter('mileage_to', e.target.value)}
+                value={(filters as any).odometer_to_km || (filters as any).mileage_to || ''}
+                onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
                 className="filter-control h-8 text-xs"
               />
             </div>
@@ -423,7 +423,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           {expandedSections.includes('more') && (
             <div className="space-y-2 pt-2 border-t">
               <div className="space-y-2">
-                <div className="space-y-1 filter-section">
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Cog className="h-2.5 w-2.5" />
                     Gjenerata
@@ -443,7 +443,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   </Select>
                 </div>
 
-                <div className="space-y-1 filter-section">
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Settings className="h-2.5 w-2.5" />
                     Motori
@@ -469,7 +469,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   </Select>
                 </div>
 
-                <div className="space-y-1 filter-section">
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                     <Settings className="h-2.5 w-2.5" />
                     Niveli i Trim
@@ -489,7 +489,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   </Select>
                 </div>
 
-                <div className="space-y-1 filter-section">
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                      <Palette className="h-2.5 w-2.5" />
                      Ngjyra
@@ -511,7 +511,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                    </Select>
                  </div>
 
-                 <div className="space-y-1 filter-section">
+                 <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                      <Fuel className="h-2.5 w-2.5" />
                      Lloji i karburantit
@@ -533,7 +533,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                    </Select>
                  </div>
 
-                 <div className="space-y-1 filter-section">
+                 <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                      <Settings className="h-2.5 w-2.5" />
                      Transmisioni
@@ -555,7 +555,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                    </Select>
                  </div>
 
-                  <div className="space-y-1 filter-section">
+                  <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                     <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                       <Car className="h-2.5 w-2.5" />
                       Lloji i trupit
@@ -577,7 +577,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     </Select>
                   </div>
 
-                  <div className="space-y-1 filter-section">
+                  <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                     <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
                       <Users className="h-2.5 w-2.5" />
                       Numri i ulëseve

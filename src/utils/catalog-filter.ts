@@ -29,6 +29,7 @@ export interface APIFilters {
   search?: string;
   seats_count?: string;
   max_accidents?: string;
+  domain_name?: string;
   per_page?: string;
 }
 

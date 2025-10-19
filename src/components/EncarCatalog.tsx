@@ -9,6 +9,7 @@ import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen,
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
+import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { AISearchBar } from "@/components/AISearchBar";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
@@ -102,6 +103,7 @@ const EncarCatalog = ({
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
+  const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number }>({ encar: 0, kbc: 0 });
 
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -397,7 +399,7 @@ const EncarCatalog = ({
     clearGlobalSorting();
 
     // Use 200 cars per page for proper pagination
-    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
+    const filtersWithPagination = addPaginationToFilters({ ...newFilters, domain_name: 'kbchachacha' }, 200, 1);
 
     // Use current sort if user has selected one
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
@@ -440,7 +442,7 @@ const EncarCatalog = ({
     clearGlobalSorting();
 
     // Apply filters immediately - no debouncing
-    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
+    const filtersWithPagination = addPaginationToFilters({ ...newFilters, domain_name: 'kbchachacha' }, 200, 1);
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
       ...filtersWithPagination,
       sort_by: sortBy
@@ -484,7 +486,7 @@ const EncarCatalog = ({
     setCurrentPage(page);
 
     // Fetch cars for the specific page with proper API pagination
-    const filtersWithPagination = addPaginationToFilters(filters, 200, page);
+    const filtersWithPagination = addPaginationToFilters({ ...filters, domain_name: 'kbchachacha' }, 200, page);
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
       ...filtersWithPagination,
       sort_by: sortBy
@@ -496,11 +498,7 @@ const EncarCatalog = ({
     currentParams.page = page.toString();
     setSearchParams(currentParams);
 
-    // Scroll to top when changing pages
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    // Avoid forcing scroll on desktop; let dropdowns remain in view
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
   }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
 
@@ -861,6 +859,18 @@ const EncarCatalog = ({
     loadInitialData();
   }, []); // Only run on mount
 
+  // Live source totals (Encar/KBC) based on current filters
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { encar, kbc } = await fetchSourceCounts(filters);
+        if (!cancelled) setSourceCounts({ encar, kbc });
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [filters]);
+
   // OPTIMIZED: Simplified scroll position saving with less frequent updates
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -1095,10 +1105,12 @@ const EncarCatalog = ({
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
             const searchFilters = effectiveSort ? {
               ...filters,
+              domain_name: 'kbchachacha',
               per_page: "200",
               sort_by: effectiveSort
             } : {
               ...filters,
+              domain_name: 'kbchachacha',
               per_page: "200"
             };
             fetchCars(1, searchFilters, true);
@@ -1214,10 +1226,14 @@ const EncarCatalog = ({
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Katalogu i makinave
             </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                {loading ? <span className="inline-flex items-center gap-2">
+                {loading ? (
+                  <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Duke ngarkuar...
-                  </span> : `${totalCount?.toLocaleString() || 0} vetura të disponueshme`}
+                  </span>
+                ) : (
+                  `${totalCount?.toLocaleString() || 0} vetura • Encar: ${sourceCounts.encar.toLocaleString()} • KBC: ${sourceCounts.kbc.toLocaleString()}`
+                )}
               </p>
             </div>
           </div>
@@ -1284,7 +1300,7 @@ const EncarCatalog = ({
               const lotNumber = car.lot_number || lot?.lot || "";
               return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
                       <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
-                vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={car.fuel?.name} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />
+                vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={car.fuel?.name} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} />
                     </div>;
             })}
               </div>

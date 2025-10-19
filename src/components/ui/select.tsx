@@ -4,7 +4,12 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Select = SelectPrimitive.Root
+const Select = (
+  props: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
+) => {
+  // Disable modal behavior to prevent background scroll locking/scroll jumps
+  return <SelectPrimitive.Root modal={false} {...props} />
+}
 
 const SelectGroup = SelectPrimitive.Group
 
@@ -79,6 +84,8 @@ const SelectContent = React.forwardRef<
         className
       )}
       position={position}
+      onOpenAutoFocus={(e) => e.preventDefault()}
+      onCloseAutoFocus={(e) => e.preventDefault()}
       {...props}
     >
       <SelectScrollUpButton />

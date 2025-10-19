@@ -2050,3 +2050,21 @@ export const useSecureAuctionAPI = () => {
     loadMore,
   };
 };
+
+export const fetchSourceCounts = async (baseFilters: any = {}) => {
+  try {
+    const common = { per_page: '1', simple_paginate: '1' } as const;
+
+    const [encarData, kbcData] = await Promise.all([
+      makeSecureAPICall('cars', { ...baseFilters, ...common, domain_name: 'encar' }),
+      makeSecureAPICall('cars', { ...baseFilters, ...common, domain_name: 'kbchachacha' }),
+    ]);
+
+    return {
+      encar: (encarData as any)?.meta?.total || 0,
+      kbc: (kbcData as any)?.meta?.total || 0,
+    };
+  } catch {
+    return { encar: 0, kbc: 0 };
+  }
+};

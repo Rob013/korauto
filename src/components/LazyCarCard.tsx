@@ -34,6 +34,7 @@ interface LazyCarCardProps {
   details?: {
     seats_count?: number;
   };
+  source?: string;
   // Archive information for sold cars
   is_archived?: boolean;
   archived_at?: string;
@@ -61,7 +62,8 @@ const LazyCarCard = memo(({
   details,
   is_archived,
   archived_at,
-  archive_reason
+  archive_reason,
+  source
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
@@ -298,7 +300,14 @@ const LazyCarCard = memo(({
       }}
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
-      <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
+  <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
+    {source && (
+      <div className="absolute top-2 left-2 z-10">
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-background/80 backdrop-blur">
+          {source === 'encar' ? 'Encar' : source?.toLowerCase()?.includes('kbc') ? 'KBC' : (source || '').toUpperCase()}
+        </Badge>
+      </div>
+    )}
         {/* Always show single image - swipe functionality removed from car cards */}
         {(image || (images && images.length > 0)) ? (
           <img 
