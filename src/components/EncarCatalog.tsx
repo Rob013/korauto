@@ -1235,11 +1235,6 @@ const EncarCatalog = ({
                   `${totalCount?.toLocaleString() || 0} vetura të disponueshme`
                 )}
               </p>
-              {!loading && (sourceCounts.encar > 0 || sourceCounts.kbc > 0) && (
-                <p className="text-muted-foreground text-[11px] sm:text-xs">
-                  {`Encar: ${sourceCounts.encar.toLocaleString()} • KBC: ${sourceCounts.kbc.toLocaleString()}`}
-                </p>
-              )}
             </div>
           </div>
 
