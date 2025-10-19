@@ -12,7 +12,21 @@ interface CarCardProps {
 }
 
 const CarCard = memo(({ car }: CarCardProps) => {
-  const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
+  const { convertUSDtoEUR } = useCurrencyAPI();
+
+  // Helper to safely extract string from potential object
+  const getString = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.name) return value.name;
+    return String(value);
+  };
+
+  const make = getString(car.make);
+  const model = getString(car.model);
+  const fuel = getString(car.fuel);
+  const transmission = getString(car.transmission);
+  const color = getString(car.color);
 
   const price = useMemo(() => {
     return convertUSDtoEUR(car.price || 0);
@@ -25,7 +39,7 @@ const CarCard = memo(({ car }: CarCardProps) => {
           {car.image_url ? (
             <img
               src={car.image_url}
-              alt={`${car.year} ${car.make} ${car.model}`}
+              alt={`${car.year} ${make} ${model}`}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
             />
           ) : (
@@ -38,7 +52,7 @@ const CarCard = memo(({ car }: CarCardProps) => {
         <div className="p-4 space-y-3">
           <div className="space-y-1">
             <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-1">
-              {car.year} {car.make} {car.model}
+              {car.year} {make} {model}
             </h3>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -61,16 +75,16 @@ const CarCard = memo(({ car }: CarCardProps) => {
               <Calendar className="h-4 w-4" />
               <span>{car.year}</span>
             </div>
-            {car.fuel && (
+            {fuel && (
               <div className="flex items-center space-x-1">
                 <Fuel className="h-4 w-4" />
-                <span className="capitalize">{car.fuel}</span>
+                <span className="capitalize">{fuel}</span>
               </div>
             )}
-            {car.transmission && (
+            {transmission && (
               <div className="flex items-center space-x-1">
                 <Settings className="h-4 w-4" />
-                <span className="capitalize">{car.transmission}</span>
+                <span className="capitalize">{transmission}</span>
               </div>
             )}
           </div>
@@ -128,18 +142,26 @@ const UnifiedCatalog = () => {
 
   // Transform Auctions API cars to a unified shape
   const transformedAuctionsCars = useMemo(() => {
+    const getString = (value: any): string => {
+      if (!value) return '';
+      if (typeof value === 'string') return value;
+      if (typeof value === 'object' && value.name) return value.name;
+      return String(value);
+    };
+
     return (auctionsCars || []).map((car: any) => ({
-      id: car.id,
-      make: car.brand,
-      model: car.model,
+      id: car.id || `auction-${Math.random()}`,
+      make: getString(car.brand || car.make),
+      model: getString(car.model),
       year: car.year,
       price: car.price || 0,
       mileage: car.mileage || 0,
-      title: car.title || `${car.brand || ''} ${car.model || ''} ${car.year || ''}`.trim(),
+      title: car.title || `${getString(car.brand || car.make)} ${getString(car.model)} ${car.year || ''}`.trim(),
       image_url: car.image_url || (car.images?.[0] || undefined),
-      fuel: car.fuel,
-      transmission: car.transmission,
-      location: car.location,
+      fuel: getString(car.fuel),
+      transmission: getString(car.transmission),
+      color: getString(car.color),
+      location: getString(car.location),
       lot_number: car.lot_number,
       source_api: 'auctions_api',
       domain_name: 'auctionsapi_com',
