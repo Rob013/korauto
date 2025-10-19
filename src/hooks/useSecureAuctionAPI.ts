@@ -2052,19 +2052,55 @@ export const useSecureAuctionAPI = () => {
 };
 
 export const fetchSourceCounts = async (baseFilters: any = {}) => {
-  try {
-    const common = { per_page: '1', simple_paginate: '1' } as const;
+  const common = { per_page: '1', simple_paginate: '1' } as const;
 
-    const [encarData, kbcData] = await Promise.all([
-      makeSecureAPICall('cars', { ...baseFilters, ...common, domain_name: 'encar' }),
-      makeSecureAPICall('cars', { ...baseFilters, ...common, domain_name: 'kbchachacha' }),
-    ]);
+  const getCount = async (filters: Record<string, string>): Promise<number> => {
+    const combos: Array<Record<string, string>> = [
+      { per_page: '1', simple_paginate: '0' },
+      { per_page: '1', simple_paginate: '1' },
+      { per_page: '1' },
+    ];
+    for (const combo of combos) {
+      try {
+        const data = await makeSecureAPICall('cars', { ...baseFilters, ...filters, ...combo });
+        const total = (data as any)?.meta?.total;
+        if (typeof total === 'number' && total >= 0) return total;
+        const arr = (data as any)?.data;
+        if (Array.isArray(arr)) return arr.length;
+      } catch {
+        // try next combo
+      }
+    }
+    return 0;
+  };
 
-    return {
-      encar: (encarData as any)?.meta?.total || 0,
-      kbc: (kbcData as any)?.meta?.total || 0,
-    };
-  } catch {
-    return { encar: 0, kbc: 0 };
-  }
+  // Try several likely parameter names and values for each source
+  const paramKeys = ['domain_name', 'domain', 'provider', 'source', 'source_api'];
+  const ENC = ['encar', 'encar_com'];
+  const KBC = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
+
+  const trySource = async (candidates: string[]): Promise<number> => {
+    // Try domain_name first for each candidate, then alternate keys
+    for (const val of candidates) {
+      // domain_name preferred
+      const first = await getCount({ domain_name: val });
+      if (first > 0) return first;
+      // try alternative keys
+      for (const key of paramKeys) {
+        if (key === 'domain_name') continue;
+        const n = await getCount({ [key]: val } as any);
+        if (n > 0) return n;
+      }
+    }
+    return 0;
+  };
+
+  // Combined total (no source filter)
+  const allTotal = await (async () => {
+    // Reuse getCount without any source filter
+    return getCount({});
+  })();
+
+  const [encar, kbc] = await Promise.all([trySource(ENC), trySource(KBC)]);
+  return { encar, kbc, all: allTotal } as { encar: number; kbc: number; all: number };
 };

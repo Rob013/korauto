@@ -103,7 +103,7 @@ const EncarCatalog = ({
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
-  const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number }>({ encar: 0, kbc: 0 });
+  const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
 
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -864,8 +864,8 @@ const EncarCatalog = ({
     let cancelled = false;
     (async () => {
       try {
-        const { encar, kbc } = await fetchSourceCounts(filters);
-        if (!cancelled) setSourceCounts({ encar, kbc });
+        const { encar, kbc, all } = await fetchSourceCounts(filters);
+        if (!cancelled) setSourceCounts({ encar, kbc, all });
       } catch {}
     })();
     return () => { cancelled = true; };
@@ -1232,9 +1232,14 @@ const EncarCatalog = ({
                     Duke ngarkuar...
                   </span>
                 ) : (
-                  `${totalCount?.toLocaleString() || 0} vetura • Encar: ${sourceCounts.encar.toLocaleString()} • KBC: ${sourceCounts.kbc.toLocaleString()}`
+                  `${totalCount?.toLocaleString() || 0} vetura të disponueshme`
                 )}
               </p>
+              {!loading && (sourceCounts.encar > 0 || sourceCounts.kbc > 0) && (
+                <p className="text-muted-foreground text-[11px] sm:text-xs">
+                  {`Encar: ${sourceCounts.encar.toLocaleString()} • KBC: ${sourceCounts.kbc.toLocaleString()}`}
+                </p>
+              )}
             </div>
           </div>
 
