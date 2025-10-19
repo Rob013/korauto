@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
-import { useAuctionsApiSupabase } from "@/hooks/useAuctionsApiSupabase";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useInView } from "@/hooks/useInView";
 import { useSortedCars, getSortOptions, SortOption } from "@/hooks/useSortedCars";
@@ -56,13 +55,6 @@ const HomeCarsSection = memo(() => {
     fetchGrades,
     fetchTrimLevels
   } = useSecureAuctionAPI();
-
-  // New Auctions API integration
-  const {
-    cars: auctionsCars,
-    isLoading: auctionsLoading,
-    startScroll
-  } = useAuctionsApiSupabase({ autoStart: false });
   const {
     convertUSDtoEUR,
     exchangeRate
@@ -230,68 +222,10 @@ const HomeCarsSection = memo(() => {
     });
   };
 
-  // Helper to safely extract string from potential object
-  const getString = (value: any): string => {
-    if (!value) return '';
-    if (typeof value === 'string') return value;
-    if (typeof value === 'object' && value.name) return value.name;
-    return String(value);
-  };
-
-  // Transform Auctions API cars to match existing format
-  const transformedAuctionsCars = useMemo(() => {
-    return (auctionsCars || []).map((car: any) => ({
-      id: car.id || `auction-${Math.random()}`,
-      manufacturer: { id: 0, name: getString(car.brand || car.make) },
-      model: { id: 0, name: getString(car.model) },
-      year: car.year,
-      lots: [{
-        buy_now: car.price || 0,
-        images: {
-          normal: car.images || [car.image_url].filter(Boolean)
-        },
-        odometer: { km: car.mileage || 0 }
-      }],
-      fuel: { name: getString(car.fuel) },
-      transmission: { name: getString(car.transmission) },
-      color: { name: getString(car.color) },
-      title: car.title || `${getString(car.brand || car.make)} ${getString(car.model)} ${car.year || ''}`.trim(),
-      lot_number: car.lot_number || '',
-      status: 1,
-      source_api: 'auctions_api'
-    }));
-  }, [auctionsCars]);
-
-  // Merge cars from both APIs
-  const mergedCars = useMemo(() => {
-    const result: any[] = [];
-    const seen = new Set<string>();
-    
-    // Add cars from existing API
-    for (const c of cars || []) {
-      const key = `${c.id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        result.push(c);
-      }
-    }
-    
-    // Add cars from new Auctions API
-    for (const c of transformedAuctionsCars || []) {
-      const key = `${c.id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        result.push(c);
-      }
-    }
-    
-    return result;
-  }, [cars, transformedAuctionsCars]);
-
   // Type conversion to match the sorting hook interface - use fallback data if API fails
   const carsForSorting = useMemo(() => {
-    // Use merged cars or fallback data when there's an error
-    const sourceCars = error && mergedCars.length === 0 ? fallbackCars : mergedCars;
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars);
     // Filter to show only cars with real buy_now pricing
     const carsWithRealPricing = filterCarsWithBuyNowPricing(cleanedCars);
@@ -309,7 +243,7 @@ const HomeCarsSection = memo(() => {
         cylinders: Number(car.cylinders || 0)
       };
     });
-  }, [mergedCars, error, exchangeRate.rate]);
+  }, [cars, error, exchangeRate.rate]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
@@ -369,9 +303,6 @@ const HomeCarsSection = memo(() => {
     fetchCars(dailyPage, {
       per_page: "50"
     }, true);
-
-    // Load cars from new Auctions API (limited batches for homepage)
-    startScroll(3, 150);
 
     // Load manufacturers with caching
     const loadManufacturers = async () => {

@@ -9,7 +9,6 @@ import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen,
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
-import { useAuctionsApiSupabase } from "@/hooks/useAuctionsApiSupabase";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { AISearchBar } from "@/components/AISearchBar";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
@@ -72,13 +71,6 @@ const EncarCatalog = ({
     convertUSDtoEUR,
     exchangeRate
   } = useCurrencyAPI();
-
-  // New Auctions API integration
-  const {
-    cars: auctionsCars,
-    isLoading: auctionsLoading,
-    startScroll
-  } = useAuctionsApiSupabase({ autoStart: false });
 
   // Global sorting hook
   const {
@@ -146,64 +138,6 @@ const EncarCatalog = ({
   // Memoized helper function to extract grades from title - now using utility
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);
 
-  // Helper to safely extract string from potential object
-  const getString = useCallback((value: any): string => {
-    if (!value) return '';
-    if (typeof value === 'string') return value;
-    if (typeof value === 'object' && value.name) return value.name;
-    return String(value);
-  }, []);
-
-  // Transform Auctions API cars to match existing format
-  const transformedAuctionsCars = useMemo(() => {
-    return (auctionsCars || []).map((car: any) => ({
-      id: car.id || `auction-${Math.random()}`,
-      manufacturer: { id: 0, name: getString(car.brand || car.make) },
-      model: { id: 0, name: getString(car.model) },
-      year: car.year,
-      lots: [{
-        buy_now: car.price || 0,
-        images: {
-          normal: car.images || [car.image_url].filter(Boolean)
-        },
-        odometer: { km: car.mileage || 0 }
-      }],
-      fuel: { name: getString(car.fuel) },
-      transmission: { name: getString(car.transmission) },
-      color: { name: getString(car.color) },
-      title: car.title || `${getString(car.brand || car.make)} ${getString(car.model)} ${car.year || ''}`.trim(),
-      lot_number: car.lot_number || '',
-      status: 1,
-      source_api: 'auctions_api'
-    }));
-  }, [auctionsCars, getString]);
-
-  // Merge cars from both APIs
-  const mergedCars = useMemo(() => {
-    const result: any[] = [];
-    const seen = new Set<string>();
-    
-    // Add cars from existing API
-    for (const c of cars || []) {
-      const key = `${c.id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        result.push(c);
-      }
-    }
-    
-    // Add cars from new Auctions API
-    for (const c of transformedAuctionsCars || []) {
-      const key = `${c.id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        result.push(c);
-      }
-    }
-    
-    return result;
-  }, [cars, transformedAuctionsCars]);
-
   // Helper function to check if filters are in default "all brands" state
   const isDefaultState = useMemo(() => {
     // Handle case where filters might be undefined during initial render
@@ -215,8 +149,8 @@ const EncarCatalog = ({
 
   // Memoized client-side grade and engine filtering for better performance
   const filteredCars = useMemo(() => {
-    // Use merged cars or fallback data when there's an error
-    const sourceCars = error && mergedCars.length === 0 ? fallbackCars : mergedCars;
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
     
     // Apply grade filter
@@ -230,7 +164,7 @@ const EncarCatalog = ({
     
     // Filter to show only cars with real buy_now pricing data
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
+  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
 
   // Extract engine variants from filtered cars for the dropdown
   const engineVariants = useMemo(() => {
@@ -880,9 +814,6 @@ const EncarCatalog = ({
           } : {})
         };
         await fetchCars(urlCurrentPage, initialFilters, true);
-
-        // Load cars from new Auctions API
-        startScroll(3, 200);
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
