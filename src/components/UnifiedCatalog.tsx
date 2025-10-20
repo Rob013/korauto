@@ -15,8 +15,8 @@ const CarCard = memo(({ car }: CarCardProps) => {
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
 
   const price = useMemo(() => {
-    return convertUSDtoEUR(car.price || 0, exchangeRate.rate);
-  }, [car.price, convertUSDtoEUR, exchangeRate.rate]);
+    return convertUSDtoEUR(car.price || 0);
+  }, [car.price, convertUSDtoEUR]);
 
   return (
     <div className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 group rounded-lg overflow-hidden bg-white dark:bg-gray-800 border">

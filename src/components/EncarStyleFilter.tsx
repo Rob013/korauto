@@ -412,6 +412,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           </div>
 
           <Button
+            type="button"
             variant="ghost"
             onClick={() => toggleSection('more')}
             className="w-full justify-between text-xs h-7"
@@ -645,6 +646,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       {/* Basic Filters Section */}
       <div className="space-y-3">
         <Button
+          type="button"
           variant="ghost"
           onClick={() => toggleSection('basic')}
           className="w-full justify-between p-2 h-auto"
@@ -720,6 +722,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       {/* Advanced Filters Section */}
       <div className="space-y-3">
         <Button
+          type="button"
           variant="ghost"
           onClick={() => toggleSection('advanced')}
           className="w-full justify-between p-2 h-auto"
