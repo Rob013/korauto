@@ -604,6 +604,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
         <div className="flex flex-col gap-2 pt-2 border-t">
           <Button
+            type="button"
             onClick={() => {
               handleSearchClick();
               // Close filter panel on mobile
