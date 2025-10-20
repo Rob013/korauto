@@ -1066,11 +1066,11 @@ const EncarCatalog = ({
                 </Badge>}
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={handleClearFilters} className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}>
+              <Button type="button" variant="ghost" size="sm" onClick={handleClearFilters} className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}>
                 <span className="text-xs">Clear</span>
               </Button>
               {/* Only show close button on mobile */}
-              {isMobile && <Button variant="ghost" size="sm" onClick={() => {
+              {isMobile && <Button type="button" variant="ghost" size="sm" onClick={() => {
               console.log("Close button clicked, isMobile:", isMobile);
               setShowFilters(false);
               setHasExplicitlyClosed(true); // Mark as explicitly closed
@@ -1177,13 +1177,13 @@ const EncarCatalog = ({
             <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full flex-nowrap">
               {/* Left group: Back and Filter buttons */}
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 sm:h-9 px-2 sm:px-3">
+                <Button type="button" variant="ghost" size="sm" onClick={() => window.history.back()} className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 sm:h-9 px-2 sm:px-3">
                   <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="text-xs sm:text-sm whitespace-nowrap">Back</span>
                 </Button>
                 
                 {/* Filter Toggle Button - Mobile only */}
-                <Button variant="default" size="sm" onClick={handleFilterToggle} className="lg:hidden flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform">
+                <Button type="button" variant="default" size="sm" onClick={handleFilterToggle} className="lg:hidden flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform">
                   {showFilters ? <PanelLeftClose className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <PanelLeftOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                   <span className="whitespace-nowrap">{showFilters ? 'Fshih' : 'Filtrat'}</span>
                   {hasSelectedCategories && !showFilters && <span className="ml-1 text-xs bg-primary-foreground/20 px-1.5 py-0.5 rounded-full">
@@ -1195,7 +1195,7 @@ const EncarCatalog = ({
               {/* Right group: View and Sort controls */}
               <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
                 {/* View Mode Toggle Button */}
-                <Button variant="outline" size="sm" onClick={handleViewModeToggle} className="h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1 transition-colors hover:bg-accent" title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}>
+                <Button type="button" variant="outline" size="sm" onClick={handleViewModeToggle} className="h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1 transition-colors hover:bg-accent" title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}>
                   {viewMode === 'grid' ? <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Grid3X3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                   <span className="text-xs sm:text-sm whitespace-nowrap">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
                 </Button>
