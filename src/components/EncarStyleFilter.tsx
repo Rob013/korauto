@@ -311,6 +311,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               {yearRangePresets.slice(0, 4).map((preset) => (
                 <Button
                   key={preset.label}
+                  type="button"
                   variant={
                     filters.from_year === preset.from.toString() && 
                     filters.to_year === preset.to.toString() 
@@ -633,6 +634,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
         <Button 
+          type="button"
           variant="outline" 
           size="sm" 
           onClick={onClearFilters} 
@@ -780,6 +782,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     {yearRangePresets.map((preset) => (
                       <Button
                         key={preset.label}
+                        type="button"
                         variant={
                           filters.from_year === preset.from.toString() && 
                           filters.to_year === preset.to.toString() 
@@ -795,6 +798,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     ))}
                     {(filters.from_year || filters.to_year) && (
                       <Button
+                        type="button"
                         variant="outline"
                         size="sm"
                         className="h-7 px-2 text-xs text-muted-foreground"
