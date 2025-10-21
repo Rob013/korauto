@@ -182,6 +182,7 @@ interface CarDetails {
   year: number;
   price: number;
   image?: string;
+  source_label?: string;
   vin?: string;
   mileage?: number;
   transmission?: string;
@@ -900,6 +901,7 @@ const CarDetails = memo(() => {
   }, [car, hasAutoExpanded]);
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
+  const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
   
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
@@ -1066,6 +1068,10 @@ const CarDetails = memo(() => {
           return;
         }
         const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
+        const domainRaw = String(lotData?.domain?.name || carData?.domain_name || carData?.provider || carData?.source_api || '').toLowerCase();
+        const isKbc = KBC_DOMAINS.some(k => domainRaw.includes(k));
+        const sourceLabel = domainRaw ? (isKbc ? 'KB Chachacha' : 'Encar') : undefined;
+
         const transformedCar: CarDetails = {
           id: carData.id?.toString() || lotData.lot,
           make: carData.manufacturer?.name || "Unknown",
@@ -1074,6 +1080,7 @@ const CarDetails = memo(() => {
           price,
           image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
           images: lotData.images?.normal || lotData.images?.big || [],
+          source_label: sourceLabel,
           vin: carData.vin,
           mileage: lotData.odometer?.km,
           transmission: carData.transmission?.name,
@@ -1612,6 +1619,13 @@ const CarDetails = memo(() => {
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight flex-1 min-w-0">
                   {car.year} {car.make} {car.model}
+                  {car.source_label && (
+                    <span className="ml-2 align-middle">
+                      <Badge variant="secondary" className="text-[10px] md:text-xs px-2 py-0.5">
+                        {car.source_label}
+                      </Badge>
+                    </span>
+                  )}
                 </h1>
                 <div className="text-right flex-shrink-0">
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
