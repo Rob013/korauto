@@ -106,6 +106,7 @@ const EncarCatalog = ({
   const isMobile = useIsMobile();
   const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid } = useAuctionsApiGrid();
+  const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
 
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -902,6 +903,24 @@ const EncarCatalog = ({
   useEffect(() => {
     fetchGrid(3, 100).catch(() => {});
   }, []);
+
+  // Debug: Count how many KB Chachacha cars are added via grid (not present in secure list)
+  useEffect(() => {
+    try {
+      if (!Array.isArray(gridCars) || !Array.isArray(cars)) return;
+      const secureIds = new Set((cars || []).map((c: any) => String(c.id)));
+      const kbcFromGrid = gridCars.filter((c: any) => {
+        const d = String(c?.domain_name || c?.domain?.name || '').toLowerCase();
+        return KBC_DOMAINS.some(k => d.includes(k));
+      });
+      const newKbc = kbcFromGrid.filter((c: any) => !secureIds.has(String(c.id)));
+      if (newKbc.length > 0) {
+        console.log('➡️ New KB Chachacha cars added via grid:', newKbc.length);
+      } else {
+        console.log('➡️ New KB Chachacha cars added via grid: 0');
+      }
+    } catch {}
+  }, [gridCars, cars]);
 
   // OPTIMIZED: Simplified scroll position saving with less frequent updates
   useEffect(() => {
