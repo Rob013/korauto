@@ -65,16 +65,30 @@ Deno.serve(async (req) => {
     const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
     const API_BASE_URL = 'https://auctionsapi.com/api';
     
+    // Parse request body for action type
+    const requestBody = await req.json().catch(() => ({ action: 'status_refresh' }));
+    const syncAction = requestBody.action || 'status_refresh';
+    const syncType = requestBody.type || 'incremental'; // 'incremental' or 'full'
+    
+    console.log(`📋 Sync action: ${syncAction}, type: ${syncType}`);
+    
+    // For status refresh, do a quick incremental sync
+    const pagesLimit = syncType === 'full' ? 500 : 1; // Full sync: 500 pages, Incremental: 1 page
+    const perPage = 50;
+    
     let page = 1;
     let totalSynced = 0;
+    let encarCount = 0;
+    let kbchachaCount = 0;
     let hasMorePages = true;
     
-    while (hasMorePages && page <= 10) { // Limit to 10 pages for safety
+    while (hasMorePages && page <= pagesLimit) {
       console.log(`📄 Fetching page ${page}...`);
       
-      const response = await fetch(`${API_BASE_URL}/cars?per_page=50&page=${page}`, {
+      // Fetch all cars without domain filter to get both Encar and KB Chachacha
+      const response = await fetch(`${API_BASE_URL}/cars?per_page=${perPage}&page=${page}&simple_paginate=0`, {
         headers: {
-          'accept': '*/*',
+          'accept': 'application/json',
           'x-api-key': API_KEY
         }
       });
@@ -105,6 +119,18 @@ Deno.serve(async (req) => {
             const lot = car.lots?.[0];
             const price = lot?.buy_now ? Math.round(lot.buy_now + 2300) : null;
             
+            // Detect source from lot domain
+            const lotDomain = lot?.domain?.name || 'unknown';
+            const isKBChachacha = lotDomain.includes('kbchachacha') || lotDomain.includes('kb_chachacha');
+            const sourceLabel = isKBChachacha ? 'KB Chachacha' : 'Encar';
+            
+            // Track counts by source
+            if (isKBChachacha) {
+              kbchachaCount++;
+            } else {
+              encarCount++;
+            }
+            
             const carCache = {
               id: car.id.toString(),
               api_id: car.id.toString(),
@@ -112,6 +138,7 @@ Deno.serve(async (req) => {
               model: car.model?.name || 'Unknown',
               year: car.year || 2020,
               price: price,
+              price_cents: price ? price * 100 : null,
               vin: car.vin,
               fuel: car.fuel?.name,
               transmission: car.transmission?.name,
@@ -119,10 +146,13 @@ Deno.serve(async (req) => {
               condition: lot?.condition?.name?.replace('run_and_drives', 'Good'),
               lot_number: lot?.lot,
               mileage: lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : null,
-              images: JSON.stringify(lot?.images?.normal || lot?.images?.big || []),
-              car_data: JSON.stringify(car),
-              lot_data: JSON.stringify(lot || {}),
-              last_api_sync: new Date().toISOString()
+              images: lot?.images?.normal || lot?.images?.big || [],
+              source_site: lotDomain,
+              location_country: 'South Korea',
+              car_data: car,
+              lot_data: lot || {},
+              last_api_sync: new Date().toISOString(),
+              sale_status: lot?.status === 3 ? 'sold' : lot?.status === 2 ? 'pending' : 'active'
             };
 
             const { error } = await supabaseClient
@@ -133,7 +163,7 @@ Deno.serve(async (req) => {
               });
 
             if (error) {
-              console.error(`❌ Error upserting car ${car.id}:`, error);
+              console.error(`❌ Error upserting car ${car.id} (${sourceLabel}):`, error);
             } else {
               totalSynced++;
             }
@@ -148,17 +178,29 @@ Deno.serve(async (req) => {
       hasMorePages = hasNext;
       page++;
       
-      // Rate limiting delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait 2 seconds between page requests to avoid rate limiting
+      if (hasMorePages && page <= pagesLimit) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
 
-    console.log(`✅ Sync completed! Total cars synced: ${totalSynced}`);
+    // Get total counts from database
+    const { count: totalCarsInDb } = await supabaseClient
+      .from('cars_cache')
+      .select('*', { count: 'exact', head: true });
+
+    console.log(`✅ Sync complete! Synced: ${totalSynced} (Encar: ${encarCount}, KB Chachacha: ${kbchachaCount})`);
+    console.log(`📊 Total cars in database: ${totalCarsInDb}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: `Successfully synced ${totalSynced} cars`,
-        totalSynced
+        totalSynced,
+        encarCount,
+        kbchachaCount,
+        totalInDatabase: totalCarsInDb,
+        syncType
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

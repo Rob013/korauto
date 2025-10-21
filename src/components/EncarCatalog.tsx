@@ -1230,7 +1230,9 @@ const EncarCatalog = ({
                     Duke ngarkuar...
                   </span>
                 ) : (
-                  `${totalCount?.toLocaleString() || 0} vetura të disponueshme`
+                  <>
+                    <span className="font-semibold text-foreground">{totalCount?.toLocaleString() || 0}</span> vetura të disponueshme nga Encar & KB Chachacha
+                  </>
                 )}
               </p>
             </div>
