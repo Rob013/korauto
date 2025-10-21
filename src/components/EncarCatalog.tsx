@@ -9,6 +9,7 @@ import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen,
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
+import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { AISearchBar } from "@/components/AISearchBar";
@@ -104,6 +105,7 @@ const EncarCatalog = ({
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
+  const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid } = useAuctionsApiGrid();
 
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -178,9 +180,32 @@ const EncarCatalog = ({
 
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
+  // Merge AuctionsAPI grid cars with secure cars BEFORE sorting to share the same pipeline
+  const mergedCars = useMemo(() => {
+    const result = [...(filterOutTestCars(error && cars.length === 0 ? fallbackCars : cars) || [])];
+    if (Array.isArray(gridCars) && gridCars.length > 0) {
+      // Include only cars with buy_now price to match existing rule
+      gridCars.forEach((c: any) => {
+        const lot = c?.lots?.[0];
+        if (lot?.buy_now && lot.buy_now > 0) {
+          result.push(c);
+        }
+      });
+    }
+    return result;
+  }, [cars, gridCars, error]);
+
+  // Apply filters on merged list
+  const mergedFilteredCars = useMemo(() => {
+    const gradeFiltered = applyGradeFilter(mergedCars, filters?.grade_iaai) || [];
+    const engineSpec = (filters as any)?.engine_spec;
+    const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
+    return filterCarsWithBuyNowPricing(engineFiltered);
+  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec]);
+
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
-    return filteredCars.map(car => {
+    return mergedFilteredCars.map(car => {
       // Calculate EUR price using current exchange rate
       const priceUSD = Number(car.lots?.[0]?.buy_now || car.buy_now || 0);
       const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
@@ -198,7 +223,7 @@ const EncarCatalog = ({
         } // Ensure engine has required name property
       };
     });
-  }, [filteredCars, exchangeRate.rate]);
+  }, [mergedFilteredCars, exchangeRate.rate]);
 
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);
@@ -225,7 +250,7 @@ const EncarCatalog = ({
     // Priority 3: Regular sorted cars (recently added by default)
     // For server-side pagination, use all sorted results without client-side slicing
     // Server already provides the correct page data with 'recently_added' sort by default
-    console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (sort: ${sortBy || 'recently_added'}, default shows recently added from API)`);
+    console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (including AuctionsAPI grid) (sort: ${sortBy || 'recently_added'})`);
     return sortedResults;
   }, [showAllCars, allCarsData, sortedAllCarsResults, sortBy, isGlobalSortingReady, shouldUseGlobalSorting, getCarsForCurrentPage, currentPage, globalSortingState.currentSortBy, isDefaultState, hasUserSelectedSort, sortedResults]);
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -865,11 +890,18 @@ const EncarCatalog = ({
     (async () => {
       try {
         const { encar, kbc, all } = await fetchSourceCounts(filters);
-        if (!cancelled) setSourceCounts({ encar, kbc, all });
+        // Augment total with gridCars length when present
+        const extra = Array.isArray(gridCars) ? gridCars.filter((c: any) => c?.lots?.[0]?.buy_now && c.lots[0].buy_now > 0).length : 0;
+        if (!cancelled) setSourceCounts({ encar, kbc, all: (all || 0) + extra });
       } catch {}
     })();
     return () => { cancelled = true; };
-  }, [filters]);
+  }, [filters, gridCars?.length]);
+
+  // Kick off fetching AuctionsAPI grid data once on mount (small number of pages for responsiveness)
+  useEffect(() => {
+    fetchGrid(3, 100).catch(() => {});
+  }, []);
 
   // OPTIMIZED: Simplified scroll position saving with less frequent updates
   useEffect(() => {
@@ -1231,7 +1263,7 @@ const EncarCatalog = ({
                   </span>
                 ) : (
                   <>
-                    <span className="font-semibold text-foreground">{totalCount?.toLocaleString() || 0}</span> vetura të disponueshme
+                    <span className="font-semibold text-foreground">{(Number(totalCount || 0) + (Array.isArray(gridCars) ? gridCars.filter((c:any)=>c?.lots?.[0]?.buy_now && c.lots[0].buy_now > 0).length : 0)).toLocaleString()}</span> vetura të disponueshme
                   </>
                 )}
               </p>
