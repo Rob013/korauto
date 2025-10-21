@@ -398,8 +398,8 @@ const EncarCatalog = ({
     // Reset global sorting when filters change
     clearGlobalSorting();
 
-    // Use 200 cars per page for proper pagination
-    const filtersWithPagination = addPaginationToFilters({ ...newFilters, domain_name: 'kbchachacha' }, 200, 1);
+    // Use 200 cars per page for proper pagination - fetch from ALL sources
+    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
 
     // Use current sort if user has selected one
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
@@ -441,8 +441,8 @@ const EncarCatalog = ({
     // Clear global sorting when filters change
     clearGlobalSorting();
 
-    // Apply filters immediately - no debouncing
-    const filtersWithPagination = addPaginationToFilters({ ...newFilters, domain_name: 'kbchachacha' }, 200, 1);
+    // Apply filters immediately - no debouncing - fetch from ALL sources
+    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
       ...filtersWithPagination,
       sort_by: sortBy
@@ -485,8 +485,8 @@ const EncarCatalog = ({
     }
     setCurrentPage(page);
 
-    // Fetch cars for the specific page with proper API pagination
-    const filtersWithPagination = addPaginationToFilters({ ...filters, domain_name: 'kbchachacha' }, 200, page);
+    // Fetch cars for the specific page with proper API pagination - fetch from ALL sources
+    const filtersWithPagination = addPaginationToFilters(filters, 200, page);
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
       ...filtersWithPagination,
       sort_by: sortBy
@@ -1101,16 +1101,14 @@ const EncarCatalog = ({
               compact={true} 
               onSearchCars={() => {
             console.log("Search button clicked, isMobile:", isMobile);
-            // Apply search/filters with current sort preference
+            // Apply search/filters with current sort preference - fetch from ALL sources
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
             const searchFilters = effectiveSort ? {
               ...filters,
-              domain_name: 'kbchachacha',
               per_page: "200",
               sort_by: effectiveSort
             } : {
               ...filters,
-              domain_name: 'kbchachacha',
               per_page: "200"
             };
             fetchCars(1, searchFilters, true);
