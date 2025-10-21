@@ -34,7 +34,7 @@ const HomeSection = () => {
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-2xl mx-auto mt-8 stagger-animation">
             <div className="text-center modern-card p-6 hover-lift-gentle">
-              <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">400+</div>
+              <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">450+</div>
               <div className="text-sm text-muted-foreground">Makina të Shitura në Kosovë</div>
             </div>
             <div className="text-center modern-card p-6 hover-lift-gentle">
@@ -42,8 +42,8 @@ const HomeSection = () => {
               <div className="text-sm text-muted-foreground">Garancion ne Motor, Transimison dhe KM</div>
             </div>
             <div className="text-center col-span-2 md:col-span-1 modern-card p-6 hover-lift-gentle">
-              <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">24/7</div>
-              <div className="text-sm text-muted-foreground">Mbështetje</div>
+              <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">NR.1</div>
+              <div className="text-sm text-muted-foreground">Ne Kosove</div>
             </div>
           </div>
         </div>
