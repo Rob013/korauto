@@ -105,7 +105,7 @@ const EncarCatalog = ({
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
-  const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid } = useAuctionsApiGrid();
+  const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
 
   // Initialize showFilters - always open on desktop, closed on mobile
@@ -901,7 +901,12 @@ const EncarCatalog = ({
 
   // Kick off fetching AuctionsAPI grid data once on mount (small number of pages for responsiveness)
   useEffect(() => {
-    fetchGrid(3, 100).catch(() => {});
+    const link = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK as string | undefined;
+    if (link) {
+      fetchFromLink(link, 10, 100).catch(() => {});
+    } else {
+      fetchGrid(3, 100).catch(() => {});
+    }
   }, []);
 
   // Debug: Count how many KB Chachacha cars are added via grid (not present in secure list)

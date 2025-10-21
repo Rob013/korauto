@@ -10,6 +10,20 @@ export const useAuctionsApiGrid = () => {
   const [error, setError] = useState<string | null>(null);
   const scrollingRef = useRef(false);
 
+  const fetchWithCors = async (url: string, asText: boolean = false) => {
+    try {
+      const res = await fetch(url, { method: 'GET' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return asText ? res.text() : res.json();
+    } catch (e) {
+      // Fallback via corsproxy
+      const proxied = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const res = await fetch(proxied, { method: 'GET' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return asText ? res.text() : res.json();
+    }
+  };
+
   const pickTitle = (titles: any): string | null => {
     if (!titles || typeof titles !== 'object') return null;
     const order = ['en', 'ru', 'ro', 'ko', 'uk'];
@@ -70,9 +84,7 @@ export const useAuctionsApiGrid = () => {
       const pages: any[] = [];
       for (let i = 0; i < Math.max(1, maxPages); i++) {
         if (!nextUrl) break;
-        const res = await fetch(nextUrl, { method: 'GET' });
-        if (!res.ok) break;
-        const payload = await res.json();
+        const payload = await fetchWithCors(nextUrl, false);
         const rawItems = Array.isArray(payload) ? payload : (payload.data || []);
         pages.push(rawItems);
         nextUrl = payload?.next_url || null;
@@ -99,7 +111,69 @@ export const useAuctionsApiGrid = () => {
     }
   }, []);
 
-  return { cars, isLoading, error, fetchGrid } as const;
+  const resolveStartApiUrl = async (input: string, limit: number): Promise<string | null> => {
+    if (!input) return null;
+    // If already an API endpoint, use it
+    if (input.includes('/cars?')) {
+      return input;
+    }
+    // Otherwise assume it's the example HTML page; parse out the target URL
+    try {
+      const html = await fetchWithCors(input, true) as string;
+      const match = html.match(/const\s+target\s*=\s*"([^"]+)"/);
+      if (match && match[1]) {
+        const url = new URL(match[1]);
+        // Ensure limit is respected/overridden
+        url.searchParams.set('limit', String(limit));
+        return url.toString();
+      }
+      // Fallback: search for an API URL pattern in HTML
+      const m2 = html.match(/https:\/\/api\.auctionsapi\.com\/cars\?[^"']+/);
+      if (m2 && m2[0]) return m2[0];
+    } catch (e) {
+      // ignore
+    }
+    return null;
+  };
+
+  const fetchFromLink = useCallback(async (link: string, maxPages: number = 5, limit: number = 100) => {
+    if (scrollingRef.current) return;
+    scrollingRef.current = true;
+    setIsLoading(true);
+    setError(null);
+    try {
+      let nextUrl = await resolveStartApiUrl(link, limit);
+      if (!nextUrl) throw new Error('Could not resolve API URL from link');
+      const pages: any[] = [];
+      for (let i = 0; i < Math.max(1, maxPages); i++) {
+        if (!nextUrl) break;
+        const payload = await fetchWithCors(nextUrl, false);
+        const rawItems = Array.isArray(payload) ? payload : (payload.data || []);
+        pages.push(rawItems);
+        nextUrl = payload?.next_url || null;
+        if (!nextUrl) break;
+      }
+      const flat = pages.flat();
+      const normalized = flat.map(normalizeCar);
+      const seen = new Set<string>();
+      const unique = normalized.filter((c) => {
+        const key = String(c.id);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setCars(unique);
+      return unique;
+    } catch (e: any) {
+      setError(e?.message || 'Failed to fetch AuctionsAPI grid from link');
+      return [];
+    } finally {
+      setIsLoading(false);
+      scrollingRef.current = false;
+    }
+  }, []);
+
+  return { cars, isLoading, error, fetchGrid, fetchFromLink } as const;
 };
 
 export default useAuctionsApiGrid;
