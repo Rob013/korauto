@@ -52,6 +52,27 @@ export default function AdminSyncDashboard() {
       setTestInProgress(false);
     }
   };
+  const handleImportFromGridLink = async () => {
+    try {
+      const link = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK || 'https://auctionsapi.com/example/kbchachacha-grid-cars.html';
+      const res = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'grid_link', link, limit: 100, pages: 50 })
+      });
+      const result = await res.json();
+      if (result?.success) {
+        toast({
+          title: 'Grid Import Complete',
+          description: `Imported ${result.imported} cars (KBC: ${result.kbchachaCount}, Encar: ${result.encarCount})`
+        });
+      } else {
+        throw new Error(result?.error || 'Import failed');
+      }
+    } catch (error) {
+      toast({ title: 'Import Failed', description: error instanceof Error ? error.message : 'Unknown error', variant: 'destructive' });
+    }
+  };
   const handleSeedData = async () => {
     try {
       const response = await fetch(`https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync?seed=true`, {
@@ -237,6 +258,16 @@ export default function AdminSyncDashboard() {
                 {testInProgress ? 'Syncing...' : 'Incremental'}
               </span>
             </Button>
+
+          <Button
+            onClick={handleImportFromGridLink}
+            variant="outline"
+            className="gap-1 sm:gap-2"
+            size="sm"
+          >
+            <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="text-xs sm:text-sm">Import Grid Link</span>
+          </Button>
 
             <Button
               onClick={handleCleanupSoldCars}

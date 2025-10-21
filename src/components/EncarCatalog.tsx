@@ -904,6 +904,17 @@ const EncarCatalog = ({
     const link = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK as string | undefined;
     if (link) {
       fetchFromLink(link, 10, 100).catch(() => {});
+      // Trigger cloud import to persist and count
+      fetch('https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'grid_link', link, limit: 100, pages: 50 })
+      }).then(r => r.json()).then((res) => {
+        if (res?.success) {
+          console.log(`☁️ Cloud import done: imported ${res.imported} (KBC: ${res.kbchachaCount}, Encar: ${res.encarCount})`);
+          toast({ title: 'Shtim i të dhënave', description: `U shtuan ${res.imported} makina nga linku`, duration: 4000 });
+        }
+      }).catch(() => {});
     } else {
       fetchGrid(3, 100).catch(() => {});
     }

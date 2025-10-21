@@ -72,6 +72,132 @@ Deno.serve(async (req) => {
     
     console.log(`📋 Sync action: ${syncAction}, type: ${syncType}`);
     
+    // Utility: fetch with graceful fallback
+    const fetchWithCors = async (url: string): Promise<Response> => {
+      return await fetch(url, { method: 'GET' });
+    };
+
+    // If asked to import from an example/demo HTML link, parse and import all pages
+    if (syncAction === 'grid_link') {
+      try {
+        const link: string | undefined = requestBody.link;
+        if (!link) {
+          return new Response(JSON.stringify({ success: false, error: 'Missing link' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        // 1) Resolve start API URL from the HTML demo page
+        const htmlRes = await fetchWithCors(link);
+        if (!htmlRes.ok) throw new Error(`Failed to fetch link HTML: ${htmlRes.status}`);
+        const html = await htmlRes.text();
+        let startUrl: string | null = null;
+        const m = html.match(/const\s+target\s*=\s*"([^"]+)"/);
+        if (m && m[1]) {
+          startUrl = m[1];
+        } else {
+          const m2 = html.match(/https:\/\/api\.auctionsapi\.com\/cars\?[^"']+/);
+          if (m2 && m2[0]) startUrl = m2[0];
+        }
+        if (!startUrl) throw new Error('Could not resolve API URL from provided link');
+
+        // Respect a reasonable limit from request body or default
+        const limit = Number(requestBody.limit || 100);
+        const pagesLimit = Number(requestBody.pages || 50); // safeguard
+        const urlObj = new URL(startUrl);
+        urlObj.searchParams.set('limit', String(limit));
+        let nextUrl: string | null = urlObj.toString();
+
+        let imported = 0;
+        let kbchachaCount = 0;
+        let encarCount = 0;
+
+        // cache existing IDs to count new additions only
+        const existingIds = new Set<string>();
+        {
+          const { data: existing, error: exErr } = await supabaseClient
+            .from('cars_cache')
+            .select('id');
+          if (!exErr && Array.isArray(existing)) {
+            for (const row of existing) {
+              if (row?.id) existingIds.add(String(row.id));
+            }
+          }
+        }
+
+        let page = 0;
+        const seen = new Set<string>();
+        while (nextUrl && page < pagesLimit) {
+          page++;
+          const res = await fetchWithCors(nextUrl);
+          if (!res.ok) break;
+          const payload = await res.json();
+          const items = Array.isArray(payload) ? payload : (payload?.data || []);
+          for (const raw of items) {
+            try {
+              // normalize grid car → cache record
+              const listing = (raw?.listings?.find((l: any) => !l?.archived) || raw?.listings?.[0]) || {};
+              const id = String(raw?.id ?? `${raw?.year || ''}-${raw?.badge || ''}-${listing?.price?.price || Math.random()}`);
+              if (seen.has(id)) continue;
+              seen.add(id);
+
+              const preview = listing?.images?.[0]?.preview || '';
+              const priceAmount = typeof listing?.price?.price === 'number' ? Math.round(listing.price.price + 2300) : null;
+              const lotNumber = raw?.lot_number || undefined;
+              const lotStatus = 1; // grid cars treated as active
+              const lotData = listing || {};
+
+              const domainName: string = (raw?.domain_name || 'kbchachacha').toString();
+              const isKBC = domainName.includes('kbchachacha') || domainName.includes('kb_chachacha');
+              if (isKBC) kbchachaCount++; else encarCount++;
+
+              const carCache = {
+                id: id,
+                api_id: id,
+                make: raw?.brand || 'Unknown',
+                model: raw?.model || 'Unknown',
+                year: raw?.year || 2020,
+                price: priceAmount,
+                price_cents: priceAmount ? priceAmount * 100 : null,
+                vin: raw?.vin,
+                fuel: raw?.fuel || (lotData?.fuel?.name || lotData?.fuel) || null,
+                transmission: raw?.transmission || (raw?.gearbox || null),
+                color: raw?.color || null,
+                condition: lotData?.condition?.name || null,
+                lot_number: lotNumber,
+                mileage: typeof lotData?.odometer === 'number' ? `${lotData.odometer.toLocaleString()} km` : null,
+                images: preview ? [preview] : [],
+                source_site: domainName,
+                location_country: (lotData?.location?.country || raw?.location) || 'South Korea',
+                car_data: raw,
+                lot_data: lotData,
+                last_api_sync: new Date().toISOString(),
+                sale_status: lotStatus === 3 ? 'sold' : lotStatus === 2 ? 'pending' : 'active'
+              } as any;
+
+              const { error } = await supabaseClient
+                .from('cars_cache')
+                .upsert(carCache, { onConflict: 'id', ignoreDuplicates: false });
+              if (!error) {
+                if (!existingIds.has(id)) imported++;
+              }
+            } catch (e) {
+              // continue on errors
+            }
+          }
+          nextUrl = payload?.next_url || null;
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Imported ${imported} grid cars`,
+          imported,
+          encarCount,
+          kbchachaCount
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ success: false, error: err?.message || String(err) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // For status refresh, do a quick incremental sync
     const pagesLimit = syncType === 'full' ? 500 : 1; // Full sync: 500 pages, Incremental: 1 page
     const perPage = 50;
