@@ -43,7 +43,7 @@ const HomeSection = () => {
             </div>
             <div className="text-center col-span-2 md:col-span-1 modern-card p-6 hover-lift-gentle">
               <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">NR.1</div>
-              <div className="text-sm text-muted-foreground">Ne Kosove</div>
+              <div className="text-sm text-muted-foreground">në Kosovë</div>
             </div>
           </div>
         </div>
