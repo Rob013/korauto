@@ -1231,7 +1231,7 @@ const EncarCatalog = ({
                   </span>
                 ) : (
                   <>
-                    <span className="font-semibold text-foreground">{totalCount?.toLocaleString() || 0}</span> vetura të disponueshme nga Encar & KB Chachacha
+                    <span className="font-semibold text-foreground">{totalCount?.toLocaleString() || 0}</span> vetura të disponueshme
                   </>
                 )}
               </p>
