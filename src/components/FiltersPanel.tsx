@@ -435,10 +435,11 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
         {expandedSections.includes('advanced') && (
           <div 
-            className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30"
+            className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30 max-h-[60vh] overflow-y-auto"
             style={{
               animation: 'fadeIn 0.2s ease-out',
-              willChange: 'contents'
+              willChange: 'contents',
+              scrollBehavior: 'smooth'
             }}
           >
             {/* Fuel Type */}
