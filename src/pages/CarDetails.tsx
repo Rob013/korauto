@@ -1787,7 +1787,7 @@ const CarDetails = memo(() => {
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Disc3 className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                          <CircleDot className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium uppercase text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1815,7 +1815,7 @@ const CarDetails = memo(() => {
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Palette className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                          <PaintBucket className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1829,7 +1829,7 @@ const CarDetails = memo(() => {
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <PaintBucket className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                          <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
