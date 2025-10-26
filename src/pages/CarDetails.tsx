@@ -1619,13 +1619,6 @@ const CarDetails = memo(() => {
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight flex-1 min-w-0">
                   {car.year} {car.make} {car.model}
-                  {car.source_label && (
-                    <span className="ml-2 align-middle">
-                      <Badge variant="secondary" className="text-[10px] md:text-xs px-2 py-0.5">
-                        {car.source_label}
-                      </Badge>
-                    </span>
-                  )}
                 </h1>
                 <div className="text-right flex-shrink-0">
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
