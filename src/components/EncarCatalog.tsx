@@ -1136,14 +1136,14 @@ const EncarCatalog = ({
               <Button type="button" variant="ghost" size="sm" onClick={handleClearFilters} className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}>
                 <span className="text-xs">Clear</span>
               </Button>
-              {/* Only show close button on mobile */}
-              {isMobile && <Button type="button" variant="ghost" size="sm" onClick={() => {
-              console.log("Close button clicked, isMobile:", isMobile);
+              {/* Show close button on mobile and tablet (iPad) */}
+              <Button type="button" variant="ghost" size="sm" onClick={() => {
+              console.log("Close button clicked");
               setShowFilters(false);
               setHasExplicitlyClosed(true); // Mark as explicitly closed
-            }} className="flex items-center gap-1 h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground" title="Mbyll filtrat">
-                  <X className="h-3 w-3" />
-                </Button>}
+            }} className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground' : 'h-8 px-2 hover:bg-muted'}`} title="Mbyll filtrat">
+                  <X className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                </Button>
             </div>
           </div>
         </div>
