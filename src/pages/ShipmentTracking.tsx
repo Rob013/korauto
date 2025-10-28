@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { Ship, Package, Search, ArrowLeft, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
 
 const ShipmentTracking = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -373,7 +372,6 @@ const ShipmentTracking = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       
       {/* CIG Shipping inspired header */}
       <div className="bg-gradient-to-r from-blue-800 to-blue-600 text-white py-6">
