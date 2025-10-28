@@ -303,9 +303,9 @@ const LazyCarCard = memo(({
           WebkitTapHighlightColor: 'transparent'
         }}
       >
-        <div className="flex flex-row gap-2 p-2">
-          {/* Image Section - Compact in list mode */}
-          <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-md w-24 h-20 sm:w-28 sm:h-24">
+        <div className="flex flex-row gap-1.5 p-1.5">
+          {/* Image Section - Very compact in list mode */}
+          <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded w-20 h-16 sm:w-24 sm:h-20">
             {source && (
               <div className="absolute top-0.5 left-0.5 z-10">
                 <Badge variant="outline" className="text-[8px] px-1 py-0 bg-background/80 backdrop-blur">
@@ -339,63 +339,63 @@ const LazyCarCard = memo(({
             )}
           </div>
           
-          {/* Content Section - Compact in list mode */}
-          <div className="flex-1 flex flex-col justify-between min-w-0">
+          {/* Content Section - Ultra compact in list mode */}
+          <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5">
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 leading-tight mb-0.5">
+              <h3 className="text-[11px] sm:text-xs font-bold text-foreground line-clamp-1 leading-tight">
                 {make} {formatModelName(model, make)}
               </h3>
               {title && title !== `${make} ${model}` && (
-                <p className="text-[10px] text-muted-foreground line-clamp-1 mb-1">{title}</p>
+                <p className="text-[9px] text-muted-foreground line-clamp-1 mb-0.5">{title}</p>
               )}
               
               {/* Vehicle Info - Horizontal in list mode */}
-              <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] mb-1">
+              <div className="flex flex-wrap gap-x-1.5 gap-y-0 text-[9px] mb-0.5">
                 {year && (
                   <div className="flex items-center gap-0.5">
-                    <Car className="h-2.5 w-2.5 text-muted-foreground" />
+                    <Car className="h-2 w-2 text-muted-foreground flex-shrink-0" />
                     <span className="text-foreground">{year}</span>
                   </div>
                 )}
                 {mileage && (
                   <div className="flex items-center gap-0.5">
-                    <Gauge className="h-2.5 w-2.5 text-muted-foreground" />
+                    <Gauge className="h-2 w-2 text-muted-foreground flex-shrink-0" />
                     <span className="font-medium text-foreground">{mileage}</span>
                   </div>
                 )}
                 {fuel && (
                   <div className="flex items-center gap-0.5">
-                    <Fuel className="h-2.5 w-2.5 text-muted-foreground" />
+                    <Fuel className="h-2 w-2 text-muted-foreground flex-shrink-0" />
                     <span className="capitalize text-foreground">{fuel}</span>
                   </div>
                 )}
                 {transmission && (
                   <div className="flex items-center gap-0.5">
-                    <Settings className="h-2.5 w-2.5 text-muted-foreground" />
+                    <Settings className="h-2 w-2 text-muted-foreground flex-shrink-0" />
                     <span className="capitalize text-foreground">{transmission}</span>
                   </div>
                 )}
               </div>
               
               {insurance_v2?.accidentCnt === 0 && (
-                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200 inline-flex items-center">
-                  <Shield className="h-2 w-2 mr-0.5" />
+                <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-green-50 text-green-700 border-green-200 inline-flex items-center h-4">
+                  <Shield className="h-1.5 w-1.5 mr-0.5" />
                   Clean
                 </Badge>
               )}
             </div>
             
             {/* Pricing Section */}
-            <div className="flex items-end justify-between gap-2 mt-1">
+            <div className="flex items-end justify-between gap-1.5">
               <div>
-                <div className="text-base sm:text-lg font-bold text-primary">
+                <div className="text-sm sm:text-base font-bold text-primary leading-tight">
                   €{price.toLocaleString()}
                 </div>
-                <p className="text-[9px] text-muted-foreground leading-tight">
-                  deri ne portin e Durrësit
+                <p className="text-[8px] text-muted-foreground leading-tight">
+                  port Durrës
                 </p>
               </div>
-              <span className="text-[10px] text-muted-foreground flex-shrink-0">
+              <span className="text-[9px] text-muted-foreground flex-shrink-0 self-end">
                 KORAUTO
               </span>
             </div>
@@ -405,9 +405,9 @@ const LazyCarCard = memo(({
           {user && (
             <button
               onClick={handleFavoriteToggle}
-              className="absolute top-1 right-1 p-1 bg-black/60 backdrop-blur-sm rounded-md transition-all duration-200 z-10"
+              className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 backdrop-blur-sm rounded transition-all duration-200 z-10"
             >
-              <Heart className={`h-3 w-3 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+              <Heart className={`h-2.5 w-2.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
             </button>
           )}
         </div>
