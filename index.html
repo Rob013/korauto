@@ -21,9 +21,6 @@
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.tsx">
     
-    <!-- Preload LCP image with high priority -->
-    <link rel="preload" as="image" href="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" fetchpriority="high">
-    
     <style>
       /* Critical above-the-fold CSS - Inlined to prevent render blocking */
       *,::before,::after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}
@@ -36,51 +33,12 @@
       img,svg,video{display:block;max-width:100%;height:auto}
       .dark body{background:#0a0a0a;color:#fafafa}
       
-      /* Critical layout and positioning */
-      .flex{display:flex}
-      .items-center{align-items:center}
-      .justify-center{justify-content:center}
-      .justify-between{justify-content:space-between}
-      .relative{position:relative}
-      .absolute{position:absolute}
-      .fixed{position:fixed}
-      .sticky{position:sticky}
-      .top-0{top:0}
-      .z-10{z-index:10}
-      .z-50{z-index:50}
-      .h-20{height:5rem}
-      .w-full{width:100%}
-      .w-auto{width:auto}
-      .max-w-4xl{max-width:56rem}
-      .mx-auto{margin-left:auto;margin-right:auto}
-      .container{width:100%;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem}
-      
-      /* Critical typography */
-      .text-4xl{font-size:2.25rem;line-height:2.5rem}
-      .text-lg{font-size:1.125rem;line-height:1.75rem}
-      .font-bold{font-weight:700}
-      .text-center{text-align:center}
-      
-      /* Critical colors and backgrounds */
-      .bg-background{background-color:hsl(var(--background))}
-      .text-foreground{color:hsl(var(--foreground))}
-      .border-b{border-bottom-width:1px}
-      .border-border{border-color:hsl(var(--border))}
-      
       /* Loading skeleton animation */
       @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
       .animate-pulse{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}
       
-      /* Fade in animation for critical content */
-      @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-      .animate-fade-in{animation:fadeIn 0.3s ease-in}
-      
       /* Prevent layout shift during load */
       .loading-skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:pulse 1.5s ease-in-out infinite}
-      
-      /* Critical button styles */
-      button{cursor:pointer}
-      .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:0.375rem;padding:0.5rem 1rem;font-weight:500}
     </style>
     
     <!-- Favicon and Icons -->
