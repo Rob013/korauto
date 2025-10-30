@@ -1,13 +1,35 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
-import './index.css'
-import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
 import cacheManager from '@/utils/cacheManager'
 import { inject120FPSStyles } from '@/utils/frameRateOptimizer'
 import initSmoothRuntime from '@/utils/runtimeSmoothness'
 import initAntiFlicker from '@/utils/antiFlicker'
+
+// Defer non-critical CSS to prevent render blocking
+const loadStyles = () => {
+  const mainCSS = document.createElement('link') as HTMLLinkElement;
+  mainCSS.rel = 'stylesheet';
+  mainCSS.href = '/src/index.css';
+  mainCSS.media = 'print';
+  mainCSS.onload = function() { (this as HTMLLinkElement).media = 'all'; };
+  document.head.appendChild(mainCSS);
+  
+  const iosCSS = document.createElement('link') as HTMLLinkElement;
+  iosCSS.rel = 'stylesheet';
+  iosCSS.href = '/src/utils/iosOptimizations.css';
+  iosCSS.media = 'print';
+  iosCSS.onload = function() { (this as HTMLLinkElement).media = 'all'; };
+  document.head.appendChild(iosCSS);
+};
+
+// Load styles asynchronously after critical render
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadStyles);
+} else {
+  requestIdleCallback ? requestIdleCallback(loadStyles) : setTimeout(loadStyles, 1);
+}
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {

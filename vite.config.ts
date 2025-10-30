@@ -29,22 +29,60 @@ export default defineConfig(({ mode }) => ({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        manualChunks: {
-          // Core React libraries
-          vendor: ['react', 'react-dom'],
-          // Router in separate chunk for better caching
-          router: ['react-router-dom'],
-          // UI libraries split into smaller chunks
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          'ui-tabs': ['@radix-ui/react-tabs', '@radix-ui/react-accordion', '@radix-ui/react-alert-dialog'],
-          'ui-form': ['@radix-ui/react-label', '@radix-ui/react-checkbox', '@radix-ui/react-radio-group'],
-          // Backend and data fetching
-          supabase: ['@supabase/supabase-js'],
-          query: ['@tanstack/react-query'],
-          // Utility libraries
-          utils: ['clsx', 'tailwind-merge', 'date-fns', 'zod'],
-          // Charts and visualization (if used heavily)
-          charts: ['recharts'],
+        manualChunks: (id) => {
+          // More aggressive code splitting for reduced main thread work
+          if (id.includes('node_modules')) {
+            // Core React - keep together for optimal loading
+            if (id.includes('react') && !id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            // Router separate for route-based lazy loading
+            if (id.includes('react-router')) {
+              return 'vendor-router';
+            }
+            // Split Radix UI by functionality
+            if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-dropdown-menu')) {
+              return 'ui-overlay';
+            }
+            if (id.includes('@radix-ui/react-select') || id.includes('@radix-ui/react-tabs')) {
+              return 'ui-interactive';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'ui-base';
+            }
+            // Backend libs
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'vendor-query';
+            }
+            // Icons separate (large)
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            // Charts separate (large)
+            if (id.includes('recharts')) {
+              return 'vendor-charts';
+            }
+            // Utilities
+            if (id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'vendor-utils';
+            }
+            // Other node_modules
+            return 'vendor-misc';
+          }
+          
+          // Split pages by route for better lazy loading
+          if (id.includes('src/pages/')) {
+            const pageName = id.split('src/pages/')[1].split('.')[0].toLowerCase();
+            return `page-${pageName}`;
+          }
+          
+          // Split large components
+          if (id.includes('src/components/') && id.includes('Catalog')) {
+            return 'comp-catalog';
+          }
         },
       },
       // Add external dependencies that should not be bundled
@@ -78,9 +116,9 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       '@supabase/supabase-js',
     ],
-    // Add polyfills for better browser compatibility
+    exclude: ['lucide-react'], // Exclude large icon library - lazy load instead
     esbuildOptions: {
-      target: 'es2015',
+      target: 'es2020', // Modern target for better performance
     },
   },
   // Add polyfill configuration for legacy browsers
