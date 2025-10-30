@@ -1,6 +1,6 @@
 // Service Worker for caching API responses and static assets with 120fps performance optimization
 // CRITICAL: Update this version number to force cache refresh for all users
-const VERSION = '2025.10.30.001'; // YYYY.MM.DD.BUILD format - Updated for performance optimizations
+const VERSION = '2025.06.01.001'; // YYYY.MM.DD.BUILD format
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
@@ -32,14 +32,14 @@ const API_CACHE_PATTERNS = [
   /\/api\/cars\?/
 ];
 
-// Cache duration in milliseconds - optimized for performance
+// Cache duration in milliseconds (shorter for fresher content)
 const CACHE_DURATION = {
-  API: 10 * 60 * 1000, // 10 minutes for API responses
-  STATIC: 30 * 24 * 60 * 60 * 1000, // 30 days for static assets
-  IMAGES: 7 * 24 * 60 * 60 * 1000, // 7 days for images
-  ASSETS: 365 * 24 * 60 * 60 * 1000, // 1 year for versioned assets (immutable)
-  FONTS: 365 * 24 * 60 * 60 * 1000, // 1 year for fonts (immutable)
-  HIGH_PERFORMANCE: 365 * 24 * 60 * 60 * 1000 // 1 year for performance-critical assets
+  API: 2 * 60 * 1000, // 2 minutes for API responses (reduced for fresher data)
+  STATIC: 12 * 60 * 60 * 1000, // 12 hours for static assets
+  IMAGES: 30 * 60 * 1000, // 30 minutes for images
+  ASSETS: 24 * 60 * 60 * 1000, // 24 hours for versioned assets (JS/CSS)
+  FONTS: 7 * 24 * 60 * 60 * 1000, // 7 days for fonts
+  HIGH_PERFORMANCE: 30 * 60 * 1000 // 30 minutes for performance-critical assets
 };
 
 // Install event - cache static assets and prioritize performance-critical resources
@@ -316,29 +316,14 @@ async function handleAssetRequest(request) {
 
   // Assets with hashes can be cached indefinitely
   if (cachedResponse) {
-    // Add immutable cache headers for better browser caching
-    const headers = new Headers(cachedResponse.headers);
-    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    return new Response(cachedResponse.body, {
-      status: cachedResponse.status,
-      statusText: cachedResponse.statusText,
-      headers: headers
-    });
+    return cachedResponse;
   }
 
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      // Cache successful responses with immutable headers
-      const headers = new Headers(networkResponse.headers);
-      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-      const responseToCache = new Response(networkResponse.body, {
-        status: networkResponse.status,
-        statusText: networkResponse.statusText,
-        headers: headers
-      });
-      cache.put(request, responseToCache.clone());
-      return responseToCache;
+      // Cache successful responses
+      cache.put(request, networkResponse.clone());
     }
     return networkResponse;
   } catch (error) {
