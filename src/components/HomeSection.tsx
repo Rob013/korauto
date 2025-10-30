@@ -13,7 +13,14 @@ const HomeSection = () => {
           {/* Logo on Homepage */}
           <div className="mb-4">
             <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 mx-auto flex items-center justify-center mb-2 animate-scale-in hover-scale-gentle">
-              <img src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" alt="KORAUTO Logo" className="w-full h-full object-contain dark:invert transition-all duration-500 hover-lift-gentle" />
+              <img 
+                src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
+                alt="KORAUTO Logo" 
+                width="256" 
+                height="256"
+                fetchPriority="high"
+                className="w-full h-full object-contain dark:invert transition-all duration-500 hover-lift-gentle" 
+              />
             </div>
           </div>
           
