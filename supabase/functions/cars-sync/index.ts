@@ -23,6 +23,7 @@ interface Car {
   lots?: {
     id: number;
     lot?: string;
+    title?: string; // Add title field
     buy_now?: number;
     status?: number;
     sale_status?: string;
@@ -45,6 +46,12 @@ interface Car {
     images?: {
       normal?: string[];
       big?: string[];
+    };
+    domain?: {
+      name?: string;
+    };
+    condition?: {
+      name?: string;
     };
   }[];
 }
@@ -275,6 +282,7 @@ Deno.serve(async (req) => {
               images: lot?.images?.normal || lot?.images?.big || [],
               source_site: lotDomain,
               location_country: 'South Korea',
+              sale_title: lot?.title || null, // Store the lot title for variant extraction
               car_data: car,
               lot_data: lot || {},
               last_api_sync: new Date().toISOString(),

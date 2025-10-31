@@ -1,34 +1,51 @@
 /**
  * Extract vehicle variant from title or model string
- * Examples: "A-Class W177 A220 Hatchback" -> "220"
- *           "C 220 d" -> "220d"
- *           "E 200 d 4MATIC" -> "200d 4MATIC"
+ * Examples: 
+ *   "A-Class W177 A220 Hatchback" -> "220"
+ *   "C-Class W205 C220d" -> "220d"
+ *   "E 200 d 4MATIC" -> "200d 4MATIC"
+ *   "A-klasse 260920" -> "200" (numeric code extraction)
  */
 export const extractVariant = (title?: string, model?: string): string | null => {
   if (!title && !model) return null;
   
   const text = title || model || '';
   
-  // Common patterns for Mercedes variants: A220, C220d, E200, etc.
-  // Pattern 1: Letter followed by numbers and optional d/i (e.g., "A220", "C220d")
-  const pattern1 = /[A-Z](\d{3}(?:d|i|e)?(?:\s*4MATIC)?)/i;
-  const match1 = text.match(pattern1);
-  if (match1) {
-    return match1[1].trim();
+  // Pattern 1: After W-code (e.g., "W177 A220" -> "220", "W205 C220d" -> "220d")
+  // This handles full titles like "A-Class W177 A220 Hatchback"
+  const patternAfterWCode = /W\d{3}\s+[A-Z]?(\d{3}[a-z]?(?:\s*4MATIC)?)/i;
+  const matchWCode = text.match(patternAfterWCode);
+  if (matchWCode) {
+    return matchWCode[1].replace(/\s+/g, '').trim();
   }
   
-  // Pattern 2: Numbers with optional d/i and 4MATIC (e.g., "220 d", "200 d 4MATIC")
-  const pattern2 = /\b(\d{3}(?:\s*d|\s*i|\s*e)?(?:\s*4MATIC)?)\b/i;
-  const match2 = text.match(pattern2);
-  if (match2) {
-    return match2[1].replace(/\s+/g, ' ').trim();
+  // Pattern 2: Letter followed by numbers and optional d/i/e (e.g., "A220", "C220d")
+  const patternLetterNumber = /[A-Z](\d{3}[die]?(?:\s*4MATIC)?)/i;
+  const matchLetterNumber = text.match(patternLetterNumber);
+  if (matchLetterNumber) {
+    return matchLetterNumber[1].replace(/\s+/g, '').trim();
   }
   
-  // Pattern 3: Model codes like "260920" -> extract meaningful part
-  const pattern3 = /(\d{3})\d+/;
-  const match3 = text.match(pattern3);
-  if (match3) {
-    return match3[1];
+  // Pattern 3: Numbers with space and optional d/i/e and 4MATIC (e.g., "220 d 4MATIC", "200 d")
+  const patternSpacedNumber = /\b(\d{3})\s+(d|i|e)(?:\s+(4MATIC))?\b/i;
+  const matchSpaced = text.match(patternSpacedNumber);
+  if (matchSpaced) {
+    const variant = matchSpaced[1] + matchSpaced[2];
+    return matchSpaced[3] ? `${variant} ${matchSpaced[3]}` : variant;
+  }
+  
+  // Pattern 4: Just numbers with optional d/i/e (e.g., "220d", "200i")
+  const patternJustNumber = /\b(\d{3}[die]?)\b/i;
+  const matchJust = text.match(patternJustNumber);
+  if (matchJust) {
+    return matchJust[1].trim();
+  }
+  
+  // Pattern 5: Model codes like "260920" -> extract first 3 digits as variant
+  const patternNumericCode = /^(\d{3})\d+$/;
+  const matchNumeric = text.match(patternNumericCode);
+  if (matchNumeric) {
+    return matchNumeric[1];
   }
   
   return null;
