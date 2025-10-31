@@ -1679,7 +1679,7 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.model}
+                      {car.model}{car.engine?.name ? ` ${car.engine.name}` : ''}
                     </span>
                   </div>
 
