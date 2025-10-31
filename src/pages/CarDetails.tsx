@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
+import { formatModelWithVariant, getCarVariant } from "@/utils/variantExtractor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -884,6 +885,19 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
 
+  // Compute display model with variant
+  const displayModel = useMemo(() => {
+    if (!car) return '';
+    const variant = getCarVariant({
+      car_data: { title: car.title },
+      grade: undefined,
+      engine: car.engine,
+      sale_title: undefined,
+      model: car.model
+    });
+    return variant ? formatModelWithVariant(car.model, variant) : car.model;
+  }, [car]);
+
   // Reset placeholder state when image selection changes
   useEffect(() => {
     setIsPlaceholderImage(false);
@@ -1618,7 +1632,7 @@ const CarDetails = memo(() => {
             <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight flex-1 min-w-0">
-                  {car.year} {car.make} {car.model}
+                  {car.year} {car.make} {displayModel}
                 </h1>
                 <div className="text-right flex-shrink-0">
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -1679,7 +1693,7 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.model}{car.engine?.name ? ` ${car.engine.name}` : ''}
+                      {displayModel}
                     </span>
                   </div>
 

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatModelWithVariant, getCarVariant } from "@/utils/variantExtractor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,11 @@ interface EncarCarCardProps {
   condition?: string;
   lot?: string;
   cylinders?: number;
+  // Raw data for variant extraction
+  car_data?: { title?: string };
+  grade?: string;
+  sale_title?: string;
+  engine?: { name?: string };
   // Insurance information
   insurance?: {
     accident_history?: string;
@@ -106,7 +112,7 @@ interface EncarCarCardProps {
 const EncarCarCard = ({ 
   id, make, model, year, price, image, mileage, fuel, location, isNew, isCertified,
   vin, transmission, color, condition, lot, cylinders, insurance, insurance_v2, 
-  locationDetails, inspect, details
+  locationDetails, inspect, details, car_data, grade, sale_title, engine
 }: EncarCarCardProps) => {
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
@@ -114,6 +120,12 @@ const EncarCarCard = ({
   const isMobile = useIsMobile();
   const [isLiked, setIsLiked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Extract and format variant name
+  const displayModel = useMemo(() => {
+    const variant = getCarVariant({ car_data, grade, engine, sale_title, model });
+    return variant ? formatModelWithVariant(model, variant) : model;
+  }, [car_data, grade, engine, sale_title, model]);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -240,7 +252,7 @@ const EncarCarCard = ({
         {/* Car Title - More compact */}
         <div className="mb-2">
           <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-1 line-clamp-1">
-            {year} {typeof make === 'object' ? (make as any)?.name || '' : make || ''} {typeof model === 'object' ? (model as any)?.name || '' : model || ''}
+            {year} {typeof make === 'object' ? (make as any)?.name || '' : make || ''} {displayModel}
           </h3>
           {location && (
             <div className="flex items-center text-xs sm:text-sm text-gray-500">

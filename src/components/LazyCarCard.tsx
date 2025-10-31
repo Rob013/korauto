@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useRef, useEffect } from "react";
+import React, { memo, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { formatModelName } from "@/utils/modelNameFormatter";
+import { formatModelWithVariant, getCarVariant } from "@/utils/variantExtractor";
 
 interface LazyCarCardProps {
   id: string;
@@ -40,6 +41,11 @@ interface LazyCarCardProps {
   archived_at?: string;
   archive_reason?: string;
   viewMode?: 'grid' | 'list';
+  // Raw data for variant extraction
+  car_data?: { title?: string };
+  grade?: string;
+  sale_title?: string;
+  engine?: { name?: string };
 }
 
 const LazyCarCard = memo(({
@@ -65,7 +71,11 @@ const LazyCarCard = memo(({
   archived_at,
   archive_reason,
   source,
-  viewMode = 'grid'
+  viewMode = 'grid',
+  car_data,
+  grade,
+  sale_title,
+  engine
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
@@ -75,6 +85,13 @@ const LazyCarCard = memo(({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Extract and format variant name
+  const displayModel = useMemo(() => {
+    const baseModel = formatModelName(model, make);
+    const variant = getCarVariant({ car_data, grade, engine, sale_title, model });
+    return variant ? formatModelWithVariant(baseModel, variant) : baseModel;
+  }, [car_data, grade, engine, sale_title, model, make]);
 
   // Simplified logic: trust the database filtering, only hide in clear edge cases
   const shouldHideSoldCar = () => {
@@ -343,7 +360,7 @@ const LazyCarCard = memo(({
           <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5">
             <div>
               <h3 className="text-[11px] sm:text-xs font-bold text-foreground line-clamp-1 leading-tight">
-                {make} {formatModelName(model, make)}
+                {make} {displayModel}
               </h3>
               {title && title !== `${make} ${model}` && (
                 <p className="text-[9px] text-muted-foreground line-clamp-1 mb-0.5">{title}</p>
@@ -486,7 +503,7 @@ const LazyCarCard = memo(({
       <div className="p-3 flex-1 flex flex-col">
         <div className="mb-2">
           <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
-            {make} {formatModelName(model, make)}
+            {make} {displayModel}
           </h3>
           {title && title !== `${make} ${model}` && (
             <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{title}</p>
