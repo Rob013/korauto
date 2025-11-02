@@ -30,11 +30,16 @@ export const formatBMWModelName = (modelName: string): string => {
  * Format model name for any manufacturer
  * Currently handles BMW series names, can be extended for other brands
  */
-export const formatModelName = (modelName: string, manufacturerName?: string): string => {
+export const formatModelName = (modelName: string, manufacturerName?: string | { name: string } | any): string => {
   if (!modelName) return modelName;
   
+  // Convert manufacturerName to string, handling both string and object types
+  const manufacturerStr = typeof manufacturerName === 'string' 
+    ? manufacturerName 
+    : manufacturerName?.name || '';
+  
   // Handle BMW models
-  if (manufacturerName?.toLowerCase() === 'bmw') {
+  if (manufacturerStr.toLowerCase() === 'bmw') {
     return formatBMWModelName(modelName);
   }
   
