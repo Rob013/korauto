@@ -152,14 +152,50 @@ const EncarCatalog = ({
     return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && !filters.model_id && !filters.generation_id && !filters.color && !filters.fuel_type && !filters.transmission && !filters.body_type && !filters.odometer_from_km && !filters.odometer_to_km && !filters.from_year && !filters.to_year && !filters.buy_now_price_from && !filters.buy_now_price_to && !filters.search && !filters.seats_count && (!filters.grade_iaai || filters.grade_iaai === 'all');
   }, [filters]);
 
+  // Premium brands to show by default
+  const PREMIUM_BRANDS = ['Volkswagen', 'Audi', 'Mercedes-Benz', 'BMW'];
+  
+  // Check if we're in default state (no filters applied)
+  const hasAnyFilters = useMemo(() => {
+    if (!filters) return false;
+    return !!(
+      filters.manufacturer_id || 
+      filters.model_id || 
+      filters.generation_id || 
+      filters.color || 
+      filters.fuel_type || 
+      filters.transmission || 
+      filters.body_type || 
+      filters.odometer_from_km || 
+      filters.odometer_to_km || 
+      filters.from_year || 
+      filters.to_year || 
+      filters.buy_now_price_from || 
+      filters.buy_now_price_to || 
+      filters.search || 
+      filters.seats_count || 
+      filters.grade_iaai
+    );
+  }, [filters]);
+
   // Memoized client-side grade and engine filtering for better performance
   const filteredCars = useMemo(() => {
     // Use fallback data when there's an error and no cars loaded
     const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
     
+    // Apply default premium brand filter if no other filters are active
+    const brandFiltered = !hasAnyFilters 
+      ? cleanedCars.filter(car => {
+          const carMake = car.manufacturer?.name || car.make || '';
+          return PREMIUM_BRANDS.some(brand => 
+            carMake.toLowerCase().includes(brand.toLowerCase())
+          );
+        })
+      : cleanedCars;
+    
     // Apply grade filter
-    const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+    const gradeFiltered = applyGradeFilter(brandFiltered, filters?.grade_iaai) || [];
     
     // Apply engine filter if specified
     const engineSpec = (filters as any)?.engine_spec;
@@ -169,7 +205,7 @@ const EncarCatalog = ({
     
     // Filter to show only cars with real buy_now pricing data
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
+  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error, hasAnyFilters]);
 
   // Extract engine variants from filtered cars for the dropdown
   const engineVariants = useMemo(() => {
@@ -198,11 +234,21 @@ const EncarCatalog = ({
 
   // Apply filters on merged list
   const mergedFilteredCars = useMemo(() => {
-    const gradeFiltered = applyGradeFilter(mergedCars, filters?.grade_iaai) || [];
+    // Apply default premium brand filter if no other filters are active
+    const brandFiltered = !hasAnyFilters 
+      ? mergedCars.filter(car => {
+          const carMake = car.manufacturer?.name || car.make || '';
+          return PREMIUM_BRANDS.some(brand => 
+            carMake.toLowerCase().includes(brand.toLowerCase())
+          );
+        })
+      : mergedCars;
+    
+    const gradeFiltered = applyGradeFilter(brandFiltered, filters?.grade_iaai) || [];
     const engineSpec = (filters as any)?.engine_spec;
     const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec]);
+  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec, hasAnyFilters]);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
