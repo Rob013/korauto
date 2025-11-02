@@ -30,11 +30,12 @@ export const createFallbackCars = (filters: any = {}): any[] => {
   
   // Generate mock cars for pagination testing
   const mockCars = [];
-  const brands = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia'];
+  const brands = ['BMW', 'Audi', 'Mercedes-Benz', 'Volkswagen', 'Toyota', 'Honda', 'Hyundai', 'Kia'];
   const models = {
     'BMW': ['3 Series', '5 Series', 'X3', 'X5'],
     'Audi': ['A3', 'A4', 'A6', 'Q5'],
     'Mercedes-Benz': ['C-Class', 'E-Class', 'GLC'],
+    'Volkswagen': ['Golf', 'Passat', 'Tiguan', 'ID.4'],
     'Toyota': ['Camry', 'RAV4', 'Corolla'],
     'Honda': ['Civic', 'Accord', 'CR-V'],
     'Hyundai': ['Elantra', 'Tucson', 'Santa Fe'],
@@ -722,26 +723,49 @@ export const useSecureAuctionAPI = () => {
     setError(null);
 
     try {
+      // Handle premium brands special filter
+      const PREMIUM_BRANDS = ['Volkswagen', 'Audi', 'Mercedes-Benz', 'BMW'];
+      let modifiedFilters = { ...newFilters };
+      
+      if (modifiedFilters.manufacturer_id === 'premium_brands') {
+        // Remove the special flag and fetch ALL cars, we'll filter client-side
+        delete modifiedFilters.manufacturer_id;
+        console.log(`🎯 Premium brands filter active - fetching all cars to filter by: ${PREMIUM_BRANDS.join(', ')}`);
+      }
+      
       // Pass filters to the API - DO NOT send grade_iaai to server for filtering
       const apiFilters = {
-        ...newFilters,
+        ...modifiedFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "200", // Show 200 cars per page
+        per_page: modifiedFilters.per_page || "200", // Show 200 cars per page
         simple_paginate: "0",
       };
       
       // IMPORTANT: Remove grade_iaai and trim_level from server request - we'll do client-side filtering
       // This prevents backend errors and ensures we get all cars for client-side filtering
-      const selectedVariant = newFilters.grade_iaai;
-      const selectedTrimLevel = newFilters.trim_level;
+      const selectedVariant = modifiedFilters.grade_iaai;
+      const selectedTrimLevel = modifiedFilters.trim_level;
+      const isPremiumBrandsFilter = newFilters.manufacturer_id === 'premium_brands';
       delete apiFilters.grade_iaai;
       delete apiFilters.trim_level;
 
       console.log(`🔄 Fetching cars - Page ${page} with filters:`, apiFilters);
       const data: APIResponse = await makeSecureAPICall("cars", apiFilters);
 
-      // Apply client-side variant filtering if a variant is selected
+      // Apply premium brands filter if active
       let filteredCars = data.data || [];
+      if (isPremiumBrandsFilter) {
+        console.log(`🔍 Applying premium brands filter: ${PREMIUM_BRANDS.join(', ')}`);
+        filteredCars = filteredCars.filter(car => {
+          const carMake = String(car.manufacturer?.name || car.make || '');
+          return PREMIUM_BRANDS.some(brand => 
+            carMake.toLowerCase().includes(brand.toLowerCase())
+          );
+        });
+        console.log(`✅ Premium brands filter: ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
+      }
+      
+      // Apply client-side variant filtering if a variant is selected
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
         
@@ -864,7 +888,20 @@ export const useSecureAuctionAPI = () => {
       console.log("❌ API failed, using fallback cars for pagination testing");
       const fallbackCars = createFallbackCars(newFilters);
       
-      if (fallbackCars.length === 0) {
+      // Apply premium brands filter to fallback cars if active
+      let filteredFallbackCars = fallbackCars;
+      if (newFilters.manufacturer_id === 'premium_brands') {
+        const PREMIUM_BRANDS = ['Volkswagen', 'Audi', 'Mercedes-Benz', 'BMW'];
+        filteredFallbackCars = fallbackCars.filter(car => {
+          const carMake = String(car.manufacturer?.name || '');
+          return PREMIUM_BRANDS.some(brand => 
+            carMake.toLowerCase().includes(brand.toLowerCase())
+          );
+        });
+        console.log(`🎯 Filtered fallback cars to premium brands: ${filteredFallbackCars.length} of ${fallbackCars.length}`);
+      }
+      
+      if (filteredFallbackCars.length === 0) {
         console.log("❌ No fallback cars available, showing empty state");
         setError("Failed to load cars. Please try again.");
         setCars([]);
@@ -877,14 +914,14 @@ export const useSecureAuctionAPI = () => {
       const pageSize = parseInt(newFilters.per_page || "200");
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
-      const paginatedCars = fallbackCars.slice(startIndex, endIndex);
+      const paginatedCars = filteredFallbackCars.slice(startIndex, endIndex);
       
       console.log(
-        `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
+        `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${filteredFallbackCars.length}`
       );
       
-      setTotalCount(fallbackCars.length);
-      setHasMorePages(endIndex < fallbackCars.length);
+      setTotalCount(filteredFallbackCars.length);
+      setHasMorePages(endIndex < filteredFallbackCars.length);
       
       if (resetList || page === 1) {
         setCars(paginatedCars);

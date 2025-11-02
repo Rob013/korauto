@@ -158,23 +158,28 @@ const EncarCatalog = ({
   // Check if we're in default state (no filters applied)
   const hasAnyFilters = useMemo(() => {
     if (!filters) return false;
+    // Ignore the premium_brands special filter flag
+    const filtersCopy = { ...filters };
+    if (filtersCopy.manufacturer_id === 'premium_brands') {
+      delete filtersCopy.manufacturer_id;
+    }
     return !!(
-      filters.manufacturer_id || 
-      filters.model_id || 
-      filters.generation_id || 
-      filters.color || 
-      filters.fuel_type || 
-      filters.transmission || 
-      filters.body_type || 
-      filters.odometer_from_km || 
-      filters.odometer_to_km || 
-      filters.from_year || 
-      filters.to_year || 
-      filters.buy_now_price_from || 
-      filters.buy_now_price_to || 
-      filters.search || 
-      filters.seats_count || 
-      filters.grade_iaai
+      filtersCopy.manufacturer_id || 
+      filtersCopy.model_id || 
+      filtersCopy.generation_id || 
+      filtersCopy.color || 
+      filtersCopy.fuel_type || 
+      filtersCopy.transmission || 
+      filtersCopy.body_type || 
+      filtersCopy.odometer_from_km || 
+      filtersCopy.odometer_to_km || 
+      filtersCopy.from_year || 
+      filtersCopy.to_year || 
+      filtersCopy.buy_now_price_from || 
+      filtersCopy.buy_now_price_to || 
+      filtersCopy.search || 
+      filtersCopy.seats_count || 
+      filtersCopy.grade_iaai
     );
   }, [filters]);
 
@@ -184,18 +189,10 @@ const EncarCatalog = ({
     const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
     
-    // Apply default premium brand filter if no other filters are active
-    const brandFiltered = !hasAnyFilters 
-      ? cleanedCars.filter(car => {
-          const carMake = String(car.manufacturer?.name || car.make || '');
-          return PREMIUM_BRANDS.some(brand => 
-            carMake.toLowerCase().includes(brand.toLowerCase())
-          );
-        })
-      : cleanedCars;
+    // No need for client-side brand filtering - handled by API
     
     // Apply grade filter
-    const gradeFiltered = applyGradeFilter(brandFiltered, filters?.grade_iaai) || [];
+    const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
     
     // Apply engine filter if specified
     const engineSpec = (filters as any)?.engine_spec;
@@ -205,7 +202,7 @@ const EncarCatalog = ({
     
     // Filter to show only cars with real buy_now pricing data
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error, hasAnyFilters]);
+  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
 
   // Extract engine variants from filtered cars for the dropdown
   const engineVariants = useMemo(() => {
@@ -234,21 +231,13 @@ const EncarCatalog = ({
 
   // Apply filters on merged list
   const mergedFilteredCars = useMemo(() => {
-    // Apply default premium brand filter if no other filters are active
-    const brandFiltered = !hasAnyFilters 
-      ? mergedCars.filter(car => {
-          const carMake = String(car.manufacturer?.name || car.make || '');
-          return PREMIUM_BRANDS.some(brand => 
-            carMake.toLowerCase().includes(brand.toLowerCase())
-          );
-        })
-      : mergedCars;
+    // No need for client-side brand filtering - handled by API
     
-    const gradeFiltered = applyGradeFilter(brandFiltered, filters?.grade_iaai) || [];
+    const gradeFiltered = applyGradeFilter(mergedCars, filters?.grade_iaai) || [];
     const engineSpec = (filters as any)?.engine_spec;
     const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec, hasAnyFilters]);
+  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec]);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
@@ -532,14 +521,18 @@ const EncarCatalog = ({
   }, [fetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
 
   const handleClearFilters = useCallback(() => {
-    setFilters({});
+    const defaultFilters = {
+      manufacturer_id: 'premium_brands', // Reset to premium brands
+      sort_by: 'recently_added'
+    };
+    setFilters(defaultFilters);
     setSearchTerm("");
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset sort preference
     setSortBy("recently_added"); // Reset to recently_added default
-    fetchCars(1, {}, true);
+    fetchCars(1, defaultFilters, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
   const handleSearch = useCallback(() => {
@@ -874,16 +867,22 @@ const EncarCatalog = ({
           }
         }
 
-        // Load cars last - this is the most expensive operation
-        const initialFilters = {
-          ...urlFilters,
-          per_page: "200",
-          page: urlCurrentPage.toString(),
-          ...(hasUserSelectedSort && sortBy ? {
-            sort_by: sortBy
-          } : {})
-        };
-        await fetchCars(urlCurrentPage, initialFilters, true);
+      // Load cars last - this is the most expensive operation
+      const initialFilters = {
+        ...urlFilters,
+        per_page: "200",
+        page: urlCurrentPage.toString(),
+        // Add premium brand filter by default when no manufacturer selected
+        ...((!urlFilters.manufacturer_id || urlFilters.manufacturer_id === 'all') ? {
+          manufacturer_id: 'premium_brands' // Special flag for premium brands
+        } : {}),
+        ...(hasUserSelectedSort && sortBy ? {
+          sort_by: sortBy
+        } : {
+          sort_by: 'recently_added' // Always sort by recently_added for premium brands
+        })
+      };
+      await fetchCars(urlCurrentPage, initialFilters, true);
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
