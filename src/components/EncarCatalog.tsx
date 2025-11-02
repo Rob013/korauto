@@ -187,7 +187,7 @@ const EncarCatalog = ({
     // Apply default premium brand filter if no other filters are active
     const brandFiltered = !hasAnyFilters 
       ? cleanedCars.filter(car => {
-          const carMake = car.manufacturer?.name || car.make || '';
+          const carMake = String(car.manufacturer?.name || car.make || '');
           return PREMIUM_BRANDS.some(brand => 
             carMake.toLowerCase().includes(brand.toLowerCase())
           );
@@ -237,7 +237,7 @@ const EncarCatalog = ({
     // Apply default premium brand filter if no other filters are active
     const brandFiltered = !hasAnyFilters 
       ? mergedCars.filter(car => {
-          const carMake = car.manufacturer?.name || car.make || '';
+          const carMake = String(car.manufacturer?.name || car.make || '');
           return PREMIUM_BRANDS.some(brand => 
             carMake.toLowerCase().includes(brand.toLowerCase())
           );
