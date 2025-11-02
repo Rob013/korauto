@@ -11,8 +11,8 @@ import { formatModelName } from "@/utils/modelNameFormatter";
 
 interface LazyCarCardProps {
   id: string;
-  make: string;
-  model: string;
+  make: string | { id: number; name: string } | any; // Allow object type for API data
+  model: string | { id: number; name: string } | any; // Allow object type for API data
   year: number;
   price: number;
   image?: string;
@@ -75,6 +75,10 @@ const LazyCarCard = memo(({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Normalize make and model to strings (handle both string and object formats)
+  const makeStr = typeof make === 'string' ? make : (make?.name || 'Unknown');
+  const modelStr = typeof model === 'string' ? model : (model?.name || 'Unknown');
 
   // Simplified logic: trust the database filtering, only hide in clear edge cases
   const shouldHideSoldCar = () => {
@@ -316,7 +320,7 @@ const LazyCarCard = memo(({
             {(image || (images && images.length > 0)) ? (
               <img 
                 src={image || images?.[0]} 
-                alt={`${year} ${make} ${model}`} 
+            alt={`${year} ${makeStr} ${modelStr}`}
                 className={`w-full h-full object-cover transition-all duration-700 ease-out ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
@@ -343,9 +347,9 @@ const LazyCarCard = memo(({
           <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5">
             <div>
               <h3 className="text-[11px] sm:text-xs font-bold text-foreground line-clamp-1 leading-tight">
-                {make} {formatModelName(model, make)}
+                {makeStr} {formatModelName(modelStr, makeStr)}
               </h3>
-              {title && title !== `${make} ${model}` && (
+              {title && title !== `${makeStr} ${modelStr}` && (
                 <p className="text-[9px] text-muted-foreground line-clamp-1 mb-0.5">{title}</p>
               )}
               
@@ -442,7 +446,7 @@ const LazyCarCard = memo(({
         {(image || (images && images.length > 0)) ? (
           <img 
             src={image || images?.[0]} 
-            alt={`${year} ${make} ${model}`} 
+            alt={`${year} ${makeStr} ${modelStr}`} 
             className={`w-full h-full object-cover transition-all duration-700 ease-out ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
@@ -486,9 +490,9 @@ const LazyCarCard = memo(({
       <div className="p-3 flex-1 flex flex-col">
         <div className="mb-2">
           <h3 className="card-title text-sm font-bold text-foreground line-clamp-1 leading-tight">
-            {make} {formatModelName(model, make)}
+            {makeStr} {formatModelName(modelStr, makeStr)}
           </h3>
-          {title && title !== `${make} ${model}` && (
+          {title && title !== `${makeStr} ${modelStr}` && (
             <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{title}</p>
           )}
         </div>
