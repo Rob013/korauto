@@ -14,6 +14,12 @@ interface CarCardProps {
 const CarCard = memo(({ car }: CarCardProps) => {
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
 
+  // Normalize props to strings
+  const makeStr = typeof car.make === 'string' ? car.make : (car.make as any)?.name || 'Unknown';
+  const modelStr = typeof car.model === 'string' ? car.model : (car.model as any)?.name || 'Unknown';
+  const fuelStr = typeof car.fuel === 'string' ? car.fuel : (car.fuel as any)?.name || '';
+  const transmissionStr = typeof car.transmission === 'string' ? car.transmission : (car.transmission as any)?.name || '';
+
   const price = useMemo(() => {
     return convertUSDtoEUR(car.price || 0);
   }, [car.price, convertUSDtoEUR]);
@@ -25,7 +31,7 @@ const CarCard = memo(({ car }: CarCardProps) => {
           {car.image_url ? (
             <img
               src={car.image_url}
-              alt={`${car.year} ${car.make} ${car.model}`}
+              alt={`${car.year} ${makeStr} ${modelStr}`}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
             />
           ) : (
@@ -38,7 +44,7 @@ const CarCard = memo(({ car }: CarCardProps) => {
         <div className="p-4 space-y-3">
           <div className="space-y-1">
             <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-1">
-              {car.year} {car.make} {car.model}
+              {car.year} {makeStr} {modelStr}
             </h3>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -61,16 +67,16 @@ const CarCard = memo(({ car }: CarCardProps) => {
               <Calendar className="h-4 w-4" />
               <span>{car.year}</span>
             </div>
-            {car.fuel && (
+            {fuelStr && (
               <div className="flex items-center space-x-1">
                 <Fuel className="h-4 w-4" />
-                <span className="capitalize">{car.fuel}</span>
+                <span className="capitalize">{fuelStr}</span>
               </div>
             )}
-            {car.transmission && (
+            {transmissionStr && (
               <div className="flex items-center space-x-1">
                 <Settings className="h-4 w-4" />
-                <span className="capitalize">{car.transmission}</span>
+                <span className="capitalize">{transmissionStr}</span>
               </div>
             )}
           </div>

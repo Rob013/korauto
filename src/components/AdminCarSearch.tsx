@@ -11,15 +11,15 @@ import { useToast } from '@/hooks/use-toast';
 interface CarSearchResult {
   id: string;
   year: number;
-  make: string;
-  model: string;
+  make: string | { id: number; name: string } | any;
+  model: string | { id: number; name: string } | any;
   vin?: string;
   lot_number?: string;
   price?: number;
   image?: string;
   mileage?: string;
-  fuel?: string;
-  transmission?: string;
+  fuel?: string | { id: number; name: string } | any;
+  transmission?: string | { id: number; name: string } | any;
   color?: string;
   source?: 'cached' | 'api'; // Add source tracking
 }
@@ -467,7 +467,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-medium text-sm text-foreground truncate">
-                                  {car.year} {car.make} {car.model}
+                                  {car.year} {typeof car.make === 'string' ? car.make : (car.make as any)?.name || ''} {typeof car.model === 'string' ? car.model : (car.model as any)?.name || ''}
                                 </h4>
                                 <div className="flex flex-wrap gap-1 mt-1">
                                   <Badge variant="outline" className="text-xs">
@@ -501,8 +501,8 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
                               )}
                               <div className="flex gap-4">
                                 {car.mileage && <span>📏 {car.mileage}</span>}
-                                {car.fuel && <span>⛽ {car.fuel}</span>}
-                                {car.transmission && <span>⚙️ {car.transmission}</span>}
+                                {car.fuel && <span>⛽ {typeof car.fuel === 'string' ? car.fuel : (car.fuel as any)?.name || ''}</span>}
+                                {car.transmission && <span>⚙️ {typeof car.transmission === 'string' ? car.transmission : (car.transmission as any)?.name || ''}</span>}
                                 {car.color && <span>🎨 {car.color}</span>}
                               </div>
                             </div>
