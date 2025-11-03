@@ -93,11 +93,12 @@ const EncarCatalog = ({
     validationEnabled: false
   });
 
-  // Default sort: recently_added when no filters selected
+  // Default sort: recently_added with premium brands filter
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
+  const [carsPerPage] = useState(200); // Show 200 cars per page
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterLoading, setIsFilterLoading] = useState(false);

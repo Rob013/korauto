@@ -1,0 +1,24 @@
+name: Scheduled Cars Sync (Every 6 Hours)
+
+on:
+  schedule:
+    # Run every 6 hours at 00:00, 06:00, 12:00, and 18:00 UTC
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync-cars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Call Scheduled Sync Function
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/scheduled-cars-sync"
+
+      - name: Log sync completion
+        run: echo "Scheduled sync triggered at $(date)"
