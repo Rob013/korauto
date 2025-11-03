@@ -17,19 +17,19 @@ import InspectionRequestForm from "./InspectionRequestForm";
 
 interface EncarCarCardProps {
   id: string;
-  make: string;
-  model: string;
+  make: string | { id: number; name: string } | any;
+  model: string | { id: number; name: string } | any;
   year: number;
   price: number;
   image?: string;
   mileage?: string;
-  fuel?: string;
+  fuel?: string | { id: number; name: string } | any;
   location?: string;
   isNew?: boolean;
   isCertified?: boolean;
   // Enhanced fields from API
   vin?: string;
-  transmission?: string;
+  transmission?: string | { id: number; name: string } | any;
   color?: string;
   condition?: string;
   lot?: string;
@@ -115,6 +115,12 @@ const EncarCarCard = ({
   const [isLiked, setIsLiked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Normalize props to strings (handle both string and object formats)
+  const makeStr = typeof make === 'string' ? make : (make?.name || 'Unknown');
+  const modelStr = typeof model === 'string' ? model : (model?.name || 'Unknown');
+  const fuelStr = typeof fuel === 'string' ? fuel : (fuel?.name || '');
+  const transmissionStr = typeof transmission === 'string' ? transmission : (transmission?.name || '');
+
   useEffect(() => {
     const checkAdminStatus = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -155,7 +161,7 @@ const EncarCarCard = ({
 
   const handleContactWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const message = `Përshëndetje! Jam i interesuar për ${year} ${make} ${model}. A mund të më jepni më shumë informacion?`;
+    const message = `Përshëndetje! Jam i interesuar për ${year} ${makeStr} ${modelStr}. A mund të më jepni më shumë informacion?`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -170,7 +176,7 @@ const EncarCarCard = ({
         {image ? (
           <img
             src={image}
-            alt={`${year} ${make} ${model}`}
+            alt={`${year} ${makeStr} ${modelStr}`}
             className="w-full h-full object-cover object-center transition-transform duration-300"
             onError={(e) => {
               e.currentTarget.src = "https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image";
@@ -240,7 +246,7 @@ const EncarCarCard = ({
         {/* Car Title - More compact */}
         <div className="mb-2">
           <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-1 line-clamp-1">
-            {year} {typeof make === 'object' ? (make as any)?.name || '' : make || ''} {typeof model === 'object' ? (model as any)?.name || '' : model || ''}
+            {year} {makeStr} {modelStr}
           </h3>
           {location && (
             <div className="flex items-center text-xs sm:text-sm text-gray-500">
@@ -258,16 +264,16 @@ const EncarCarCard = ({
               <span className="font-medium truncate">{mileage}</span>
             </div>
           )}
-          {fuel && (
+          {fuelStr && (
             <div className="flex items-center gap-1.5 truncate">
               <Fuel className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              <span className="font-medium capitalize truncate">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
+              <span className="font-medium capitalize truncate">{fuelStr}</span>
             </div>
           )}
-          {transmission && (
+          {transmissionStr && (
             <div className="flex items-center gap-1.5 truncate">
               <Settings className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              <span className="font-medium capitalize truncate">{typeof transmission === 'object' ? (transmission as any)?.name || '' : transmission || ''}</span>
+              <span className="font-medium capitalize truncate">{transmissionStr}</span>
             </div>
           )}
           <div className="flex items-center gap-1.5">
@@ -300,15 +306,15 @@ const EncarCarCard = ({
                 size="sm"
                 className="flex-1 bg-primary text-white font-semibold h-9 text-xs sm:text-sm shadow-md transition-all"
                 onClick={(e) => e.stopPropagation()}
-                aria-label={`Kërkoni inspektim për ${year} ${make} ${model}`}
+                aria-label={`Kërkoni inspektim për ${year} ${makeStr} ${modelStr}`}
               >
                 <FileText className="h-3.5 w-3.5 mr-1.5" />
                 <span className="hidden sm:inline">Inspektim </span>€50
               </Button>
             }
             carId={id}
-            carMake={make}
-            carModel={model}
+            carMake={makeStr}
+            carModel={modelStr}
             carYear={year}
           />
           <Button
@@ -316,7 +322,7 @@ const EncarCarCard = ({
             size="sm"
             className="flex-1 border-2 border-primary text-primary font-semibold h-9 text-xs sm:text-sm transition-all"
             onClick={handleContactWhatsApp}
-            aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${make} ${model}`}
+            aria-label={`Kontaktoni për më shumë informacion rreth ${year} ${makeStr} ${modelStr}`}
           >
             <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
             Kontakt
