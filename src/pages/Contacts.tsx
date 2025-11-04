@@ -60,11 +60,11 @@ const Contacts = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="py-8">
+      <main className="py-8 sm:py-12 animate-fade-in container-responsive">
         <Suspense fallback={<ContactSkeleton />}>
           <ContactSection />
         </Suspense>
-      </div>
+      </main>
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />
       </Suspense>

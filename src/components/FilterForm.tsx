@@ -256,45 +256,45 @@ const FilterForm = memo<FilterFormProps>(({
   }, [filters, manufacturers, models, onFiltersChange]);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+    <Card className="glass-card p-4 sm:p-6 space-y-4 animate-slide-in-up">
       <AISearchBar onSearch={handleAISearch} />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-primary" />
-          <h3 className="text-sm sm:text-base font-semibold">Kërkim i mençur</h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onClearFilters} 
-            disabled={isLoading}
-            className="text-xs px-2 py-1 h-6 ml-2 text-muted-foreground hover:text-destructive"
-          >
-            {isLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <>
-                <X className="h-3 w-3 mr-1" />
-                Pastro
-              </>
-            )}
-          </Button>
+          <Filter className="h-5 w-5 text-primary flex-shrink-0" />
+          <h3 className="text-base sm:text-lg font-semibold">Kërkim i mençur</h3>
         </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onClearFilters} 
+          disabled={isLoading}
+          className="btn-press-effect text-xs sm:text-sm px-3 py-2 h-8 sm:h-9 text-muted-foreground hover:text-destructive self-start sm:self-auto"
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <X className="h-4 w-4 mr-1.5" />
+              Pastro
+            </>
+          )}
+        </Button>
       </div>
 
 
 
 
 
-      {/* Basic Filters - Optimized mobile layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="manufacturer" className="text-xs font-medium truncate">Marka</Label>
+      {/* Basic Filters - iOS-inspired layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="manufacturer" className="text-xs sm:text-sm font-medium">Marka</Label>
           <AdaptiveSelect 
             value={filters.manufacturer_id || 'all'} 
             onValueChange={handleBrandChange} 
             disabled={isLoading}
             placeholder={isLoading ? "Po ngarkon..." : "Të gjitha Markat"}
-            className="h-8 text-xs"
+            className="h-10 sm:h-11 text-sm transition-all duration-300"
             options={[
               { value: 'all', label: 'Të gjitha Markat' },
               ...sortedManufacturers.map((manufacturer) => ({
@@ -312,14 +312,14 @@ const FilterForm = memo<FilterFormProps>(({
           />
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="model" className="text-xs font-medium truncate">Modeli</Label>
+        <div className="space-y-2">
+          <Label htmlFor="model" className="text-xs sm:text-sm font-medium">Modeli</Label>
           <AdaptiveSelect 
             value={filters.model_id || 'all'} 
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
             placeholder={isLoading ? "Po ngarkon..." : (filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidhni markën së pari")}
-            className="h-8 text-xs"
+            className="h-10 sm:h-11 text-sm transition-all duration-300"
             options={[
               { value: 'all', label: 'Të gjithë Modelet' },
               ...(models && models.length > 0 ? 
@@ -335,8 +335,8 @@ const FilterForm = memo<FilterFormProps>(({
           />
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="year_presets" className="text-xs font-medium truncate flex items-center gap-1">
+        <div className="space-y-2">
+          <Label htmlFor="year_presets" className="text-xs sm:text-sm font-medium flex items-center gap-1">
             Zgjedhja e Shpejtë e Vitit 
             <span className="text-xs text-primary bg-primary/10 px-1 rounded" title="Optimized for instant results">⚡</span>
           </Label>
@@ -351,7 +351,7 @@ const FilterForm = memo<FilterFormProps>(({
                     : "outline"
                 }
                 size="sm"
-                className="h-6 px-2 text-xs"
+                className="h-8 px-3 text-xs sm:text-sm btn-press-effect"
                 onClick={() => {
                   // Apply year range presets immediately for instant response
                   const updatedFilters = {
@@ -369,7 +369,7 @@ const FilterForm = memo<FilterFormProps>(({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-6 px-2 text-xs text-muted-foreground"
+                className="h-8 px-2 text-xs sm:text-sm text-muted-foreground btn-press-effect"
                 onClick={() => {
                   const updatedFilters = {
                     ...filters,
@@ -385,13 +385,13 @@ const FilterForm = memo<FilterFormProps>(({
           </div>
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="from_year" className="text-xs font-medium truncate">Nga Viti</Label>
+        <div className="space-y-2">
+          <Label htmlFor="from_year" className="text-xs sm:text-sm font-medium">Nga Viti</Label>
           <AdaptiveSelect 
             value={filters.from_year || 'any'} 
             onValueChange={(value) => updateFilter('from_year', value)}
             placeholder="Të gjithë vitet"
-            className="h-8 text-xs"
+            className="h-10 sm:h-11 text-sm transition-all duration-300"
             options={[
               { value: 'any', label: 'Të gjithë vitet' },
               ...years.map((year) => ({
@@ -402,13 +402,13 @@ const FilterForm = memo<FilterFormProps>(({
           />
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="to_year" className="text-xs font-medium truncate">Deri në Vit</Label>
+        <div className="space-y-2">
+          <Label htmlFor="to_year" className="text-xs sm:text-sm font-medium">Deri në Vit</Label>
           <AdaptiveSelect 
             value={filters.to_year || 'any'} 
             onValueChange={(value) => updateFilter('to_year', value)}
             placeholder="Të gjithë vitet"
-            className="h-8 text-xs"
+            className="h-10 sm:h-11 text-sm transition-all duration-300"
             options={[
               { value: 'any', label: 'Të gjithë vitet' },
               ...years.map((year) => ({
@@ -422,15 +422,20 @@ const FilterForm = memo<FilterFormProps>(({
 
       {/* Toggle Advanced Filters */}
       {onToggleAdvanced && (
-        <Button variant="ghost" size="sm" onClick={onToggleAdvanced} className="w-full sm:w-auto text-xs h-7">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onToggleAdvanced} 
+          className="w-full sm:w-auto text-sm h-10 btn-press-effect hover-lift-gentle"
+        >
           {showAdvanced ? 'Fshih' : 'Shfaq'} Filtrat e Avancuara
         </Button>
       )}
 
       {/* Advanced Filters */}
       {showAdvanced && (
-        <div className="border-t pt-3 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        <div className="border-t pt-4 space-y-4 animate-slide-in-up">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-1">
               <Label htmlFor="generation" className="text-xs font-medium">Gjenerata</Label>
               <AdaptiveSelect 
@@ -646,7 +651,7 @@ const FilterForm = memo<FilterFormProps>(({
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 });
 
