@@ -875,10 +875,6 @@ const CarDetails = memo(() => {
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Normalize car properties to strings (handle both string and object formats)
-  const carMake = car ? (typeof car.make === 'string' ? car.make : (car.make as any)?.name || 'Unknown') : '';
-  const carModel = car ? (typeof car.model === 'string' ? car.model : (car.model as any)?.name || 'Unknown') : '';
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -1371,7 +1367,7 @@ const CarDetails = memo(() => {
                   {images.length > 0 ? (
                     <img 
                       src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${carMake} ${carModel} - Image ${selectedImageIndex + 1}`}
+                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
                       className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
                       onError={e => {
                         e.currentTarget.src = "/placeholder.svg";
@@ -1484,7 +1480,7 @@ const CarDetails = memo(() => {
                   >
                     <img
                       src={image}
-                      alt={`${car.year} ${carMake} ${carModel} - Thumbnail ${index + 2}`}
+                      alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
@@ -1520,7 +1516,7 @@ const CarDetails = memo(() => {
                   {images.length > 0 ? (
                     <img 
                       src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${carMake} ${carModel} - Image ${selectedImageIndex + 1}`} 
+                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
                       className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
                       onError={e => {
                         e.currentTarget.src = "/placeholder.svg";
@@ -1622,7 +1618,7 @@ const CarDetails = memo(() => {
             <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight flex-1 min-w-0">
-                  {car.year} {carMake} {carModel}
+                  {car.year} {car.make} {car.model}
                 </h1>
                 <div className="text-right flex-shrink-0">
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -1640,7 +1636,7 @@ const CarDetails = memo(() => {
                       <FileText className="h-3 w-3 mr-1.5" />
                       <span className="hidden sm:inline">Kërko Inspektim</span>
                       <span className="sm:hidden">Inspektim</span>
-                    </Button>} carId={car.id} carMake={carMake} carModel={carModel} carYear={car.year} />
+                    </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
                 <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white flex-1 h-9 text-xs hover-scale shadow-md">
                   <MessageCircle className="h-3 w-3 mr-1.5" />
                   WhatsApp
@@ -1671,7 +1667,7 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {carMake}
+                      {car.make}
                     </span>
                   </div>
 
@@ -1683,7 +1679,7 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {carModel}
+                      {car.model}
                     </span>
                   </div>
 
@@ -2219,7 +2215,7 @@ const CarDetails = memo(() => {
                   <InspectionRequestForm trigger={<Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
                         <FileText className="h-4 w-4 mr-2" />
                         Kërko Inspektim
-                      </Button>} carId={car.id} carMake={carMake} carModel={carModel} carYear={car.year} />
+                      </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
                 </div>
 
                 {/* Enhanced Location */}

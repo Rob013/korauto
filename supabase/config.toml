@@ -49,9 +49,3 @@ verify_jwt = false
 
 [functions.ai-car-search]
 verify_jwt = false
-
-[functions.scheduled-cars-sync]
-verify_jwt = false
-
-[functions._cron]
-verify_jwt = false

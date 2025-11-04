@@ -211,8 +211,8 @@ Deno.serve(async (req) => {
     while (hasMorePages && page <= pagesLimit) {
       console.log(`📄 Fetching page ${page}...`);
       
-      // Fetch all cars sorted by created_at descending to get latest first
-      const response = await fetch(`${API_BASE_URL}/cars?per_page=${perPage}&page=${page}&simple_paginate=0&sort=created_at&order=desc`, {
+      // Fetch all cars without domain filter to get both Encar and KB Chachacha
+      const response = await fetch(`${API_BASE_URL}/cars?per_page=${perPage}&page=${page}&simple_paginate=0`, {
         headers: {
           'accept': 'application/json',
           'x-api-key': API_KEY

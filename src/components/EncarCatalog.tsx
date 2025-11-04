@@ -93,12 +93,11 @@ const EncarCatalog = ({
     validationEnabled: false
   });
 
-  // Default sort: recently_added with premium brands filter
+  // Default sort: recently_added when no filters selected
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
   const [hasUserSelectedSort, setHasUserSelectedSort] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
-  const [carsPerPage] = useState(200); // Show 200 cars per page
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterLoading, setIsFilterLoading] = useState(false);
@@ -153,44 +152,11 @@ const EncarCatalog = ({
     return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && !filters.model_id && !filters.generation_id && !filters.color && !filters.fuel_type && !filters.transmission && !filters.body_type && !filters.odometer_from_km && !filters.odometer_to_km && !filters.from_year && !filters.to_year && !filters.buy_now_price_from && !filters.buy_now_price_to && !filters.search && !filters.seats_count && (!filters.grade_iaai || filters.grade_iaai === 'all');
   }, [filters]);
 
-  // Premium brands to show by default
-  const PREMIUM_BRANDS = ['Volkswagen', 'Audi', 'Mercedes-Benz', 'BMW'];
-  
-  // Check if we're in default state (no filters applied)
-  const hasAnyFilters = useMemo(() => {
-    if (!filters) return false;
-    // Ignore the premium_brands special filter flag
-    const filtersCopy = { ...filters };
-    if (filtersCopy.manufacturer_id === 'premium_brands') {
-      delete filtersCopy.manufacturer_id;
-    }
-    return !!(
-      filtersCopy.manufacturer_id || 
-      filtersCopy.model_id || 
-      filtersCopy.generation_id || 
-      filtersCopy.color || 
-      filtersCopy.fuel_type || 
-      filtersCopy.transmission || 
-      filtersCopy.body_type || 
-      filtersCopy.odometer_from_km || 
-      filtersCopy.odometer_to_km || 
-      filtersCopy.from_year || 
-      filtersCopy.to_year || 
-      filtersCopy.buy_now_price_from || 
-      filtersCopy.buy_now_price_to || 
-      filtersCopy.search || 
-      filtersCopy.seats_count || 
-      filtersCopy.grade_iaai
-    );
-  }, [filters]);
-
   // Memoized client-side grade and engine filtering for better performance
   const filteredCars = useMemo(() => {
     // Use fallback data when there's an error and no cars loaded
     const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars || []);
-    
-    // No need for client-side brand filtering - handled by API
     
     // Apply grade filter
     const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
@@ -232,8 +198,6 @@ const EncarCatalog = ({
 
   // Apply filters on merged list
   const mergedFilteredCars = useMemo(() => {
-    // No need for client-side brand filtering - handled by API
-    
     const gradeFiltered = applyGradeFilter(mergedCars, filters?.grade_iaai) || [];
     const engineSpec = (filters as any)?.engine_spec;
     const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
@@ -522,18 +486,14 @@ const EncarCatalog = ({
   }, [fetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
 
   const handleClearFilters = useCallback(() => {
-    const defaultFilters = {
-      manufacturer_id: 'premium_brands', // Reset to premium brands
-      sort_by: 'recently_added'
-    };
-    setFilters(defaultFilters);
+    setFilters({});
     setSearchTerm("");
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset sort preference
     setSortBy("recently_added"); // Reset to recently_added default
-    fetchCars(1, defaultFilters, true);
+    fetchCars(1, {}, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams]);
   const handleSearch = useCallback(() => {
@@ -868,22 +828,16 @@ const EncarCatalog = ({
           }
         }
 
-      // Load cars last - this is the most expensive operation
-      const initialFilters = {
-        ...urlFilters,
-        per_page: "200",
-        page: urlCurrentPage.toString(),
-        // Add premium brand filter by default when no manufacturer selected
-        ...((!urlFilters.manufacturer_id || urlFilters.manufacturer_id === 'all') ? {
-          manufacturer_id: 'premium_brands' // Special flag for premium brands
-        } : {}),
-        ...(hasUserSelectedSort && sortBy ? {
-          sort_by: sortBy
-        } : {
-          sort_by: 'recently_added' // Always sort by recently_added for premium brands
-        })
-      };
-      await fetchCars(urlCurrentPage, initialFilters, true);
+        // Load cars last - this is the most expensive operation
+        const initialFilters = {
+          ...urlFilters,
+          per_page: "200",
+          page: urlCurrentPage.toString(),
+          ...(hasUserSelectedSort && sortBy ? {
+            sort_by: sortBy
+          } : {})
+        };
+        await fetchCars(urlCurrentPage, initialFilters, true);
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {

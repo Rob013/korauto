@@ -894,7 +894,7 @@ const AdminDashboard = () => {
                               {car?.image ? (
                                 <img
                                   src={car.image}
-                                  alt={`${car.year} ${typeof car.make === 'string' ? car.make : (car.make as any)?.name || ''} ${typeof car.model === 'string' ? car.model : (car.model as any)?.name || ''}`}
+                                  alt={`${car.year} ${car.make} ${car.model}`}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -924,7 +924,7 @@ const AdminDashboard = () => {
                               {car && (
                                 <div className="mb-1">
                                   <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                                    <span>{car.year} {typeof car.make === 'string' ? car.make : (car.make as any)?.name || ''} {typeof car.model === 'string' ? car.model : (car.model as any)?.name || ''}</span>
+                                    <span>{car.year} {car.make} {car.model}</span>
                                   </div>
                                 </div>
                               )}
@@ -1334,7 +1334,7 @@ const AdminDashboard = () => {
                             {car?.image ? (
                               <img
                                 src={car.image}
-                                alt={`${car.year} ${typeof car.make === 'string' ? car.make : (car.make as any)?.name || ''} ${typeof car.model === 'string' ? car.model : (car.model as any)?.name || ''}`}
+                                alt={`${car.year} ${car.make} ${car.model}`}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -1369,7 +1369,7 @@ const AdminDashboard = () => {
                             {car && (
                               <div className="mb-2">
                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                                  <span>{car.year} {typeof car.make === 'string' ? car.make : (car.make as any)?.name || ''} {typeof car.model === 'string' ? car.model : (car.model as any)?.name || ''}</span>
+                                  <span>{car.year} {car.make} {car.model}</span>
                                   {car.lot_number && (
                                     <span className="lot-number-highlight ml-2">
                                       Lot: {car.lot_number}

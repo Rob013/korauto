@@ -34,15 +34,15 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 interface CarCardProps {
   id: string;
-  make: string | { id: number; name: string } | any;
-  model: string | { id: number; name: string } | any;
+  make: string;
+  model: string;
   year: number;
   price: number;
   image?: string;
   vin?: string;
   mileage?: string;
-  transmission?: string | { id: number; name: string } | any;
-  fuel?: string | { id: number; name: string } | any;
+  transmission?: string;
+  fuel?: string;
   color?: string;
   condition?: string;
   lot?: string;
@@ -269,12 +269,6 @@ const CarCard = ({
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Normalize props to strings (handle both string and object formats)
-  const makeStr = typeof make === 'string' ? make : (make?.name || 'Unknown');
-  const modelStr = typeof model === 'string' ? model : (model?.name || 'Unknown');
-  const fuelStr = typeof fuel === 'string' ? fuel : (fuel?.name || '');
-  const transmissionStr = typeof transmission === 'string' ? transmission : (transmission?.name || '');
-
   // Simplified logic: trust the database filtering, only hide in clear edge cases
   const shouldHideSoldCar = () => {
     // Only hide if it's definitively a sold car that's clearly old
@@ -370,8 +364,8 @@ const CarCard = ({
         await supabase.from("favorite_cars").insert({
           user_id: user.id,
           car_id: id,
-          car_make: makeStr,
-          car_model: modelStr,
+          car_make: make,
+          car_model: model,
           car_year: year,
           car_price: price,
           car_image: image,
@@ -390,7 +384,7 @@ const CarCard = ({
         variant: "destructive",
       });
     }
-  }, [user, isFavorite, id, makeStr, modelStr, year, price, image, toast, navigate]);
+  }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
   const handleCardClick = useCallback(() => {
     // Save current page and scroll position before navigating
@@ -432,7 +426,7 @@ const CarCard = ({
         {image ? (
           <OptimizedImage
             src={image}
-            alt={`${year} ${makeStr} ${modelStr}`}
+            alt={`${year} ${make} ${model}`}
             className="w-full h-full transition-transform duration-300 ease-out"
             width={280}
             priority={false}
@@ -471,9 +465,9 @@ const CarCard = ({
       <div className="p-3 flex flex-col flex-1" style={{ minHeight: '168px' }}>
         <div className="mb-2">
           <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
-            {year} {makeStr} {modelStr}
+            {year} {make} {model}
           </h3>
-          {title && title !== `${makeStr} ${modelStr}` && (
+          {title && title !== `${make} ${model}` && (
             <p className="text-xs text-muted-foreground line-clamp-1" style={{ minHeight: '1rem' }}>
               {title}
             </p>
@@ -488,16 +482,16 @@ const CarCard = ({
               <span className="truncate text-muted-foreground">{mileage}</span>
             </div>
           )}
-          {transmissionStr && (
+          {transmission && (
             <div className="flex items-center gap-1">
               <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{transmissionStr}</span>
+              <span className="capitalize truncate text-muted-foreground">{transmission}</span>
             </div>
           )}
-          {fuelStr && (
+          {fuel && (
             <div className="flex items-center gap-1">
               <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{fuelStr}</span>
+              <span className="capitalize truncate text-muted-foreground">{fuel}</span>
             </div>
           )}
           {color && (

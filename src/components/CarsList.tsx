@@ -9,13 +9,13 @@ import { formatMileage } from '@/utils/mileageFormatter';
 
 interface Car {
   id: string;
-  make: string | { id: number; name: string } | any;
-  model: string | { id: number; name: string } | any;
+  make: string;
+  model: string;
   year: number;
   price: number;
   mileage?: number;
-  fuel?: string | { id: number; name: string } | any;
-  transmission?: string | { id: number; name: string } | any;
+  fuel?: string;
+  transmission?: string;
   bodyType?: string;
   color?: string;
   location?: string;
@@ -53,26 +53,19 @@ const CarCardSkeleton: React.FC = () => (
 );
 
 // Individual car card component
-const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, onClick }) => {
-  // Normalize props to strings
-  const makeStr = typeof car.make === 'string' ? car.make : (car.make as any)?.name || 'Unknown';
-  const modelStr = typeof car.model === 'string' ? car.model : (car.model as any)?.name || 'Unknown';
-  const fuelStr = typeof car.fuel === 'string' ? car.fuel : (car.fuel as any)?.name || '';
-  const transmissionStr = typeof car.transmission === 'string' ? car.transmission : (car.transmission as any)?.name || '';
-
-  return (
-    <Card 
-      className="w-full h-full cursor-pointer transition-all duration-200 car-card-container"
-      onClick={onClick}
-    >
-      <CardContent className="p-4">
-        {/* Car Image */}
-        <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-muted">
-          {car.images && car.images.length > 0 ? (
-            <img
-              src={car.images[0]}
-              alt={`${makeStr} ${modelStr}`}
-              className="w-full h-full object-cover"
+const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, onClick }) => (
+  <Card 
+    className="w-full h-full cursor-pointer transition-all duration-200 car-card-container"
+    onClick={onClick}
+  >
+    <CardContent className="p-4">
+      {/* Car Image */}
+      <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-muted">
+        {car.images && car.images.length > 0 ? (
+          <img
+            src={car.images[0]}
+            alt={`${car.make} ${car.model}`}
+            className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/images/car-placeholder.jpg';
@@ -88,15 +81,15 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
       {/* Car Details */}
       <div className="space-y-2">
         <h3 className="font-semibold text-lg line-clamp-1">
-          {car.year} {makeStr} {modelStr}
+          {car.year} {car.make} {car.model}
         </h3>
         
         <div className="text-sm text-muted-foreground space-y-1">
           {car.mileage && (
             <p>{formatMileage(car.mileage)}</p>
           )}
-          {fuelStr && transmissionStr && (
-            <p>{fuelStr} • {transmissionStr}</p>
+          {car.fuel && car.transmission && (
+            <p>{car.fuel} • {car.transmission}</p>
           )}
           {car.color && (
             <p>Color: {car.color}</p>
@@ -120,7 +113,7 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
       </div>
     </CardContent>
   </Card>
-)});
+));
 
 CarCard.displayName = 'CarCard';
 

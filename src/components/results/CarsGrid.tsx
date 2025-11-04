@@ -30,10 +30,6 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
     onCarClick?.(car);
   }, [car, onCarClick]);
 
-  // Normalize props to strings (handle both string and object formats)
-  const makeStr = typeof car.make === 'string' ? car.make : (car.make as any)?.name || 'Unknown';
-  const modelStr = typeof car.model === 'string' ? car.model : (car.model as any)?.name || 'Unknown';
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-EU', {
       style: 'currency',
@@ -65,7 +61,7 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
           {car.thumbnail ? (
             <img
               src={car.thumbnail}
-              alt={`${makeStr} ${modelStr}`}
+              alt={`${car.make} ${car.model}`}
               className="w-full h-full object-cover"
               loading={priority ? 'eager' : 'lazy'}
               onError={(e) => {
@@ -94,7 +90,7 @@ const CarCard = memo(({ car, onCarClick, priority = false }: CarCardProps) => {
         <div className="flex-1 space-y-2">
           {/* Title */}
           <h3 className="font-medium text-sm leading-tight line-clamp-2">
-            {makeStr} {modelStr}
+            {car.make} {car.model}
           </h3>
 
           {/* Price */}
