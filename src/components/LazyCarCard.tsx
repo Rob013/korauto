@@ -19,9 +19,9 @@ interface LazyCarCardProps {
   images?: string[]; // New prop for multiple images
   vin?: string;
   mileage?: string;
-  transmission?: string;
-  fuel?: string;
-  color?: string;
+  transmission?: string | { id: number; name: string } | any;
+  fuel?: string | { id: number; name: string } | any;
+  color?: string | { id: number; name: string } | any;
   condition?: string;
   lot?: string;
   title?: string;
@@ -79,6 +79,9 @@ const LazyCarCard = memo(({
   // Normalize make and model to strings (handle both string and object formats)
   const makeStr = typeof make === 'string' ? make : (make?.name || 'Unknown');
   const modelStr = typeof model === 'string' ? model : (model?.name || 'Unknown');
+  const fuelStr = typeof fuel === 'string' ? fuel : (fuel as any)?.name || '';
+  const transmissionStr = typeof transmission === 'string' ? transmission : (transmission as any)?.name || '';
+  const colorStr = typeof color === 'string' ? color : (color as any)?.name || '';
 
   // Simplified logic: trust the database filtering, only hide in clear edge cases
   const shouldHideSoldCar = () => {
@@ -367,16 +370,16 @@ const LazyCarCard = memo(({
                     <span className="font-medium text-foreground">{mileage}</span>
                   </div>
                 )}
-                {fuel && (
+                {fuelStr && (
                   <div className="flex items-center gap-0.5">
                     <Fuel className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                    <span className="capitalize text-foreground">{fuel}</span>
+                    <span className="capitalize text-foreground">{fuelStr}</span>
                   </div>
                 )}
-                {transmission && (
+                {transmissionStr && (
                   <div className="flex items-center gap-0.5">
                     <Settings className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                    <span className="capitalize text-foreground">{transmission}</span>
+                    <span className="capitalize text-foreground">{transmissionStr}</span>
                   </div>
                 )}
               </div>
@@ -511,16 +514,16 @@ const LazyCarCard = memo(({
               <span className="truncate text-foreground">{year}</span>
             </div>
           )}
-          {fuel && (
+          {fuelStr && (
             <div className="flex items-center gap-1.5 min-w-0">
               <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-foreground">{fuel}</span>
+              <span className="capitalize truncate text-foreground">{fuelStr}</span>
             </div>
           )}
-          {transmission && (
+          {transmissionStr && (
             <div className="flex items-center gap-1.5 min-w-0">
               <Settings className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-foreground">{transmission}</span>
+              <span className="capitalize truncate text-foreground">{transmissionStr}</span>
             </div>
           )}
         </div>
