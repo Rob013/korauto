@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { initializeAnalytics, trackPageView } from "@/utils/analytics";
+import { initMobileEnhancers } from "@/utils/mobileEnhancer";
 import Header from "@/components/Header";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -66,6 +66,9 @@ const Index = () => {
     // Initialize analytics tracking for homepage
     initializeAnalytics();
     trackPageView(undefined, { page_type: 'homepage' });
+    
+    // Initialize mobile enhancements
+    initMobileEnhancers();
   }, []);
 
   return (
