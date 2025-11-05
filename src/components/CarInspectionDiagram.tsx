@@ -121,6 +121,21 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       path: 'M 220 555 L 420 555 Q 435 555 435 570 L 435 590 Q 435 605 420 605 L 220 605 Q 205 605 205 590 L 205 570 Q 205 555 220 555 Z',
       labelPos: { x: 320, y: 580 }
     },
+      // Side Sill Panels (approximate positions under doors)
+      {
+        id: 'side_sill_left',
+        name: 'Panel Anësor (Majtas)',
+        nameEn: 'Side Sill L',
+        path: 'M 135 310 L 235 310 L 235 330 L 135 330 Z',
+        labelPos: { x: 185, y: 320 }
+      },
+      {
+        id: 'side_sill_right',
+        name: 'Panel Anësor (Djathtas)',
+        nameEn: 'Side Sill R',
+        path: 'M 405 310 L 505 310 L 505 330 L 405 330 Z',
+        labelPos: { x: 455, y: 320 }
+      },
     // Left Front Fender
     {
       id: 'left_fender',
@@ -187,33 +202,80 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     },
   ];
 
-  // Get part status from inspection data
+  // Helper: evaluate if an item's title targets a given part id
+  const titleMatchesPart = (title: string, partId: string) => {
+    const t = title.toLowerCase();
+    const p = partId.toLowerCase();
+
+    // Generic substring match
+    if (t.includes(p)) return true;
+
+    // English mappings
+    const isLeft = t.includes('(left)') || t.includes('left') || t.includes(' lh') || t.includes(' l)');
+    const isRight = t.includes('(right)') || t.includes('right') || t.includes(' rh') || t.includes(' r)');
+    const isFront = t.includes('front');
+    const isRear = t.includes('rear');
+
+    if (t.includes('rear door') && isLeft && partId === 'rear_left_door') return true;
+    if (t.includes('rear door') && isRight && partId === 'rear_right_door') return true;
+    if (t.includes('front door') && isLeft && partId === 'front_left_door') return true;
+    if (t.includes('front door') && isRight && partId === 'front_right_door') return true;
+
+    if ((t.includes('quarter panel') || t.includes('quarter')) && isLeft && partId === 'left_quarter') return true;
+    if ((t.includes('quarter panel') || t.includes('quarter')) && isRight && partId === 'right_quarter') return true;
+
+    if (t.includes('wheel house') && isRear && isLeft && partId === 'left_quarter') return true;
+    if (t.includes('wheel house') && isRear && isRight && partId === 'right_quarter') return true;
+
+    if (t.includes('side sill') || t.includes('sill')) {
+      if (isLeft && partId === 'side_sill_left') return true;
+      if (isRight && partId === 'side_sill_right') return true;
+    }
+
+    if (t.includes('trunk floor') && partId === 'trunk') return true;
+
+    // Korean term matching
+    if (p.includes('front') && (t.includes('앞') || t.includes('전'))) return true;
+    if (p.includes('rear') && (t.includes('뒤') || t.includes('후'))) return true;
+    if (p.includes('left') && t.includes('좌')) return true;
+    if (p.includes('right') && t.includes('우')) return true;
+    if (p.includes('door') && t.includes('도어')) return true;
+    if (p.includes('hood') && t.includes('후드')) return true;
+    if (p.includes('bumper') && t.includes('범퍼')) return true;
+    if (p.includes('fender') && t.includes('펜더')) return true;
+    if (p.includes('quarter') && t.includes('쿼터')) return true;
+    if (p.includes('trunk') && t.includes('트렁크')) return true;
+    if (p.includes('windshield') && t.includes('윈드')) return true;
+    if (p.includes('glass') && t.includes('유리')) return true;
+    if (p.includes('roof') && t.includes('루프')) return true;
+
+    return false;
+  };
+
+  // Get part status from inspection data (aggregate across matching items)
   const getPartStatus = (partId: string) => {
-    const part = inspectionData.find(item => {
-      const typeTitle = item.type.title.toLowerCase();
-      const partIdLower = partId.toLowerCase();
-      
-      // Direct match
-      if (item.type.code === partId || typeTitle.includes(partIdLower)) return true;
-      
-      // Korean term matching
-      if (partIdLower.includes('front') && (typeTitle.includes('앞') || typeTitle.includes('전'))) return true;
-      if (partIdLower.includes('rear') && (typeTitle.includes('뒤') || typeTitle.includes('후'))) return true;
-      if (partIdLower.includes('left') && typeTitle.includes('좌')) return true;
-      if (partIdLower.includes('right') && typeTitle.includes('우')) return true;
-      if (partIdLower.includes('door') && typeTitle.includes('도어')) return true;
-      if (partIdLower.includes('hood') && typeTitle.includes('후드')) return true;
-      if (partIdLower.includes('bumper') && typeTitle.includes('범퍼')) return true;
-      if (partIdLower.includes('fender') && typeTitle.includes('펜더')) return true;
-      if (partIdLower.includes('quarter') && typeTitle.includes('쿼터')) return true;
-      if (partIdLower.includes('trunk') && typeTitle.includes('트렁크')) return true;
-      if (partIdLower.includes('windshield') && typeTitle.includes('윈드')) return true;
-      if (partIdLower.includes('glass') && typeTitle.includes('유리')) return true;
-      if (partIdLower.includes('roof') && typeTitle.includes('루프')) return true;
-      
-      return false;
-    });
-    return part?.statusTypes || [];
+    const statuses: Array<{ code: string; title: string }> = [];
+    for (const item of inspectionData) {
+      const typeTitle = (item?.type?.title || '').toString();
+      const matches =
+        item?.type?.code === partId ||
+        titleMatchesPart(typeTitle, partId);
+      if (!matches) continue;
+
+      const st = Array.isArray(item.statusTypes) ? item.statusTypes : [];
+      if (st.length > 0) {
+        statuses.push(...st);
+      } else {
+        // Derive from title if codes missing
+        const low = typeTitle.toLowerCase();
+        if (low.includes('exchange') || low.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
+        if (low.includes('weld')) statuses.push({ code: 'W', title: 'Welding' });
+        if (low.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
+        if (low.includes('scratch')) statuses.push({ code: 'S', title: 'Scratch' });
+        if (low.includes('corr')) statuses.push({ code: 'U', title: 'Corrosion' });
+      }
+    }
+    return statuses;
   };
 
 const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
