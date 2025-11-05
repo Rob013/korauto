@@ -67,7 +67,8 @@ const EncarCatalog = ({
     fetchFilterCounts,
     fetchGrades,
     fetchTrimLevels,
-    loadMore
+    loadMore,
+    refreshInventory
   } = useSecureAuctionAPI();
   const {
     convertUSDtoEUR,
@@ -139,6 +140,10 @@ const EncarCatalog = ({
   useEffect(() => {
     if (!isMobile) setShowFilters(true);else setShowFilters(false);
   }, [isMobile]);
+
+  useEffect(() => {
+    refreshInventory(60);
+  }, [refreshInventory]);
 
   // Memoized helper function to extract grades from title - now using utility
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);

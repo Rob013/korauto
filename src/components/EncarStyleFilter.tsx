@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { 
   Filter, 
   X, 
@@ -240,66 +241,78 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       <Card className="glass-panel border-0 rounded-xl p-6 sm:p-8 space-y-4 w-full max-w-md mx-auto shadow-lg">
         <div className="space-y-2">
           <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Car className="h-2.5 w-2.5" />
-              Marka
-            </Label>
-            <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-              <SelectTrigger className="filter-control h-8 text-xs">
-                <SelectValue placeholder="Zgjidhni markën" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[400px] bg-popover text-popover-foreground border border-border shadow-lg">
-                {!(isStrictMode && filters.manufacturer_id) && (
-                  <SelectItem value="all">Të gjitha markat</SelectItem>
-                )}
-                {sortedManufacturers.map((manufacturer: Manufacturer) => {
-                  const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
-                  return (
-                    <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                      <div className="flex items-center gap-2 py-1">
-                        <img 
-                          src={logoUrl} 
-                          alt={manufacturer.name}
-                          className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
-                          loading="eager"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                        <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+          <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+            <Car className="h-2.5 w-2.5" />
+            Marka
+          </Label>
+          <div className="h-4">
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] text-muted-foreground transition-opacity duration-200 ${loadingCounts ? 'opacity-100' : 'opacity-0 invisible'}`}
+            >
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Po përditësohen numrat
+            </span>
           </div>
+          <AdaptiveSelect
+            value={filters.manufacturer_id || 'all'}
+            onValueChange={(value) => updateFilter('manufacturer_id', value)}
+            placeholder="Zgjidhni markën"
+            className="filter-control h-8 text-xs"
+            options={[
+              ...(!(isStrictMode && filters.manufacturer_id)
+                ? [{ value: 'all', label: 'Të gjitha markat' }]
+                : []),
+              ...sortedManufacturers.map((manufacturer: Manufacturer) => {
+                const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
+                return {
+                  value: manufacturer.id.toString(),
+                  label: (
+                    <div className="flex items-center gap-2 py-1">
+                      <img
+                        src={logoUrl}
+                        alt={manufacturer.name}
+                        className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
+                        loading="eager"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
+                    </div>
+                  )
+                };
+              })
+            ]}
+          />
+        </div>
 
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Settings className="h-2.5 w-2.5" />
-              Modeli
-            </Label>
-            <Select value={filters.model_id || 'all'} onValueChange={(value) => updateFilter('model_id', value)} disabled={!filters.manufacturer_id}>
-              <SelectTrigger className="filter-control h-8 text-xs">
-                <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-              </SelectTrigger>
-              <SelectContent>
-                {!(isStrictMode && filters.model_id) && (
-                  <SelectItem value="all">Të gjithë modelet</SelectItem>
-                )}
-                {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => {
+        <div className="space-y-1 filter-section">
+          <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+            <Settings className="h-2.5 w-2.5" />
+            Modeli
+          </Label>
+          <AdaptiveSelect
+            value={filters.model_id || 'all'}
+            onValueChange={(value) => updateFilter('model_id', value)}
+            disabled={!filters.manufacturer_id}
+            placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+            className="filter-control h-8 text-xs"
+            options={[
+              ...(!(isStrictMode && filters.model_id)
+                ? [{ value: 'all', label: 'Të gjithë modelet' }]
+                : []),
+              ...models
+                .filter(model => model.cars_qty && model.cars_qty > 0)
+                .map(model => {
                   const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
                   const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
-                  return (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {formattedModelName} ({model.cars_qty})
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
+                  return {
+                    value: model.id.toString(),
+                    label: `${formattedModelName} (${model.cars_qty})`
+                  };
+                })
+            ]}
+          />
+        </div>
 
           {/* Year presets */}
           <div className="space-y-1 filter-section">
@@ -664,22 +677,31 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         {expandedSections.includes('basic') && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Marka</Label>
-              <Select value={filters.manufacturer_id || 'all'} onValueChange={(value) => updateFilter('manufacturer_id', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[400px] bg-background">
-                  {!(isStrictMode && filters.manufacturer_id) && (
-                    <SelectItem value="all">Të gjitha Markat</SelectItem>
-                  )}
-                  {sortedManufacturers.map((manufacturer: Manufacturer) => {
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Marka</Label>
+                <span
+                  className={`inline-flex h-4 items-center gap-1 text-[10px] text-muted-foreground transition-opacity duration-200 ${loadingCounts ? 'opacity-100' : 'opacity-0 invisible'}`}
+                >
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Po përditësohen numrat
+                </span>
+              </div>
+              <AdaptiveSelect
+                value={filters.manufacturer_id || 'all'}
+                onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                placeholder="Zgjidhni markën"
+                className="filter-control"
+                options={[
+                  ...(!(isStrictMode && filters.manufacturer_id)
+                    ? [{ value: 'all', label: 'Të gjitha markat' }]
+                    : []),
+                  ...sortedManufacturers.map((manufacturer: Manufacturer) => {
                     const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
-                    return (
-                      <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                    return {
+                      value: manufacturer.id.toString(),
+                      label: (
                         <div className="flex items-center gap-2 py-1">
-                          <img 
-                            src={logoUrl} 
+                          <img
+                            src={logoUrl}
                             alt={manufacturer.name}
                             className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
                             loading="eager"
@@ -689,34 +711,37 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                           />
                           <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
                         </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+                      )
+                    };
+                  })
+                ]}
+              />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Modeli</Label>
-              <Select value={filters.model_id || 'all'} onValueChange={(value) => updateFilter('model_id', value)} disabled={!filters.manufacturer_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {!(isStrictMode && filters.model_id) && (
-                    <SelectItem value="all">Të gjithë Modelet</SelectItem>
-                  )}
-                  {models.filter(model => model.cars_qty && model.cars_qty > 0).map((model) => {
-                    const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
-                    const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
-                    return (
-                      <SelectItem key={model.id} value={model.id.toString()}>
-                        {formattedModelName} ({model.cars_qty})
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <AdaptiveSelect
+                value={filters.model_id || 'all'}
+                onValueChange={(value) => updateFilter('model_id', value)}
+                disabled={!filters.manufacturer_id}
+                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                className="filter-control"
+                options={[
+                  ...(!(isStrictMode && filters.model_id)
+                    ? [{ value: 'all', label: 'Të gjithë modelet' }]
+                    : []),
+                  ...models
+                    .filter(model => model.cars_qty && model.cars_qty > 0)
+                    .map(model => {
+                      const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+                      const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
+                      return {
+                        value: model.id.toString(),
+                        label: `${formattedModelName} (${model.cars_qty})`
+                      };
+                    })
+                ]}
+              />
             </div>
           </div>
         )}

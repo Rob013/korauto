@@ -53,7 +53,8 @@ const HomeCarsSection = memo(() => {
     fetchGenerations,
     fetchFilterCounts,
     fetchGrades,
-    fetchTrimLevels
+    fetchTrimLevels,
+    refreshInventory
   } = useSecureAuctionAPI();
   const {
     convertUSDtoEUR,
@@ -224,8 +225,9 @@ const HomeCarsSection = memo(() => {
 
   // Type conversion to match the sorting hook interface - use fallback data if API fails
   const carsForSorting = useMemo(() => {
-    // Use fallback data when there's an error and no cars loaded
-    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
+    // Use fallback data when there's an error and no cars loaded and we aren't loading
+    const shouldUseFallback = !loading && (error || cars.length === 0);
+    const sourceCars = shouldUseFallback ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars);
     // Filter to show cars that have real pricing (buy_now, final_bid, or price)
     const carsWithRealPricing = filterCarsWithRealPricing(cleanedCars);
@@ -244,7 +246,7 @@ const HomeCarsSection = memo(() => {
         cylinders: Number(car.cylinders || 0)
       };
     });
-  }, [cars, error, exchangeRate.rate]);
+  }, [cars, error, exchangeRate.rate, loading]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
@@ -331,6 +333,9 @@ const HomeCarsSection = memo(() => {
     };
     loadManufacturers();
   }, []);
+  useEffect(() => {
+    refreshInventory(45);
+  }, [refreshInventory]);
   const handleFiltersChange = (newFilters: APIFilters) => {
     // Check if generation is being selected
     if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {

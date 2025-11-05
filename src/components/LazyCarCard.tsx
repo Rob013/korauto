@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Car, Gauge, Settings, Fuel, Palette, Shield, Heart } from "lucide-react";
+import { Car, Gauge, Settings, Fuel, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
@@ -166,6 +166,28 @@ const LazyCarCard = memo(({
     };
   }, [id]);
 
+  const normalizedSource = typeof source === 'string' ? source : '';
+  const sourceBadgeLabel = normalizedSource
+    ? normalizedSource.toLowerCase() === 'encar'
+      ? 'Encar'
+      : normalizedSource.toLowerCase().includes('kbc')
+        ? 'KBC'
+        : normalizedSource.toUpperCase()
+    : null;
+  const showAccidentFreeBadge = insurance_v2?.accidentCnt === 0;
+  const isListView = viewMode === 'list';
+  const badgeStyles = isListView
+    ? {
+        container: 'absolute top-0.5 left-0.5 z-10 flex flex-col gap-1',
+        source: 'text-[8px] px-1 py-0 bg-background/80 backdrop-blur',
+        accident: 'bg-green-600/95 text-white px-1.5 py-0.5 rounded text-[8px] font-semibold shadow'
+      }
+    : {
+        container: 'absolute top-2 left-2 z-10 flex flex-col gap-1',
+        source: 'text-[10px] px-1.5 py-0.5 bg-background/80 backdrop-blur',
+        accident: 'bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow'
+      };
+
   const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -306,11 +328,18 @@ const LazyCarCard = memo(({
         <div className="flex flex-row gap-1.5 p-1.5">
           {/* Image Section - Very compact in list mode */}
           <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded w-20 h-16 sm:w-24 sm:h-20">
-            {source && (
-              <div className="absolute top-0.5 left-0.5 z-10">
-                <Badge variant="outline" className="text-[8px] px-1 py-0 bg-background/80 backdrop-blur">
-                  {source === 'encar' ? 'Encar' : source?.toLowerCase()?.includes('kbc') ? 'KBC' : (source || '').toUpperCase()}
-                </Badge>
+            {(sourceBadgeLabel || showAccidentFreeBadge) && (
+              <div className={badgeStyles.container}>
+                {sourceBadgeLabel && (
+                  <Badge variant="outline" className={`${badgeStyles.source}`}>
+                    {sourceBadgeLabel}
+                  </Badge>
+                )}
+                {showAccidentFreeBadge && (
+                  <div className={badgeStyles.accident}>
+                    Accident free
+                  </div>
+                )}
               </div>
             )}
             {(image || (images && images.length > 0)) ? (
@@ -330,11 +359,6 @@ const LazyCarCard = memo(({
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-muted">
                 <Car className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
-            {insurance_v2?.accidentCnt === 0 && (
-              <div className="absolute top-0.5 left-0.5 bg-green-600/95 text-white px-1.5 py-0.5 rounded text-[8px] font-semibold shadow z-10">
-                Accident free
               </div>
             )}
             {lot && (
@@ -382,12 +406,6 @@ const LazyCarCard = memo(({
                 )}
               </div>
               
-              {insurance_v2?.accidentCnt === 0 && (
-                <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-green-50 text-green-700 border-green-200 inline-flex items-center h-4">
-                  <Shield className="h-1.5 w-1.5 mr-0.5" />
-                  Accident free
-                </Badge>
-              )}
             </div>
             
             {/* Pricing Section */}
@@ -436,16 +454,18 @@ const LazyCarCard = memo(({
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
   <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
-    {source && (
-      <div className="absolute top-2 left-2 z-10">
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-background/80 backdrop-blur">
-          {source === 'encar' ? 'Encar' : source?.toLowerCase()?.includes('kbc') ? 'KBC' : (source || '').toUpperCase()}
-        </Badge>
-      </div>
-    )}
-    {insurance_v2?.accidentCnt === 0 && (
-      <div className="absolute top-2 right-2 bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow z-10">
-        Accident free
+    {(sourceBadgeLabel || showAccidentFreeBadge) && (
+      <div className={badgeStyles.container}>
+        {sourceBadgeLabel && (
+          <Badge variant="outline" className={`${badgeStyles.source}`}>
+            {sourceBadgeLabel}
+          </Badge>
+        )}
+        {showAccidentFreeBadge && (
+          <div className={badgeStyles.accident}>
+            Accident free
+          </div>
+        )}
       </div>
     )}
         {/* Always show single image - swipe functionality removed from car cards */}
@@ -530,16 +550,6 @@ const LazyCarCard = memo(({
             </div>
           )}
         </div>
-
-        {/* Status Indicators - More compact */}
-        {insurance_v2?.accidentCnt === 0 && (
-          <div className="mb-2">
-            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200">
-              <Shield className="h-2.5 w-2.5 mr-1" />
-              Accident free
-            </Badge>
-          </div>
-        )}
 
         {/* Pricing Section - Better aligned */}
         <div className="mt-auto">
