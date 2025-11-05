@@ -364,6 +364,19 @@ body {
     transition: var(--transition-smooth);
   }
 
+  /* Unified car card container and media sizing */
+  .car-card-container {
+    @apply flex flex-col h-full;
+  }
+
+  .car-image-wrapper {
+    @apply relative overflow-hidden rounded-lg bg-muted w-full aspect-[4/3];
+  }
+
+  .car-image {
+    @apply w-full h-full object-cover;
+  }
+
   /* iOS-style hover lift effect */
   .hover-lift {
     @apply transition-all duration-300;
