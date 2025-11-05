@@ -21,7 +21,6 @@ import {
   Loader2,
   MapPin,
   Shield,
-  Users,
   Wrench,
 } from "lucide-react";
 
@@ -42,6 +41,11 @@ interface InspectionReportCar {
       name?: string;
     };
   };
+  vin?: string;
+  fuel?: string;
+  firstRegistration?: string;
+  postedAt?: string;
+  engineDisplacement?: number | string;
   damage?: {
     main?: string | null;
     second?: string | null;
@@ -112,6 +116,62 @@ const formatKeyLabel = (key: string) =>
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
+const formatDisplayDate = (
+  value?: string | number | null,
+  { monthYear = false }: { monthYear?: boolean } = {},
+) => {
+  if (value === undefined || value === null) return null;
+  const raw = typeof value === "number" ? value.toString() : `${value}`.trim();
+  if (!raw) return null;
+
+  const normalized = raw.replace(/\s+/g, "");
+
+  const monthYearMatch = normalized.match(/^(\d{2})[./](\d{4})$/);
+  if (monthYearMatch) {
+    return `${monthYearMatch[1]}.${monthYearMatch[2]}`;
+  }
+
+  const dayMonthYearMatch = normalized.match(/^(\d{2})[./-](\d{2})[./-](\d{4})$/);
+  if (dayMonthYearMatch) {
+    const [, dd, mm, yyyy] = dayMonthYearMatch;
+    return monthYear ? `${mm}.${yyyy}` : `${dd}.${mm}.${yyyy}`;
+  }
+
+  const yearMonthDayMatch = normalized.match(/^(\d{4})[./-](\d{2})[./-](\d{2})$/);
+  if (yearMonthDayMatch) {
+    const [, yyyy, mm, dd] = yearMonthDayMatch;
+    return monthYear ? `${mm}.${yyyy}` : `${dd}.${mm}.${yyyy}`;
+  }
+
+  const digitsOnly = normalized.replace(/[^0-9]/g, "");
+  if (digitsOnly.length === 8) {
+    const yyyy = digitsOnly.slice(0, 4);
+    const mm = digitsOnly.slice(4, 6);
+    const dd = digitsOnly.slice(6, 8);
+    return monthYear ? `${mm}.${yyyy}` : `${dd}.${mm}.${yyyy}`;
+  }
+
+  if (digitsOnly.length === 6) {
+    const yyyy = digitsOnly.slice(0, 4);
+    const mm = digitsOnly.slice(4, 6);
+    return `${mm}.${yyyy}`;
+  }
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    if (monthYear) {
+      return parsed.toLocaleDateString("sq-AL", { month: "2-digit", year: "numeric" });
+    }
+    return parsed.toLocaleDateString("sq-AL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
+
+  return raw.replace(/-/g, ".").replace(/T.*/, "");
+};
+
 const CarInspectionReport = () => {
   const { id: lot } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -173,35 +233,63 @@ const CarInspectionReport = () => {
       const inspectInner =
         details?.inspect?.inner || lotData.inspect?.inner || carData.inspect?.inner;
 
-      const transformed: InspectionReportCar = {
-        id: carData.id?.toString() || lot,
-        lot: lotData.lot || lot,
-        make: carData.manufacturer?.name,
-        model: carData.model?.name,
-        year: carData.year,
-        title: carData.title || lotData.title,
-        image: lotData.images?.big?.[0] || lotData.images?.normal?.[0],
-        priceEUR,
-        mileageKm: lotData.odometer?.km,
-        odometer: lotData.odometer,
-        damage: lotData.damage || details?.damage || null,
-        insurance: lotData.insurance || details?.insurance || carData.insurance,
-        insurance_v2: lotData.insurance_v2 || carData.insurance_v2,
-        details: {
-          ...details,
-          inspect_outer: inspectOuter,
-          inspect: {
-            ...details?.inspect,
-            inner: inspectInner,
+        const transformed: InspectionReportCar = {
+          id: carData.id?.toString() || lot,
+          lot: lotData.lot || lot,
+          make: carData.manufacturer?.name,
+          model: carData.model?.name,
+          year: carData.year,
+          title: carData.title || lotData.title,
+          image: lotData.images?.big?.[0] || lotData.images?.normal?.[0],
+          priceEUR,
+          mileageKm: lotData.odometer?.km,
+          odometer: lotData.odometer,
+          vin:
+            lotData.vin ||
+            carData.vin ||
+            details?.vin ||
+            details?.insurance?.car_info?.vin,
+          fuel:
+            carData.fuel?.name ||
+            lotData.fuel?.name ||
+            details?.fuel?.name ||
+            details?.specs?.fuel,
+          firstRegistration:
+            lotData.first_registration ||
+            (typeof lotData.firstRegistration === "string" && lotData.firstRegistration) ||
+            details?.first_registration ||
+            lotData.insurance_v2?.firstDate ||
+            carData.insurance_v2?.firstDate,
+          postedAt:
+            lotData.listed_at ||
+            lotData.posted_at ||
+            lotData.created_at ||
+            carData.listed_at ||
+            carData.posted_at ||
+            carData.created_at,
+          engineDisplacement:
+            lotData.insurance_v2?.displacement ||
+            carData.insurance_v2?.displacement ||
+            details?.engine_volume ||
+            details?.engine?.displacement,
+          damage: lotData.damage || details?.damage || null,
+          insurance: lotData.insurance || details?.insurance || carData.insurance,
+          insurance_v2: lotData.insurance_v2 || carData.insurance_v2,
+          details: {
+            ...details,
+            inspect_outer: inspectOuter,
+            inspect: {
+              ...details?.inspect,
+              inner: inspectInner,
+            },
           },
-        },
-        inspect: lotData.inspect,
-        ownerChanges: details?.insurance?.owner_changes || [],
-        maintenanceHistory: details?.maintenance_history || [],
-        location: lotData.location,
-        grade: lotData.grade_iaai,
-        sourceLabel: carData.source_label || carData.domain_name,
-      };
+          inspect: lotData.inspect,
+          ownerChanges: details?.insurance?.owner_changes || [],
+          maintenanceHistory: details?.maintenance_history || [],
+          location: lotData.location,
+          grade: lotData.grade_iaai,
+          sourceLabel: carData.source_label || carData.domain_name,
+        };
 
       setCar(transformed);
       setLoading(false);
@@ -230,9 +318,22 @@ const CarInspectionReport = () => {
           year: fallbackCar.year,
           title: fallbackCar.title,
           image: lotData.images?.big?.[0] || lotData.images?.normal?.[0],
-          priceEUR,
+            priceEUR,
           mileageKm: lotData.odometer?.km,
           odometer: lotData.odometer,
+          vin: fallbackCar.vin || lotData.vin,
+          fuel:
+            fallbackCar.fuel?.name ||
+            lotData.fuel?.name ||
+            fallbackCar.details?.fuel?.name,
+          firstRegistration:
+            lotData.first_registration ||
+            fallbackCar.first_registration ||
+            fallbackCar.details?.first_registration,
+          postedAt: lotData.listed_at || fallbackCar.listed_at,
+          engineDisplacement:
+            fallbackCar.details?.engine_volume ||
+            lotData.insurance_v2?.displacement,
           damage: lotData.damage || null,
           insurance: lotData.insurance,
           insurance_v2: lotData.insurance_v2,
@@ -297,6 +398,51 @@ const CarInspectionReport = () => {
     return [];
   }, [car]);
 
+  const accidentEntries = useMemo(() => {
+    return accidents.map((accident: any) => {
+      const dateValue =
+        accident?.date ||
+        accident?.accidentDate ||
+        accident?.accident_date ||
+        accident?.created_at ||
+        accident?.updated_at;
+
+      const normalizeValue = (value: unknown) => {
+        if (value === undefined || value === null) return "-";
+        if (typeof value === "number") {
+          return value.toLocaleString("de-DE");
+        }
+        const stringValue = `${value}`.trim();
+        return stringValue ? stringValue : "-";
+      };
+
+      return {
+        date: formatDisplayDate(dateValue) ?? "-",
+        part:
+          normalizeValue(
+            accident?.part ||
+              accident?.damagePart ||
+              accident?.component ||
+              accident?.type ||
+              accident?.position,
+          ),
+        paint: normalizeValue(accident?.paint || accident?.paintCost || accident?.painting),
+        labor: normalizeValue(accident?.labor || accident?.laborCost || accident?.workCost),
+        total: normalizeValue(accident?.total || accident?.totalCost || accident?.sum),
+      };
+    });
+  }, [accidents]);
+
+  const hasAccidentDetails = useMemo(
+    () =>
+      accidentEntries.some((entry) =>
+        Object.values(entry).some(
+          (value) => value !== "-" && value !== "" && value !== null && value !== undefined,
+        ),
+      ),
+    [accidentEntries],
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -342,6 +488,172 @@ const CarInspectionReport = () => {
     : car.odometer?.km
       ? formatMileage(car.odometer.km)
       : undefined;
+
+    const postedAtDisplay = formatDisplayDate(
+      car.postedAt ||
+        car.details?.posted_at ||
+        car.details?.listing_date ||
+        car.details?.postedDate ||
+        car.insurance_v2?.regDate,
+    );
+
+    const firstRegistrationDisplay = formatDisplayDate(
+      car.firstRegistration ||
+        car.details?.first_registration ||
+        car.details?.registration_date ||
+        car.insurance_v2?.firstDate,
+      { monthYear: true },
+    );
+
+    const engineSource =
+      car.engineDisplacement ||
+      car.details?.engine_volume ||
+      car.details?.engine?.displacement ||
+      car.details?.engine_capacity ||
+      car.insurance_v2?.displacement;
+
+    let engineDisplay: string | null = null;
+    if (typeof engineSource === "number") {
+      engineDisplay = `${engineSource.toLocaleString("de-DE")} cc`;
+    } else if (typeof engineSource === "string") {
+      const trimmedEngine = engineSource.trim();
+      if (trimmedEngine) {
+        engineDisplay = trimmedEngine.toLowerCase().includes("cc")
+          ? trimmedEngine
+          : `${trimmedEngine} cc`;
+      }
+    }
+
+    const fuelSource =
+      car.fuel ||
+      car.details?.fuel_type ||
+      car.details?.fuel?.name ||
+      car.insurance_v2?.fuel ||
+      car.details?.specs?.fuel;
+
+    const fuelDisplay =
+      typeof fuelSource === "string" && fuelSource.trim()
+        ? fuelSource.charAt(0).toUpperCase() + fuelSource.slice(1)
+        : fuelSource ?? null;
+
+    const mileageDisplay = formattedMileage || "-";
+
+    const ownerChangeCount =
+      typeof car.insurance_v2?.ownerChangeCnt === "number"
+        ? car.insurance_v2.ownerChangeCnt
+        : car.ownerChanges?.length;
+
+    const ownerChangesDisplay =
+      ownerChangeCount === undefined
+        ? "-"
+        : ownerChangeCount === 0
+          ? "Asnjë"
+          : ownerChangeCount === 1
+            ? "1 herë"
+            : `${ownerChangeCount} herë`;
+
+    const topVehicleInfo = [
+      { label: "Vetura", value: carName || car.title || "-" },
+      { label: "Postuar në", value: postedAtDisplay ?? "-" },
+      { label: "Regjistrimi i parë", value: firstRegistrationDisplay ?? "-" },
+      { label: "Numri i shasisë", value: car.vin || "-" },
+      { label: "Karburanti", value: fuelDisplay || "-" },
+      { label: "Kilometra", value: mileageDisplay },
+    ];
+
+    const generalVehicleInfo = [
+      { label: "Prodhuesi", value: car.make || "-" },
+      { label: "Modeli", value: car.model || "-" },
+      { label: "Regjistrimi i parë", value: firstRegistrationDisplay ?? "-" },
+      { label: "Karburanti", value: fuelDisplay || "-" },
+      { label: "Motorri", value: engineDisplay || "-" },
+      { label: "Pronaret e ndërruar", value: ownerChangesDisplay },
+    ];
+
+    const usageHistoryList: Array<{ description?: string; value?: string }> = Array.isArray(
+      car.details?.insurance?.usage_history,
+    )
+      ? car.details?.insurance?.usage_history
+      : [];
+
+    const findUsageValue = (keywords: string[]) => {
+      const match = usageHistoryList.find((entry) => {
+        const description = `${entry.description ?? ""}`.toLowerCase();
+        return keywords.some((keyword) => description.includes(keyword));
+      });
+      return match?.value;
+    };
+
+    const toYesNo = (value?: string | number | boolean | null) => {
+      if (value === undefined || value === null) return null;
+      if (typeof value === "boolean") return value ? "Po" : "Jo";
+      if (typeof value === "number") return value > 0 ? "Po" : "Jo";
+      const normalized = value.toString().trim().toLowerCase();
+      if (!normalized) return null;
+      if (["po", "yes", "true", "1"].includes(normalized)) return "Po";
+      if (["jo", "no", "false", "0"].includes(normalized)) return "Jo";
+      return value.toString();
+    };
+
+    const rentalUsageValue =
+      toYesNo(findUsageValue(["rent", "qira", "rental"])) ??
+      toYesNo(car.insurance_v2?.carInfoUse1s?.join(" ")) ??
+      toYesNo(car.insurance_v2?.carInfoUse2s?.join(" ")) ??
+      toYesNo(car.insurance_v2?.loan);
+
+    const commercialUsageValue =
+      toYesNo(findUsageValue(["komerc", "biznes", "commercial"])) ??
+      toYesNo(car.insurance_v2?.business);
+
+    const usageHighlights = [
+      { label: "Përdorur si veturë me qira", value: rentalUsageValue ?? "Nuk ka informata" },
+      { label: "Përdorur për qëllime komerciale", value: commercialUsageValue ?? "Nuk ka informata" },
+    ];
+
+    const ownerChangesList: Array<any> = Array.isArray(car.ownerChanges) ? car.ownerChanges : [];
+
+    const specialAccidentHistory: Array<any> = Array.isArray(
+      car.details?.insurance?.special_accident_history,
+    )
+      ? car.details?.insurance?.special_accident_history
+      : [];
+
+    const specialAccidentStats = [
+      {
+        label: "Flooded?",
+        value:
+          typeof car.insurance_v2?.floodTotalLossCnt === "number"
+            ? car.insurance_v2.floodTotalLossCnt > 0
+              ? "Po"
+              : "Jo"
+            : insuranceCarInfo?.flood_damage
+              ? toYesNo(processFloodDamageText(insuranceCarInfo.flood_damage)) ??
+                processFloodDamageText(insuranceCarInfo.flood_damage)
+              : "Nuk ka informata",
+      },
+      {
+        label: "Total loss?",
+        value:
+          typeof car.insurance_v2?.totalLossCnt === "number"
+            ? car.insurance_v2.totalLossCnt > 0
+              ? "Po"
+              : "Jo"
+            : insuranceCarInfo?.total_loss
+              ? toYesNo(insuranceCarInfo.total_loss) ?? insuranceCarInfo.total_loss
+              : "Nuk ka informata",
+      },
+      {
+        label: "Aksidente të raportuara",
+        value:
+          typeof car.insurance_v2?.accidentCnt === "number"
+            ? car.insurance_v2.accidentCnt
+            : insuranceCarInfo?.accident_history || "Nuk ka informata",
+      },
+      {
+        label: "Pronaret e ndërruar",
+        value: ownerChangesDisplay,
+      },
+    ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -398,19 +710,31 @@ const CarInspectionReport = () => {
         </div>
       </div>
 
-      <div className="container-responsive py-10 space-y-8">
-        {car.image && (
-          <Card className="overflow-hidden shadow-md">
-            <div className="aspect-video bg-muted">
-              <img
-                src={car.image}
-                alt={carName || car.title || "Foto e automjetit"}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
+        <div className="container-responsive py-10 space-y-8">
+          <Card className="shadow-md border-border/80">
+            <CardHeader className="pb-4 space-y-1">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                {topVehicleInfo[0].label}
+              </span>
+              <CardTitle className="text-2xl font-bold">
+                {topVehicleInfo[0].value}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {topVehicleInfo.slice(1).map((item) => (
+                  <div key={item.label} className="flex flex-col gap-1">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {item.label}
+                    </span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {item.value || "-"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
-        )}
 
         <Tabs defaultValue="diagram" className="space-y-6">
           <TabsList className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-muted/60 p-1 rounded-xl">
@@ -493,223 +817,247 @@ const CarInspectionReport = () => {
           </TabsContent>
 
           <TabsContent value="exterior" className="space-y-6">
-            {car.insurance_v2 && (
-              <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Historia e Sigurisë & Sigurimit</CardTitle>
+            <Card className="shadow-md border-border/80">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-xl">Gjendja e Jashtme dhe Karrocerisë</CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Përmbledhje e informacionit të jashtëm dhe historisë së automjetit
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <section className="space-y-3">
+                  <h3 className="text-base font-semibold text-foreground">Info gjenerale të veturës</h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {generalVehicleInfo.map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3"
+                      >
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {item.label}
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {item.value || "-"}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Të dhënat e aksidenteve, pronarëve dhe demtimeve të raportuara nga siguracioni
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {typeof car.insurance_v2.accidentCnt === "number" && (
-                      <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                        <span className="text-sm font-semibold text-foreground block mb-1">
-                          Aksidente
-                        </span>
-                        <Badge
-                          variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"}
-                          className="text-sm"
-                        >
-                          {car.insurance_v2.accidentCnt === 0
-                            ? "E pastër"
-                            : `${car.insurance_v2.accidentCnt} raste`}
-                        </Badge>
-                      </div>
-                    )}
-                    {typeof car.insurance_v2.ownerChangeCnt === "number" && (
-                      <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                        <span className="text-sm font-semibold text-foreground block mb-1">
-                          Ndryshime pronësie
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {car.insurance_v2.ownerChangeCnt}
-                        </span>
-                      </div>
-                    )}
-                    {typeof car.insurance_v2.totalLossCnt === "number" && (
-                      <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                        <span className="text-sm font-semibold text-foreground block mb-1">
-                          Humbje totale
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {car.insurance_v2.totalLossCnt}
-                        </span>
-                      </div>
-                    )}
-                    {typeof car.insurance_v2.floodTotalLossCnt === "number" && (
-                      <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                        <span className="text-sm font-semibold text-foreground block mb-1">
-                          Dëmtime nga përmbytjet
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {car.insurance_v2.floodTotalLossCnt}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                </section>
 
-                  {accidents.length > 0 && (
-                    <div className="mt-6 space-y-3">
-                      <h3 className="text-base font-semibold text-foreground">
-                        Aksidente të raportuara
-                      </h3>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {accidents.map((accident: any, idx: number) => (
-                          <Card key={idx} className="border border-border/60 bg-background">
-                            <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
-                              {accident.date && (
-                                <div>
-                                  <span className="font-medium text-foreground">Data:</span> {accident.date}
-                                </div>
-                              )}
-                              {accident.type && (
-                                <div>
-                                  <span className="font-medium text-foreground">Lloji:</span> {accident.type}
-                                </div>
-                              )}
-                              {accident.note && <p>{accident.note}</p>}
-                            </CardContent>
-                          </Card>
-                        ))}
+                <section className="space-y-3">
+                  <h3 className="text-base font-semibold text-foreground">Historia e përdorimit të veturës</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {usageHighlights.map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-3"
+                      >
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {item.label}
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{item.value}</span>
                       </div>
+                    ))}
+                  </div>
+                  {usageHistoryList.length > 0 && (
+                    <div className="space-y-2">
+                      {usageHistoryList.map((entry, index) => (
+                        <div
+                          key={`${entry.description || "usage"}-${index}`}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                        >
+                          <span className="font-medium text-foreground">
+                            {entry.description || "Përdorim"}
+                          </span>
+                          <span className="text-muted-foreground">{entry.value || "-"}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-base font-semibold text-foreground">Historia e ndërrimit të pronarëve</h3>
+                  {ownerChangesList.length > 0 ? (
+                    <div className="space-y-3">
+                      {ownerChangesList.map((change, index) => (
+                        <div
+                          key={`${change?.change_type || "owner"}-${index}`}
+                          className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm space-y-2"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-semibold text-foreground">
+                              {change?.change_type || "Ndryshim pronari"}
+                            </span>
+                            {change?.date && (
+                              <Badge variant="outline" className="text-xs">
+                                {formatDisplayDate(change.date) ?? change.date}
+                              </Badge>
+                            )}
+                          </div>
+                          {change?.usage_type && (
+                            <p className="text-xs text-muted-foreground">
+                              Përdorim: {change.usage_type}
+                            </p>
+                          )}
+                          {change?.previous_number && (
+                            <p className="text-xs text-muted-foreground">
+                              Numri paraprak: {change.previous_number}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nuk ka informata për ndërrimin e pronarëve.
+                    </p>
+                  )}
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-base font-semibold text-foreground">Historia e aksidenteve të veçanta</h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {specialAccidentStats.map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-3"
+                      >
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {item.label}
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {specialAccidentHistory.length > 0 && (
+                    <div className="space-y-2">
+                      {specialAccidentHistory.map((entry, index) => (
+                        <div
+                          key={`${entry?.type || "event"}-${index}`}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                        >
+                          <span className="font-medium text-foreground">
+                            {entry?.type || "Ngjarje"}
+                          </span>
+                          <span className="text-muted-foreground">{entry?.value || "-"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {insuranceCarInfo && (
+                    <div className="space-y-2">
+                      {[
+                        { label: "Historia e aksidenteve", value: insuranceCarInfo.accident_history },
+                        { label: "Riparime të regjistruara", value: insuranceCarInfo.repair_count },
+                        { label: "Humbje totale", value: insuranceCarInfo.total_loss },
+                        {
+                          label: "Dëmtime nga uji",
+                          value: insuranceCarInfo.flood_damage
+                            ? processFloodDamageText(insuranceCarInfo.flood_damage)
+                            : undefined,
+                        },
+                      ]
+                        .filter((item) => item.value)
+                        .map((item) => (
+                          <div
+                            key={item.label}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                          >
+                            <span className="font-medium text-foreground">{item.label}</span>
+                            <span className="text-muted-foreground">{item.value}</span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </section>
+              </CardContent>
+            </Card>
 
             {car.damage && (car.damage.main || car.damage.second) && (
               <Card className="shadow-md border-border/80">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">
-                      Gjendja e Jashtme dhe Karocerisë
-                    </CardTitle>
+                    <CardTitle className="text-xl">Dëmtimet e raportuara</CardTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Vlerësimi i dëmtimeve dhe riparime të mundshme
+                    Vlerësimi i dëmtimeve të evidentuara nga inspektimi
                   </p>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
                   {car.damage?.main && (
                     <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Dëmtimi kryesor
-                      </h3>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {car.damage.main}
-                      </p>
+                      <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi kryesor</h3>
+                      <p className="text-sm text-muted-foreground capitalize">{car.damage.main}</p>
                     </div>
                   )}
                   {car.damage?.second && (
                     <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Dëmtimi dytësor
-                      </h3>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {car.damage.second}
-                      </p>
+                      <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi dytësor</h3>
+                      <p className="text-sm text-muted-foreground capitalize">{car.damage.second}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
             )}
 
-            {insuranceCarInfo && (
-              <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Detaje nga siguracioni</CardTitle>
+            <Card className="shadow-md border-border/80">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-xl">Historia e aksidenteve</CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Detaje të aksidenteve të raportuara për automjetin
+                </p>
+              </CardHeader>
+              <CardContent>
+                {hasAccidentDetails ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-border/60 text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          {[
+                            "Data",
+                            "Pjesa",
+                            "Ngjyrosja",
+                            "Punë dore",
+                            "Total",
+                          ].map((header) => (
+                            <th
+                              key={header}
+                              scope="col"
+                              className="px-3 py-2 text-left font-semibold uppercase tracking-wide text-xs text-muted-foreground"
+                            >
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {accidentEntries.map((entry, index) => (
+                          <tr key={`accident-${index}`} className="bg-background/80">
+                            <td className="px-3 py-2 whitespace-nowrap text-foreground">{entry.date}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{entry.part}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{entry.paint}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{entry.labor}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{entry.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
-                  {insuranceCarInfo.accident_history && (
-                    <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Historia e aksidenteve
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {insuranceCarInfo.accident_history}
-                      </p>
-                    </div>
-                  )}
-                  {insuranceCarInfo.repair_count && (
-                    <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Riparime të regjistruara
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {insuranceCarInfo.repair_count}
-                      </p>
-                    </div>
-                  )}
-                  {insuranceCarInfo.total_loss && (
-                    <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Humbje totale
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {insuranceCarInfo.total_loss}
-                      </p>
-                    </div>
-                  )}
-                  {insuranceCarInfo.flood_damage && (
-                    <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Dëmtime nga uji
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {processFloodDamageText(insuranceCarInfo.flood_damage)}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {car.ownerChanges && car.ownerChanges.length > 0 && (
-              <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Historia e pronësisë</CardTitle>
+                ) : (
+                  <div className="py-6 text-sm text-muted-foreground text-center">
+                    Nuk ka inspektim për aksidente të raportuara.
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Ndryshimet e pronarëve gjatë kohës
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {car.ownerChanges.map((change: any, index: number) => (
-                    <Card key={index} className="border border-border/60 bg-muted/40">
-                      <CardContent className="pt-4 text-sm text-muted-foreground">
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <div>
-                            <span className="font-semibold text-foreground">
-                              {change.change_type}
-                            </span>
-                            {change.usage_type && (
-                              <p className="text-xs mt-1">Lloji: {change.usage_type}</p>
-                            )}
-                          </div>
-                          {change.date && (
-                            <Badge variant="outline" className="text-xs">
-                              {change.date}
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="mechanical" className="space-y-6">
