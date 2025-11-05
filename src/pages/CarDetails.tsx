@@ -879,7 +879,6 @@ const CarDetails = memo(() => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
-  const [showInspectionReport, setShowInspectionReport] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
@@ -1197,6 +1196,14 @@ const CarDetails = memo(() => {
       duration: 3000
     });
   }, [toast]);
+
+  const handleOpenInspectionReport = useCallback(() => {
+    const reportLot = car?.lot || lot;
+    if (!reportLot) return;
+
+    const reportUrl = `/car/${encodeURIComponent(reportLot)}/report`;
+    window.open(reportUrl, "_blank", "noopener,noreferrer");
+  }, [car?.lot, lot]);
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
@@ -1901,264 +1908,14 @@ const CarDetails = memo(() => {
 
                     {/* Vehicle Details */}
                     {car.details && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                        <Button onClick={() => {
-                        setShowInspectionReport(!showInspectionReport);
-                      }} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
-                              {showInspectionReport ? "Fshih Raportin" : "Raporti"}
-                              {/* Show indicators for available inspection data */}
-                              {!showInspectionReport && <div className="ml-2 flex gap-1">
-                                  {car.details?.inspect_outer && <div className="w-2 h-2 bg-yellow-400 rounded-full" title="Visual inspection data available" />}
-                                  {(car.details?.inspect?.inner || car.details?.insurance) && <div className="w-2 h-2 bg-orange-400 rounded-full" title="Technical inspection data available" />}
-                                  {car.insurance_v2?.accidents && <div className="w-2 h-2 bg-red-400 rounded-full" title="Accident history available" />}
-                                </div>}
-                            </Button>
-                      </div>}
-
-                    {/* Compact Modern Inspection Report Section - Triggered by Raporti Button */}
-                    {showInspectionReport && <div className="space-y-4 p-4 lg:p-6 bg-card rounded-xl border border-border shadow-md px-0 py-0">
-                        <div className="text-center mb-4">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <FileText className="h-6 w-6 text-blue-600" />
+                        <Button onClick={handleOpenInspectionReport} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
+                          Raporti
+                          <div className="ml-2 flex gap-1">
+                            {car.details?.inspect_outer && <div className="w-2 h-2 bg-yellow-400 rounded-full" title="Visual inspection data available" />}
+                            {(car.details?.inspect?.inner || car.details?.insurance) && <div className="w-2 h-2 bg-orange-400 rounded-full" title="Technical inspection data available" />}
+                            {car.insurance_v2 && <div className="w-2 h-2 bg-red-400 rounded-full" title="Accident history available" />}
                           </div>
-                          <h4 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
-                            Raporti i Inspektimit të Plotë
-                          </h4>
-                          <p className="text-muted-foreground text-sm lg:text-base max-w-xl mx-auto">
-                            Analiza e detajuar profesionale e gjendjes së automjetit
-                          </p>
-                        </div>
-
-                        {/* Inspection Groups - Compact Modern Cards Layout */}
-                        <div className="grid gap-4">
-                          
-                          {/* Technical Inspection - Engine & Mechanical - Compact Layout */}
-                          {car.details?.inspect?.inner && <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 inspection-section-black">
-                              <div className="flex items-center gap-2 mb-4">
-                                <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
-                                  <Cog className="h-4 w-4 text-white" />
-                                </div>
-                                <div>
-                                  <h5 className="text-lg font-bold text-foreground">Motori dhe Sistemi Mekanik</h5>
-                                  <p className="text-muted-foreground text-xs">Kontrolli teknik i komponentëve kryesorë</p>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {Object.entries(car.details.inspect.inner).map(([key, value], index) => {
-                                  const isGood = value === "goodness" || value === "proper" || value === "doesn't exist" || 
-                                                value === "good" || value === "ok" || value === "okay" || value === "normal" || 
-                                                value === "excellent" || value === "perfect" || value === "fine";
-                                  const displayValue = value === "goodness" ? "Mirë" : 
-                                                     value === "proper" ? "Saktë" : 
-                                                     value === "doesn't exist" ? "Nuk ekziston" : 
-                                                     value === "good" ? "Mirë" : 
-                                                     value === "ok" ? "Mirë" : 
-                                                     value === "okay" ? "Mirë" : 
-                                                     value === "normal" ? "Normal" : 
-                                                     value === "excellent" ? "Shkëlqyeshëm" : 
-                                                     value === "perfect" ? "Perfekt" : 
-                                                     value === "fine" ? "Mirë" : value;
-                                  return (
-                                    <div key={index} className={`p-3 bg-card rounded-md border hover:shadow-sm transition-shadow ${
-                                      isGood 
-                                        ? 'border-green-500/30 bg-green-50/50' 
-                                        : 'border-red-500/30 bg-red-50/50'
-                                    }`}>
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${isGood ? 'bg-green-500' : 'bg-red-500'}`} />
-                                        <span className="text-xs font-semibold text-foreground capitalize truncate">
-                                          {key.replace(/_/g, ' ')}
-                                        </span>
-                                      </div>
-                                      <p className={`text-xs font-medium ${isGood ? 'text-green-700' : 'text-red-700'}`}>
-                                        {String(displayValue)}
-                                      </p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>}
-
-                          {/* Insurance & Safety History */}
-                          {car.details?.insurance && <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 inspection-section-black">
-                              <div className="flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                                  <Shield className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                  <h5 className="text-xl font-bold text-foreground">Historia e Sigurisë dhe Sigurimit</h5>
-                                  <p className="text-muted-foreground text-sm">Të dhënat e sigurimit dhe aksidenteve</p>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                {car.details.insurance.car_info && <>
-                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <CheckCircle className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-foreground">
-                                          Historia e Aksidenteve
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground">
-                                        {car.details.insurance.car_info.accident_history}
-                                      </p>
-                                    </div>
-                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <Settings className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-foreground">
-                                          riparime
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground">
-                                        {car.details.insurance.car_info.repair_count}
-                                      </p>
-                                    </div>
-                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <AlertTriangle className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-foreground">
-                                          Humbje Totale
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground">
-                                        {car.details.insurance.car_info.total_loss}
-                                      </p>
-                                    </div>
-                                    <div className="p-4 bg-card rounded-lg border border-green-500/20 hover:shadow-md transition-shadow">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <Car className="h-4 w-4 text-green-600" />
-                                        <span className="text-sm font-semibold text-foreground">
-                                          demtime
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground">
-                                        {processFloodDamageText(car.details.insurance.car_info.flood_damage)}
-                                      </p>
-                                    </div>
-                                  </>}
-                              </div>
-                            </div>}
-
-                          {/* Exterior & Body Condition */}
-                          {car.damage && <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 inspection-section-black">
-                              <div className="flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
-                                  <AlertTriangle className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                  <h5 className="text-xl font-bold text-foreground inspection-text-black">Gjendja e Jashtme dhe Karocerisë</h5>
-                                  <p className="text-muted-foreground text-sm inspection-subtext-black">Vlerësimi i dëmtimeve dhe riparime</p>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                {car.damage.main && <div className="p-4 bg-card rounded-lg border border-orange-500/20 hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <AlertTriangle className="h-4 w-4 text-orange-600" />
-                                      <span className="text-sm font-semibold text-foreground">
-                                        Dëmtimi Kryesor
-                                      </span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground capitalize">
-                                      {car.damage.main}
-                                    </p>
-                                  </div>}
-                                {car.damage.second && <div className="p-4 bg-card rounded-lg border border-orange-500/20 hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <AlertTriangle className="h-4 w-4 text-orange-600" />
-                                      <span className="text-sm font-semibold text-foreground">
-                                        Dëmtimi Dytësor
-                                      </span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground capitalize">
-                                      {car.damage.second}
-                                    </p>
-                                  </div>}
-                              </div>
-                            </div>}
-
-                          {/* Owner History */}
-                          {car.details?.insurance?.owner_changes && car.details.insurance.owner_changes.length > 0 && <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 inspection-section-black">
-                                <div className="flex items-center gap-3 mb-6">
-                                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
-                                    <Users className="h-6 w-6 text-white" />
-                                  </div>
-                                  <div>
-                                    <h5 className="text-xl font-bold text-foreground">Historia e Pronarëve</h5>
-                                    <p className="text-muted-foreground text-sm">Ndryshimet e pronësisë përgjatë kohës</p>
-                                  </div>
-                                </div>
-                                <div className="space-y-3">
-                                  {car.details.insurance.owner_changes.map((change: any, index: number) => <div key={index} className="p-4 bg-card rounded-lg border border-purple-500/20 hover:shadow-md transition-shadow">
-                                        <div className="flex justify-between items-start">
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                                            <div>
-                                              <span className="text-sm font-semibold text-foreground">
-                                                {change.change_type}
-                                              </span>
-                                              {change.usage_type && <p className="text-xs text-muted-foreground mt-1">
-                                                  Lloji: {change.usage_type}
-                                                </p>}
-                                            </div>
-                                          </div>
-                                          <span className="text-xs text-muted-foreground bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded">
-                                            {change.date}
-                                          </span>
-                                        </div>
-                                      </div>)}
-                                </div>
-                              </div>}
-
-                          {/* Visual Inspection Diagram */}
-                          {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 inspection-section-black px-0 py-0">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-[15px]">
-                                    <Car className="h-5 w-5 text-white mx-0" />
-                                  </div>
-                                  <div>
-                                    <h5 className="text-lg font-bold text-foreground mx-px px-0 py-[5px]">Diagrami i Inspektimit të Automjetit</h5>
-                                    <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
-                                  </div>
-                                </div>
-                                <CarInspectionDiagram inspectionData={car.details.inspect_outer} className="mt-3" />
-                              </div>}
-
-                          {/* Maintenance History */}
-                          {car.details?.maintenance_history && car.details.maintenance_history.length > 0 && <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200 inspection-section-black">
-                                <div className="flex items-center gap-3 mb-6">
-                                  <div className="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center">
-                                    <Clock className="h-6 w-6 text-white" />
-                                  </div>
-                                  <div>
-                                    <h5 className="text-xl font-bold text-foreground">Historia e Mirëmbajtjes</h5>
-                                    <p className="text-muted-foreground text-sm">Shërbimet dhe mirëmbajtja e bërë</p>
-                                  </div>
-                                </div>
-                                <div className="space-y-3">
-                                  {car.details.maintenance_history.map((record: any, index: number) => <div key={index} className="p-4 bg-card rounded-lg border border-yellow-500/20 hover:shadow-md transition-shadow">
-                                        <div className="flex justify-between items-start">
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                                            <div>
-                                              <span className="text-sm font-semibold text-foreground">
-                                                {record.service_type || record.type || "Shërbim i Përgjithshëm"}
-                                              </span>
-                                              {record.description && <p className="text-xs text-muted-foreground mt-1">
-                                                  {record.description}
-                                                </p>}
-                                            </div>
-                                          </div>
-                                          {record.date && <span className="text-xs text-muted-foreground bg-yellow-50 dark:bg-yellow-900/30 px-2 py-1 rounded">
-                                              {record.date}
-                                            </span>}
-                                        </div>
-                                        {record.mileage && <span className="text-xs text-muted-foreground block mt-2">
-                                            Kilometrazh: {record.mileage}
-                                          </span>}
-                                      </div>)}
-                                </div>
-                              </div>}
-                        </div>
+                        </Button>
                       </div>}
 
                     {/* Equipment & Options */}

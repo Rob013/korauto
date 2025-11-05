@@ -187,6 +187,60 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     },
   ];
 
+  const statusMarkerStyles: Record<string, {
+    shape: "circle" | "square";
+    fill: string;
+    textColor: string;
+    stroke?: string;
+    strokeWidth?: number;
+  }> = {
+    X: {
+      shape: "circle",
+      fill: "rgba(239,68,68,0.15)",
+      textColor: "#ef4444",
+      stroke: "#ef4444",
+      strokeWidth: 2,
+    },
+    W: {
+      shape: "square",
+      fill: "#2563eb",
+      textColor: "#ffffff",
+    },
+    A: {
+      shape: "circle",
+      fill: "#f97316",
+      textColor: "#ffffff",
+    },
+    U: {
+      shape: "circle",
+      fill: "#fb923c",
+      textColor: "#ffffff",
+    },
+    S: {
+      shape: "circle",
+      fill: "#facc15",
+      textColor: "#1f2937",
+    },
+    default: {
+      shape: "circle",
+      fill: "rgba(34,197,94,0.18)",
+      textColor: "#16a34a",
+      stroke: "#16a34a",
+      strokeWidth: 1.5,
+    },
+  };
+
+  const legendItems = [
+    { key: "X", label: "Zëvendësuara" },
+    { key: "W", label: "Salduar" },
+    { key: "A", label: "Riparuar" },
+    { key: "U", label: "Ndryshk" },
+    { key: "S", label: "Gërvishje" },
+    { key: "default", label: "Normal", display: "✓" },
+  ];
+
+  const getMarkerStyle = (code: string) => statusMarkerStyles[code] || statusMarkerStyles.default;
+
   // Get part status from inspection data
   const getPartStatus = (partId: string) => {
     const part = inspectionData.find(item => {
@@ -252,18 +306,22 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     return 'Pjesë normale';
   };
 
-  // Count issues
+  const partsWithReportedStatus = carParts.reduce((count, part) => {
+    return count + (getPartStatus(part.id).length > 0 ? 1 : 0);
+  }, 0);
+
+  // Count issues based on inspection codes
   const issueCount = {
-    critical: inspectionData.filter(item => 
-      item.statusTypes.some(s => ['X', 'W'].includes(s.code))
+    replaced: inspectionData.filter(item =>
+      item.statusTypes.some(s => s.code === 'X')
     ).length,
-    major: inspectionData.filter(item => 
-      item.statusTypes.some(s => ['A', 'U'].includes(s.code))
+    repaired: inspectionData.filter(item =>
+      item.statusTypes.some(s => ['W', 'A', 'U'].includes(s.code))
     ).length,
-    minor: inspectionData.filter(item => 
+    scratches: inspectionData.filter(item =>
       item.statusTypes.some(s => s.code === 'S')
     ).length,
-    good: carParts.length - inspectionData.length
+    good: Math.max(carParts.length - partsWithReportedStatus, 0),
   };
 
   return (
@@ -281,30 +339,30 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                 <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
                   <span className="text-xs lg:text-sm flex items-center gap-1">
                     <XCircle className="h-3 w-3 text-destructive" />
-                    Kritike
+                    Zëvendësuara
                   </span>
-                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.critical}</Badge>
+                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.replaced}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                <div className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: 'hsl(25 95% 53% / 0.1)' }}>
                   <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" style={{color: 'hsl(25 95% 53%)'}} />
-                    Major
+                    <AlertCircle className="h-3 w-3" style={{ color: 'hsl(25 95% 53%)' }} />
+                    Riparuara
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.major}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(25 95% 53%)', color: 'white' }}>{issueCount.repaired}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
+                <div className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: 'hsl(48 96% 53% / 0.1)' }}>
                   <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" style={{color: 'hsl(48 96% 53%)'}} />
-                    Minor
+                    <AlertCircle className="h-3 w-3" style={{ color: 'hsl(48 96% 53%)' }} />
+                    Gërvishje
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'black'}}>{issueCount.minor}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(48 96% 53%)', color: 'black' }}>{issueCount.scratches}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(142 76% 36% / 0.1)'}}>
+                <div className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: 'hsl(142 76% 36% / 0.1)' }}>
                   <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" style={{color: 'hsl(142 76% 36%)'}} />
+                    <CheckCircle className="h-3 w-3" style={{ color: 'hsl(142 76% 36%)' }} />
                     Mirë
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(142 76% 36%)', color: 'white'}}>{issueCount.good}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(142 76% 36%)', color: 'white' }}>{issueCount.good}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -315,30 +373,32 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             <CardContent className="p-3 lg:p-4">
               <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet</h4>
               <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(0 84% 60%)'}}></div>
-                  <span>X - Zëvendësuar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(0 84% 60%)'}}></div>
-                  <span>W - Salduar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}></div>
-                  <span>A - Riparuar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}></div>
-                  <span>U - Ndryshk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}></div>
-                  <span>S - Gërvishje</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(142 76% 36%)'}}></div>
-                  <span>Normal</span>
-                </div>
+                {legendItems.map((item) => {
+                  const style = getMarkerStyle(item.key);
+                  const display = item.display || item.key;
+                  const size = 20;
+                  const borderRadius = style.shape === "square" ? "0.45rem" : "9999px";
+
+                  return (
+                    <div key={item.label} className="flex items-center gap-2">
+                      <span
+                        className="flex items-center justify-center font-semibold"
+                        style={{
+                          width: size,
+                          height: size,
+                          borderRadius,
+                          backgroundColor: style.fill,
+                          color: style.textColor,
+                          border: style.stroke ? `${style.strokeWidth ?? 1}px solid ${style.stroke}` : undefined,
+                          fontSize: "0.65rem",
+                        }}
+                      >
+                        {display}
+                      </span>
+                      <span>{item.label}</span>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -370,7 +430,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                     <path
                       d={part.path}
                       fill={color}
-                      fillOpacity={statuses.length > 0 ? (isHovered || isSelected ? 0.7 : 0.5) : 0}
+                      fillOpacity={statuses.length > 0 ? (isHovered || isSelected ? 0.35 : 0.2) : 0}
                       stroke={isSelected ? "hsl(var(--primary))" : statuses.length > 0 ? color : "transparent"}
                       strokeWidth={isSelected ? 4 : statuses.length > 0 ? 3 : 0}
                       className="cursor-pointer transition-all duration-200"
@@ -383,6 +443,54 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                         mixBlendMode: statuses.length > 0 ? 'multiply' : 'normal'
                       }}
                     />
+                    {statuses.length > 0 && (
+                      <g>
+                        {statuses.map((status, statusIndex) => {
+                          const statusCode = (status?.code || '').toUpperCase() || '?';
+                          const markerStyle = getMarkerStyle(statusCode);
+                          const offset = (statusIndex - (statuses.length - 1) / 2) * 22;
+                          const baseX = part.labelPos.x + offset;
+                          const baseY = part.labelPos.y;
+                          const radius = 11;
+
+                          return (
+                            <g key={`${part.id}-${statusCode}-${statusIndex}`} className="pointer-events-none">
+                              {markerStyle.shape === "circle" ? (
+                                <circle
+                                  cx={baseX}
+                                  cy={baseY}
+                                  r={radius}
+                                  fill={markerStyle.fill}
+                                  stroke={markerStyle.stroke}
+                                  strokeWidth={markerStyle.strokeWidth ?? 0}
+                                />
+                              ) : (
+                                <rect
+                                  x={baseX - radius}
+                                  y={baseY - radius}
+                                  width={radius * 2}
+                                  height={radius * 2}
+                                  rx={4}
+                                  fill={markerStyle.fill}
+                                  stroke={markerStyle.stroke}
+                                  strokeWidth={markerStyle.strokeWidth ?? 0}
+                                />
+                              )}
+                              <text
+                                x={baseX}
+                                y={baseY + 4}
+                                textAnchor="middle"
+                                fontSize="10"
+                                fontWeight={600}
+                                fill={markerStyle.textColor}
+                              >
+                                {statusCode}
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </g>
+                    )}
                     {(isHovered || isSelected) && (
                       <text
                         x={part.labelPos.x}
