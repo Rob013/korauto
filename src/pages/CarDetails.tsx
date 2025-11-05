@@ -1276,7 +1276,7 @@ const CarDetails = memo(() => {
             </div>
           </div>
         </div>
-      </div>;
+      </div>
   }
   if (error || !car) {
     return <div className="min-h-screen bg-background animate-fade-in">
@@ -1296,7 +1296,7 @@ const CarDetails = memo(() => {
             </p>
           </div>
         </div>
-      </div>;
+      </div>
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
