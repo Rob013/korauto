@@ -1,6 +1,7 @@
 //@ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSold } from "@/services/carCache";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 import { getBrandLogo } from '@/data/brandLogos';
@@ -615,6 +616,8 @@ export const useSecureAuctionAPI = () => {
   const [filters, setFilters] = useState<APIFilters>({});
   const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
   const [trimLevelsCache, setTrimLevelsCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
+  const [isPrimingCache, setIsPrimingCache] = useState(false);
+  const [cachePrimed, setCachePrimed] = useState(false);
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -677,6 +680,48 @@ export const useSecureAuctionAPI = () => {
       throw new Error(e?.message || 'External API request failed');
     }
   };
+
+  const filtersSignature = useMemo(() => JSON.stringify(filters || {}), [filters]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const primeFromCache = async () => {
+      if (cachePrimed || isPrimingCache) {
+        return;
+      }
+
+      if (!shouldUseCachedPrime(filters)) {
+        setCachePrimed(true);
+        return;
+      }
+
+      setIsPrimingCache(true);
+
+      try {
+        const cachedCars = await fetchCachedCars({ limit: 200 });
+        if (!cancelled && Array.isArray(cachedCars) && cachedCars.length > 0) {
+          setCars((prev) => (prev.length === 0 ? cachedCars : prev));
+          setTotalCount((prev) => (prev === 0 ? cachedCars.length : prev));
+          setHasMorePages(cachedCars.length >= 200);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.warn("Failed to prime cars from cache", error);
+      } finally {
+        if (!cancelled) {
+          setIsPrimingCache(false);
+          setCachePrimed(true);
+        }
+      }
+    };
+
+    primeFromCache();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cachePrimed, filtersSignature, isPrimingCache]);
 
   // Helper function to map frontend sort options to API parameters
   const mapSortToAPI = (sortBy: string): { sort_by?: string; sort_direction?: string } => {
@@ -821,15 +866,17 @@ export const useSecureAuctionAPI = () => {
       setTotalCount(data.meta?.total || 0);
       setHasMorePages(page < (data.meta?.last_page || 1));
 
+      const activeCars = filteredCars.filter(car => !isCarSold(car));
+
       console.log(
-        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, server total: ${data.meta?.total || 0}, filtered displayed: ${filteredCars.length}`
+        `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, active displayed: ${activeCars.length}`
       );
 
       if (resetList || page === 1) {
-        setCars(filteredCars);
+        setCars(activeCars);
         setCurrentPage(page); // Set the actual requested page, not always 1
       } else {
-        setCars((prev) => [...prev, ...filteredCars]);
+        setCars((prev) => [...prev, ...activeCars]);
         setCurrentPage(page);
       }
     } catch (err: any) {
@@ -877,7 +924,7 @@ export const useSecureAuctionAPI = () => {
       const pageSize = parseInt(newFilters.per_page || "200");
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
-      const paginatedCars = fallbackCars.slice(startIndex, endIndex);
+      const paginatedCars = fallbackCars.slice(startIndex, endIndex).filter(car => !isCarSold(car));
       
       console.log(
         `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
@@ -893,18 +940,7 @@ export const useSecureAuctionAPI = () => {
         setCars((prev) => [...prev, ...paginatedCars]);
         setCurrentPage(page);
       }
-      
-      // Clear error since we're showing fallback data
-      setError(null);
-      
-      if (resetList || page === 1) {
-        setCars(paginatedCars);
-        setCurrentPage(1);
-      } else {
-        setCars((prev) => [...prev, ...paginatedCars]);
-        setCurrentPage(page);
-      }
-      
+
       // Clear error since we're showing fallback data
       setError(null);
     } finally {
@@ -1976,8 +2012,9 @@ export const useSecureAuctionAPI = () => {
         });
       }
 
-      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting`);
-      return filteredCars;
+      const activeCars = filteredCars.filter(car => !isCarSold(car));
+      console.log(`✅ Fetched ${filteredCars.length} cars for global sorting (${activeCars.length} active)`);
+      return activeCars;
       
     } catch (err: any) {
       console.error("❌ API Error fetching all cars:", err);
@@ -2006,7 +2043,7 @@ export const useSecureAuctionAPI = () => {
       console.log("❌ API failed for global sorting, using fallback cars");
       const fallbackCars = createFallbackCars(newFilters);
       console.log(`✅ Fallback Success - Created ${fallbackCars.length} fallback cars for global sorting`);
-      return fallbackCars;
+      return fallbackCars.filter(car => !isCarSold(car));
     }
   };
 
@@ -2023,6 +2060,15 @@ export const useSecureAuctionAPI = () => {
       setLoading(false);
     }
   };
+
+  const refreshInventory = useCallback(async (minutes = 60) => {
+    try {
+      return await triggerInventoryRefresh(minutes);
+    } catch (error) {
+      console.error("Failed to trigger inventory refresh", error);
+      return { success: false, error };
+    }
+  }, []);
   return {
     cars,
     setCars, // ✅ Export setCars so it can be used in components
@@ -2048,6 +2094,7 @@ export const useSecureAuctionAPI = () => {
     fetchGrades,
     fetchTrimLevels,
     loadMore,
+    refreshInventory,
   };
 };
 

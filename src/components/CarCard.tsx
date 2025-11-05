@@ -27,7 +27,7 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -405,6 +405,8 @@ const CarCard = ({
     window.open(`/car/${lot ?? id}`, '_blank');
   }, [id, lot, setPreviousPage]);
 
+  const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
+
   // Don't render the component if it should be hidden
   if (hideSoldCar) {
     return null;
@@ -441,30 +443,22 @@ const CarCard = ({
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
-        {/* Status Badge - Takes priority over lot number */}
-        {(() => {
-          const statusBadge = getStatusBadgeConfig({ status, sale_status });
-          
-          if (statusBadge.show) {
-            return (
-              <div className={`absolute top-2 left-2 ${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg z-10`}>
-                {statusBadge.text}
-              </div>
-            );
-          }
-          
-          // Show lot number if no status badge and lot exists
-          return lot ? (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-              Kodi #{lot}
+        {/* Status & accident badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-2 z-10">
+          {statusBadge.show && (
+            <div className={`${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg`}>{statusBadge.text}</div>
+          )}
+          {insurance_v2?.accidentCnt === 0 && (
+            <div className="bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+              Accident free
             </div>
-          ) : null;
-        })()}
+          )}
+        </div>
 
-        {/* Accident free badge */}
-        {insurance_v2?.accidentCnt === 0 && (
-          <div className="absolute top-2 left-2 bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow z-10">
-            Accident free
+        {/* Lot badge when status badge is not displayed */}
+        {!statusBadge.show && lot && (
+          <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
+            Kodi #{lot}
           </div>
         )}
       </div>

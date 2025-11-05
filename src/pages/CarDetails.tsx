@@ -18,6 +18,7 @@ import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
+import { transformCachedCarRecord } from "@/services/carCache";
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -867,11 +868,7 @@ const CarDetails = memo(() => {
     restorePageState,
     pageState
   } = useNavigation();
-  const {
-    convertUSDtoEUR,
-    processFloodDamageText,
-    exchangeRate
-  } = useCurrencyAPI();
+  const { exchangeRate } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -901,6 +898,81 @@ const CarDetails = memo(() => {
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
+
+  const buildCarDetails = useCallback((carData: any, lotData: any): CarDetails | null => {
+    if (!carData || !lotData) {
+      return null;
+    }
+
+    const buyNow = Number(lotData?.buy_now || carData?.buy_now || carData?.price);
+    if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
+      return null;
+    }
+
+    const price = calculateFinalPriceEUR(buyNow, exchangeRate.rate);
+    const domainRaw = String(lotData?.domain?.name || carData?.domain_name || carData?.provider || carData?.source_api || "").toLowerCase();
+    const isKbc = domainRaw ? KBC_DOMAINS.some(k => domainRaw.includes(k)) : false;
+    const sourceLabel = domainRaw ? (isKbc ? 'KB Chachacha' : 'Encar') : undefined;
+
+    const manufacturerName = carData?.manufacturer?.name || carData?.make || "Unknown";
+    const modelName = carData?.model?.name || carData?.model || "Unknown";
+
+    const odometer = lotData?.odometer || (lotData?.odometer_km
+      ? { km: lotData.odometer_km, mi: Math.round(Number(lotData.odometer_km) * 0.621371) }
+      : undefined);
+
+    const images = lotData?.images?.normal || lotData?.images?.big || [];
+
+    return {
+      id: carData?.id?.toString() || lotData?.lot,
+      make: manufacturerName,
+      model: modelName,
+      year: carData?.year || 2020,
+      price,
+      image: images?.[0],
+      images,
+      source_label: sourceLabel,
+      vin: carData?.vin,
+      mileage: odometer?.km,
+      transmission: carData?.transmission?.name || carData?.transmission,
+      fuel: carData?.fuel?.name || carData?.fuel,
+      color: carData?.color?.name || carData?.color,
+      condition: lotData?.condition?.name?.replace("run_and_drives", "Good Condition") || carData?.condition,
+      lot: lotData?.lot || carData?.lot_number,
+      title: carData?.title || lotData?.title,
+      odometer: odometer
+        ? {
+            km: odometer.km,
+            mi: odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
+            status: lotData?.odometer?.status || { name: "Verified" },
+          }
+        : undefined,
+      engine: carData?.engine,
+      cylinders: carData?.cylinders,
+      drive_wheel: carData?.drive_wheel,
+      body_type: carData?.body_type,
+      damage: lotData?.damage,
+      keys_available: lotData?.keys_available,
+      airbags: lotData?.airbags,
+      grade_iaai: lotData?.grade_iaai,
+      seller: lotData?.seller,
+      seller_type: lotData?.seller_type,
+      sale_date: lotData?.sale_date,
+      bid: lotData?.bid,
+      buy_now: lotData?.buy_now,
+      final_bid: lotData?.final_bid,
+      features: getCarFeatures(carData, lotData),
+      safety_features: getSafetyFeatures(carData, lotData),
+      comfort_features: getComfortFeatures(carData, lotData),
+      performance_rating: 4.5,
+      popularity_score: 85,
+      insurance: lotData?.insurance,
+      insurance_v2: lotData?.insurance_v2,
+      location: lotData?.location,
+      inspect: lotData?.inspect,
+      details: lotData?.details || carData?.details,
+    };
+  }, [KBC_DOMAINS, exchangeRate.rate]);
   
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
@@ -964,6 +1036,40 @@ const CarDetails = memo(() => {
     return result;
   };
 
+  const hydrateFromCache = useCallback(async () => {
+    if (!lot) {
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('cars_cache')
+        .select('car_data, lot_data, make, model, price, price_usd, lot_number, sale_status, status, images')
+        .or(`lot_number.eq.${lot},api_id.eq.${lot}`)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Failed to load cached car', error);
+        return null;
+      }
+
+      if (data) {
+        const cachedCar = transformCachedCarRecord(data);
+        const lotData = cachedCar?.lots?.[0];
+        const details = buildCarDetails(cachedCar, lotData);
+        if (details) {
+          setCar(details);
+          setLoading(false);
+          return details;
+        }
+      }
+    } catch (cacheError) {
+      console.warn('Cache hydration failed', cacheError);
+    }
+
+    return null;
+  }, [buildCarDetails, lot]);
+
   // Extract features from car data
   const getCarFeatures = (carData: any, lot: any): string[] => {
     const features = [];
@@ -1023,15 +1129,14 @@ const CarDetails = memo(() => {
   }, []);
   useEffect(() => {
     let isMounted = true;
-    const fetchCarDetails = async () => {
+
+    const fetchFromApi = async () => {
       if (!lot) return;
       try {
-        // Use external API directly with API key
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        // Try to fetch by lot ID first, then by lot number if that fails
-        let response;
+        let response: Response;
         try {
           response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
             headers: {
@@ -1041,7 +1146,6 @@ const CarDetails = memo(() => {
             signal: controller.signal
           });
         } catch (firstAttemptError) {
-          // If first attempt fails, try searching by lot number
           console.log("First API attempt failed, trying as lot number...");
           response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
             headers: {
@@ -1051,137 +1155,67 @@ const CarDetails = memo(() => {
             signal: controller.signal
           });
         }
+
         clearTimeout(timeoutId);
+
         if (!response.ok) {
           throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
+
         const data = await response.json();
         if (!isMounted) return;
+
         const carData = data.data;
-        const lotData = carData.lots?.[0];
-        if (!lotData) throw new Error("Missing lot data");
-        const basePrice = lotData.buy_now;
-        if (!basePrice) {
+        const lotData = carData?.lots?.[0];
+        const details = buildCarDetails(carData, lotData);
+
+        if (!details) {
           console.log("Car doesn't have buy_now pricing, redirecting to catalog");
           navigate('/catalog');
           return;
         }
-        const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
-        const domainRaw = String(lotData?.domain?.name || carData?.domain_name || carData?.provider || carData?.source_api || '').toLowerCase();
-        const isKbc = KBC_DOMAINS.some(k => domainRaw.includes(k));
-        const sourceLabel = domainRaw ? (isKbc ? 'KB Chachacha' : 'Encar') : undefined;
 
-        const transformedCar: CarDetails = {
-          id: carData.id?.toString() || lotData.lot,
-          make: carData.manufacturer?.name || "Unknown",
-          model: carData.model?.name || "Unknown",
-          year: carData.year || 2020,
-          price,
-          image: lotData.images?.normal?.[0] || lotData.images?.big?.[0],
-          images: lotData.images?.normal || lotData.images?.big || [],
-          source_label: sourceLabel,
-          vin: carData.vin,
-          mileage: lotData.odometer?.km,
-          transmission: carData.transmission?.name,
-          fuel: carData.fuel?.name,
-          color: carData.color?.name,
-          condition: lotData.condition?.name?.replace("run_and_drives", "Good Condition"),
-          lot: lotData.lot,
-          title: carData.title || lotData.title,
-          odometer: lotData.odometer,
-          engine: carData.engine,
-          cylinders: carData.cylinders,
-          drive_wheel: carData.drive_wheel,
-          body_type: carData.body_type,
-          damage: lotData.damage,
-          keys_available: lotData.keys_available,
-          airbags: lotData.airbags,
-          grade_iaai: lotData.grade_iaai,
-          seller: lotData.seller,
-          seller_type: lotData.seller_type,
-          sale_date: lotData.sale_date,
-          bid: lotData.bid,
-          buy_now: lotData.buy_now,
-          final_bid: lotData.final_bid,
-          features: getCarFeatures(carData, lotData),
-          safety_features: getSafetyFeatures(carData, lotData),
-          comfort_features: getComfortFeatures(carData, lotData),
-          performance_rating: 4.5,
-          popularity_score: 85,
-          // Enhanced API data
-          insurance: lotData.insurance,
-          insurance_v2: lotData.insurance_v2,
-          location: lotData.location,
-          inspect: lotData.inspect,
-          details: lotData.details
-        };
-        setCar(transformedCar);
+        setCar(details);
         setLoading(false);
-
-        // Track car view analytics
-        trackCarView(lot, transformedCar);
+        trackCarView(lot, details);
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
-        if (isMounted) {
-          // Try to find the car in fallback data as a last resort
-          const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
-          if (fallbackCar && fallbackCar.lots?.[0]) {
+        if (!isMounted) return;
+
+        const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
+        if (fallbackCar && fallbackCar.lots?.[0]) {
+          const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
+          if (details) {
             console.log("Using fallback car data for:", lot);
-            const lotData = fallbackCar.lots[0];
-            const basePrice = lotData.buy_now || fallbackCar.price;
-            if (!basePrice) {
-              console.log("Fallback car doesn't have buy_now pricing, showing error");
-              throw new Error("Car pricing not available");
-            }
-            const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
-            const transformedCar: CarDetails = {
-              id: fallbackCar.id,
-              make: fallbackCar.manufacturer?.name || "Unknown",
-              model: fallbackCar.model?.name || "Unknown",
-              year: fallbackCar.year || 2020,
-              price,
-              image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
-              images: lotData.images?.normal || lotData.images?.big || [],
-              vin: fallbackCar.vin,
-              mileage: lotData.odometer?.km,
-              transmission: fallbackCar.transmission?.name,
-              fuel: fallbackCar.fuel?.name,
-              color: fallbackCar.color?.name,
-              condition: "Good Condition",
-              lot: fallbackCar.lot_number,
-              title: fallbackCar.title,
-              odometer: lotData.odometer ? {
-                km: lotData.odometer.km,
-                mi: Math.round(lotData.odometer.km * 0.621371),
-                status: {
-                  name: "Verified"
-                }
-              } : undefined,
-              features: fallbackCar.features || [],
-              safety_features: ["ABS", "Airbags", "Stability Control"],
-              comfort_features: ["Air Conditioning", "Power Windows"],
-              performance_rating: 4.5,
-              popularity_score: 85,
-              // Enhanced API data  
-              details: lotData && 'details' in lotData ? lotData.details : undefined
-            };
-            setCar(transformedCar);
+            setCar(details);
             setLoading(false);
             return;
           }
-
-          // If no fallback data found, show appropriate error message
-          const errorMessage = apiError instanceof Error ? apiError.message.includes("Failed to fetch") ? "Unable to connect to the server. Please check your internet connection and try again." : apiError.message.includes("404") ? `Car with ID ${lot} is not available. This car may have been sold or removed.` : "Car not found" : "Car not found";
-          setError(errorMessage);
-          setLoading(false);
         }
+
+        const errorMessage = apiError instanceof Error
+          ? apiError.message.includes("Failed to fetch")
+            ? "Unable to connect to the server. Please check your internet connection and try again."
+            : apiError.message.includes("404")
+              ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
+              : "Car not found"
+          : "Car not found";
+        setError(errorMessage);
+        setLoading(false);
       }
     };
-    fetchCarDetails();
+
+    const loadCar = async () => {
+      await hydrateFromCache();
+      await fetchFromApi();
+    };
+
+    loadCar();
+
     return () => {
       isMounted = false;
     };
-  }, [lot, convertUSDtoEUR]);
+  }, [API_BASE_URL, API_KEY, buildCarDetails, fallbackCars, hydrateFromCache, lot, navigate, trackCarView]);
   const handleContactWhatsApp = useCallback(() => {
     const currentUrl = window.location.href;
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
