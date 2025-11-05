@@ -35,9 +35,7 @@ html.theme-transitioning *::after {
               stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-html.theme-transitioning * {
-  animation: none !important;
-}
+/* Keep animations active during theme transitions to prevent spinners from freezing */
 
 body {
   opacity: 1;

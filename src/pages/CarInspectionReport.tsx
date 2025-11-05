@@ -748,33 +748,9 @@ const CarInspectionReport = () => {
       </div>
 
         <div className="container-responsive py-4 space-y-4">
-          <Card className="shadow-md border-border/80">
-            <CardHeader className="pb-4 space-y-1">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                {topVehicleInfo[0].label}
-              </span>
-              <CardTitle className="text-2xl font-bold">
-                {topVehicleInfo[0].value}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {topVehicleInfo.slice(1).map((item) => (
-                  <div key={item.label} className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {item.label}
-                    </span>
-                    <span className="text-sm font-semibold text-foreground">
-                      {item.value || "-"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
         <Tabs defaultValue="diagram" className="space-y-3">
-          <TabsList className="grid grid-cols-1 md:grid-cols-4 gap-1 bg-muted/60 p-1 rounded-lg">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-1 bg-muted/60 p-1 rounded-lg">
             <TabsTrigger value="diagram" className="text-sm md:text-base">
               Diagrami i Inspektimit të Automjetit
             </TabsTrigger>
