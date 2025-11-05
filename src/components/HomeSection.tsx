@@ -24,9 +24,9 @@ const HomeSection = () => {
             Gjeni makinën tuaj të përsosur nga Koreja e Jugut me çmimin më të mirë dhe cilësinë e lartë
           </p>
           
-          <div className="flex flex-row flex-wrap gap-3 justify-center items-center mb-8 animate-bounce-in">
-            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/catalog'}>Shfleto Veturat</Button>
-            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/inspections'}>
+          <div className="grid grid-cols-2 gap-3 justify-center items-center mb-8 animate-bounce-in sm:flex sm:flex-row sm:flex-wrap">
+            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto px-5 sm:px-8 py-3 text-base sm:text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/catalog'}>Shfleto Veturat</Button>
+            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto px-5 sm:px-8 py-3 text-base sm:text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/inspections'}>
               Mëso për Inspektimet
             </Button>
           </div>

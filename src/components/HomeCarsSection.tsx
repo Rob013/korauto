@@ -13,7 +13,7 @@ import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
-import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
+import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing, filterCarsWithRealPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 interface APIFilters {
   manufacturer_id?: string;
@@ -227,12 +227,13 @@ const HomeCarsSection = memo(() => {
     // Use fallback data when there's an error and no cars loaded
     const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
     const cleanedCars = filterOutTestCars(sourceCars);
-    // Filter to show only cars with real buy_now pricing
-    const carsWithRealPricing = filterCarsWithBuyNowPricing(cleanedCars);
+    // Filter to show cars that have real pricing (buy_now, final_bid, or price)
+    const carsWithRealPricing = filterCarsWithRealPricing(cleanedCars);
     
     return carsWithRealPricing.map(car => {
-      // Calculate EUR price using current exchange rate
-      const priceUSD = Number(car.lots?.[0]?.buy_now || car.buy_now || 0);
+      // Calculate EUR price using current exchange rate from the best available price
+      const lot = car.lots?.[0];
+      const priceUSD = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
       const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
       
       return {
@@ -514,15 +515,10 @@ const HomeCarsSection = memo(() => {
             </p>
           </div> : <>
             <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container ${isInView ? 'stagger-animation' : ''}`}>
-              {displayedCars.filter(car => {
-            // Only show cars with buy_now pricing
+              {displayedCars.map(car => {
             const lot = car.lots?.[0];
-            return lot?.buy_now && lot.buy_now > 0;
-          }).map(car => {
-            const lot = car.lots?.[0];
-            // Only use buy_now price, no fallbacks
-            const usdPrice = lot?.buy_now;
-            const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+            const usdPrice = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
+            const price = usdPrice > 0 ? calculateFinalPriceEUR(usdPrice, exchangeRate.rate) : 0;
             return <LazyCarCard key={car.id} id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={car.fuel?.name} color={car.color?.name} condition={car.condition?.replace("run_and_drives", "Good")} lot={car.lot_number || lot?.lot} title={car.title} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />;
           })}
             </div>
