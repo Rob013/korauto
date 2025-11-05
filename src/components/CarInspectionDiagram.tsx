@@ -22,6 +22,7 @@ interface CarPart {
   nameEn: string;
   path: string;
   labelPos: { x: number; y: number };
+  markerPos?: { x: number; y: number };
 }
 
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
@@ -63,7 +64,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Derë Para Majtas',
       nameEn: 'L Front',
       path: 'M 150 195 L 235 195 L 235 310 L 150 310 Q 140 310 140 300 L 140 205 Q 140 195 150 195 Z',
-      labelPos: { x: 185, y: 250 }
+      labelPos: { x: 185, y: 250 },
+      markerPos: { x: 185, y: 255 }
     },
     // Right Front Door
     {
@@ -71,7 +73,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Derë Para Djathtas',
       nameEn: 'R Front',
       path: 'M 405 195 L 495 195 Q 505 195 505 205 L 505 300 Q 505 310 495 310 L 405 310 L 405 195 Z',
-      labelPos: { x: 450, y: 250 }
+      labelPos: { x: 450, y: 250 },
+      markerPos: { x: 450, y: 255 }
     },
     // Roof
     {
@@ -87,7 +90,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Derë Prapa Majtas',
       nameEn: 'L Rear',
       path: 'M 140 315 L 235 315 L 235 430 L 140 430 Q 130 430 130 420 L 130 325 Q 130 315 140 315 Z',
-      labelPos: { x: 185, y: 370 }
+      labelPos: { x: 185, y: 370 },
+      markerPos: { x: 185, y: 375 }
     },
     // Right Rear Door
     {
@@ -95,7 +99,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Derë Prapa Djathtas',
       nameEn: 'R Rear',
       path: 'M 405 315 L 510 315 Q 520 315 520 325 L 520 420 Q 520 430 510 430 L 405 430 L 405 315 Z',
-      labelPos: { x: 455, y: 370 }
+      labelPos: { x: 455, y: 370 },
+      markerPos: { x: 455, y: 375 }
     },
     // Rear Glass
     {
@@ -111,7 +116,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Bagazh',
       nameEn: 'Trunk',
       path: 'M 240 430 L 400 430 Q 410 430 410 440 L 410 540 Q 410 550 400 550 L 240 550 Q 230 550 230 540 L 230 440 Q 230 430 240 430 Z',
-      labelPos: { x: 320, y: 485 }
+      labelPos: { x: 320, y: 485 },
+      markerPos: { x: 320, y: 490 }
     },
     // Rear Bumper
     {
@@ -127,14 +133,16 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         name: 'Panel Anësor (Majtas)',
         nameEn: 'Side Sill L',
         path: 'M 135 310 L 235 310 L 235 330 L 135 330 Z',
-        labelPos: { x: 185, y: 320 }
+        labelPos: { x: 185, y: 320 },
+        markerPos: { x: 185, y: 323 }
       },
       {
         id: 'side_sill_right',
         name: 'Panel Anësor (Djathtas)',
         nameEn: 'Side Sill R',
         path: 'M 405 310 L 505 310 L 505 330 L 405 330 Z',
-        labelPos: { x: 455, y: 320 }
+        labelPos: { x: 455, y: 320 },
+        markerPos: { x: 455, y: 323 }
       },
     // Left Front Fender
     {
@@ -158,7 +166,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Panel Prapa Majtas',
       nameEn: 'L Quarter',
       path: 'M 130 435 L 225 435 L 225 545 L 130 545 Q 120 545 120 535 L 120 445 Q 120 435 130 435 Z',
-      labelPos: { x: 170, y: 490 }
+      labelPos: { x: 170, y: 490 },
+      markerPos: { x: 170, y: 495 }
     },
     // Right Quarter Panel
     {
@@ -166,7 +175,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Panel Prapa Djathtas',
       nameEn: 'R Quarter',
       path: 'M 415 435 L 520 435 Q 530 435 530 445 L 530 535 Q 530 545 520 545 L 415 545 L 415 435 Z',
-      labelPos: { x: 470, y: 490 }
+      labelPos: { x: 470, y: 490 },
+      markerPos: { x: 470, y: 495 }
     },
     // Front Left Wheel
     {
@@ -470,10 +480,11 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       <>
                         {statuses.map((s, idx) => {
                           const n = statuses.length;
-                          const spacing = 18;
+                          const spacing = 14;
+                          const base = part.markerPos || part.labelPos;
                           const offset = (idx - (n - 1) / 2) * spacing;
-                          const cx = part.labelPos.x + offset;
-                          const cy = part.labelPos.y;
+                          const cx = base.x + offset;
+                          const cy = base.y;
                           const rawCode = (s.code || '').toUpperCase();
                           const title = (s.title || '').toString().toLowerCase();
                           const deriveCodeFromTitle = () => {

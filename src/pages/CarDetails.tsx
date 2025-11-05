@@ -1989,6 +1989,26 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
+        {/* Google Maps - Store Location */}
+        <div className="container-responsive mt-8">
+          <Card className="glass-panel border-0 shadow-2xl rounded-xl">
+            <CardContent className="p-0">
+              <div className="aspect-video w-full overflow-hidden rounded-xl">
+                <iframe
+                  title="Korauto Location"
+                  src="https://www.google.com/maps?q=Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
+                  width="100%"
+                  height="100%"
+                  loading="lazy"
+                  style={{ border: 0 }}
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Image Zoom Modal - Removed, now using gallery page for all image viewing */}
       </div>
     </div>
