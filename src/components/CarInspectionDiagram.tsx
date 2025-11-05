@@ -329,18 +329,22 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   return 'Pjesë normale';
 };
 
-  // Count issues
+  // Count issues (simplified to replacements and repairs)
   const issueCount = {
-    critical: inspectionData.filter(item => 
-      item.statusTypes.some(s => ['X', 'W'].includes(s.code))
-    ).length,
-    major: inspectionData.filter(item => 
-      item.statusTypes.some(s => ['A', 'U'].includes(s.code))
-    ).length,
-    minor: inspectionData.filter(item => 
-      item.statusTypes.some(s => s.code === 'S')
-    ).length,
-    good: carParts.length - inspectionData.length
+    replacements: inspectionData.filter(item => {
+      const t = (item?.type?.title || '').toString().toLowerCase();
+      return (
+        item.statusTypes?.some((s) => s.code === 'X') ||
+        t.includes('exchange') || t.includes('replacement')
+      );
+    }).length,
+    repairs: inspectionData.filter(item => {
+      const t = (item?.type?.title || '').toString().toLowerCase();
+      return (
+        item.statusTypes?.some((s) => s.code === 'W' || s.code === 'A') ||
+        t.includes('weld') || t.includes('sheet metal') || t.includes('repair')
+      );
+    }).length,
   };
 
   return (
@@ -355,33 +359,19 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 Statistika
               </h4>
     <div className="space-y-2">
-      <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
                   <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <XCircle className="h-3 w-3 text-destructive" />
-          Zevendesuara
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold">N</span>
+                    Nderrime
                   </span>
-                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.critical}</Badge>
+                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.replacements}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-blue-600/10">
                   <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" style={{color: 'hsl(25 95% 53%)'}} />
-          Riparuara
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold">R</span>
+                    Riparime
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.major}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
-                  <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" style={{color: 'hsl(48 96% 53%)'}} />
-          Gervishje
-                  </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'black'}}>{issueCount.minor}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(142 76% 36% / 0.1)'}}>
-                  <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" style={{color: 'hsl(142 76% 36%)'}} />
-          Mire
-                  </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(142 76% 36%)', color: 'white'}}>{issueCount.good}</Badge>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(217 91% 60%)', color: 'white'}}>{issueCount.repairs}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -392,49 +382,14 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
             <CardContent className="p-3 lg:p-4">
               <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet</h4>
               <div className="space-y-2 text-xs">
-                {[{
-                  code: 'X',
-                  label: 'Zëvendësuar',
-                  color: 'hsl(0 84% 60%)',
-                  textColor: 'white'
-                }, {
-                  code: 'W',
-                  label: 'Salduar',
-                  color: 'hsl(217 91% 60%)',
-                  textColor: 'white'
-                }, {
-                  code: 'A',
-                  label: 'Riparuar',
-                  color: 'hsl(25 95% 53%)',
-                  textColor: 'white'
-                }, {
-                  code: 'U',
-                  label: 'Ndryshk',
-                  color: 'hsl(25 95% 53%)',
-                  textColor: 'white'
-                }, {
-                  code: 'S',
-                  label: 'Gërvishje',
-                  color: 'hsl(48 96% 53%)',
-                  textColor: 'black'
-                }, {
-                  code: '',
-                  label: 'Normal',
-                  color: 'hsl(142 76% 36%)',
-                  textColor: 'white'
-                }].map((item, index) => (
-                  <div key={`${item.label}-${index}`} className="flex items-center gap-2">
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold"
-                      style={{ backgroundColor: item.color, color: item.textColor }}
-                    >
-                      {item.code || '•'}
-                    </div>
-                    <span>
-                      {item.code ? `${item.code} - ${item.label}` : item.label}
-                    </span>
-                  </div>
-                ))}
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-red-600 text-white">N</div>
+                  <span>Nderrim (zëvendësim)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-blue-600 text-white">R</div>
+                  <span>Riparim / Saldim</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -475,44 +430,36 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       style={{ pointerEvents: 'auto' }}
                     />
 
-                    {/* Status markers as small circles with code letters */}
+                    {/* Status markers as small circles with code letters (N/R only) */}
                     {statuses.length > 0 && (
                       <>
-                        {statuses.map((s, idx) => {
-                          const n = statuses.length;
-                          const spacing = 14;
+                        {(() => {
+                          const lowTitles = statuses.map((s) => (s.title || '').toString().toLowerCase());
+                          const codes = statuses.map((s) => (s.code || '').toUpperCase());
+                          const isExchange = codes.includes('X') || lowTitles.some(t => t.includes('exchange') || t.includes('replacement'));
+                          const isRepair = codes.some(c => c === 'W' || c === 'A') || lowTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('repair'));
+
+                          const markers: Array<{ char: string; color: string }> = [];
+                          if (isExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
+                          if (isRepair) markers.push({ char: 'R', color: 'hsl(217 91% 60%)' });
+
+                          const n = markers.length;
                           const base = part.markerPos || part.labelPos;
-                          const offset = (idx - (n - 1) / 2) * spacing;
-                          const cx = base.x + offset;
-                          const cy = base.y;
-                          const rawCode = (s.code || '').toUpperCase();
-                          const title = (s.title || '').toString().toLowerCase();
-                          const deriveCodeFromTitle = () => {
-                            if (title.includes('weld') || title.includes('용접') || title.includes('sal') || title.includes('welding')) return 'W';
-                            if (title.includes('exchange') || title.includes('교환') || title.includes('zëvend') || title.includes('zevend')) return 'X';
-                            if (title.includes('repair') || title.includes('수리') || title.includes('ripar')) return 'A';
-                            if (title.includes('corr') || title.includes('부식') || title.includes('ndryshk')) return 'U';
-                            if (title.includes('scratch') || title.includes('흠집') || title.includes('gërvish') || title.includes('gervish')) return 'S';
-                            return rawCode || '';
-                          };
-                          const code = deriveCodeFromTitle();
-                          const markerColor = (() => {
-                            if (code === 'X') return 'hsl(0 84% 60%)';
-                            if (code === 'W') return 'hsl(217 91% 60%)';
-                            if (code === 'A' || code === 'U') return 'hsl(25 95% 53%)';
-                            if (code === 'S') return 'hsl(48 96% 53%)';
-                            return color;
-                          })();
-                          const textColor = code === 'S' ? 'black' : 'white';
-                          return (
-                            <g key={`${part.id}-m-${idx}`}>
-                              <circle cx={cx} cy={cy} r={10} fill={markerColor} stroke={markerColor} strokeWidth={2} />
-                              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight={700} fill={textColor}>
-                                {code || '•'}
-                              </text>
-                            </g>
-                          );
-                        })}
+                          const spacing = 14;
+                          return markers.map((m, idx) => {
+                            const offset = (idx - (n - 1) / 2) * spacing;
+                            const cx = base.x + offset;
+                            const cy = base.y;
+                            return (
+                              <g key={`${part.id}-mrk-${idx}`}>
+                                <circle cx={cx} cy={cy} r={10} fill={m.color} stroke={m.color} strokeWidth={2} />
+                                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight={700} fill={'white'}>
+                                  {m.char}
+                                </text>
+                              </g>
+                            );
+                          });
+                        })()}
                       </>
                     )}
                     {(isHovered || isSelected) && (
