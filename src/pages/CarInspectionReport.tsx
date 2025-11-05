@@ -695,7 +695,7 @@ const CarInspectionReport = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="bg-muted/30 border-b border-border">
-        <div className="container-responsive py-6 flex flex-col gap-4">
+        <div className="container-responsive py-5 flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
@@ -715,7 +715,7 @@ const CarInspectionReport = () => {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
               {carName || car.title || "Raporti i Automjetit"}
             </h1>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               {car.lot && (
                 <span className="font-medium text-foreground">
                   Kodi i lotit: <span className="font-semibold">{car.lot}</span>
@@ -747,7 +747,7 @@ const CarInspectionReport = () => {
         </div>
       </div>
 
-        <div className="container-responsive py-10 space-y-8">
+        <div className="container-responsive py-6 space-y-6">
           <Card className="shadow-md border-border/80">
             <CardHeader className="pb-4 space-y-1">
               <span className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -758,7 +758,7 @@ const CarInspectionReport = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {topVehicleInfo.slice(1).map((item) => (
                   <div key={item.label} className="flex flex-col gap-1">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -773,8 +773,8 @@ const CarInspectionReport = () => {
             </CardContent>
           </Card>
 
-        <Tabs defaultValue="diagram" className="space-y-6">
-          <TabsList className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-muted/60 p-1 rounded-xl">
+        <Tabs defaultValue="diagram" className="space-y-4">
+          <TabsList className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-muted/60 p-1 rounded-xl">
             <TabsTrigger value="diagram" className="text-sm md:text-base">
               Diagrami i Inspektimit të Automjetit
             </TabsTrigger>
@@ -786,7 +786,7 @@ const CarInspectionReport = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="diagram" className="space-y-6">
+          <TabsContent value="diagram" className="space-y-4">
             <Card className="shadow-lg">
               <CardHeader className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
@@ -799,17 +799,17 @@ const CarInspectionReport = () => {
                   Gjendja vizuale e pjesëve të jashtme dhe panelet e karocerisë
                 </p>
               </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4">
                   <CarInspectionDiagram
                     inspectionData={inspectionOuterData}
                     className="mx-auto"
                   />
 
                   {inspectionOuterData.length > 0 && (
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-3 md:grid-cols-2">
                       {inspectionOuterData.map((item: any, index: number) => (
                         <Card key={`${item?.type?.code || index}-summary`} className="border-border/80">
-                          <CardHeader className="pb-2">
+                          <CardHeader className="pb-1">
                             <div className="flex items-center gap-3">
                               <Wrench className="h-4 w-4 text-primary" />
                               <CardTitle className="text-base font-semibold">
@@ -817,9 +817,9 @@ const CarInspectionReport = () => {
                               </CardTitle>
                             </div>
                           </CardHeader>
-                          <CardContent className="space-y-3">
+                          <CardContent className="space-y-2">
                             {item?.statusTypes?.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-1.5">
                                 {item.statusTypes.map((status: any) => (
                                   <Badge key={`${status?.code}-${status?.title}`} variant="secondary">
                                     {status?.title}
@@ -831,7 +831,7 @@ const CarInspectionReport = () => {
                               <ul className="space-y-1 text-sm text-muted-foreground">
                                 {item.attributes.map((attribute: string, attrIndex: number) => (
                                   <li key={attrIndex} className="flex items-start gap-2">
-                                    <CheckCircle className="h-3.5 w-3.5 text-muted-foreground mt-1" />
+                                    <CheckCircle className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
                                     <span>{attribute}</span>
                                   </li>
                                 ))}
@@ -846,7 +846,7 @@ const CarInspectionReport = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="exterior" className="space-y-6">
+          <TabsContent value="exterior" className="space-y-4">
             <Card className="shadow-md border-border/80">
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -857,14 +857,14 @@ const CarInspectionReport = () => {
                   Përmbledhje e informacionit të jashtëm dhe historisë së automjetit
                 </p>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 <section className="space-y-3">
                   <h3 className="text-base font-semibold text-foreground">Info gjenerale të veturës</h3>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {generalVehicleInfo.map((item) => (
                       <div
                         key={item.label}
-                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3"
+                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-2.5"
                       >
                         <span className="text-xs uppercase tracking-wide text-muted-foreground">
                           {item.label}
@@ -879,11 +879,11 @@ const CarInspectionReport = () => {
 
                 <section className="space-y-3">
                   <h3 className="text-base font-semibold text-foreground">Historia e përdorimit të veturës</h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {usageHighlights.map((item) => (
                       <div
                         key={item.label}
-                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-3"
+                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
                       >
                         <span className="text-xs uppercase tracking-wide text-muted-foreground">
                           {item.label}
@@ -897,7 +897,7 @@ const CarInspectionReport = () => {
                       {usageHistoryList.map((entry, index) => (
                         <div
                           key={`${entry.description || "usage"}-${index}`}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
                         >
                           <span className="font-medium text-foreground">
                             {entry.description || "Përdorim"}
@@ -916,7 +916,7 @@ const CarInspectionReport = () => {
                       {ownerChangesList.map((change, index) => (
                         <div
                           key={`${change?.change_type || "owner"}-${index}`}
-                          className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm space-y-2"
+                          className="rounded-lg border border-border/60 bg-muted/40 p-2.5 text-sm space-y-2"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="font-semibold text-foreground">
@@ -950,11 +950,11 @@ const CarInspectionReport = () => {
 
                 <section className="space-y-3">
                   <h3 className="text-base font-semibold text-foreground">Historia e aksidenteve të veçanta</h3>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {specialAccidentStats.map((item) => (
                       <div
                         key={item.label}
-                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-3"
+                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
                       >
                         <span className="text-xs uppercase tracking-wide text-muted-foreground">
                           {item.label}
@@ -968,7 +968,7 @@ const CarInspectionReport = () => {
                       {specialAccidentHistory.map((entry, index) => (
                         <div
                           key={`${entry?.type || "event"}-${index}`}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
                         >
                           <span className="font-medium text-foreground">
                             {entry?.type || "Ngjarje"}
@@ -1018,15 +1018,15 @@ const CarInspectionReport = () => {
                     Vlerësimi i dëmtimeve të evidentuara nga inspektimi
                   </p>
                 </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
+                <CardContent className="grid gap-3 md:grid-cols-2">
                   {car.damage?.main && (
-                    <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
+                    <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
                       <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi kryesor</h3>
                       <p className="text-sm text-muted-foreground capitalize">{car.damage.main}</p>
                     </div>
                   )}
                   {car.damage?.second && (
-                    <div className="p-4 rounded-lg border border-border/60 bg-muted/40">
+                    <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
                       <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi dytësor</h3>
                       <p className="text-sm text-muted-foreground capitalize">{car.damage.second}</p>
                     </div>
@@ -1061,7 +1061,7 @@ const CarInspectionReport = () => {
                             <th
                               key={header}
                               scope="col"
-                              className="px-3 py-2 text-left font-semibold uppercase tracking-wide text-xs text-muted-foreground"
+                              className="px-2.5 py-1.5 text-left font-semibold uppercase tracking-wide text-xs text-muted-foreground"
                             >
                               {header}
                             </th>
@@ -1071,18 +1071,18 @@ const CarInspectionReport = () => {
                       <tbody className="divide-y divide-border/40">
                         {accidentEntries.map((entry, index) => (
                           <tr key={`accident-${index}`} className="bg-background/80">
-                            <td className="px-3 py-2 whitespace-nowrap text-foreground">{entry.date}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{entry.part}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{entry.paint}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{entry.labor}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{entry.total}</td>
+                            <td className="px-2.5 py-1.5 whitespace-nowrap text-foreground">{entry.date}</td>
+                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.part}</td>
+                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.paint}</td>
+                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.labor}</td>
+                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.total}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <div className="py-6 text-sm text-muted-foreground text-center">
+                  <div className="py-4 text-sm text-muted-foreground text-center">
                     Nuk ka inspektim për aksidente të raportuara.
                   </div>
                 )}

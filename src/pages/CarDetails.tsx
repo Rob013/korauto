@@ -1988,11 +1988,28 @@ const CarDetails = memo(() => {
                 </div>
 
                 {/* Enhanced Inspection Request Button */}
-                <div className="border-t border-border pt-4">
-                  <InspectionRequestForm trigger={<Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+                <div className="border-t border-border pt-4 space-y-3">
+                  <InspectionRequestForm
+                    trigger={
+                      <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
                         <FileText className="h-4 w-4 mr-2" />
                         Kërko Inspektim
-                      </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
+                      </Button>
+                    }
+                    carId={car.id}
+                    carMake={car.make}
+                    carModel={car.model}
+                    carYear={car.year}
+                  />
+
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => window.open("/garancioni", "_blank")}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Mëso më shumë për garancionin
+                  </Button>
                 </div>
 
                 {/* Enhanced Location */}

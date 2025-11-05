@@ -35,6 +35,7 @@ const ShipmentTracking = lazy(() => import("./pages/ShipmentTracking"));
 const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
 const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
 const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
+const Warranty = lazy(() => import("./pages/Warranty"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
@@ -219,6 +220,11 @@ const App = () => {
             <Route path="/contacts" element={
               <Suspense fallback={<PageSkeleton />}>
                 <Contacts />
+              </Suspense>
+            } />
+            <Route path="/garancioni" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Warranty />
               </Suspense>
             } />
             <Route path="/tracking" element={
