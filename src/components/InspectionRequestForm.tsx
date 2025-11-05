@@ -73,10 +73,10 @@ const InspectionRequestForm = ({
 
     // Validate first name
     if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
+      newErrors.firstName = "Emri është i detyrueshëm";
       console.log("❌ First name validation failed: empty");
     } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = "First name must be at least 2 characters";
+      newErrors.firstName = "Emri duhet të ketë të paktën 2 karaktere";
       console.log("❌ First name validation failed: too short");
     } else {
       console.log("✅ First name validation passed");
@@ -84,10 +84,10 @@ const InspectionRequestForm = ({
 
     // Validate last name
     if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
+      newErrors.lastName = "Mbiemri është i detyrueshëm";
       console.log("❌ Last name validation failed: empty");
     } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = "Last name must be at least 2 characters";
+      newErrors.lastName = "Mbiemri duhet të ketë të paktën 2 karaktere";
       console.log("❌ Last name validation failed: too short");
     } else {
       console.log("✅ Last name validation passed");
@@ -95,10 +95,10 @@ const InspectionRequestForm = ({
 
     // Validate email
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = "Email-i është i detyrueshëm";
       console.log("❌ Email validation failed: empty");
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = "Ju lutem shkruani një email të vlefshëm";
       console.log("❌ Email validation failed: invalid format");
     } else {
       console.log("✅ Email validation passed");
@@ -106,10 +106,10 @@ const InspectionRequestForm = ({
 
     // Validate phone
     if (!formData.whatsappPhone.trim()) {
-      newErrors.whatsappPhone = "Phone number is required";
+      newErrors.whatsappPhone = "Numri i telefonit është i detyrueshëm";
       console.log("❌ Phone validation failed: empty");
     } else if (!validatePhone(formData.whatsappPhone)) {
-      newErrors.whatsappPhone = "Please enter a valid phone number";
+      newErrors.whatsappPhone = "Ju lutem shkruani një numër telefoni të vlefshëm";
       console.log("❌ Phone validation failed: invalid format");
     } else {
       console.log("✅ Phone validation passed");
@@ -143,8 +143,8 @@ const InspectionRequestForm = ({
     if (!isValid) {
       console.log("❌ Form validation failed - stopping submission");
       toast({
-        title: "Validation Error",
-        description: "Please fix the errors in the form",
+        title: "Gabim në validim",
+        description: "Ju lutem korrigjoni gabimet në formular",
         variant: "destructive",
       });
       return;
@@ -262,24 +262,24 @@ const InspectionRequestForm = ({
       });
 
       toast({
-        title: "Request Submitted Successfully",
+        title: "Kërkesa u dërgua me sukses",
         description:
-          "We have received your inspection request and will contact you soon.",
+          "E kemi pranuar kërkesën tuaj për inspektim dhe do t'ju kontaktojmë së shpejti.",
       });
     } catch (error: any) {
       console.error("❌ Error submitting inspection request:", error);
 
       let errorMessage =
-        "There was an error submitting your request. Please try again.";
+        "Ndodhi një gabim gjatë dërgimit të kërkesës. Ju lutem provoni përsëri.";
       if (error?.message?.includes("rate")) {
-        errorMessage = "Too many requests. Please wait a moment and try again.";
+        errorMessage = "Shumë kërkesa. Ju lutem prisni pak dhe provoni përsëri.";
       } else if (error?.message?.includes("network")) {
         errorMessage =
-          "Network error. Please check your connection and try again.";
+          "Gabim rrjeti. Ju lutem kontrolloni lidhjen tuaj dhe provoni përsëri.";
       }
 
       toast({
-        title: "Error",
+        title: "Gabim",
         description: errorMessage,
         variant: "destructive",
       });
@@ -333,7 +333,7 @@ const InspectionRequestForm = ({
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">Emri</Label>
                   <Input
                     id="firstName"
                     name="firstName"
@@ -351,7 +351,7 @@ const InspectionRequestForm = ({
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">Mbiemri</Label>
                   <Input
                     id="lastName"
                     name="lastName"
@@ -387,12 +387,12 @@ const InspectionRequestForm = ({
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="whatsappPhone">WhatsApp Phone Number</Label>
+                  <Label htmlFor="whatsappPhone">Numri i telefonit (WhatsApp)</Label>
                   <Input
                     id="whatsappPhone"
                     name="whatsappPhone"
                     type="tel"
-                    placeholder="+355 68 123 4567"
+                    placeholder="+383 48 111 111"
                     value={formData.whatsappPhone}
                     onChange={handleInputChange}
                     required
@@ -413,7 +413,7 @@ const InspectionRequestForm = ({
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Submitting...
+                      Duke dërguar...
                     </>
                   ) : (
                     "Dërgo Kërkesën"
