@@ -217,6 +217,11 @@ const App = () => {
                 <InspectionServices />
               </Suspense>
             } />
+            <Route path="/warranty" element={
+              <Suspense fallback={<PageSkeleton />}>
+                <Warranty />
+              </Suspense>
+            } />
             <Route path="/contacts" element={
               <Suspense fallback={<PageSkeleton />}>
                 <Contacts />
