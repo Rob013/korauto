@@ -1943,7 +1943,7 @@ const CarDetails = memo(() => {
           {/* Right Column - Enhanced Contact Card */}
           <div className="space-y-4">
             {/* Enhanced Contact & Inspection Card */}
-            <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-[calc(100%-2rem)] lg:w-auto max-w-sm lg:max-w-none">
+            <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
               <CardContent className="p-4">
                 <h3 className="text-lg font-bold mb-4 text-center text-foreground">
                   Kontakt & Inspektim
