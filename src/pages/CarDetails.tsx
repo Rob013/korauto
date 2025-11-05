@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
-import { useImageSwipe } from "@/hooks/useImageSwipe";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 
@@ -1216,24 +1216,123 @@ const CarDetails = memo(() => {
     return [];
   }, [car?.images, car?.image]);
 
-  // Add swipe functionality for car detail photos - must be before early returns
-  const {
-    currentIndex: swipeCurrentIndex,
-    containerRef: imageContainerRef,
-    goToNext,
-    goToPrevious,
-    goToIndex
-  } = useImageSwipe({
-    images,
-    onImageChange: index => setSelectedImageIndex(index)
-  });
+    useEffect(() => {
+      if (images.length === 0) {
+        setSelectedImageIndex(0);
+        return;
+      }
+      if (selectedImageIndex >= images.length) {
+        setSelectedImageIndex(images.length - 1);
+      }
+    }, [images, selectedImageIndex]);
 
-  // Sync swipe current index with selected image index
-  useEffect(() => {
-    if (swipeCurrentIndex !== selectedImageIndex) {
-      goToIndex(selectedImageIndex);
-    }
-  }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
+    const isMobileView = useIsMobile();
+    const desktopCarouselRef = useRef<HTMLDivElement | null>(null);
+    const mobileCarouselRef = useRef<HTMLDivElement | null>(null);
+    const activeCarouselRef = useRef<HTMLDivElement | null>(null);
+    const isProgrammaticScroll = useRef(false);
+    const scrollTimeoutRef = useRef<number>();
+
+    const updateActiveCarousel = useCallback(() => {
+      activeCarouselRef.current = isMobileView ? mobileCarouselRef.current : desktopCarouselRef.current;
+    }, [isMobileView]);
+
+    useEffect(() => {
+      updateActiveCarousel();
+    }, [updateActiveCarousel]);
+
+    useEffect(() => {
+      const container = activeCarouselRef.current;
+      if (!container) return;
+      container.scrollTo({
+        left: selectedImageIndex * container.clientWidth,
+        behavior: "auto",
+      });
+    }, [isMobileView, images.length]);
+
+    useEffect(() => {
+      return () => {
+        if (scrollTimeoutRef.current) {
+          window.clearTimeout(scrollTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    const scrollToIndex = useCallback(
+      (index: number, behavior: ScrollBehavior = "smooth") => {
+        const container = activeCarouselRef.current;
+        if (!container || images.length === 0) return;
+
+        const clampedIndex = Math.max(0, Math.min(index, images.length - 1));
+        isProgrammaticScroll.current = true;
+
+        if (scrollTimeoutRef.current) {
+          window.clearTimeout(scrollTimeoutRef.current);
+        }
+
+        setSelectedImageIndex(clampedIndex);
+        container.scrollTo({
+          left: clampedIndex * container.clientWidth,
+          behavior,
+        });
+
+        if (behavior === "smooth") {
+          scrollTimeoutRef.current = window.setTimeout(() => {
+            isProgrammaticScroll.current = false;
+            scrollTimeoutRef.current = undefined;
+          }, 400);
+        } else {
+          isProgrammaticScroll.current = false;
+        }
+      },
+      [images.length]
+    );
+
+    useEffect(() => {
+      const containers = [desktopCarouselRef.current, mobileCarouselRef.current].filter(
+        (node): node is HTMLDivElement => Boolean(node)
+      );
+
+      if (containers.length === 0) return;
+
+      const disposers = containers.map((container) => {
+        let animationFrame = 0;
+
+        const handleScroll = () => {
+          if (container !== activeCarouselRef.current) return;
+          if (isProgrammaticScroll.current) return;
+
+          cancelAnimationFrame(animationFrame);
+          animationFrame = window.requestAnimationFrame(() => {
+            const width = container.clientWidth;
+            if (!width) return;
+            const index = Math.round(container.scrollLeft / width);
+            setSelectedImageIndex((prev) => (prev === index ? prev : index));
+          });
+        };
+
+        container.addEventListener("scroll", handleScroll, { passive: true });
+
+        return () => {
+          cancelAnimationFrame(animationFrame);
+          container.removeEventListener("scroll", handleScroll);
+        };
+      });
+
+      return () => {
+        disposers.forEach((dispose) => dispose && dispose());
+      };
+    }, [images.length, isMobileView]);
+
+    const handleNextImage = useCallback(() => {
+      if (images.length <= 1) return;
+      scrollToIndex(selectedImageIndex + 1);
+    }, [images.length, scrollToIndex, selectedImageIndex]);
+
+    const handlePreviousImage = useCallback(() => {
+      if (images.length <= 1) return;
+      scrollToIndex(selectedImageIndex - 1);
+    }, [images.length, scrollToIndex, selectedImageIndex]);
   const carImages = useMemo(() => car?.images || [], [car?.images]);
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
@@ -1362,122 +1461,132 @@ const CarDetails = memo(() => {
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
-              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
-                <CardContent className="p-0">
-                  <div 
-                    ref={imageContainerRef} 
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
-                    onClick={(e) => handleGalleryClick(e)} 
-                    data-fancybox="gallery"
-                  >
-                  {/* Main Image with improved loading states */}
-                  {images.length > 0 ? (
-                    <img 
-                      src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
-                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
-                      onError={e => {
-                        e.currentTarget.src = "/placeholder.svg";
-                        setIsPlaceholderImage(true);
-                      }} 
-                      onLoad={e => {
-                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
-                          setIsPlaceholderImage(false);
-                        }
-                      }}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Car className="h-16 w-16 text-muted-foreground" />
+                <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
+                  <CardContent className="p-0">
+                    <div
+                      ref={desktopCarouselRef}
+                      className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-grab"
+                      data-fancybox="gallery"
+                    >
+                      {images.length > 0 ? (
+                        <div className="relative h-full w-full">
+                          <div
+                            data-carousel
+                            className="flex h-full w-full overflow-x-auto snap-x snap-mandatory scroll-smooth"
+                            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                          >
+                            {images.map((image, index) => (
+                              <div
+                                key={`${car.id}-image-${index}`}
+                                className="relative flex h-full w-full flex-shrink-0 snap-center"
+                                aria-hidden={selectedImageIndex !== index}
+                              >
+                                <img
+                                  src={image}
+                                  alt={`${car.year} ${car.make} ${car.model} - Image ${index + 1}`}
+                                  className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
+                                  onError={(e) => {
+                                    if (selectedImageIndex === index) {
+                                      e.currentTarget.src = "/placeholder.svg";
+                                      setIsPlaceholderImage(true);
+                                    }
+                                  }}
+                                  onLoad={(e) => {
+                                    if (!e.currentTarget.src.includes("/placeholder.svg") && selectedImageIndex === index) {
+                                      setIsPlaceholderImage(false);
+                                    }
+                                  }}
+                                  draggable={false}
+                                  loading="lazy"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Car className="h-16 w-16 text-muted-foreground" />
+                        </div>
+                      )}
+
+                      {images.length > 1 && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePreviousImage();
+                            }}
+                            aria-label="Previous image"
+                          >
+                            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNextImage();
+                            }}
+                            aria-label="Next image"
+                          >
+                            <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                          </Button>
+                        </>
+                      )}
+
+                      {images.length > 1 && (
+                        <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                          <button
+                            onClick={handleGalleryClick}
+                            className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                            aria-label={`View all ${images.length} images`}
+                          >
+                            <Camera className="h-3 w-3" />
+                            {selectedImageIndex + 1}/{images.length}
+                          </button>
+
+                          <button
+                            onClick={handleGalleryClick}
+                            className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                            aria-label={`View all ${images.length} images`}
+                          >
+                            <Camera className="h-4 w-4" />
+                            View Gallery ({images.length})
+                          </button>
+                        </div>
+                      )}
+
+                      {car.lot && (
+                        <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                          {car.lot}
+                        </Badge>
+                      )}
+
+                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
+                        <Expand className="h-4 w-4 text-white" />
+                      </div>
+
+                      {isPlaceholderImage && (
+                        <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {/* Navigation arrows - Improved positioning and visibility */}
-                  {images.length > 1 && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          goToPrevious();
-                        }}
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          goToNext();
-                        }}
-                        aria-label="Next image"
-                      >
-                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    </>
-                  )}
-                  
-                  {/* Image counter and gallery button - Improved mobile design */}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      {/* Mobile gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-3 w-3" />
-                        {selectedImageIndex + 1}/{images.length}
-                      </button>
-                      
-                      {/* Desktop gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-4 w-4" />
-                        View Gallery ({images.length})
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Lot number badge - Improved positioning */}
-                  {car.lot && (
-                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                      {car.lot}
-                    </Badge>
-                  )}
-                  
-                  {/* Zoom icon - Improved positioning and visibility */}
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
-                    <Expand className="h-4 w-4 text-white" />
-                  </div>
-                  
-                  {/* Loading indicator */}
-                  {isPlaceholderImage && (
-                    <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
             {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
             {images.length > 1 && (
               <div className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in" style={{animationDelay: '200ms'}}>
-                {images.slice(1, 7).map((image, index) => (
-                  <button
-                    key={index + 1}
-                    onClick={() => setSelectedImageIndex(index + 1)}
+                  {images.slice(1, 7).map((image, index) => (
+                    <button
+                      key={index + 1}
+                      onClick={() => scrollToIndex(index + 1)}
                     className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                       selectedImageIndex === index + 1 
                         ? 'border-primary shadow-lg scale-105' 
@@ -1511,114 +1620,115 @@ const CarDetails = memo(() => {
             </div>
 
             {/* Mobile Main Image - Full width for mobile */}
-            <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
-              <CardContent className="p-0">
-                <div 
-                  ref={imageContainerRef} 
-                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
-                  onClick={(e) => handleGalleryClick(e)} 
-                  data-fancybox="gallery"
-                >
-                  {/* Main Image with improved loading states */}
-                  {images.length > 0 ? (
-                    <img 
-                      src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
-                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
-                      onError={e => {
-                        e.currentTarget.src = "/placeholder.svg";
-                        setIsPlaceholderImage(true);
-                      }} 
-                      onLoad={e => {
-                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
-                          setIsPlaceholderImage(false);
-                        }
-                      }}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Car className="h-16 w-16 text-muted-foreground" />
+              <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+                <CardContent className="p-0">
+                  <div
+                    ref={mobileCarouselRef}
+                    className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-grab"
+                    data-fancybox="gallery"
+                  >
+                    {images.length > 0 ? (
+                      <div className="relative h-full w-full">
+                        <div
+                          data-carousel
+                          className="flex h-full w-full overflow-x-auto snap-x snap-mandatory scroll-smooth"
+                          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                        >
+                          {images.map((image, index) => (
+                            <div
+                              key={`${car.id}-mobile-image-${index}`}
+                              className="relative flex h-full w-full flex-shrink-0 snap-center"
+                              aria-hidden={selectedImageIndex !== index}
+                            >
+                              <img
+                                src={image}
+                                alt={`${car.year} ${car.make} ${car.model} - Image ${index + 1}`}
+                                className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
+                                onError={(e) => {
+                                  if (selectedImageIndex === index) {
+                                    e.currentTarget.src = "/placeholder.svg";
+                                    setIsPlaceholderImage(true);
+                                  }
+                                }}
+                                onLoad={(e) => {
+                                  if (!e.currentTarget.src.includes("/placeholder.svg") && selectedImageIndex === index) {
+                                    setIsPlaceholderImage(false);
+                                  }
+                                }}
+                                draggable={false}
+                                loading="lazy"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Car className="h-16 w-16 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {images.length > 1 && (
+                      <div className="absolute inset-x-3 top-1/2 flex items-center justify-between -translate-y-1/2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 p-0 flex z-20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePreviousImage();
+                          }}
+                          aria-label="Previous image"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 p-0 flex z-20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNextImage();
+                          }}
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {images.length > 1 && (
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        <button
+                          onClick={handleGalleryClick}
+                          className="gallery-button bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-3 w-3" />
+                          {selectedImageIndex + 1}/{images.length}
+                        </button>
+                      </div>
+                    )}
+
+                    {car.lot && (
+                      <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                        {car.lot}
+                      </Badge>
+                    )}
+
+                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
+                      <Expand className="h-4 w-4 text-white" />
                     </div>
-                  )}
-                  
-                  {/* Navigation arrows - Improved positioning and visibility */}
-                  {images.length > 1 && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          goToPrevious();
-                        }}
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          goToNext();
-                        }}
-                        aria-label="Next image"
-                      >
-                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    </>
-                  )}
-                  
-                  {/* Image counter and gallery button - Improved mobile design */}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      {/* Mobile gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-3 w-3" />
-                        {selectedImageIndex + 1}/{images.length}
-                      </button>
-                      
-                      {/* Desktop gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-4 w-4" />
-                        View Gallery ({images.length})
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Lot number badge - Improved positioning */}
-                  {car.lot && (
-                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                      {car.lot}
-                    </Badge>
-                  )}
-                  
-                  {/* Zoom icon - Improved positioning and visibility */}
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
-                    <Expand className="h-4 w-4 text-white" />
+
+                    {isPlaceholderImage && (
+                      <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Loading indicator */}
-                  {isPlaceholderImage && (
-                    <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
 
             {/* Car Title with Price - Compact mobile design */}

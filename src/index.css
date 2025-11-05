@@ -81,6 +81,7 @@ body {
     /* Original black and white color scheme */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
+    --loading-spin-duration: 0.7s;
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
@@ -486,6 +487,16 @@ body {
     box-shadow: var(--shadow-xl);
   }
 
+[data-carousel] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-y;
+}
+
+[data-carousel]::-webkit-scrollbar {
+  display: none;
+}
+
   /* Stagger animation for lists */
   .stagger-animation > * {
     animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
@@ -546,6 +557,18 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  [data-allow-motion],
+  [data-allow-motion] *,
+  .loading-motion,
+  .loading-motion::before,
+  .loading-motion::after,
+  .animate-spin {
+    animation-duration: var(--loading-spin-duration, 0.7s) !important;
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
+    transition-duration: unset !important;
   }
   
   html {

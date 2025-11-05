@@ -36,11 +36,11 @@ const LoadingLogo: React.FC<LoadingLogoProps> = ({
       "flex items-center justify-center",
       className
     )}>
-      <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center" data-allow-motion>
         {/* Spinning ring around logo - using Tailwind animate-spin */}
         <div 
           className={cn(
-            "absolute border-2 rounded-full animate-spin",
+              "absolute border-2 rounded-full animate-spin loading-motion",
             ringSize[size]
           )} 
           style={{ 

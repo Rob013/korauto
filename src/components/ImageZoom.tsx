@@ -161,29 +161,29 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
             <X className="h-6 w-6" />
           </Button>
 
-          {/* Navigation Arrows */}
-          {images.length > 1 && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePrevImage}
-                disabled={currentIndex === 0}
-                className="absolute left-1/2 top-1/2 transform -translate-x-16 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
-              >
-                <ChevronLeft className="h-8 w-8" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNextImage}
-                disabled={currentIndex === images.length - 1}
-                className="absolute left-1/2 top-1/2 transform translate-x-4 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
-              >
-                <ChevronRight className="h-8 w-8" />
-              </Button>
-            </>
-          )}
+            {/* Navigation Arrows */}
+            {images.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrevImage}
+                  disabled={currentIndex === 0}
+                  className="absolute left-4 sm:left-6 md:left-10 top-1/2 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
+                >
+                  <ChevronLeft className="h-8 w-8" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNextImage}
+                  disabled={currentIndex === images.length - 1}
+                  className="absolute right-4 sm:right-6 md:right-10 top-1/2 -translate-y-1/2 z-50 bg-black/70 hover:bg-black/90 text-white disabled:opacity-20 disabled:cursor-not-allowed border border-white/20 h-12 w-12 touch-manipulation"
+                >
+                  <ChevronRight className="h-8 w-8" />
+                </Button>
+              </>
+            )}
 
           {/* Controls - Improved design and accessibility */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-1 bg-black/80 rounded-xl p-2 border border-white/30 backdrop-blur-md shadow-2xl">

@@ -1112,15 +1112,28 @@ const EncarCatalog = ({
       // Clear state when navigating away from catalog page
       clearStateOnNavigation();
     };
-  }, []);
-  return <div className="flex min-h-screen bg-background">
-      {/* Collapsible Filter Sidebar - Optimized for mobile */}
-      <div ref={filterPanelRef} data-filter-panel className={`
-        fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
-        ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        ${!showFilters && 'lg:block hidden'}
-        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-96 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg'} 
-      `}>
+    }, []);
+
+    const filterPanelClasses = useMemo(() => {
+      const baseClasses = [
+        "fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-all duration-300 ease-in-out will-change-transform",
+        showFilters ? "translate-x-0 opacity-100 pointer-events-auto" : "-translate-x-full opacity-0 pointer-events-none",
+        !isMobile ? "lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto" : "",
+        isMobile ? "mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col" : "w-96 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg"
+      ];
+
+      return baseClasses.filter(Boolean).join(" ");
+    }, [showFilters, isMobile]);
+
+    return <div className="flex min-h-screen bg-background">
+        {/* Collapsible Filter Sidebar - Optimized for mobile */}
+        <div
+          ref={filterPanelRef}
+          data-filter-panel
+          aria-hidden={isMobile ? !showFilters : false}
+          className={filterPanelClasses}
+          style={{ visibility: !showFilters && isMobile ? 'hidden' : 'visible' }}
+        >
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1136,12 +1149,18 @@ const EncarCatalog = ({
               <Button type="button" variant="ghost" size="sm" onClick={handleClearFilters} className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground text-xs' : 'h-8 px-2'}`}>
                 <span className="text-xs">Clear</span>
               </Button>
-              {/* Show close button on mobile and tablet (iPad) */}
-              <Button type="button" variant="ghost" size="sm" onClick={() => {
-              console.log("Close button clicked");
-              setShowFilters(false);
-              setHasExplicitlyClosed(true); // Mark as explicitly closed
-            }} className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground' : 'h-8 px-2 hover:bg-muted'}`} title="Mbyll filtrat">
+                {/* Show close button on mobile and tablet (iPad) */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowFilters(false);
+                    setHasExplicitlyClosed(true); // Mark as explicitly closed
+                  }}
+                  className={`lg:hidden flex items-center gap-1 ${isMobile ? 'h-6 px-1.5 hover:bg-primary-foreground/20 text-primary-foreground' : 'h-8 px-2 hover:bg-muted'}`}
+                  title="Mbyll filtrat"
+                >
                   <X className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
                 </Button>
             </div>
@@ -1185,34 +1204,12 @@ const EncarCatalog = ({
               setShowFilters(false);
               setHasExplicitlyClosed(true);
             }
-
-            // Additional CSS force close as backup
-            if (isMobile) {
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
-            }
           }} onCloseFilter={() => {
             console.log("Close filter called, isMobile:", isMobile);
             // Close the filter panel on mobile only; keep open on desktop
             if (isMobile) {
               setShowFilters(false);
               setHasExplicitlyClosed(true);
-            }
-
-            // Additional CSS force close as backup
-            if (isMobile) {
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
             }
           }} />
           
@@ -1354,7 +1351,14 @@ const EncarCatalog = ({
                   </div>
                 </div>}
               
-              <div ref={containerRef} className={`transition-all duration-300 ${viewMode === 'list' ? 'flex flex-col gap-2 sm:gap-3' : `grid gap-2 sm:gap-3 lg:gap-4 ${'grid-cols-1 md:grid-cols-4 px-1 sm:px-2'}`} ${isFilterLoading ? 'opacity-50' : ''}`}>
+                <div
+                  ref={containerRef}
+                  className={`transition-all duration-300 ${
+                    viewMode === 'list'
+                      ? 'flex flex-col gap-2 sm:gap-3'
+                      : 'grid gap-3 sm:gap-4 lg:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 px-1 sm:px-2 md:px-0'
+                  } ${isFilterLoading ? 'opacity-50' : ''}`}
+                >
                 {carsToDisplay.filter(car => {
               // Only show cars with buy_now pricing
               const lot = car.lots?.[0];
