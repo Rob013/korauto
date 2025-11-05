@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
@@ -173,6 +173,22 @@ const FEATURE_MAPPING: { [key: string]: string } = {
   "1048": "Sistemi i Ndriçimit të Brendshëm të Prapme",
   "1049": "Sistemi i Ngrohjes së Dritareve të Prapme",
   "1050": "Kontrolli i Temperaturës së Klimatizimit të Prapme"
+};
+
+const CAR_CACHE_TABLE = 'cars_cache';
+const CAR_DETAILS_CACHE_TTL = 1000 * 60 * 60 * 6; // 6 hours
+
+const parseJsonValue = (value: any) => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn('Failed to parse cached JSON value:', error);
+      return null;
+    }
+  }
+  return value;
 };
 
 interface CarDetails {
@@ -882,6 +898,7 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+  const lastTrackedCarRef = useRef<string | null>(null);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -901,6 +918,165 @@ const CarDetails = memo(() => {
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
+
+  const buildCarFromCache = useCallback((record: any, lotId?: string): CarDetails | null => {
+    if (!record) return null;
+
+    const carData = parseJsonValue(record.car_data) || {};
+    const lotData = parseJsonValue(record.lot_data) || {};
+    const cachedImages = parseJsonValue(record.images);
+
+    const normalizedImages = (() => {
+      if (Array.isArray(lotData?.images?.normal)) return lotData.images.normal;
+      if (Array.isArray(lotData?.images?.big)) return lotData.images.big;
+      if (Array.isArray(cachedImages)) return cachedImages;
+      if (Array.isArray(cachedImages?.normal)) return cachedImages.normal;
+      if (Array.isArray(cachedImages?.big)) return cachedImages.big;
+      return [];
+    })();
+
+    const basePrice = lotData?.buy_now ?? lotData?.final_bid ?? lotData?.price ?? record?.price_usd ?? record?.price ?? null;
+    const price = basePrice ? calculateFinalPriceEUR(basePrice, exchangeRate.rate) : record?.price_eur || 0;
+
+    const resolvedLot = lotData?.lot || record?.lot_number || lotId;
+    if (!resolvedLot) return null;
+
+    return {
+      id: carData?.id?.toString() || resolvedLot,
+      make: carData?.manufacturer?.name || record?.make || "Unknown",
+      model: carData?.model?.name || record?.model || "Unknown",
+      year: carData?.year || record?.year || new Date().getFullYear(),
+      price,
+      image: normalizedImages?.[0] || undefined,
+      images: normalizedImages || [],
+      source_label: record?.source_site || carData?.domain_name || undefined,
+      vin: carData?.vin || record?.vin || undefined,
+      mileage: lotData?.odometer?.km || (record?.mileage ? Number(record.mileage) : undefined),
+      transmission: carData?.transmission?.name || record?.transmission || undefined,
+      fuel: carData?.fuel?.name || record?.fuel || undefined,
+      color: carData?.color?.name || record?.color || undefined,
+      condition: carData?.condition?.replace?.("run_and_drives", "Good Condition") || record?.condition || undefined,
+      lot: resolvedLot,
+      title: carData?.title || lotData?.title || record?.sale_title || undefined,
+      odometer: lotData?.odometer,
+      engine: carData?.engine,
+      cylinders: carData?.cylinders,
+      drive_wheel: carData?.drive_wheel,
+      body_type: carData?.body_type,
+      damage: lotData?.damage,
+      keys_available: lotData?.keys_available,
+      airbags: lotData?.airbags,
+      grade_iaai: lotData?.grade_iaai || carData?.grade_iaai,
+      seller: lotData?.seller,
+      seller_type: lotData?.seller_type,
+      sale_date: lotData?.sale_date,
+      bid: lotData?.bid,
+      buy_now: lotData?.buy_now,
+      final_bid: lotData?.final_bid ?? record?.price_usd ?? undefined,
+      features: getCarFeatures(carData, lotData),
+      safety_features: getSafetyFeatures(carData, lotData),
+      comfort_features: getComfortFeatures(carData, lotData),
+      performance_rating: 4.5,
+      popularity_score: 85,
+      insurance: lotData?.insurance,
+      insurance_v2: lotData?.insurance_v2,
+      location: lotData?.location,
+      inspect: lotData?.inspect,
+      details: lotData?.details
+    };
+  }, [exchangeRate.rate]);
+
+  const loadCachedCar = useCallback(async (lotId: string) => {
+    if (!lotId) return null;
+
+    try {
+      const selectFields = 'car_data, lot_data, price_usd, price_eur, price, make, model, year, vin, fuel, transmission, color, condition, lot_number, sale_status, images, updated_at, source_site, mileage';
+      let record: any = null;
+
+      const { data, error } = await supabase
+        .from(CAR_CACHE_TABLE)
+        .select(selectFields)
+        .eq('lot_number', lotId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.warn('Failed to load cached car by lot number:', error);
+      }
+
+      record = data;
+
+      if (!record) {
+        const { data: byApiId, error: apiError } = await supabase
+          .from(CAR_CACHE_TABLE)
+          .select(selectFields)
+          .eq('api_id', lotId)
+          .maybeSingle();
+
+        if (apiError && apiError.code !== 'PGRST116') {
+          console.warn('Failed to load cached car by API id:', apiError);
+        }
+        record = byApiId;
+      }
+
+      if (!record) return null;
+
+      const updatedAt = record.updated_at ? new Date(record.updated_at).getTime() : null;
+      const stale = !updatedAt || Date.now() - updatedAt > CAR_DETAILS_CACHE_TTL;
+      const parsed = buildCarFromCache(record, lotId);
+      if (!parsed) return null;
+
+      return { car: parsed, stale };
+    } catch (error) {
+      console.warn('Failed to hydrate car details from cache:', error);
+      return null;
+    }
+  }, [buildCarFromCache]);
+
+  const saveCarToCache = useCallback(async (carData: any, lotData: any) => {
+    try {
+      if (!carData && !lotData) return;
+
+      const lotNumber = lotData?.lot || carData?.lot_number || lot;
+      const apiId = carData?.id?.toString() || lotNumber;
+
+      if (!apiId || !lotNumber) return;
+
+      const basePrice = lotData?.buy_now ?? lotData?.final_bid ?? lotData?.price ?? null;
+
+      const payload: any = {
+        api_id: apiId,
+        lot_number: lotNumber,
+        make: carData?.manufacturer?.name || carData?.make || 'Unknown',
+        model: carData?.model?.name || carData?.model || 'Unknown',
+        year: carData?.year || new Date().getFullYear(),
+        price: basePrice,
+        price_usd: basePrice,
+        price_eur: basePrice ? calculateFinalPriceEUR(basePrice, exchangeRate.rate) : null,
+        vin: carData?.vin,
+        fuel: carData?.fuel?.name,
+        transmission: carData?.transmission?.name,
+        color: carData?.color?.name,
+        condition: carData?.condition?.name || carData?.condition || null,
+        sale_status: lotData?.sale_status || carData?.sale_status,
+        images: lotData?.images?.normal || lotData?.images?.big || null,
+        car_data: carData,
+        lot_data: lotData,
+        updated_at: new Date().toISOString(),
+        last_api_sync: new Date().toISOString(),
+        source_site: carData?.domain_name || lotData?.domain?.name || null
+      };
+
+      const { error } = await supabase
+        .from(CAR_CACHE_TABLE)
+        .upsert(payload, { onConflict: 'api_id' });
+
+      if (error) {
+        console.warn('Failed to upsert car details cache:', error);
+      }
+    } catch (error) {
+      console.warn('Failed to persist car details cache:', error);
+    }
+  }, [exchangeRate.rate, lot]);
   
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
@@ -1023,14 +1199,37 @@ const CarDetails = memo(() => {
   }, []);
   useEffect(() => {
     let isMounted = true;
+
     const fetchCarDetails = async () => {
       if (!lot) return;
+
+      let cachedResult: { car: CarDetails; stale: boolean } | null = null;
+
       try {
-        // Use external API directly with API key
+        cachedResult = await loadCachedCar(lot);
+      } catch (cacheError) {
+        console.warn('Unable to load cached car details:', cacheError);
+      }
+
+      if (!isMounted) return;
+
+      if (cachedResult?.car) {
+        setCar(prev => (prev && !cachedResult?.stale ? prev : cachedResult.car));
+        setLoading(false);
+        setError(null);
+        if (!cachedResult.stale) {
+          return;
+        }
+      }
+
+      if (!cachedResult?.car) {
+        setLoading(true);
+      }
+
+      try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        // Try to fetch by lot ID first, then by lot number if that fails
         let response;
         try {
           response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
@@ -1041,7 +1240,6 @@ const CarDetails = memo(() => {
             signal: controller.signal
           });
         } catch (firstAttemptError) {
-          // If first attempt fails, try searching by lot number
           console.log("First API attempt failed, trying as lot number...");
           response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
             headers: {
@@ -1055,17 +1253,21 @@ const CarDetails = memo(() => {
         if (!response.ok) {
           throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
+
         const data = await response.json();
         if (!isMounted) return;
+
         const carData = data.data;
         const lotData = carData.lots?.[0];
         if (!lotData) throw new Error("Missing lot data");
+
         const basePrice = lotData.buy_now;
         if (!basePrice) {
           console.log("Car doesn't have buy_now pricing, redirecting to catalog");
           navigate('/catalog');
           return;
         }
+
         const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
         const domainRaw = String(lotData?.domain?.name || carData?.domain_name || carData?.provider || carData?.source_api || '').toLowerCase();
         const isKbc = KBC_DOMAINS.some(k => domainRaw.includes(k));
@@ -1108,22 +1310,26 @@ const CarDetails = memo(() => {
           comfort_features: getComfortFeatures(carData, lotData),
           performance_rating: 4.5,
           popularity_score: 85,
-          // Enhanced API data
           insurance: lotData.insurance,
           insurance_v2: lotData.insurance_v2,
           location: lotData.location,
           inspect: lotData.inspect,
           details: lotData.details
         };
+
         setCar(transformedCar);
         setLoading(false);
+        setError(null);
 
-        // Track car view analytics
-        trackCarView(lot, transformedCar);
+        await saveCarToCache(carData, lotData);
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (isMounted) {
-          // Try to find the car in fallback data as a last resort
+          if (cachedResult?.car) {
+            setLoading(false);
+            return;
+          }
+
           const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
           if (fallbackCar && fallbackCar.lots?.[0]) {
             console.log("Using fallback car data for:", lot);
@@ -1131,46 +1337,44 @@ const CarDetails = memo(() => {
             const basePrice = lotData.buy_now || fallbackCar.price;
             if (!basePrice) {
               console.log("Fallback car doesn't have buy_now pricing, showing error");
-              throw new Error("Car pricing not available");
+            } else {
+              const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
+              const transformedCar: CarDetails = {
+                id: fallbackCar.id,
+                make: fallbackCar.manufacturer?.name || "Unknown",
+                model: fallbackCar.model?.name || "Unknown",
+                year: fallbackCar.year || 2020,
+                price,
+                image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
+                images: lotData.images?.normal || lotData.images?.big || [],
+                vin: fallbackCar.vin,
+                mileage: lotData.odometer?.km,
+                transmission: fallbackCar.transmission?.name,
+                fuel: fallbackCar.fuel?.name,
+                color: fallbackCar.color?.name,
+                condition: "Good Condition",
+                lot: fallbackCar.lot_number,
+                title: fallbackCar.title,
+                odometer: lotData.odometer ? {
+                  km: lotData.odometer.km,
+                  mi: Math.round(lotData.odometer.km * 0.621371),
+                  status: {
+                    name: "Verified"
+                  }
+                } : undefined,
+                features: fallbackCar.features || [],
+                safety_features: ["ABS", "Airbags", "Stability Control"],
+                comfort_features: ["Air Conditioning", "Power Windows"],
+                performance_rating: 4.5,
+                popularity_score: 85,
+                details: lotData && 'details' in lotData ? lotData.details : undefined
+              };
+              setCar(transformedCar);
+              setLoading(false);
+              return;
             }
-            const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
-            const transformedCar: CarDetails = {
-              id: fallbackCar.id,
-              make: fallbackCar.manufacturer?.name || "Unknown",
-              model: fallbackCar.model?.name || "Unknown",
-              year: fallbackCar.year || 2020,
-              price,
-              image: lotData.images?.normal?.[0] || lotData.images?.big?.[0] || "/placeholder.svg",
-              images: lotData.images?.normal || lotData.images?.big || [],
-              vin: fallbackCar.vin,
-              mileage: lotData.odometer?.km,
-              transmission: fallbackCar.transmission?.name,
-              fuel: fallbackCar.fuel?.name,
-              color: fallbackCar.color?.name,
-              condition: "Good Condition",
-              lot: fallbackCar.lot_number,
-              title: fallbackCar.title,
-              odometer: lotData.odometer ? {
-                km: lotData.odometer.km,
-                mi: Math.round(lotData.odometer.km * 0.621371),
-                status: {
-                  name: "Verified"
-                }
-              } : undefined,
-              features: fallbackCar.features || [],
-              safety_features: ["ABS", "Airbags", "Stability Control"],
-              comfort_features: ["Air Conditioning", "Power Windows"],
-              performance_rating: 4.5,
-              popularity_score: 85,
-              // Enhanced API data  
-              details: lotData && 'details' in lotData ? lotData.details : undefined
-            };
-            setCar(transformedCar);
-            setLoading(false);
-            return;
           }
 
-          // If no fallback data found, show appropriate error message
           const errorMessage = apiError instanceof Error ? apiError.message.includes("Failed to fetch") ? "Unable to connect to the server. Please check your internet connection and try again." : apiError.message.includes("404") ? `Car with ID ${lot} is not available. This car may have been sold or removed.` : "Car not found" : "Car not found";
           setError(errorMessage);
           setLoading(false);
@@ -1181,7 +1385,15 @@ const CarDetails = memo(() => {
     return () => {
       isMounted = false;
     };
-  }, [lot, convertUSDtoEUR]);
+  }, [lot, convertUSDtoEUR, loadCachedCar, saveCarToCache]);
+
+  useEffect(() => {
+    if (!car || !lot) return;
+    if (lastTrackedCarRef.current === car.id) return;
+    trackCarView(lot, car);
+    lastTrackedCarRef.current = car.id || null;
+  }, [car, lot]);
+
   const handleContactWhatsApp = useCallback(() => {
     const currentUrl = window.location.href;
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;

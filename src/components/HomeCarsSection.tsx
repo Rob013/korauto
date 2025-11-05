@@ -1,6 +1,6 @@
 // @ts-nocheck
 import LazyCarCard from "./LazyCarCard";
-import { memo, useState, useEffect, useMemo } from "react";
+import { memo, useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
@@ -15,6 +15,7 @@ import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing, filterCarsWithRealPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
+import { useStatusRefreshContext } from "@/components/StatusRefreshProvider";
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
@@ -59,6 +60,9 @@ const HomeCarsSection = memo(() => {
     convertUSDtoEUR,
     exchangeRate
   } = useCurrencyAPI();
+  const { refreshCarStatuses, archiveOldSoldCars } = useStatusRefreshContext();
+  const hasTriggeredStatusRefresh = useRef(false);
+  const hasArchivedSoldCars = useRef(false);
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [showAllCars, setShowAllCars] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -331,6 +335,21 @@ const HomeCarsSection = memo(() => {
     };
     loadManufacturers();
   }, []);
+
+  useEffect(() => {
+    if (hasTriggeredStatusRefresh.current) return;
+    hasTriggeredStatusRefresh.current = true;
+    refreshCarStatuses()
+      .catch(err => console.warn('Failed to refresh car statuses:', err));
+  }, [refreshCarStatuses]);
+
+  useEffect(() => {
+    if (cars.length === 0) return;
+    if (hasArchivedSoldCars.current) return;
+    hasArchivedSoldCars.current = true;
+    archiveOldSoldCars()
+      .catch(err => console.warn('Failed to archive old sold cars:', err));
+  }, [cars, archiveOldSoldCars]);
   const handleFiltersChange = (newFilters: APIFilters) => {
     // Check if generation is being selected
     if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {

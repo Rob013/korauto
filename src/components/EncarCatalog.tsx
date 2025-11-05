@@ -25,6 +25,7 @@ import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSorte
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { useStatusRefreshContext } from "@/components/StatusRefreshProvider";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 // TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
 // for consistent backend sorting
@@ -107,6 +108,9 @@ const EncarCatalog = ({
   const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
+  const { refreshCarStatuses } = useStatusRefreshContext();
+  const hasRefreshedStatus = useRef(false);
+
 
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -139,6 +143,13 @@ const EncarCatalog = ({
   useEffect(() => {
     if (!isMobile) setShowFilters(true);else setShowFilters(false);
   }, [isMobile]);
+
+  useEffect(() => {
+    if (hasRefreshedStatus.current) return;
+    hasRefreshedStatus.current = true;
+    refreshCarStatuses()
+      .catch(err => console.warn('Failed to trigger catalog status refresh:', err));
+  }, [refreshCarStatuses]);
 
   // Memoized helper function to extract grades from title - now using utility
   const extractGradesFromTitleCallback = useCallback(extractGradesFromTitle, []);

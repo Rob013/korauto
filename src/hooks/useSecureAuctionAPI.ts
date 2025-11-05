@@ -1,5 +1,5 @@
 //@ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
@@ -8,6 +8,23 @@ import { getBrandLogo } from '@/data/brandLogos';
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 60000; // 60 seconds
+
+// Client-side storage cache keys
+const CAR_CACHE_KEY = 'korauto-car-cache-v2';
+const CAR_CACHE_TTL = 1000 * 60 * 15; // 15 minutes
+
+const safeParseJson = (value: any) => {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn('Failed to parse cached JSON payload:', error);
+      return null;
+    }
+  }
+  return value;
+};
 
 // Helper function to get cached data or make API call
 const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {
@@ -604,6 +621,89 @@ interface APIResponse {
   retryAfter?: number;
 }
 
+const isDefaultFilterState = (value?: APIFilters | null) => {
+  if (!value) return true;
+
+  return Object.entries(value).every(([_, entry]) => {
+    if (entry === undefined || entry === null) return true;
+    if (typeof entry === 'string' && entry.trim() === '') return true;
+    if (entry === 'all' || entry === 'any') return true;
+    return false;
+  });
+};
+
+const transformCachedCar = (cached: any): Car | null => {
+  if (!cached) return null;
+
+  const carData = safeParseJson(cached.car_data) || {};
+  const lotDataRaw = safeParseJson(cached.lot_data) || {};
+  const imagesRaw = lotDataRaw?.images || safeParseJson(cached.images) || cached.images || [];
+
+  const normalizedImages = Array.isArray(imagesRaw)
+    ? { normal: imagesRaw, big: imagesRaw }
+    : {
+        normal: imagesRaw?.normal || imagesRaw?.big || [],
+        big: imagesRaw?.big || imagesRaw?.normal || []
+      };
+
+  const lot = {
+    ...lotDataRaw,
+    lot: lotDataRaw?.lot || cached.lot_number || carData?.lots?.[0]?.lot,
+    buy_now: lotDataRaw?.buy_now ?? cached.price_usd ?? cached.price ?? carData?.lots?.[0]?.buy_now ?? undefined,
+    images: normalizedImages,
+    odometer: lotDataRaw?.odometer || carData?.lots?.[0]?.odometer,
+    sale_status: lotDataRaw?.sale_status || cached.sale_status || carData?.sale_status,
+    status: lotDataRaw?.status || carData?.status,
+    insurance_v2: lotDataRaw?.insurance_v2 || carData?.insurance_v2
+  };
+
+  const saleStatus = (lot.sale_status || '').toString().toLowerCase();
+  if (saleStatus === 'archived') {
+    return null;
+  }
+
+  const manufacturerName = carData?.manufacturer?.name || cached.make;
+  const modelName = carData?.model?.name || cached.model;
+
+  if (!manufacturerName || !modelName) {
+    return null;
+  }
+
+  return {
+    id: (carData?.id || cached.api_id || lot.lot || '').toString(),
+    manufacturer: {
+      id: carData?.manufacturer?.id || 0,
+      name: manufacturerName
+    },
+    model: {
+      id: carData?.model?.id || 0,
+      name: modelName
+    },
+    year: carData?.year || cached.year,
+    vin: carData?.vin || cached.vin || undefined,
+    fuel: carData?.fuel || (cached.fuel ? { id: 0, name: cached.fuel } : undefined),
+    transmission: carData?.transmission || (cached.transmission ? { id: 0, name: cached.transmission } : undefined),
+    color: carData?.color || (cached.color ? { id: 0, name: cached.color } : undefined),
+    condition: carData?.condition || cached.condition || undefined,
+    lots: [lot],
+    sale_status: lot.sale_status || undefined,
+    status: lot.status || carData?.status,
+    insurance_v2: lot.insurance_v2 || carData?.insurance_v2,
+    body_type: carData?.body_type,
+    drive_wheel: carData?.drive_wheel,
+    cylinders: carData?.cylinders,
+    generation: carData?.generation,
+    grade_iaai: carData?.grade_iaai,
+    title: carData?.title || cached.sale_title,
+    mileage: carData?.mileage,
+    trim_level: carData?.trim_level,
+    engine: carData?.engine,
+    details: lot.details || carData?.details,
+    created_at: carData?.created_at,
+    updated_at: carData?.updated_at
+  } as Car;
+};
+
 export const useSecureAuctionAPI = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(false);
@@ -615,6 +715,120 @@ export const useSecureAuctionAPI = () => {
   const [filters, setFilters] = useState<APIFilters>({});
   const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
   const [trimLevelsCache, setTrimLevelsCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
+  const [hasHydratedFromStorage, setHasHydratedFromStorage] = useState(false);
+  const [hasHydratedFromSupabase, setHasHydratedFromSupabase] = useState(false);
+  const carsRef = useRef<Car[]>([]);
+
+  useEffect(() => {
+    carsRef.current = cars;
+  }, [cars]);
+
+  useEffect(() => {
+    if (hasHydratedFromStorage) return;
+    if (typeof window === 'undefined') return;
+
+    try {
+      const raw = localStorage.getItem(CAR_CACHE_KEY);
+      if (!raw) {
+        setHasHydratedFromStorage(true);
+        return;
+      }
+
+      const payload = JSON.parse(raw);
+      if (!payload || !Array.isArray(payload.cars)) {
+        setHasHydratedFromStorage(true);
+        return;
+      }
+
+      const cacheAge = Date.now() - (payload.timestamp || 0);
+      if (cacheAge > CAR_CACHE_TTL) {
+        setHasHydratedFromStorage(true);
+        return;
+      }
+
+      if (payload.cars.length > 0) {
+        setCars(payload.cars);
+        setTotalCount(payload.totalCount || payload.cars.length || 0);
+        setHasMorePages(!!payload.hasMorePages);
+        if (payload.filters && isDefaultFilterState(payload.filters)) {
+          setFilters(payload.filters);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to hydrate cars from local storage:', error);
+    } finally {
+      setHasHydratedFromStorage(true);
+    }
+  }, [hasHydratedFromStorage]);
+
+  useEffect(() => {
+    if (hasHydratedFromSupabase) return;
+    if (!isDefaultFilterState(filters)) return;
+    if (carsRef.current.length > 0) {
+      setHasHydratedFromSupabase(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const hydrateFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cars_cache')
+          .select('car_data, lot_data, price_usd, price, price_eur, make, model, year, vin, fuel, transmission, color, condition, lot_number, sale_status, images, updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(200);
+
+        if (error) {
+          console.warn('Failed to hydrate cars from Supabase cache:', error);
+          return;
+        }
+
+        const transformed = (data || [])
+          .map(transformCachedCar)
+          .filter(Boolean) as Car[];
+
+        if (!cancelled && transformed.length > 0) {
+          setCars(transformed);
+          if (!totalCount) {
+            setTotalCount(data?.length || transformed.length);
+          }
+          setHasMorePages((data?.length || transformed.length) >= 200);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch cached cars from Supabase:', error);
+      } finally {
+        if (!cancelled) {
+          setHasHydratedFromSupabase(true);
+        }
+      }
+    };
+
+    hydrateFromSupabase();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, hasHydratedFromSupabase, totalCount]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (cars.length === 0) return;
+    if (!isDefaultFilterState(filters)) return;
+
+    try {
+      const payload = {
+        cars,
+        totalCount,
+        hasMorePages,
+        filters,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CAR_CACHE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      console.warn('Failed to persist car cache:', error);
+    }
+  }, [cars, totalCount, hasMorePages, filters]);
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -713,7 +927,7 @@ export const useSecureAuctionAPI = () => {
   ): Promise<void> => {
     if (resetList) {
       setFilters(newFilters);
-      setLoading(true);
+      setLoading(carsRef.current.length === 0);
       // Don't reset page to 1 if we're explicitly requesting a different page
       if (page === 1) {
         setCurrentPage(1);
