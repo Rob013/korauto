@@ -905,7 +905,6 @@ const CarDetails = memo(() => {
   
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
-    console.log("🔧 Converting options:", options);
     if (!options) return {
       standard: [],
       choice: [],
@@ -923,11 +922,9 @@ const CarDetails = memo(() => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr];
         if (mapped) {
-          console.log(`📝 Mapping: ${optionStr} → ${mapped}`);
           return mapped;
         } else {
           // If no mapping found, show the raw option as-is (it might be a real name)
-          console.log(`⚠️ No mapping found for: ${optionStr}, showing raw value`);
           return optionStr;
         }
       });
@@ -961,7 +958,6 @@ const CarDetails = memo(() => {
       });
     }
     
-    console.log("✅ Converted options:", result);
     return result;
   };
 
@@ -1017,7 +1013,9 @@ const CarDetails = memo(() => {
           setIsAdmin(adminCheck || false);
         }
       } catch (error) {
-        console.error("Failed to check admin status:", error);
+        if (import.meta.env.DEV) {
+          console.error("Failed to check admin status:", error);
+        }
       }
     };
     checkAdminStatus();
@@ -1043,7 +1041,7 @@ const CarDetails = memo(() => {
           });
         } catch (firstAttemptError) {
           // If first attempt fails, try searching by lot number
-          console.log("First API attempt failed, trying as lot number...");
+          // First API attempt failed, trying as lot number
           response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
             headers: {
               accept: "*/*",
@@ -1063,7 +1061,7 @@ const CarDetails = memo(() => {
         if (!lotData) throw new Error("Missing lot data");
         const basePrice = lotData.buy_now;
         if (!basePrice) {
-          console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+          // Car doesn't have buy_now pricing, redirecting to catalog
           navigate('/catalog');
           return;
         }
@@ -1122,16 +1120,18 @@ const CarDetails = memo(() => {
         // Track car view analytics
         trackCarView(lot, transformedCar);
       } catch (apiError) {
-        console.error("Failed to fetch car data:", apiError);
+        if (import.meta.env.DEV) {
+          console.error("Failed to fetch car data:", apiError);
+        }
         if (isMounted) {
           // Try to find the car in fallback data as a last resort
           const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
           if (fallbackCar && fallbackCar.lots?.[0]) {
-            console.log("Using fallback car data for:", lot);
+            // Using fallback car data
             const lotData = fallbackCar.lots[0];
             const basePrice = lotData.buy_now || fallbackCar.price;
             if (!basePrice) {
-              console.log("Fallback car doesn't have buy_now pricing, showing error");
+              // Fallback car doesn't have buy_now pricing, showing error
               throw new Error("Car pricing not available");
             }
             const price = calculateFinalPriceEUR(basePrice, exchangeRate.rate);
@@ -1316,18 +1316,17 @@ const CarDetails = memo(() => {
             }}
           >
             <Button variant="outline" onClick={() => {
-            console.log("🔙 Attempting to go back...");
-            console.log("Page state from context:", pageState);
+            // Attempting to go back using saved page state
 
             // Use the enhanced navigation context which handles state restoration
             if (pageState && pageState.url) {
-              console.log("🔙 Using saved page state:", pageState.url);
+              // Using saved page state
               // Navigate to the saved URL and restore state
               navigate(pageState.url);
               // Let the target page handle state restoration through restorePageState
             } else {
               // Fallback to the original goBack logic
-              console.log("🔙 Using goBack fallback");
+              // Using goBack fallback
               goBack();
             }
           }} className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
