@@ -774,7 +774,7 @@ const CarInspectionReport = () => {
           </Card>
 
         <Tabs defaultValue="diagram" className="space-y-4">
-          <TabsList className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-muted/60 p-1 rounded-xl">
+          <TabsList className="grid grid-cols-1 md:grid-cols-4 gap-1 bg-muted/60 p-1 rounded-xl">
             <TabsTrigger value="diagram" className="text-sm md:text-base">
               Diagrami i Inspektimit të Automjetit
             </TabsTrigger>
@@ -783,6 +783,9 @@ const CarInspectionReport = () => {
             </TabsTrigger>
             <TabsTrigger value="mechanical" className="text-sm md:text-base">
               Motori dhe Sistemi Mekanik
+            </TabsTrigger>
+            <TabsTrigger value="warranty" className="text-sm md:text-base">
+              Garancioni
             </TabsTrigger>
           </TabsList>
 
@@ -843,6 +846,62 @@ const CarInspectionReport = () => {
                     </div>
                   )}
                 </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="warranty" className="space-y-4">
+            <Card className="shadow-md border-border/80">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-xl">Garancioni KORAUTO</CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Përmbledhje e mbulimit të garancionit për automjetet tona
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
+                <p>
+                  Garancioni ynë mbulon komponentët kryesorë mekanikë dhe elektrikë të automjetit, sipas
+                  kushteve të përcaktuara më poshtë. Qëllimi është t&apos;ju ofrojë qetësi dhe transparencë pas blerjes.
+                </p>
+
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Çfarë mbulohet</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Motori (blloku i motorit, kokat, komponentët e brendshëm)</li>
+                    <li>Kutia e shpejtësive dhe transmisioni</li>
+                    <li>Diferenciali dhe sistemi i lëvizjes</li>
+                    <li>Sistemi i ftohjes dhe sistemi i karburantit</li>
+                    <li>Komponentë elektrikë kryesorë (alternatori, startuesi, ECU)</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Çfarë nuk mbulohet</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Pjesët konsumuese (frena, disqe, vajra, filtra, gomat)</li>
+                    <li>Zhurma, dridhje ose konsum normal</li>
+                    <li>Dëme nga aksidente, përmbytje, modifikime ose pakujdesi</li>
+                    <li>Shërbime rutinë dhe mirëmbajtje periodike</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Kushtet</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Garancioni është i vlefshëm vetëm me mirëmbajtje të rregullt</li>
+                    <li>Çdo riparim duhet të miratohet paraprakisht nga KORAUTO</li>
+                    <li>Afati dhe mbulimi mund të ndryshojnë sipas automjetit</li>
+                  </ul>
+                </div>
+
+                <div className="pt-1">
+                  <Button variant="outline" onClick={() => window.open('/garancioni', '_blank')}>
+                    Shiko faqen e plotë të garancionit
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
 
