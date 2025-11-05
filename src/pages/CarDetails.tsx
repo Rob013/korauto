@@ -1986,17 +1986,35 @@ const CarDetails = memo(() => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Desktop map - small widget under Kontakt & Inspektim */}
+            <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl">
+              <CardContent className="p-0">
+                <div className="h-56 w-full overflow-hidden rounded-xl">
+                  <iframe
+                    title="Korauto Location"
+                    src="https://www.google.com/maps?q=Korauto,Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
+                    width="100%"
+                    height="100%"
+                    loading="lazy"
+                    style={{ border: 0 }}
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        {/* Google Maps - Store Location */}
-        <div className="container-responsive mt-8">
+        {/* Google Maps - Store Location (mobile only) */}
+        <div className="container-responsive mt-6 lg:hidden">
           <Card className="glass-panel border-0 shadow-2xl rounded-xl">
             <CardContent className="p-0">
-              <div className="aspect-video w-full overflow-hidden rounded-xl">
+              <div className="h-56 w-full overflow-hidden rounded-xl">
                 <iframe
                   title="Korauto Location"
-                  src="https://www.google.com/maps?q=Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
+                  src="https://www.google.com/maps?q=Korauto,Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
                   width="100%"
                   height="100%"
                   loading="lazy"
