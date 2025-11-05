@@ -695,7 +695,7 @@ const CarInspectionReport = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="bg-muted/30 border-b border-border">
-        <div className="container-responsive py-5 flex flex-col gap-3">
+        <div className="container-responsive py-3 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
@@ -747,7 +747,7 @@ const CarInspectionReport = () => {
         </div>
       </div>
 
-        <div className="container-responsive py-6 space-y-6">
+        <div className="container-responsive py-4 space-y-4">
           <Card className="shadow-md border-border/80">
             <CardHeader className="pb-4 space-y-1">
               <span className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -773,8 +773,8 @@ const CarInspectionReport = () => {
             </CardContent>
           </Card>
 
-        <Tabs defaultValue="diagram" className="space-y-4">
-          <TabsList className="grid grid-cols-1 md:grid-cols-4 gap-1 bg-muted/60 p-1 rounded-xl">
+        <Tabs defaultValue="diagram" className="space-y-3">
+          <TabsList className="grid grid-cols-1 md:grid-cols-4 gap-1 bg-muted/60 p-1 rounded-lg">
             <TabsTrigger value="diagram" className="text-sm md:text-base">
               Diagrami i Inspektimit të Automjetit
             </TabsTrigger>
@@ -789,9 +789,9 @@ const CarInspectionReport = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="diagram" className="space-y-4">
-            <Card className="shadow-lg">
-              <CardHeader className="flex flex-col gap-1">
+          <TabsContent value="diagram" className="space-y-3">
+            <Card className="shadow-md">
+              <CardHeader className="flex flex-col gap-1 pb-3">
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-primary" />
                   <CardTitle className="text-xl">
@@ -802,14 +802,14 @@ const CarInspectionReport = () => {
                   Gjendja vizuale e pjesëve të jashtme dhe panelet e karocerisë
                 </p>
               </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <CarInspectionDiagram
                     inspectionData={inspectionOuterData}
                     className="mx-auto"
                   />
 
                   {inspectionOuterData.length > 0 && (
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-2 md:grid-cols-2">
                       {inspectionOuterData.map((item: any, index: number) => (
                         <Card key={`${item?.type?.code || index}-summary`} className="border-border/80">
                           <CardHeader className="pb-1">
@@ -820,7 +820,7 @@ const CarInspectionReport = () => {
                               </CardTitle>
                             </div>
                           </CardHeader>
-                          <CardContent className="space-y-2">
+                          <CardContent className="space-y-1.5">
                             {item?.statusTypes?.length > 0 && (
                               <div className="flex flex-wrap gap-1.5">
                                 {item.statusTypes.map((status: any) => (
