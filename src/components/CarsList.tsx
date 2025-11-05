@@ -60,23 +60,19 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
   >
     <CardContent className="p-4">
       {/* Car Image */}
-      <div className="car-image-wrapper mb-4">
+      <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-muted">
         {car.images && car.images.length > 0 ? (
           <img
             src={car.images[0]}
             alt={`${car.make} ${car.model}`}
-            className="car-image"
+            className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
-              const img = e.target as HTMLImageElement;
-              if (!img.dataset.fallback) {
-                img.dataset.fallback = 'true';
-                img.src = '/placeholder.svg';
-              }
+              (e.target as HTMLImageElement).src = '/images/car-placeholder.jpg';
             }}
           />
         ) : (
-          <div className="car-image flex items-center justify-center text-muted-foreground">
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
             <span className="text-sm">No Image</span>
           </div>
         )}

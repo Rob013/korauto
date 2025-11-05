@@ -422,12 +422,12 @@ const CarCard = ({
         transform: 'translateZ(0)'
       }}
     >
-      <div className="car-image-wrapper">
+      <div className="relative h-56 bg-muted overflow-hidden">
         {image ? (
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="car-image transition-transform duration-300 ease-out"
+            className="w-full h-full transition-transform duration-300 ease-out"
             width={280}
             priority={false}
             enableLazyLoad={true}
@@ -435,7 +435,7 @@ const CarCard = ({
           />
         ) : (
           <div 
-            className="car-image flex items-center justify-center bg-muted"
+            className="w-full h-full flex items-center justify-center bg-muted"
             style={{ aspectRatio: '280/192' }}
           >
             <Car className="h-16 w-16 text-muted-foreground" />

@@ -18,7 +18,6 @@ import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -884,12 +883,6 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
-  const defaultInspectionTab = useMemo(() => {
-    if (car?.details?.inspect?.inner) return "teknik";
-    if (car?.details?.insurance || car?.damage) return "demtime";
-    if (car?.details?.inspect_outer && car.details.inspect_outer.length > 0) return "vizuale";
-    return "teknik";
-  }, [car]);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -1265,8 +1258,7 @@ const CarDetails = memo(() => {
   // Preload important images
   useImagePreload(car?.image);
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
           <div className="space-y-6 animate-fade-in">
             <div className="h-8 bg-muted/50 rounded-lg w-32 animate-pulse"></div>
@@ -1284,12 +1276,10 @@ const CarDetails = memo(() => {
             </div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
   if (error || !car) {
-    return (
-      <div className="min-h-screen bg-background animate-fade-in">
+    return <div className="min-h-screen bg-background animate-fade-in">
         <div className="container-responsive py-8">
           <Button variant="outline" onClick={() => navigate("/")} className="mb-6 hover:scale-105 transition-transform">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -1306,8 +1296,7 @@ const CarDetails = memo(() => {
             </p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
@@ -1885,7 +1874,6 @@ const CarDetails = memo(() => {
                                 {car.insurance_v2.accidentCnt === 0 ? "E Pastër" : `${car.insurance_v2.accidentCnt} aksidente`}
                               </Badge>
                             </div>}
-                          
                           {car.insurance_v2?.ownerChangeCnt !== undefined && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">
                                 Ndryshime Pronësie:
@@ -1940,34 +1928,10 @@ const CarDetails = memo(() => {
                           </p>
                         </div>
 
-                        {/* Tabs for Inspection Report */}
-                        <Tabs defaultValue={defaultInspectionTab}>
-                          <div className="flex justify-center">
-                            <TabsList className="mb-2">
-                              {car.details?.inspect?.inner && <TabsTrigger value="teknik">Kontrolli Teknik</TabsTrigger>}
-                              {(car.details?.insurance || car.damage) && <TabsTrigger value="demtime">Vlerësimi i Dëmeve dhe Riparimeve</TabsTrigger>}
-                              {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && <TabsTrigger value="vizuale">Gjendja Vizuale dhe Riparimet</TabsTrigger>}
-                            </TabsList>
-                          </div>
-
-                          {/* Inspection Groups - Compact Modern Cards Layout */}
-                        
-                          <TabsContent value="vizuale">
-                            {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 inspection-section-black px-0 py-0">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-[15px]">
-                                    <Car className="h-5 w-5 text-white mx-0" />
-                                  </div>
-                                  <div>
-                                    <h5 className="text-lg font-bold text-foreground mx-px px-0 py-[5px]">Diagrami i Inspektimit të Automjetit</h5>
-                                    <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
-                                  </div>
-                                </div>
-                                <CarInspectionDiagram inspectionData={car.details.inspect_outer} className="mt-3" />
-                              </div>}
-                          </TabsContent>
-
-                          <TabsContent value="teknik">
+                        {/* Inspection Groups - Compact Modern Cards Layout */}
+                        <div className="grid gap-4">
+                          
+                          {/* Technical Inspection - Engine & Mechanical - Compact Layout */}
                           {car.details?.inspect?.inner && <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 inspection-section-black">
                               <div className="flex items-center gap-2 mb-4">
                                 <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
@@ -2013,9 +1977,8 @@ const CarDetails = memo(() => {
                                 })}
                               </div>
                             </div>}
-                          </TabsContent>
 
-                          <TabsContent value="demtime">
+                          {/* Insurance & Safety History */}
                           {car.details?.insurance && <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 inspection-section-black">
                               <div className="flex items-center gap-3 mb-6">
                                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
@@ -2112,8 +2075,6 @@ const CarDetails = memo(() => {
                                   </div>}
                               </div>
                             </div>}
-                          </TabsContent>
-                        </Tabs>
 
                           {/* Owner History */}
                           {car.details?.insurance?.owner_changes && car.details.insurance.owner_changes.length > 0 && <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 inspection-section-black">
@@ -2148,7 +2109,19 @@ const CarDetails = memo(() => {
                                 </div>
                               </div>}
 
-                          
+                          {/* Visual Inspection Diagram */}
+                          {car.details?.inspect_outer && car.details.inspect_outer.length > 0 && <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 inspection-section-black px-0 py-0">
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-[15px]">
+                                    <Car className="h-5 w-5 text-white mx-0" />
+                                  </div>
+                                  <div>
+                                    <h5 className="text-lg font-bold text-foreground mx-px px-0 py-[5px]">Diagrami i Inspektimit të Automjetit</h5>
+                                    <p className="text-muted-foreground text-xs inspection-subtext-black">Gjendja vizuale e pjesëve të jashtme</p>
+                                  </div>
+                                </div>
+                                <CarInspectionDiagram inspectionData={car.details.inspect_outer} className="mt-3" />
+                              </div>}
 
                           {/* Maintenance History */}
                           {car.details?.maintenance_history && car.details.maintenance_history.length > 0 && <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200 inspection-section-black">
