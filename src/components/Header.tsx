@@ -146,7 +146,7 @@ const Header = () => {
           role="navigation" 
           aria-label="Navigimi mobil"
         >
-          <div className="container mx-auto px-4 py-4">
+          <div className="container-responsive py-4">
             <nav className="flex flex-col space-y-4 stagger-animation">
               <Link 
                 to="/" 

@@ -1235,7 +1235,7 @@ const EncarCatalog = ({
 
       {/* Main Content */}
       <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300 lg:ml-6`}>
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-6 mobile-text-optimize max-w-[1600px]">
+        <div className="container-responsive py-3 sm:py-6 mobile-text-optimize max-w-[1600px]">
           {/* Header Section - Mobile optimized */}
           <div className="flex flex-col gap-3 mb-4">
             {/* Top row: Back button and filter button */}

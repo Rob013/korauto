@@ -29,7 +29,7 @@ const PerformanceDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container-responsive py-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
           <p>Loading...</p>
@@ -40,7 +40,7 @@ const PerformanceDashboard = () => {
 
   if (!isAdmin) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container-responsive py-8">
         <div className="text-center max-w-md mx-auto">
           <h1 className="text-2xl font-bold mb-4">Access Restricted</h1>
           <p className="text-muted-foreground">
@@ -80,7 +80,7 @@ const PerformanceDashboard = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container-responsive p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Performance Dashboard</h1>
