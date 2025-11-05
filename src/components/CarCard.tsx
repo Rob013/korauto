@@ -401,8 +401,8 @@ const CarCard = ({
 
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
-    // Open car details in new tab
-    window.open(`/car/${lot}`, '_blank');
+    // Open car details in new tab (fallback to id if lot is unavailable)
+    window.open(`/car/${lot ?? id}`, '_blank');
   }, [id, lot, setPreviousPage]);
 
   // Don't render the component if it should be hidden
@@ -422,12 +422,12 @@ const CarCard = ({
         transform: 'translateZ(0)'
       }}
     >
-      <div className="relative h-56 bg-muted overflow-hidden">
+      <div className="car-image-wrapper">
         {image ? (
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full transition-transform duration-300 ease-out"
+            className="car-image transition-transform duration-300 ease-out"
             width={280}
             priority={false}
             enableLazyLoad={true}
@@ -435,7 +435,7 @@ const CarCard = ({
           />
         ) : (
           <div 
-            className="w-full h-full flex items-center justify-center bg-muted"
+            className="car-image flex items-center justify-center bg-muted"
             style={{ aspectRatio: '280/192' }}
           >
             <Car className="h-16 w-16 text-muted-foreground" />
@@ -530,7 +530,7 @@ const CarCard = ({
           {/* Price on bottom left with text on the right */}
           <div className="flex items-end justify-between">
             <span className="text-lg font-bold text-primary">
-              €{price.toLocaleString()}
+              {typeof price === 'number' && isFinite(price) ? `€${price.toLocaleString()}` : 'Çmimi në kërkesë'}
             </span>
             <p className="text-xs text-muted-foreground">deri ne portin e Durrësit</p>
           </div>
