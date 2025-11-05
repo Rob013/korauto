@@ -216,41 +216,51 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     return part?.statusTypes || [];
   };
 
-  const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
-    if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
-    
-    const hasExchange = statuses.some(s => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange'));
-    const hasWelding = statuses.some(s => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld'));
-    const hasRepair = statuses.some(s => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair'));
-    const hasCorrosion = statuses.some(s => s.code === 'U' || s.title.includes('부식') || s.title.includes('corr'));
-    const hasScratch = statuses.some(s => s.code === 'S' || s.title.includes('흠집') || s.title.includes('scratch'));
-    
-    if (hasExchange) return 'hsl(0 84% 60%)'; // Red
-    if (hasWelding) return 'hsl(0 84% 60%)'; // Red
-    if (hasRepair) return 'hsl(25 95% 53%)'; // Orange
-    if (hasCorrosion) return 'hsl(25 95% 53%)'; // Orange
-    if (hasScratch) return 'hsl(48 96% 53%)'; // Yellow
-    
-    return 'hsl(142 76% 36%)'; // Green
-  };
+const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
+  if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
 
-  const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
-    if (statuses.length === 0) return 'Pjesë normale';
-    
-    const hasExchange = statuses.some(s => s.code === 'X');
-    const hasWelding = statuses.some(s => s.code === 'W');
-    const hasRepair = statuses.some(s => s.code === 'A');
-    const hasCorrosion = statuses.some(s => s.code === 'U');
-    const hasScratch = statuses.some(s => s.code === 'S');
-    
-    if (hasExchange) return 'Pjesë e zëvendësuar (E kuqe)';
-    if (hasWelding) return 'Saldim i kryer (E kuqe)';
-    if (hasRepair) return 'Pjesë e riparuar (Portokalli)';
-    if (hasCorrosion) return 'Ndryshk i vogël (Portokalli)';
-    if (hasScratch) return 'Gërvishje (E verdhë)';
-    
-    return 'Pjesë normale';
-  };
+  const hasExchange = statuses.some(
+    (s) => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange')
+  );
+  const hasWelding = statuses.some(
+    (s) => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld')
+  );
+  const hasRepair = statuses.some(
+    (s) => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair')
+  );
+  const hasCorrosion = statuses.some(
+    (s) => s.code === 'U' || s.title.includes('부식') || s.title.includes('corr')
+  );
+  const hasScratch = statuses.some(
+    (s) => s.code === 'S' || s.title.includes('흠집') || s.title.includes('scratch')
+  );
+
+  if (hasExchange) return 'hsl(0 84% 60%)'; // Red for replaced parts
+  if (hasWelding) return 'hsl(217 91% 60%)'; // Blue for welded parts
+  if (hasRepair) return 'hsl(25 95% 53%)'; // Orange
+  if (hasCorrosion) return 'hsl(25 95% 53%)'; // Orange
+  if (hasScratch) return 'hsl(48 96% 53%)'; // Yellow
+
+  return 'hsl(142 76% 36%)'; // Green
+};
+
+const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
+  if (statuses.length === 0) return 'Pjesë normale';
+
+  const hasExchange = statuses.some((s) => s.code === 'X');
+  const hasWelding = statuses.some((s) => s.code === 'W');
+  const hasRepair = statuses.some((s) => s.code === 'A');
+  const hasCorrosion = statuses.some((s) => s.code === 'U');
+  const hasScratch = statuses.some((s) => s.code === 'S');
+
+  if (hasExchange) return 'Pjesë e zëvendësuar (Rreth i kuq)';
+  if (hasWelding) return 'Saldim i kryer (Rreth blu)';
+  if (hasRepair) return 'Pjesë e riparuar (Rreth portokalli)';
+  if (hasCorrosion) return 'Ndryshk i vogël (Rreth portokalli)';
+  if (hasScratch) return 'Gërvishje (Rreth i verdhë)';
+
+  return 'Pjesë normale';
+};
 
   // Count issues
   const issueCount = {
@@ -277,32 +287,32 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                 <AlertTriangle className="h-4 w-4" />
                 Statistika
               </h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
+    <div className="space-y-2">
+      <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
                   <span className="text-xs lg:text-sm flex items-center gap-1">
                     <XCircle className="h-3 w-3 text-destructive" />
-                    Kritike
+          Zevendesuara
                   </span>
                   <Badge variant="destructive" className="font-mono text-xs">{issueCount.critical}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
                   <span className="text-xs lg:text-sm flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" style={{color: 'hsl(25 95% 53%)'}} />
-                    Major
+          Riparuara
                   </span>
                   <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.major}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
                   <span className="text-xs lg:text-sm flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" style={{color: 'hsl(48 96% 53%)'}} />
-                    Minor
+          Gervishje
                   </span>
                   <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'black'}}>{issueCount.minor}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(142 76% 36% / 0.1)'}}>
                   <span className="text-xs lg:text-sm flex items-center gap-1">
                     <CheckCircle className="h-3 w-3" style={{color: 'hsl(142 76% 36%)'}} />
-                    Mirë
+          Mire
                   </span>
                   <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(142 76% 36%)', color: 'white'}}>{issueCount.good}</Badge>
                 </div>
@@ -315,30 +325,49 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             <CardContent className="p-3 lg:p-4">
               <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet</h4>
               <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(0 84% 60%)'}}></div>
-                  <span>X - Zëvendësuar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(0 84% 60%)'}}></div>
-                  <span>W - Salduar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}></div>
-                  <span>A - Riparuar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}></div>
-                  <span>U - Ndryshk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}></div>
-                  <span>S - Gërvishje</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(142 76% 36%)'}}></div>
-                  <span>Normal</span>
-                </div>
+                {[{
+                  code: 'X',
+                  label: 'Zëvendësuar',
+                  color: 'hsl(0 84% 60%)',
+                  textColor: 'white'
+                }, {
+                  code: 'W',
+                  label: 'Salduar',
+                  color: 'hsl(217 91% 60%)',
+                  textColor: 'white'
+                }, {
+                  code: 'A',
+                  label: 'Riparuar',
+                  color: 'hsl(25 95% 53%)',
+                  textColor: 'white'
+                }, {
+                  code: 'U',
+                  label: 'Ndryshk',
+                  color: 'hsl(25 95% 53%)',
+                  textColor: 'white'
+                }, {
+                  code: 'S',
+                  label: 'Gërvishje',
+                  color: 'hsl(48 96% 53%)',
+                  textColor: 'black'
+                }, {
+                  code: '',
+                  label: 'Normal',
+                  color: 'hsl(142 76% 36%)',
+                  textColor: 'white'
+                }].map((item, index) => (
+                  <div key={`${item.label}-${index}`} className="flex items-center gap-2">
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold"
+                      style={{ backgroundColor: item.color, color: item.textColor }}
+                    >
+                      {item.code || '•'}
+                    </div>
+                    <span>
+                      {item.code ? `${item.code} - ${item.label}` : item.label}
+                    </span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
