@@ -799,14 +799,13 @@ const CarInspectionReport = () => {
                   Gjendja vizuale e pjesëve të jashtme dhe panelet e karocerisë
                 </p>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {inspectionOuterData && inspectionOuterData.length > 0 ? (
-                  <div className="space-y-6">
-                    <CarInspectionDiagram
-                      inspectionData={inspectionOuterData}
-                      className="mx-auto"
-                    />
+                <CardContent className="space-y-6">
+                  <CarInspectionDiagram
+                    inspectionData={inspectionOuterData}
+                    className="mx-auto"
+                  />
 
+                  {inspectionOuterData.length > 0 && (
                     <div className="grid gap-4 md:grid-cols-2">
                       {inspectionOuterData.map((item: any, index: number) => (
                         <Card key={`${item?.type?.code || index}-summary`} className="border-border/80">
@@ -842,14 +841,8 @@ const CarInspectionReport = () => {
                         </Card>
                       ))}
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 py-10 text-center text-muted-foreground">
-                    <Shield className="h-8 w-8" />
-                    <p>Nuk ka të dhëna për diagramin e inspektimit vizual.</p>
-                  </div>
-                )}
-              </CardContent>
+                  )}
+                </CardContent>
             </Card>
           </TabsContent>
 
@@ -1110,23 +1103,23 @@ const CarInspectionReport = () => {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
                     {Object.entries(inspectionInnerData).map(([key, value]) => {
                       const positive = isPositiveStatus(value);
                       return (
                         <div
                           key={key}
-                          className={`p-4 rounded-lg border ${
+                          className={`p-2 sm:p-3 rounded-lg border text-xs sm:text-sm ${
                             positive
                               ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
                               : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
                           }`}
                         >
-                          <span className="text-sm font-semibold text-foreground block mb-1">
+                          <span className="font-semibold text-foreground block mb-0.5 sm:mb-1 truncate">
                             {formatKeyLabel(key)}
                           </span>
                           <p
-                            className={`text-sm font-medium ${
+                            className={`font-medium ${
                               positive ? "text-emerald-700" : "text-red-700"
                             }`}
                           >
@@ -1190,9 +1183,6 @@ const CarInspectionReport = () => {
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1 text-sm text-muted-foreground">
-            <p>
-              Ky raport përmbledh të gjitha të dhënat e disponueshme nga API për automjetin.
-            </p>
             <p>
               Për informacione shtesë ose pyetje, kontaktoni ekipin tonë të inspektimit.
             </p>

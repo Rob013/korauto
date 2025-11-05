@@ -387,7 +387,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   </feMerge>
                 </filter>
               </defs>
-              {/* Render clickable overlay parts */}
+              {/* Render clickable overlay parts with circular code markers */}
               {carParts.map((part) => {
                 const statuses = getPartStatus(part.id);
                 const color = getStatusColor(statuses);
@@ -398,20 +398,45 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   <g key={part.id}>
                     <path
                       d={part.path}
-                      fill={color}
-                      fillOpacity={statuses.length > 0 ? (isHovered || isSelected ? 0.7 : 0.5) : 0}
-                      stroke={isSelected ? "hsl(var(--primary))" : statuses.length > 0 ? color : "transparent"}
-                      strokeWidth={isSelected ? 4 : statuses.length > 0 ? 3 : 0}
+                      fill="transparent"
+                      stroke={isSelected ? "hsl(var(--primary))" : "transparent"}
+                      strokeWidth={isSelected ? 4 : 0}
                       className="cursor-pointer transition-all duration-200"
-                      filter={statuses.length > 0 && (isHovered || isSelected) ? "url(#glow)" : "none"}
                       onMouseEnter={() => setHoveredPart(part.id)}
                       onMouseLeave={() => setHoveredPart(null)}
                       onClick={() => setSelectedPart(selectedPart === part.id ? null : part.id)}
-                      style={{
-                        pointerEvents: 'auto',
-                        mixBlendMode: statuses.length > 0 ? 'multiply' : 'normal'
-                      }}
+                      style={{ pointerEvents: 'auto' }}
                     />
+
+                    {/* Status markers as small circles with code letters */}
+                    {statuses.length > 0 && (
+                      <>
+                        {statuses.map((s, idx) => {
+                          const n = statuses.length;
+                          const spacing = 18;
+                          const offset = (idx - (n - 1) / 2) * spacing;
+                          const cx = part.labelPos.x + offset;
+                          const cy = part.labelPos.y;
+                          const code = (s.code || '').toUpperCase();
+                          const markerColor = (() => {
+                            if (code === 'X') return 'hsl(0 84% 60%)';
+                            if (code === 'W') return 'hsl(217 91% 60%)';
+                            if (code === 'A' || code === 'U') return 'hsl(25 95% 53%)';
+                            if (code === 'S') return 'hsl(48 96% 53%)';
+                            return color;
+                          })();
+                          const textColor = code === 'S' ? 'black' : 'white';
+                          return (
+                            <g key={`${part.id}-m-${idx}`}>
+                              <circle cx={cx} cy={cy} r={10} fill={markerColor} stroke={markerColor} strokeWidth={2} />
+                              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight={700} fill={textColor}>
+                                {code || '•'}
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </>
+                    )}
                     {(isHovered || isSelected) && (
                       <text
                         x={part.labelPos.x}
