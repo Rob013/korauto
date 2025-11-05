@@ -711,11 +711,11 @@ const CarInspectionReport = () => {
             </Badge>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              {carName || car.title || "Raporti i Automjetit"}
-            </h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {carName || car.title || "Raporti i Automjetit"}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               {car.lot && (
                 <span className="font-medium text-foreground">
                   Kodi i lotit: <span className="font-semibold">{car.lot}</span>
@@ -748,41 +748,49 @@ const CarInspectionReport = () => {
       </div>
 
         <div className="container-responsive py-4 space-y-4">
+          <Tabs defaultValue="diagram" className="space-y-3">
+            <TabsList className="w-full flex flex-wrap items-stretch gap-2 bg-muted/60 p-1 rounded-lg h-auto md:flex-nowrap md:gap-1">
+              <TabsTrigger
+                value="diagram"
+                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+              >
+                Diagrami i Inspektimit të Automjetit
+              </TabsTrigger>
+              <TabsTrigger
+                value="exterior"
+                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+              >
+                Gjendja e Jashtme dhe Karocerisë
+              </TabsTrigger>
+              <TabsTrigger
+                value="mechanical"
+                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+              >
+                Motori dhe Sistemi Mekanik
+              </TabsTrigger>
+              <TabsTrigger
+                value="warranty"
+                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+              >
+                Garancioni
+              </TabsTrigger>
+            </TabsList>
 
-        <Tabs defaultValue="diagram" className="space-y-3">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-1 bg-muted/60 p-1 rounded-lg">
-            <TabsTrigger value="diagram" className="text-sm md:text-base">
-              Diagrami i Inspektimit të Automjetit
-            </TabsTrigger>
-            <TabsTrigger value="exterior" className="text-sm md:text-base">
-              Gjendja e Jashtme dhe Karocerisë
-            </TabsTrigger>
-            <TabsTrigger value="mechanical" className="text-sm md:text-base">
-              Motori dhe Sistemi Mekanik
-            </TabsTrigger>
-            <TabsTrigger value="warranty" className="text-sm md:text-base">
-              Garancioni
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="diagram" className="space-y-3">
-            <Card className="shadow-md">
-              <CardHeader className="flex flex-col gap-1 pb-3">
-                <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">
-                    Diagrami i Inspektimit të Automjetit
-                  </CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Gjendja vizuale e pjesëve të jashtme dhe panelet e karocerisë
-                </p>
-              </CardHeader>
+            <TabsContent value="diagram" className="space-y-3">
+              <Card className="shadow-md">
+                <CardHeader className="flex flex-col gap-1 pb-3">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl">
+                      Diagrami i Inspektimit të Automjetit
+                    </CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Gjendja vizuale e pjesëve të jashtme dhe panelet e karocerisë
+                  </p>
+                </CardHeader>
                 <CardContent className="space-y-3">
-                  <CarInspectionDiagram
-                    inspectionData={inspectionOuterData}
-                    className="mx-auto"
-                  />
+                  <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
 
                   {inspectionOuterData.length > 0 && (
                     <div className="grid gap-2 md:grid-cols-2">
@@ -822,416 +830,410 @@ const CarInspectionReport = () => {
                     </div>
                   )}
                 </CardContent>
-            </Card>
-          </TabsContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="warranty" className="space-y-4">
-            <Card className="shadow-md border-border/80">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">Garancioni KORAUTO</CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Përmbledhje e mbulimit të garancionit për automjetet tona
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
-                <p>
-                  Garancioni ynë mbulon komponentët kryesorë mekanikë dhe elektrikë të automjetit, sipas
-                  kushteve të përcaktuara më poshtë. Qëllimi është t&apos;ju ofrojë qetësi dhe transparencë pas blerjes.
-                </p>
-
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Çfarë mbulohet</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>Motori (blloku i motorit, kokat, komponentët e brendshëm)</li>
-                    <li>Kutia e shpejtësive dhe transmisioni</li>
-                    <li>Diferenciali dhe sistemi i lëvizjes</li>
-                    <li>Sistemi i ftohjes dhe sistemi i karburantit</li>
-                    <li>Komponentë elektrikë kryesorë (alternatori, startuesi, ECU)</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Çfarë nuk mbulohet</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>Pjesët konsumuese (frena, disqe, vajra, filtra, gomat)</li>
-                    <li>Zhurma, dridhje ose konsum normal</li>
-                    <li>Dëme nga aksidente, përmbytje, modifikime ose pakujdesi</li>
-                    <li>Shërbime rutinë dhe mirëmbajtje periodike</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Kushtet</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>Garancioni është i vlefshëm vetëm me mirëmbajtje të rregullt</li>
-                    <li>Çdo riparim duhet të miratohet paraprakisht nga KORAUTO</li>
-                    <li>Afati dhe mbulimi mund të ndryshojnë sipas automjetit</li>
-                  </ul>
-                </div>
-
-                <div className="pt-1">
-                  <Button variant="outline" onClick={() => window.open('/garancioni', '_blank')}>
-                    Shiko faqen e plotë të garancionit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="exterior" className="space-y-4">
-            <Card className="shadow-md border-border/80">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">Gjendja e Jashtme dhe Karrocerisë</CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Përmbledhje e informacionit të jashtëm dhe historisë së automjetit
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground">Info gjenerale të veturës</h3>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {generalVehicleInfo.map((item) => (
-                      <div
-                        key={item.label}
-                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-2.5"
-                      >
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {item.label}
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">
-                          {item.value || "-"}
-                        </span>
-                      </div>
-                    ))}
+            <TabsContent value="warranty" className="space-y-4">
+              <Card className="shadow-md border-border/80">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl">Garancioni KORAUTO</CardTitle>
                   </div>
-                </section>
+                  <p className="text-sm text-muted-foreground">
+                    Përmbledhje e mbulimit të garancionit për automjetet tona
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
+                  <p>
+                    Garancioni ynë mbulon komponentët kryesorë mekanikë dhe elektrikë të automjetit, sipas
+                    kushteve të përcaktuara më poshtë. Qëllimi është t&apos;ju ofrojë qetësi dhe transparencë pas blerjes.
+                  </p>
 
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground">Historia e përdorimit të veturës</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {usageHighlights.map((item) => (
-                      <div
-                        key={item.label}
-                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
-                      >
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {item.label}
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">{item.value}</span>
-                      </div>
-                    ))}
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Çfarë mbulohet</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Motori (blloku i motorit, kokat, komponentët e brendshëm)</li>
+                      <li>Kutia e shpejtësive dhe transmisioni</li>
+                      <li>Diferenciali dhe sistemi i lëvizjes</li>
+                      <li>Sistemi i ftohjes dhe sistemi i karburantit</li>
+                      <li>Komponentë elektrikë kryesorë (alternatori, startuesi, ECU)</li>
+                    </ul>
                   </div>
-                  {usageHistoryList.length > 0 && (
-                    <div className="space-y-2">
-                      {usageHistoryList.map((entry, index) => (
+
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Çfarë nuk mbulohet</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Pjesët konsumuese (frena, disqe, vajra, filtra, gomat)</li>
+                      <li>Zhurma, dridhje ose konsum normal</li>
+                      <li>Dëme nga aksidente, përmbytje, modifikime ose pakujdesi</li>
+                      <li>Shërbime rutinë dhe mirëmbajtje periodike</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Kushtet</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Garancioni është i vlefshëm vetëm me mirëmbajtje të rregullt</li>
+                      <li>Çdo riparim duhet të miratohet paraprakisht nga KORAUTO</li>
+                      <li>Afati dhe mbulimi mund të ndryshojnë sipas automjetit</li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-1">
+                    <Button variant="outline" onClick={() => window.open("/garancioni", "_blank")}>
+                      Shiko faqen e plotë të garancionit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="exterior" className="space-y-4">
+              <Card className="shadow-md border-border/80">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl">Gjendja e Jashtme dhe Karrocerisë</CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Përmbledhje e informacionit të jashtëm dhe historisë së automjetit
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <section className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground">Info gjenerale të veturës</h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {generalVehicleInfo.map((item) => (
                         <div
-                          key={`${entry.description || "usage"}-${index}`}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
+                          key={item.label}
+                          className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-2.5"
                         >
-                          <span className="font-medium text-foreground">
-                            {entry.description || "Përdorim"}
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {item.label}
                           </span>
-                          <span className="text-muted-foreground">{entry.value || "-"}</span>
+                          <span className="text-sm font-semibold text-foreground">{item.value || "-"}</span>
                         </div>
                       ))}
                     </div>
-                  )}
-                </section>
+                  </section>
 
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground">Historia e ndërrimit të pronarëve</h3>
-                  {ownerChangesList.length > 0 ? (
-                    <div className="space-y-3">
-                      {ownerChangesList.map((change, index) => (
+                  <section className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground">Historia e përdorimit të veturës</h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {usageHighlights.map((item) => (
                         <div
-                          key={`${change?.change_type || "owner"}-${index}`}
-                          className="rounded-lg border border-border/60 bg-muted/40 p-2.5 text-sm space-y-2"
+                          key={item.label}
+                          className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
                         >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="font-semibold text-foreground">
-                              {change?.change_type || "Ndryshim pronari"}
-                            </span>
-                            {change?.date && (
-                              <Badge variant="outline" className="text-xs">
-                                {formatDisplayDate(change.date) ?? change.date}
-                              </Badge>
-                            )}
-                          </div>
-                          {change?.usage_type && (
-                            <p className="text-xs text-muted-foreground">
-                              Përdorim: {change.usage_type}
-                            </p>
-                          )}
-                          {change?.previous_number && (
-                            <p className="text-xs text-muted-foreground">
-                              Numri paraprak: {change.previous_number}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Nuk ka informata për ndërrimin e pronarëve.
-                    </p>
-                  )}
-                </section>
-
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground">Historia e aksidenteve të veçanta</h3>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {specialAccidentStats.map((item) => (
-                      <div
-                        key={item.label}
-                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
-                      >
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {item.label}
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {specialAccidentHistory.length > 0 && (
-                    <div className="space-y-2">
-                      {specialAccidentHistory.map((entry, index) => (
-                        <div
-                          key={`${entry?.type || "event"}-${index}`}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
-                        >
-                          <span className="font-medium text-foreground">
-                            {entry?.type || "Ngjarje"}
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {item.label}
                           </span>
-                          <span className="text-muted-foreground">{entry?.value || "-"}</span>
+                          <span className="text-sm font-semibold text-foreground">{item.value}</span>
                         </div>
                       ))}
                     </div>
-                  )}
-                  {insuranceCarInfo && (
-                    <div className="space-y-2">
-                      {[
-                        { label: "Historia e aksidenteve", value: insuranceCarInfo.accident_history },
-                        { label: "Riparime të regjistruara", value: insuranceCarInfo.repair_count },
-                        { label: "Humbje totale", value: insuranceCarInfo.total_loss },
-                        {
-                          label: "Dëmtime nga uji",
-                          value: insuranceCarInfo.flood_damage
-                            ? processFloodDamageText(insuranceCarInfo.flood_damage)
-                            : undefined,
-                        },
-                      ]
-                        .filter((item) => item.value)
-                        .map((item) => (
+                    {usageHistoryList.length > 0 && (
+                      <div className="space-y-2">
+                        {usageHistoryList.map((entry, index) => (
                           <div
-                            key={item.label}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                            key={`${entry.description || "usage"}-${index}`}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
                           >
-                            <span className="font-medium text-foreground">{item.label}</span>
-                            <span className="text-muted-foreground">{item.value}</span>
+                            <span className="font-medium text-foreground">
+                              {entry.description || "Përdorim"}
+                            </span>
+                            <span className="text-muted-foreground">{entry.value || "-"}</span>
                           </div>
                         ))}
-                    </div>
-                  )}
-                </section>
-              </CardContent>
-            </Card>
+                      </div>
+                    )}
+                  </section>
 
-            {car.damage && (car.damage.main || car.damage.second) && (
+                  <section className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground">Historia e ndërrimit të pronarëve</h3>
+                    {ownerChangesList.length > 0 ? (
+                      <div className="space-y-3">
+                        {ownerChangesList.map((change, index) => (
+                          <div
+                            key={`${change?.change_type || "owner"}-${index}`}
+                            className="rounded-lg border border-border/60 bg-muted/40 p-2.5 text-sm space-y-2"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-semibold text-foreground">
+                                {change?.change_type || "Ndryshim pronari"}
+                              </span>
+                              {change?.date && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatDisplayDate(change.date) ?? change.date}
+                                </Badge>
+                              )}
+                            </div>
+                            {change?.usage_type && (
+                              <p className="text-xs text-muted-foreground">
+                                Përdorim: {change.usage_type}
+                              </p>
+                            )}
+                            {change?.previous_number && (
+                              <p className="text-xs text-muted-foreground">
+                                Numri paraprak: {change.previous_number}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nuk ka informata për ndërrimin e pronarëve.
+                      </p>
+                    )}
+                  </section>
+
+                  <section className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground">Historia e aksidenteve të veçanta</h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      {specialAccidentStats.map((item) => (
+                        <div
+                          key={item.label}
+                          className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
+                        >
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {item.label}
+                          </span>
+                          <span className="text-sm font-semibold text-foreground">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {specialAccidentHistory.length > 0 && (
+                      <div className="space-y-2">
+                        {specialAccidentHistory.map((entry, index) => (
+                          <div
+                            key={`${entry?.type || "event"}-${index}`}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
+                          >
+                            <span className="font-medium text-foreground">
+                              {entry?.type || "Ngjarje"}
+                            </span>
+                            <span className="text-muted-foreground">{entry?.value || "-"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {insuranceCarInfo && (
+                      <div className="space-y-2">
+                        {[
+                          { label: "Historia e aksidenteve", value: insuranceCarInfo.accident_history },
+                          { label: "Riparime të regjistruara", value: insuranceCarInfo.repair_count },
+                          { label: "Humbje totale", value: insuranceCarInfo.total_loss },
+                          {
+                            label: "Dëmtime nga uji",
+                            value: insuranceCarInfo.flood_damage
+                              ? processFloodDamageText(insuranceCarInfo.flood_damage)
+                              : undefined,
+                          },
+                        ]
+                          .filter((item) => item.value)
+                          .map((item) => (
+                            <div
+                              key={item.label}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                            >
+                              <span className="font-medium text-foreground">{item.label}</span>
+                              <span className="text-muted-foreground">{item.value}</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </section>
+                </CardContent>
+              </Card>
+
+              {car.damage && (car.damage.main || car.damage.second) && (
+                <Card className="shadow-md border-border/80">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Dëmtimet e raportuara</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Vlerësimi i dëmtimeve të evidentuara nga inspektimi
+                    </p>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 md:grid-cols-2">
+                    {car.damage?.main && (
+                      <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
+                        <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi kryesor</h3>
+                        <p className="text-sm text-muted-foreground capitalize">{car.damage.main}</p>
+                      </div>
+                    )}
+                    {car.damage?.second && (
+                      <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
+                        <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi dytësor</h3>
+                        <p className="text-sm text-muted-foreground capitalize">{car.damage.second}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="shadow-md border-border/80">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Dëmtimet e raportuara</CardTitle>
+                    <CardTitle className="text-xl">Historia e aksidenteve</CardTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Vlerësimi i dëmtimeve të evidentuara nga inspektimi
-                  </p>
-                </CardHeader>
-                <CardContent className="grid gap-3 md:grid-cols-2">
-                  {car.damage?.main && (
-                    <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi kryesor</h3>
-                      <p className="text-sm text-muted-foreground capitalize">{car.damage.main}</p>
-                    </div>
-                  )}
-                  {car.damage?.second && (
-                    <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">Dëmtimi dytësor</h3>
-                      <p className="text-sm text-muted-foreground capitalize">{car.damage.second}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="shadow-md border-border/80">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">Historia e aksidenteve</CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Detaje të aksidenteve të raportuara për automjetin
-                </p>
-              </CardHeader>
-              <CardContent>
-                {hasAccidentDetails ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-border/60 text-sm">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          {[
-                            "Data",
-                            "Pjesa",
-                            "Ngjyrosja",
-                            "Punë dore",
-                            "Total",
-                          ].map((header) => (
-                            <th
-                              key={header}
-                              scope="col"
-                              className="px-2.5 py-1.5 text-left font-semibold uppercase tracking-wide text-xs text-muted-foreground"
-                            >
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/40">
-                        {accidentEntries.map((entry, index) => (
-                          <tr key={`accident-${index}`} className="bg-background/80">
-                            <td className="px-2.5 py-1.5 whitespace-nowrap text-foreground">{entry.date}</td>
-                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.part}</td>
-                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.paint}</td>
-                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.labor}</td>
-                            <td className="px-2.5 py-1.5 text-muted-foreground">{entry.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="py-4 text-sm text-muted-foreground text-center">
-                    Nuk ka inspektim për aksidente të raportuara.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="mechanical" className="space-y-6">
-            {inspectionInnerData ? (
-              <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Cog className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Motori dhe Sistemi Mekanik</CardTitle>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Kontrolli teknik i komponentëve kryesorë të automjetit
+                    Detaje të aksidenteve të raportuara për automjetin
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {Object.entries(inspectionInnerData).map(([key, value]) => {
-                      const positive = isPositiveStatus(value);
-                      return (
-                        <div
-                          key={key}
-                          className={`p-2 sm:p-3 rounded-lg border text-xs sm:text-sm ${
-                            positive
-                              ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
-                              : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
-                          }`}
-                        >
-                          <span className="font-semibold text-foreground block mb-0.5 sm:mb-1 truncate">
-                            {formatKeyLabel(key)}
-                          </span>
-                          <p
-                            className={`font-medium ${
-                              positive ? "text-emerald-700" : "text-red-700"
+                  {hasAccidentDetails ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-border/60 text-sm">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            {[
+                              "Data",
+                              "Pjesa",
+                              "Ngjyrosja",
+                              "Punë dore",
+                              "Total",
+                            ].map((header) => (
+                              <th
+                                key={header}
+                                scope="col"
+                                className="px-2.5 py-1.5 text-left font-semibold uppercase tracking-wide text-xs text-muted-foreground"
+                              >
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/40">
+                          {accidentEntries.map((entry, index) => (
+                            <tr key={`accident-${index}`} className="bg-background/80">
+                              <td className="px-2.5 py-1.5 whitespace-nowrap text-foreground">{entry.date}</td>
+                              <td className="px-2.5 py-1.5 text-muted-foreground">{entry.part}</td>
+                              <td className="px-2.5 py-1.5 text-muted-foreground">{entry.paint}</td>
+                              <td className="px-2.5 py-1.5 text-muted-foreground">{entry.labor}</td>
+                              <td className="px-2.5 py-1.5 text-muted-foreground">{entry.total}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="py-4 text-sm text-muted-foreground text-center">
+                      Nuk ka inspektim për aksidente të raportuara.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="mechanical" className="space-y-6">
+              {inspectionInnerData ? (
+                <Card className="shadow-md border-border/80">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Cog className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Motori dhe Sistemi Mekanik</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Kontrolli teknik i komponentëve kryesorë të automjetit
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {Object.entries(inspectionInnerData).map(([key, value]) => {
+                        const positive = isPositiveStatus(value);
+                        return (
+                          <div
+                            key={key}
+                            className={`p-2 sm:p-3 rounded-lg border text-xs sm:text-sm ${
+                              positive
+                                ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
+                                : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
                             }`}
                           >
-                            {translateStatusValue(value)}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="shadow-md border-border/80">
-                <CardContent className="py-10 text-center text-muted-foreground">
-                  Nuk ka të dhëna të detajuara teknike të disponueshme.
-                </CardContent>
-              </Card>
-            )}
-
-            {car.maintenanceHistory && car.maintenanceHistory.length > 0 && (
-              <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Historia e Mirëmbajtjes</CardTitle>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Shërbimet dhe mirëmbajtjet e regjistruara për automjetin
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {car.maintenanceHistory.map((record: any, index: number) => (
-                    <Card key={index} className="border border-border/60 bg-muted/40">
-                      <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <div className="font-semibold text-foreground">
-                            {record.service_type || record.type || "Shërbim i përgjithshëm"}
+                            <span className="font-semibold text-foreground block mb-0.5 sm:mb-1 truncate">
+                              {formatKeyLabel(key)}
+                            </span>
+                            <p className={`font-medium ${positive ? "text-emerald-700" : "text-red-700"}`}>
+                              {translateStatusValue(value)}
+                            </p>
                           </div>
-                          {record.date && (
-                            <Badge variant="outline" className="text-xs">
-                              {record.date}
-                            </Badge>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="shadow-md border-border/80">
+                  <CardContent className="py-10 text-center text-muted-foreground">
+                    Nuk ka të dhëna të detajuara teknike të disponueshme.
+                  </CardContent>
+                </Card>
+              )}
+
+              {car.maintenanceHistory && car.maintenanceHistory.length > 0 && (
+                <Card className="shadow-md border-border/80">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Historia e Mirëmbajtjes</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Shërbimet dhe mirëmbajtjet e regjistruara për automjetin
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {car.maintenanceHistory.map((record: any, index: number) => (
+                      <Card key={index} className="border border-border/60 bg-muted/40">
+                        <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <div className="font-semibold text-foreground">
+                              {record.service_type || record.type || "Shërbim i përgjithshëm"}
+                            </div>
+                            {record.date && (
+                              <Badge variant="outline" className="text-xs">
+                                {record.date}
+                              </Badge>
+                            )}
+                          </div>
+                          {record.description && <p>{record.description}</p>}
+                          {record.mileage && (
+                            <p className="text-xs">
+                              Kilometrazh: <span className="font-medium">{record.mileage}</span>
+                            </p>
                           )}
-                        </div>
-                        {record.description && <p>{record.description}</p>}
-                        {record.mileage && (
-                          <p className="text-xs">
-                            Kilometrazh: <span className="font-medium">{record.mileage}</span>
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
 
-        <Separator />
+          <Separator />
 
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p>
-              Për informacione shtesë ose pyetje, kontaktoni ekipin tonë të inspektimit.
-            </p>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p>
+                Për informacione shtesë ose pyetje, kontaktoni ekipin tonë të inspektimit.
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => navigate(`/car/${car.lot || lot}`)}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kthehu te faqja e makinës
+            </Button>
           </div>
-          <Button
-            size="lg"
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => navigate(`/car/${car.lot || lot}`)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kthehu te faqja e makinës
-          </Button>
         </div>
-      </div>
     </div>
   );
 };
