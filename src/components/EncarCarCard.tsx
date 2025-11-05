@@ -195,9 +195,9 @@ const EncarCarCard = ({
             </Badge>
           )}
           {insurance_v2?.accidentCnt === 0 && (
-            <Badge className="bg-green-600 text-white text-xs px-3 py-1 font-semibold shadow-lg flex items-center gap-1">
+            <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 font-semibold shadow-lg flex items-center gap-1">
               <Shield className="h-3 w-3" />
-              CLEAN
+              Accident free
             </Badge>
           )}
         </div>

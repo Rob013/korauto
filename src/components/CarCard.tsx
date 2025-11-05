@@ -460,6 +460,13 @@ const CarCard = ({
             </div>
           ) : null;
         })()}
+
+        {/* Accident free badge */}
+        {insurance_v2?.accidentCnt === 0 && (
+          <div className="absolute top-2 left-2 bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow z-10">
+            Accident free
+          </div>
+        )}
       </div>
 
       <div className="p-3 flex flex-col flex-1" style={{ minHeight: '168px' }}>

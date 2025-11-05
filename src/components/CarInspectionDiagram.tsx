@@ -417,7 +417,17 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                           const offset = (idx - (n - 1) / 2) * spacing;
                           const cx = part.labelPos.x + offset;
                           const cy = part.labelPos.y;
-                          const code = (s.code || '').toUpperCase();
+                          const rawCode = (s.code || '').toUpperCase();
+                          const title = (s.title || '').toString().toLowerCase();
+                          const deriveCodeFromTitle = () => {
+                            if (title.includes('weld') || title.includes('용접') || title.includes('sal') || title.includes('welding')) return 'W';
+                            if (title.includes('exchange') || title.includes('교환') || title.includes('zëvend') || title.includes('zevend')) return 'X';
+                            if (title.includes('repair') || title.includes('수리') || title.includes('ripar')) return 'A';
+                            if (title.includes('corr') || title.includes('부식') || title.includes('ndryshk')) return 'U';
+                            if (title.includes('scratch') || title.includes('흠집') || title.includes('gërvish') || title.includes('gervish')) return 'S';
+                            return rawCode || '';
+                          };
+                          const code = deriveCodeFromTitle();
                           const markerColor = (() => {
                             if (code === 'X') return 'hsl(0 84% 60%)';
                             if (code === 'W') return 'hsl(217 91% 60%)';
