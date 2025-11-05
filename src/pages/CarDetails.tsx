@@ -1222,7 +1222,8 @@ const CarDetails = memo(() => {
     containerRef: imageContainerRef,
     goToNext,
     goToPrevious,
-    goToIndex
+    goToIndex,
+    isClickAllowed
   } = useImageSwipe({
     images,
     onImageChange: index => setSelectedImageIndex(index)
@@ -1248,6 +1249,9 @@ const CarDetails = memo(() => {
   // Handler for opening gallery images in a new page
   const handleGalleryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isClickAllowed()) {
+      return;
+    }
     // Track gallery view
     trackPageView(`/car/${lot}/gallery`);
     // Navigate to gallery page with all images
@@ -1260,7 +1264,7 @@ const CarDetails = memo(() => {
         carLot: car?.lot || lot
       }
     });
-  }, [images, navigate, lot, car]);
+  }, [images, navigate, lot, car, isClickAllowed]);
 
   // Preload important images
   useImagePreload(car?.image);
@@ -1364,10 +1368,10 @@ const CarDetails = memo(() => {
               {/* Main Image Card */}
               <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
                 <CardContent className="p-0">
-                  <div 
-                    ref={imageContainerRef} 
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
-                    onClick={(e) => handleGalleryClick(e)} 
+                  <div
+                    ref={imageContainerRef}
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-pan-y select-none"
+                    onClick={(e) => handleGalleryClick(e)}
                     data-fancybox="gallery"
                   >
                   {/* Main Image with improved loading states */}
@@ -1513,10 +1517,10 @@ const CarDetails = memo(() => {
             {/* Mobile Main Image - Full width for mobile */}
             <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
-                <div 
-                  ref={imageContainerRef} 
-                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer"
-                  onClick={(e) => handleGalleryClick(e)} 
+                <div
+                  ref={imageContainerRef}
+                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-pan-y select-none"
+                  onClick={(e) => handleGalleryClick(e)}
                   data-fancybox="gallery"
                 >
                   {/* Main Image with improved loading states */}

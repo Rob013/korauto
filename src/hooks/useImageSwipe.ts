@@ -10,6 +10,11 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const pointerActive = useRef(false);
+  const pointerStartX = useRef(0);
+  const pointerLastX = useRef(0);
+  const preventClickRef = useRef(false);
+  const clickGuardTimeout = useRef<number | null>(null);
 
   const goToNext = () => {
     const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
@@ -34,30 +39,79 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     const container = containerRef.current;
     if (!container) return;
 
+    const evaluateSwipe = (deltaX: number) => {
+      const swipeThreshold = 50;
+      if (Math.abs(deltaX) > swipeThreshold) {
+        if (deltaX > 0) {
+          goToNext();
+        } else {
+          goToPrevious();
+        }
+        preventClickRef.current = true;
+        if (clickGuardTimeout.current) {
+          window.clearTimeout(clickGuardTimeout.current);
+        }
+        clickGuardTimeout.current = window.setTimeout(() => {
+          preventClickRef.current = false;
+          clickGuardTimeout.current = null;
+        }, 150);
+      }
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault(); // Prevent scrolling
+      if (e.cancelable) {
+        e.preventDefault();
+      }
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       touchEndX.current = e.changedTouches[0].clientX;
-      handleSwipe();
+      evaluateSwipe(touchStartX.current - touchEndX.current);
     };
 
-    const handleSwipe = () => {
-      const swipeThreshold = 50;
-      const deltaX = touchStartX.current - touchEndX.current;
+    const handlePointerDown = (e: PointerEvent) => {
+      pointerActive.current = true;
+      pointerStartX.current = e.clientX;
+      pointerLastX.current = e.clientX;
+      if (typeof container.setPointerCapture === 'function') {
+        try {
+          container.setPointerCapture(e.pointerId);
+        } catch {
+          // ignore capture errors
+        }
+      }
+    };
 
-      if (Math.abs(deltaX) > swipeThreshold) {
-        if (deltaX > 0) {
-          // Swipe left - go to next image
-          goToNext();
-        } else {
-          // Swipe right - go to previous image
-          goToPrevious();
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!pointerActive.current) return;
+      pointerLastX.current = e.clientX;
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (!pointerActive.current) return;
+      pointerActive.current = false;
+      if (typeof container.releasePointerCapture === 'function') {
+        try {
+          container.releasePointerCapture(e.pointerId);
+        } catch {
+          // ignore release errors
+        }
+      }
+      evaluateSwipe(pointerStartX.current - pointerLastX.current);
+    };
+
+    const handlePointerCancel = (e: PointerEvent) => {
+      if (!pointerActive.current) return;
+      pointerActive.current = false;
+      if (typeof container.releasePointerCapture === 'function') {
+        try {
+          container.releasePointerCapture(e.pointerId);
+        } catch {
+          // ignore release errors
         }
       }
     };
@@ -67,10 +121,26 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
     container.addEventListener('touchend', handleTouchEnd, { passive: false });
 
+    // Add pointer event listeners for desktop drag support
+    container.addEventListener('pointerdown', handlePointerDown);
+    container.addEventListener('pointermove', handlePointerMove);
+    container.addEventListener('pointerup', handlePointerUp);
+    container.addEventListener('pointercancel', handlePointerCancel);
+    container.addEventListener('pointerleave', handlePointerUp);
+
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('pointerdown', handlePointerDown);
+      container.removeEventListener('pointermove', handlePointerMove);
+      container.removeEventListener('pointerup', handlePointerUp);
+      container.removeEventListener('pointercancel', handlePointerCancel);
+      container.removeEventListener('pointerleave', handlePointerUp);
+      if (clickGuardTimeout.current) {
+        window.clearTimeout(clickGuardTimeout.current);
+        clickGuardTimeout.current = null;
+      }
     };
   }, [currentIndex, images.length]);
 
@@ -83,5 +153,6 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     currentImage: images[currentIndex],
     hasNext: currentIndex < images.length - 1,
     hasPrevious: currentIndex > 0,
+    isClickAllowed: () => !preventClickRef.current,
   };
 };
