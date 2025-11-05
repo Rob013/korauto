@@ -1265,7 +1265,8 @@ const CarDetails = memo(() => {
   // Preload important images
   useImagePreload(car?.image);
   if (loading) {
-    return <div className="min-h-screen bg-background">
+    return (
+      <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
           <div className="space-y-6 animate-fade-in">
             <div className="h-8 bg-muted/50 rounded-lg w-32 animate-pulse"></div>
@@ -1283,10 +1284,12 @@ const CarDetails = memo(() => {
             </div>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
   if (error || !car) {
-    return <div className="min-h-screen bg-background animate-fade-in">
+    return (
+      <div className="min-h-screen bg-background animate-fade-in">
         <div className="container-responsive py-8">
           <Button variant="outline" onClick={() => navigate("/")} className="mb-6 hover:scale-105 transition-transform">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -1303,7 +1306,8 @@ const CarDetails = memo(() => {
             </p>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
