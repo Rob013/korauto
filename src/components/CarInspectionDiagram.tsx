@@ -204,55 +204,36 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
   // Helper: evaluate if an item's title targets a given part id
   const titleMatchesPart = (title: string, partId: string) => {
-    const t = title.toLowerCase();
-    const p = partId.toLowerCase();
+    const t = title.toLowerCase().replace(/\s+/g, ' ').trim();
 
-    // Generic substring match
-    if (t.includes(p)) return true;
+    // Strict regex-based mappings to avoid false positives
+    const patterns: Array<{ re: RegExp; id: string }> = [
+      // Doors
+      { re: /(front\s*)?door.*(left|\blh\b)/i, id: 'front_left_door' },
+      { re: /(front\s*)?door.*(right|\brh\b)/i, id: 'front_right_door' },
+      { re: /rear\s*door.*(left|\blh\b)/i, id: 'rear_left_door' },
+      { re: /rear\s*door.*(right|\brh\b)/i, id: 'rear_right_door' },
+      // Quarters and wheel house
+      { re: /(quarter\s*panel|quarter).*\b(left|lh)\b/i, id: 'left_quarter' },
+      { re: /(quarter\s*panel|quarter).*\b(right|rh)\b/i, id: 'right_quarter' },
+      { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(left|lh)\b/i, id: 'left_quarter' },
+      { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(right|rh)\b/i, id: 'right_quarter' },
+      // Side sills
+      { re: /(side\s*sill|sill).*\b(left|lh)\b/i, id: 'side_sill_left' },
+      { re: /(side\s*sill|sill).*\b(right|rh)\b/i, id: 'side_sill_right' },
+      // Bumpers
+      { re: /front\s*bumper/i, id: 'front_bumper' },
+      { re: /rear\s*bumper/i, id: 'rear_bumper' },
+      // Trunk floor
+      { re: /trunk\s*floor/i, id: 'trunk' },
+      // Fenders
+      { re: /(front\s*)?fender.*\b(left|lh)\b/i, id: 'left_fender' },
+      { re: /(front\s*)?fender.*\b(right|rh)\b/i, id: 'right_fender' },
+    ];
 
-    // English mappings
-    const isLeft = t.includes('(left)') || t.includes('left') || t.includes(' lh') || t.includes(' l)');
-    const isRight = t.includes('(right)') || t.includes('right') || t.includes(' rh') || t.includes(' r)');
-    const isFront = t.includes('front') || t.includes(' f ');
-    const isRear = t.includes('rear') || t.includes(' r ');
-
-    if (t.includes('rear door') && isLeft && partId === 'rear_left_door') return true;
-    if (t.includes('rear door') && isRight && partId === 'rear_right_door') return true;
-    if ((t.includes('front door') || (t.includes('door') && isFront)) && isLeft && partId === 'front_left_door') return true;
-    if ((t.includes('front door') || (t.includes('door') && isFront)) && isRight && partId === 'front_right_door') return true;
-    // Fallback: generic "right door"/"left door" without front/rear -> assume front doors
-    if (t.includes('door') && isRight && !isFront && !isRear && partId === 'front_right_door') return true;
-    if (t.includes('door') && isLeft && !isFront && !isRear && partId === 'front_left_door') return true;
-
-    if ((t.includes('quarter panel') || t.includes('quarter')) && isLeft && partId === 'left_quarter') return true;
-    if ((t.includes('quarter panel') || t.includes('quarter')) && isRight && partId === 'right_quarter') return true;
-
-    if ((t.includes('wheel house') || t.includes('wheelhouse') || t.includes('wheel arch')) && isRear && isLeft && partId === 'left_quarter') return true;
-    if ((t.includes('wheel house') || t.includes('wheelhouse') || t.includes('wheel arch')) && isRear && isRight && partId === 'right_quarter') return true;
-
-    if (t.includes('side sill') || t.includes('sill')) {
-      if (isLeft && partId === 'side_sill_left') return true;
-      if (isRight && partId === 'side_sill_right') return true;
-    }
-
-    if (t.includes('trunk floor') && partId === 'trunk') return true;
-
-    // Korean term matching
-    if (p.includes('front') && (t.includes('앞') || t.includes('전'))) return true;
-    if (p.includes('rear') && (t.includes('뒤') || t.includes('후'))) return true;
-    if (p.includes('left') && t.includes('좌')) return true;
-    if (p.includes('right') && t.includes('우')) return true;
-    if (p.includes('door') && t.includes('도어')) return true;
-    if (p.includes('hood') && t.includes('후드')) return true;
-    if (p.includes('bumper') && t.includes('범퍼')) return true;
-    if (p.includes('fender') && t.includes('펜더')) return true;
-    if (p.includes('quarter') && t.includes('쿼터')) return true;
-    if (p.includes('trunk') && t.includes('트렁크')) return true;
-    if (p.includes('windshield') && t.includes('윈드')) return true;
-    if (p.includes('glass') && t.includes('유리')) return true;
-    if (p.includes('roof') && t.includes('루프')) return true;
-
-    return false;
+    const matched = patterns.find((m) => m.re.test(t));
+    if (!matched) return false;
+    return matched.id === partId;
   };
 
   // Get part status from inspection data (aggregate across matching items)
