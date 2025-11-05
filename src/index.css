@@ -241,6 +241,9 @@ body {
     backface-visibility: hidden;
   }
 
+  /* Ensure full-height layout for full-screen sections */
+  html, body, #root { min-height: 100%; height: auto; }
+
   /* iOS-inspired typography */
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
@@ -420,23 +423,23 @@ body {
   /* Container with responsive padding */
   .container-responsive {
     width: 100%;
-    max-width: min(1400px, 100%);
+    max-width: min(1440px, 100%);
     margin-left: auto;
     margin-right: auto;
-    padding-left: clamp(1rem, 4vw, 2.75rem);
-    padding-right: clamp(1rem, 4vw, 2.75rem);
+    padding-left: max(env(safe-area-inset-left), clamp(1rem, 4vw, 2.75rem));
+    padding-right: max(env(safe-area-inset-right), clamp(1rem, 4vw, 2.75rem));
   }
 
   @media (min-width: 1280px) {
-    .container-responsive {
-      max-width: min(1500px, 100%);
-    }
+    .container-responsive { max-width: min(1600px, 100%); }
   }
 
   @media (min-width: 1536px) {
-    .container-responsive {
-      max-width: min(1600px, 100%);
-    }
+    .container-responsive { max-width: min(1760px, 100%); }
+  }
+
+  @media (min-width: 1792px) {
+    .container-responsive { max-width: min(1920px, 100%); }
   }
 
   /* iOS-style card hover effect */

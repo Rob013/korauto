@@ -49,7 +49,7 @@ const Header = () => {
               <img 
                 src="/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png" 
                 alt="KORAUTO Logo - Makina nga Koreja e Jugut" 
-                className="h-20 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-300"
+                className="h-10 sm:h-12 w-auto object-contain dark:invert dark:brightness-0 dark:contrast-100 transition-all duration-300"
               />
             </div>
           </Link>
