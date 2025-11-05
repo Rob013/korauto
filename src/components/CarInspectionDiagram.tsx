@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
 
 interface InspectionItem {
   type: { code: string; title: string };
@@ -16,12 +17,9 @@ interface CarInspectionDiagramProps {
 interface CarPart {
   id: string;
   name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rx?: number;
-  path?: string;
+  nameEn: string;
+  path: string;
+  labelPos: { x: number; y: number };
 }
 
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
@@ -31,190 +29,281 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
 
-  // Define car parts with their positions in the SVG
+  // Enhanced car parts with realistic SVG paths
   const carParts: CarPart[] = [
-    // Front section
-    { id: 'front_bumper', name: 'Bamper i përparmë', x: 220, y: 50, width: 160, height: 25, rx: 12 },
-    { id: 'hood', name: 'Kapaku i motorit', x: 240, y: 75, width: 120, height: 60, rx: 8 },
-    { id: 'windshield', name: 'Xhami i përparmë', x: 250, y: 135, width: 100, height: 50, rx: 5 },
-    
-    // Doors and sides
-    { id: 'front_left_door', name: 'Dera e përparme e majtë', x: 180, y: 185, width: 25, height: 80, rx: 5 },
-    { id: 'rear_left_door', name: 'Dera e pasme e majtë', x: 180, y: 265, width: 25, height: 80, rx: 5 },
-    { id: 'front_right_door', name: 'Dera e përparme e djathtë', x: 395, y: 185, width: 25, height: 80, rx: 5 },
-    { id: 'rear_right_door', name: 'Dera e pasme e djathtë', x: 395, y: 265, width: 25, height: 80, rx: 5 },
-    
-    // Roof and pillars
-    { id: 'roof', name: 'Çatia', x: 250, y: 185, width: 100, height: 160, rx: 8 },
-    
-    // Rear section
-    { id: 'rear_windshield', name: 'Xhami i pasëm', x: 250, y: 345, width: 100, height: 40, rx: 5 },
-    { id: 'trunk', name: 'Bagazhi', x: 240, y: 385, width: 120, height: 50, rx: 8 },
-    { id: 'rear_bumper', name: 'Bamper i pasëm', x: 220, y: 435, width: 160, height: 25, rx: 12 },
-    
-    // Wheels
-    { id: 'front_left_wheel', name: 'Rrota e përparme e majtë', x: 200, y: 120, width: 40, height: 40, rx: 20 },
-    { id: 'front_right_wheel', name: 'Rrota e përparme e djathtë', x: 360, y: 120, width: 40, height: 40, rx: 20 },
-    { id: 'rear_left_wheel', name: 'Rrota e pasme e majtë', x: 200, y: 380, width: 40, height: 40, rx: 20 },
-    { id: 'rear_right_wheel', name: 'Rrota e pasme e djathtë', x: 360, y: 380, width: 40, height: 40, rx: 20 },
-    
-    // Side panels
-    { id: 'left_side_panel', name: 'Paneli i majtë', x: 205, y: 185, width: 45, height: 160, rx: 8 },
-    { id: 'right_side_panel', name: 'Paneli i djathtë', x: 350, y: 185, width: 45, height: 160, rx: 8 },
+    // Hood
+    {
+      id: 'hood',
+      name: 'Kapak',
+      nameEn: 'Hood',
+      path: 'M 180 80 L 320 80 Q 330 80 330 90 L 330 160 Q 330 165 325 165 L 175 165 Q 170 165 170 160 L 170 90 Q 170 80 180 80 Z',
+      labelPos: { x: 250, y: 120 }
+    },
+    // Front Bumper
+    {
+      id: 'front_bumper',
+      name: 'Bamper Para',
+      nameEn: 'F. Bumper',
+      path: 'M 160 40 L 340 40 Q 350 40 350 50 L 350 75 Q 350 80 340 80 L 160 80 Q 150 80 150 75 L 150 50 Q 150 40 160 40 Z',
+      labelPos: { x: 250, y: 58 }
+    },
+    // Windshield
+    {
+      id: 'windshield',
+      name: 'Xham Para',
+      nameEn: 'Windshield',
+      path: 'M 185 170 L 315 170 Q 325 170 325 180 L 325 210 L 175 210 Q 170 210 170 205 L 170 180 Q 170 170 185 170 Z',
+      labelPos: { x: 250, y: 188 }
+    },
+    // Left Front Door
+    {
+      id: 'front_left_door',
+      name: 'Derë Para Majtas',
+      nameEn: 'L Front Door',
+      path: 'M 120 170 L 165 170 L 165 260 L 120 260 Q 115 260 115 255 L 115 175 Q 115 170 120 170 Z',
+      labelPos: { x: 140, y: 215 }
+    },
+    // Right Front Door
+    {
+      id: 'front_right_door',
+      name: 'Derë Para Djathtas',
+      nameEn: 'R Front Door',
+      path: 'M 335 170 L 385 170 Q 390 170 390 175 L 390 255 Q 390 260 385 260 L 335 260 L 335 170 Z',
+      labelPos: { x: 360, y: 215 }
+    },
+    // Roof
+    {
+      id: 'roof',
+      name: 'Çati',
+      nameEn: 'Roof',
+      path: 'M 175 215 L 325 215 L 325 315 L 175 315 L 175 215 Z',
+      labelPos: { x: 250, y: 265 }
+    },
+    // Left Rear Door
+    {
+      id: 'rear_left_door',
+      name: 'Derë Prapa Majtas',
+      nameEn: 'L Rear Door',
+      path: 'M 115 265 L 165 265 L 165 355 L 115 355 Q 110 355 110 350 L 110 270 Q 110 265 115 265 Z',
+      labelPos: { x: 138, y: 310 }
+    },
+    // Right Rear Door
+    {
+      id: 'rear_right_door',
+      name: 'Derë Prapa Djathtas',
+      nameEn: 'R Rear Door',
+      path: 'M 335 265 L 390 265 Q 395 265 395 270 L 395 350 Q 395 355 390 355 L 335 355 L 335 265 Z',
+      labelPos: { x: 362, y: 310 }
+    },
+    // Rear Glass
+    {
+      id: 'rear_glass',
+      name: 'Xham Prapa',
+      nameEn: 'Rear Glass',
+      path: 'M 175 320 L 325 320 L 325 355 Q 325 360 315 360 L 185 360 Q 175 360 175 355 L 175 320 Z',
+      labelPos: { x: 250, y: 338 }
+    },
+    // Trunk
+    {
+      id: 'trunk',
+      name: 'Bagazh',
+      nameEn: 'Trunk',
+      path: 'M 180 365 L 320 365 Q 330 365 330 375 L 330 445 Q 330 450 325 450 L 175 450 Q 170 450 170 445 L 170 375 Q 170 365 180 365 Z',
+      labelPos: { x: 250, y: 405 }
+    },
+    // Rear Bumper
+    {
+      id: 'rear_bumper',
+      name: 'Bamper Prapa',
+      nameEn: 'R. Bumper',
+      path: 'M 160 455 L 340 455 Q 350 455 350 465 L 350 490 Q 350 500 340 500 L 160 500 Q 150 500 150 490 L 150 465 Q 150 455 160 455 Z',
+      labelPos: { x: 250, y: 475 }
+    },
+    // Left Fender
+    {
+      id: 'left_fender',
+      name: 'Paranicë Majtas',
+      nameEn: 'L Fender',
+      path: 'M 115 90 L 165 90 L 165 165 L 115 165 Q 110 165 110 160 L 110 95 Q 110 90 115 90 Z',
+      labelPos: { x: 135, y: 125 }
+    },
+    // Right Fender
+    {
+      id: 'right_fender',
+      name: 'Paranicë Djathtas',
+      nameEn: 'R Fender',
+      path: 'M 335 90 L 390 90 Q 395 90 395 95 L 395 160 Q 395 165 390 165 L 335 165 L 335 90 Z',
+      labelPos: { x: 362, y: 125 }
+    },
+    // Left Quarter Panel
+    {
+      id: 'left_quarter',
+      name: 'Panel Prapa Majtas',
+      nameEn: 'L Quarter',
+      path: 'M 110 360 L 165 360 L 165 450 L 110 450 Q 105 450 105 445 L 105 365 Q 105 360 110 360 Z',
+      labelPos: { x: 135, y: 405 }
+    },
+    // Right Quarter Panel
+    {
+      id: 'right_quarter',
+      name: 'Panel Prapa Djathtas',
+      nameEn: 'R Quarter',
+      path: 'M 335 360 L 395 360 Q 400 360 400 365 L 400 445 Q 400 450 395 450 L 335 450 L 335 360 Z',
+      labelPos: { x: 365, y: 405 }
+    },
   ];
 
-  // Map Korean part names to our inspection data
+  // Get part status from inspection data
   const getPartStatus = (partId: string) => {
-    const part = inspectionData.find(item => 
-      item.type.code === partId || 
-      item.type.title.toLowerCase().includes(partId.toLowerCase()) ||
-      // Map common Korean terms
-      (partId.includes('front') && (item.type.title.includes('앞') || item.type.title.includes('전'))) ||
-      (partId.includes('rear') && (item.type.title.includes('뒤') || item.type.title.includes('후'))) ||
-      (partId.includes('left') && item.type.title.includes('좌')) ||
-      (partId.includes('right') && item.type.title.includes('우')) ||
-      (partId.includes('door') && item.type.title.includes('도어')) ||
-      (partId.includes('hood') && item.type.title.includes('후드')) ||
-      (partId.includes('bumper') && item.type.title.includes('범퍼'))
-    );
+    const part = inspectionData.find(item => {
+      const typeTitle = item.type.title.toLowerCase();
+      const partIdLower = partId.toLowerCase();
+      
+      // Direct match
+      if (item.type.code === partId || typeTitle.includes(partIdLower)) return true;
+      
+      // Korean term matching
+      if (partIdLower.includes('front') && (typeTitle.includes('앞') || typeTitle.includes('전'))) return true;
+      if (partIdLower.includes('rear') && (typeTitle.includes('뒤') || typeTitle.includes('후'))) return true;
+      if (partIdLower.includes('left') && typeTitle.includes('좌')) return true;
+      if (partIdLower.includes('right') && typeTitle.includes('우')) return true;
+      if (partIdLower.includes('door') && typeTitle.includes('도어')) return true;
+      if (partIdLower.includes('hood') && typeTitle.includes('후드')) return true;
+      if (partIdLower.includes('bumper') && typeTitle.includes('범퍼')) return true;
+      if (partIdLower.includes('fender') && typeTitle.includes('펜더')) return true;
+      if (partIdLower.includes('quarter') && typeTitle.includes('쿼터')) return true;
+      if (partIdLower.includes('trunk') && typeTitle.includes('트렁크')) return true;
+      if (partIdLower.includes('windshield') && typeTitle.includes('윈드')) return true;
+      if (partIdLower.includes('glass') && typeTitle.includes('유리')) return true;
+      if (partIdLower.includes('roof') && typeTitle.includes('루프')) return true;
+      
+      return false;
+    });
     return part?.statusTypes || [];
   };
 
   const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
-    if (statuses.length === 0) return '#10b981'; // Default green for good condition
+    if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
     
-    // Check for different damage types with priority
     const hasExchange = statuses.some(s => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange'));
     const hasWelding = statuses.some(s => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld'));
     const hasRepair = statuses.some(s => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair'));
-    const hasSheetMetal = statuses.some(s => s.code === 'C' || s.title.includes('판금') || s.title.includes('sheet'));
+    const hasCorrosion = statuses.some(s => s.code === 'U' || s.title.includes('부식') || s.title.includes('corr'));
+    const hasScratch = statuses.some(s => s.code === 'S' || s.title.includes('흠집') || s.title.includes('scratch'));
     
-    // Red for exchange/replacement - highest priority (as required)
-    if (hasExchange) return '#dc2626'; // Bright red for replaced parts
-    // Orange for welding/major repair 
-    if (hasWelding) return '#ea580c'; // Orange for major repairs
-    // Orange for general repair (as required - changed from yellow)
-    if (hasRepair) return '#ea580c'; // Orange for repaired parts
-    // Amber for sheet metal work
-    if (hasSheetMetal) return '#d97706'; // Amber for moderate repairs
+    if (hasExchange) return 'hsl(0 84% 60%)'; // Red
+    if (hasWelding) return 'hsl(0 84% 60%)'; // Red
+    if (hasRepair) return 'hsl(25 95% 53%)'; // Orange
+    if (hasCorrosion) return 'hsl(25 95% 53%)'; // Orange
+    if (hasScratch) return 'hsl(48 96% 53%)'; // Yellow
     
-    return '#10b981'; // Green for good condition
+    return 'hsl(142 76% 36%)'; // Green
   };
 
   const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
-    if (statuses.length === 0) return 'Në gjendje të mirë';
+    if (statuses.length === 0) return 'Pjesë normale';
     
-    const hasExchange = statuses.some(s => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange'));
-    const hasWelding = statuses.some(s => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld'));
-    const hasRepair = statuses.some(s => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair'));
-    const hasSheetMetal = statuses.some(s => s.code === 'C' || s.title.includes('판금') || s.title.includes('sheet'));
+    const hasExchange = statuses.some(s => s.code === 'X');
+    const hasWelding = statuses.some(s => s.code === 'W');
+    const hasRepair = statuses.some(s => s.code === 'A');
+    const hasCorrosion = statuses.some(s => s.code === 'U');
+    const hasScratch = statuses.some(s => s.code === 'S');
     
-    if (hasExchange) return 'E zëvendësuar (E kuqe)';
-    if (hasWelding) return 'Zëvendësim';
-    if (hasSheetMetal) return 'Punë limarie (Ngjyrë kafe)';
-    if (hasRepair) return 'E riparuar (Portokalli)';
+    if (hasExchange) return 'Pjesë e zëvendësuar (E kuqe)';
+    if (hasWelding) return 'Saldim i kryer (E kuqe)';
+    if (hasRepair) return 'Pjesë e riparuar (Portokalli)';
+    if (hasCorrosion) return 'Ndryshk i vogël (Portokalli)';
+    if (hasScratch) return 'Gërvishje (E verdhë)';
     
-    return 'Në gjendje të mirë';
+    return 'Pjesë normale';
   };
 
-  // Count issues by type
+  // Count issues
   const issueCount = {
     critical: inspectionData.filter(item => 
-      item.statusTypes.some(s => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange'))
+      item.statusTypes.some(s => ['X', 'W'].includes(s.code))
     ).length,
     major: inspectionData.filter(item => 
-      item.statusTypes.some(s => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld'))
+      item.statusTypes.some(s => ['A', 'U'].includes(s.code))
     ).length,
     minor: inspectionData.filter(item => 
-      item.statusTypes.some(s => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair'))
+      item.statusTypes.some(s => s.code === 'S')
     ).length,
-    good: inspectionData.filter(item => 
-      !item.statusTypes.some(s => s.code === 'X' || s.code === 'W' || s.code === 'A')
-    ).length
-  };
-
-  const handlePartHover = (partId: string | null) => {
-    setHoveredPart(partId);
-  };
-
-  const handlePartClick = (partId: string) => {
-    setSelectedPart(selectedPart === partId ? null : partId);
+    good: carParts.length - inspectionData.length
   };
 
   return (
-    <div className={`w-full max-w-6xl mx-auto p-6 bg-card border border-border rounded-2xl shadow-lg inspection-section-black ${className}`}>
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold text-foreground mb-3 inspection-text-black">Diagrami i Inspektimit të Automjetit</h3>
-        <p className="text-muted-foreground">Kliko mbi pjesët e makinës për më shumë detaje</p>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left side - Statistics */}
-        <div className="space-y-4">
-          {selectedPart && (
-            <>
-              <h4 className="text-lg font-semibold text-foreground mb-4">Përmbledhje e Gjendjes</h4>
-              
-              {/* Overall Status */}
-              <Card className="border-l-4 border-l-primary">
-                <CardContent className="p-4">
-                  {issueCount.critical > 0 ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-destructive rounded-full"></div>
-                      <div>
-                        <div className="font-semibold text-destructive">Gjendja</div>
-                        <div className="text-sm text-muted-foreground">Ka pjesë të zëvendësuara (të kuqe)</div>
-                      </div>
-                    </div>
-                  ) : issueCount.major > 0 ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                      <div>
-                        <div className="font-semibold text-orange-700 dark:text-orange-400">RIPARIME</div>
-                        <div className="text-sm text-muted-foreground">riparime</div>
-                      </div>
-                    </div>
-                  ) : issueCount.minor > 0 ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                      <div>
-                        <div className="font-semibold text-orange-700 dark:text-orange-400">RIPARIME</div>
-                        <div className="text-sm text-muted-foreground">Disa pjesë janë riparuar (portokalli)</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <div>
-                        <div className="font-semibold text-green-700 dark:text-green-400">Gjendje e Shkëlqyer</div>
-                        <div className="text-sm text-muted-foreground">Automjeti në gjendje perfekte</div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
-
-          {/* Stats Cards - Removed as per requirements */}
+    <div className={`w-full ${className}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+        {/* Left - Statistics */}
+        <div className="space-y-3">
+          <Card className="border border-border">
+            <CardContent className="p-3 lg:p-4">
+              <h4 className="font-semibold mb-3 text-foreground flex items-center gap-2 text-sm lg:text-base">
+                <AlertTriangle className="h-4 w-4" />
+                Statistika
+              </h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
+                  <span className="text-xs lg:text-sm flex items-center gap-1">
+                    <XCircle className="h-3 w-3 text-destructive" />
+                    Kritike
+                  </span>
+                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.critical}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                  <span className="text-xs lg:text-sm flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" style={{color: 'hsl(25 95% 53%)'}} />
+                    Major
+                  </span>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.major}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
+                  <span className="text-xs lg:text-sm flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" style={{color: 'hsl(48 96% 53%)'}} />
+                    Minor
+                  </span>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'black'}}>{issueCount.minor}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg" style={{backgroundColor: 'hsl(142 76% 36% / 0.1)'}}>
+                  <span className="text-xs lg:text-sm flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" style={{color: 'hsl(142 76% 36%)'}} />
+                    Mirë
+                  </span>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(142 76% 36%)', color: 'white'}}>{issueCount.good}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Legend */}
-          <Card>
-            <CardContent className="p-4">
-              <h5 className="text-sm font-semibold text-foreground mb-3">Legjenda e Ngjyrave</h5>
-              <div className="space-y-2">
+          <Card className="border border-border">
+            <CardContent className="p-3 lg:p-4">
+              <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet</h4>
+              <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">🟢</span>
-                  <span className="text-sm text-muted-foreground">Green parts: Components in good condition</span>
+                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(0 84% 60%)'}}></div>
+                  <span>X - Zëvendësuar</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">🟠</span>
-                  <span className="text-sm text-muted-foreground">Orange parts: Components that have been repaired</span>
+                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(0 84% 60%)'}}></div>
+                  <span>W - Salduar</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">🔴</span>
-                  <span className="text-sm text-muted-foreground">Red parts: Components that have been completely replaced</span>
+                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}></div>
+                  <span>A - Riparuar</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}></div>
+                  <span>U - Ndryshk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}></div>
+                  <span>S - Gërvishje</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm" style={{backgroundColor: 'hsl(142 76% 36%)'}}></div>
+                  <span>Normal</span>
                 </div>
               </div>
             </CardContent>
@@ -222,37 +311,36 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         </div>
 
         {/* Center - Car Diagram */}
-        <div className="lg:col-span-2 flex justify-center">
-          <div className="relative w-full max-w-2xl">
-            <svg 
-              width="100%" 
-              height="500" 
-              viewBox="0 0 600 500" 
-              className="rounded-2xl bg-card/50 backdrop-blur-sm border border-border/30 shadow-2xl"
-              preserveAspectRatio="xMidYMid meet"
-            >
-              {/* Background pattern */}
+        <div className="lg:col-span-2 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md">
+            <svg viewBox="0 0 500 540" className="w-full h-auto drop-shadow-lg">
               <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" opacity="0.2"/>
-                </pattern>
+                <filter id="shadow">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2"/>
+                </filter>
+                <linearGradient id="carBg" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.2}} />
+                  <stop offset="100%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.1}} />
+                </linearGradient>
               </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
               
-              {/* Car shadow */}
-              <ellipse cx="300" cy="470" rx="120" ry="20" fill="rgba(0,0,0,0.1)" />
+              {/* Car base outline */}
+              <rect x="95" y="30" width="310" height="480" rx="20" fill="url(#carBg)" stroke="hsl(var(--border))" strokeWidth="2" opacity="0.4" />
               
-              {/* Car main outline with improved design */}
-              <path 
-                d="M 220 60 L 380 60 Q 390 60 390 70 L 390 430 Q 390 440 380 440 L 220 440 Q 210 440 210 430 L 210 70 Q 210 60 220 60 Z" 
-                fill="none" 
-                stroke="hsl(var(--border))" 
-                strokeWidth="3" 
-                strokeDasharray="8,4"
-                opacity="0.6"
-              />
+              {/* Center line */}
+              <line x1="250" y1="40" x2="250" y2="510" stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4,4" opacity="0.3"/>
               
-              {/* Car parts with improved positioning */}
+              {/* Direction indicators */}
+              <g>
+                <polygon points="250,20 260,35 240,35" fill="hsl(var(--primary))" opacity="0.6"/>
+                <text x="265" y="30" className="text-[10px] font-medium fill-foreground">Front</text>
+              </g>
+              <g>
+                <polygon points="250,520 240,505 260,505" fill="hsl(var(--muted-foreground))" opacity="0.4"/>
+                <text x="265" y="518" className="text-[10px] fill-muted-foreground">Rear</text>
+              </g>
+              
+              {/* Render all parts */}
               {carParts.map((part) => {
                 const statuses = getPartStatus(part.id);
                 const color = getStatusColor(statuses);
@@ -261,159 +349,105 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                 
                 return (
                   <g key={part.id}>
-                    {/* Part shadow for depth */}
-                    <rect
-                      x={part.x + 2}
-                      y={part.y + 2}
-                      width={part.width}
-                      height={part.height}
-                      rx={part.rx || 0}
-                      fill="rgba(0,0,0,0.1)"
-                      opacity="0.3"
-                    />
-                    {/* Main part */}
-                    <rect
-                      x={part.x}
-                      y={part.y}
-                      width={part.width}
-                      height={part.height}
-                      rx={part.rx || 0}
+                    <path
+                      d={part.path}
                       fill={color}
-                      stroke={isSelected ? "hsl(var(--foreground))" : isHovered ? "hsl(var(--ring))" : "white"}
-                      strokeWidth={isSelected ? 4 : isHovered ? 3 : 2}
-                      opacity={isHovered || isSelected ? 0.95 : 0.8}
-                      className="cursor-pointer transition-all duration-300 hover:opacity-95 drop-shadow-sm"
-                      onMouseEnter={() => handlePartHover(part.id)}
-                      onMouseLeave={() => handlePartHover(null)}
-                      onClick={() => handlePartClick(part.id)}
+                      fillOpacity={isHovered || isSelected ? 0.95 : 0.85}
+                      stroke={isSelected ? "hsl(var(--primary))" : isHovered ? "hsl(var(--foreground))" : "hsl(var(--border))"}
+                      strokeWidth={isSelected ? 3 : isHovered ? 2.5 : 1.5}
+                      className="cursor-pointer transition-all duration-200"
+                      filter={isHovered || isSelected ? "url(#shadow)" : "none"}
+                      onMouseEnter={() => setHoveredPart(part.id)}
+                      onMouseLeave={() => setHoveredPart(null)}
+                      onClick={() => setSelectedPart(selectedPart === part.id ? null : part.id)}
+                      style={{
+                        transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                        transformOrigin: `${part.labelPos.x}px ${part.labelPos.y}px`,
+                      }}
                     />
-                    {/* Part label for better identification */}
                     {(isHovered || isSelected) && (
                       <text
-                        x={part.x + part.width / 2}
-                        y={part.y + part.height / 2}
+                        x={part.labelPos.x}
+                        y={part.labelPos.y}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fontSize="8"
-                        fill="white"
-                        fontWeight="bold"
-                        className="pointer-events-none drop-shadow-sm"
+                        className="text-[9px] font-semibold pointer-events-none"
+                        fill="hsl(var(--background))"
+                        stroke="hsl(var(--foreground))"
+                        strokeWidth="0.5"
                       >
-                        {part.name.split(' ')[0]}
+                        {part.nameEn}
                       </text>
                     )}
                   </g>
                 );
               })}
-              
-              {/* Enhanced center line */}
-              <line x1="300" y1="60" x2="300" y2="440" stroke="hsl(var(--border))" strokeWidth="2" strokeDasharray="6,4" opacity="0.4"/>
-              
-              {/* Direction indicators with improved design */}
-              <g>
-                <polygon points="300,35 315,55 285,55" fill="hsl(var(--primary))" opacity="0.8"/>
-                <text x="325" y="50" className="text-sm font-semibold fill-primary" fontSize="14">Përpara</text>
-              </g>
-              <g>
-                <polygon points="300,465 285,445 315,445" fill="hsl(var(--muted-foreground))" opacity="0.6"/>
-                <text x="325" y="460" className="text-sm fill-muted-foreground" fontSize="12">Prapa</text>
-              </g>
-              
-              {/* Car brand/model placeholder */}
-              <text x="300" y="250" textAnchor="middle" className="text-xs fill-muted-foreground" fontSize="10" opacity="0.5">
-                Model Automjeti
-              </text>
             </svg>
             
-            {/* Enhanced hover tooltip */}
-            {hoveredPart && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-3 rounded-xl text-sm shadow-xl z-10 border border-border">
-                <div className="font-semibold">{carParts.find(p => p.id === hoveredPart)?.name}</div>
-                <div className="text-xs opacity-90 mt-1">
-                  {getStatusText(getPartStatus(hoveredPart))}
-                </div>
-                <div className="text-xs opacity-70 mt-1">Kliko për detaje të plota</div>
+            {hoveredPart && !selectedPart && (
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-foreground/90 text-background px-3 py-1.5 rounded-lg text-xs shadow-lg backdrop-blur-sm">
+                Kliko për detaje
               </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Selected part details */}
-      {selectedPart && (
-        <Card className="mt-6 border-primary bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h5 className="font-semibold text-foreground mb-2">
-                  {carParts.find(p => p.id === selectedPart)?.name}
-                </h5>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: getStatusColor(getPartStatus(selectedPart)) }}
-                    ></div>
-                    <span className="text-sm text-muted-foreground">
-                      {getStatusText(getPartStatus(selectedPart))}
-                    </span>
-                  </div>
-                  {getPartStatus(selectedPart).length > 0 && (
-                    <div className="mt-2">
-                      <div className="text-sm text-muted-foreground mb-1">Detaje:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {getPartStatus(selectedPart).map((status, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {status.title}
-                          </Badge>
+        {/* Right - Details */}
+        <div className="space-y-3">
+          {selectedPart ? (
+            <Card className="border border-primary/50 bg-primary/5 animate-in slide-in-from-right-2 duration-200">
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-semibold text-foreground text-sm lg:text-base">
+                    {carParts.find(p => p.id === selectedPart)?.name}
+                  </h4>
+                  <button
+                    onClick={() => setSelectedPart(null)}
+                    className="text-muted-foreground hover:text-foreground transition-colors text-lg leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+                {(() => {
+                  const statuses = getPartStatus(selectedPart);
+                  if (statuses.length === 0) {
+                    return (
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4" style={{color: 'hsl(142 76% 36%)'}} />
+                        <span className="text-muted-foreground">Pjesë normale</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        {statuses.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Badge variant="outline" className="font-mono text-xs">{s.code}</Badge>
+                            <span className="text-xs text-muted-foreground">{s.title}</span>
+                          </div>
                         ))}
                       </div>
+                      <div className="pt-2 border-t text-xs text-muted-foreground flex items-start gap-2">
+                        <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <span>{getStatusText(statuses)}</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedPart(null)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* No data message */}
-      {inspectionData.length === 0 && (
-        <Card className="mt-6 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
-          <CardContent className="p-8 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-blue-500 dark:text-blue-400 text-3xl">🔍</span>
-            </div>
-            <h4 className="text-xl font-bold text-foreground mb-3">Nuk ka të dhëna inspektimi disponibla</h4>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Diagrami do të shfaqë gjendjen e pjesëve të automjetit kur të disponohen të dhënat e inspektimit.
-            </p>
-            <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 max-w-lg mx-auto">
-              <h5 className="font-semibold text-foreground mb-2">Kodi i ngjyrave:</h5>
-              <div className="flex flex-wrap justify-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <span>🟢</span>
-                  <span>Green parts: Components in good condition</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span>🟠</span>
-                  <span>Orange parts: Components that have been repaired</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span>🔴</span>
-                  <span>Red parts: Components that have been completely replaced</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border border-border">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs lg:text-sm text-muted-foreground">
+                  Kliko një pjesë për detaje
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
