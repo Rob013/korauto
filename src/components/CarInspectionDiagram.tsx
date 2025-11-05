@@ -213,19 +213,22 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     // English mappings
     const isLeft = t.includes('(left)') || t.includes('left') || t.includes(' lh') || t.includes(' l)');
     const isRight = t.includes('(right)') || t.includes('right') || t.includes(' rh') || t.includes(' r)');
-    const isFront = t.includes('front');
-    const isRear = t.includes('rear');
+    const isFront = t.includes('front') || t.includes(' f ');
+    const isRear = t.includes('rear') || t.includes(' r ');
 
     if (t.includes('rear door') && isLeft && partId === 'rear_left_door') return true;
     if (t.includes('rear door') && isRight && partId === 'rear_right_door') return true;
-    if (t.includes('front door') && isLeft && partId === 'front_left_door') return true;
-    if (t.includes('front door') && isRight && partId === 'front_right_door') return true;
+    if ((t.includes('front door') || (t.includes('door') && isFront)) && isLeft && partId === 'front_left_door') return true;
+    if ((t.includes('front door') || (t.includes('door') && isFront)) && isRight && partId === 'front_right_door') return true;
+    // Fallback: generic "right door"/"left door" without front/rear -> assume front doors
+    if (t.includes('door') && isRight && !isFront && !isRear && partId === 'front_right_door') return true;
+    if (t.includes('door') && isLeft && !isFront && !isRear && partId === 'front_left_door') return true;
 
     if ((t.includes('quarter panel') || t.includes('quarter')) && isLeft && partId === 'left_quarter') return true;
     if ((t.includes('quarter panel') || t.includes('quarter')) && isRight && partId === 'right_quarter') return true;
 
-    if (t.includes('wheel house') && isRear && isLeft && partId === 'left_quarter') return true;
-    if (t.includes('wheel house') && isRear && isRight && partId === 'right_quarter') return true;
+    if ((t.includes('wheel house') || t.includes('wheelhouse') || t.includes('wheel arch')) && isRear && isLeft && partId === 'left_quarter') return true;
+    if ((t.includes('wheel house') || t.includes('wheelhouse') || t.includes('wheel arch')) && isRear && isRight && partId === 'right_quarter') return true;
 
     if (t.includes('side sill') || t.includes('sill')) {
       if (isLeft && partId === 'side_sill_left') return true;
@@ -269,10 +272,21 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         // Derive from title if codes missing
         const low = typeTitle.toLowerCase();
         if (low.includes('exchange') || low.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
-        if (low.includes('weld')) statuses.push({ code: 'W', title: 'Welding' });
+        if (low.includes('weld') || low.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });
         if (low.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
         if (low.includes('scratch')) statuses.push({ code: 'S', title: 'Scratch' });
         if (low.includes('corr')) statuses.push({ code: 'U', title: 'Corrosion' });
+      }
+
+      // Derive from attributes too (if present)
+      const attrs = Array.isArray((item as any).attributes) ? ((item as any).attributes as string[]) : [];
+      const attrsText = attrs.join(' ').toLowerCase();
+      if (attrsText) {
+        if (attrsText.includes('exchange') || attrsText.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
+        if (attrsText.includes('weld') || attrsText.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });
+        if (attrsText.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
+        if (attrsText.includes('scratch')) statuses.push({ code: 'S', title: 'Scratch' });
+        if (attrsText.includes('corr')) statuses.push({ code: 'U', title: 'Corrosion' });
       }
     }
     return statuses;
