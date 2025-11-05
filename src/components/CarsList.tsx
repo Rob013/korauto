@@ -68,7 +68,11 @@ const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, 
             className="car-image"
             loading="lazy"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = '/images/car-placeholder.jpg';
+              const img = e.target as HTMLImageElement;
+              if (!img.dataset.fallback) {
+                img.dataset.fallback = 'true';
+                img.src = '/placeholder.svg';
+              }
             }}
           />
         ) : (
