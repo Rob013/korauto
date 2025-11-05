@@ -117,10 +117,23 @@ const formatKeyLabel = (key: string) =>
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
 const formatDisplayDate = (
-  value?: string | number | null,
+  value?: unknown,
   { monthYear = false }: { monthYear?: boolean } = {},
 ) => {
   if (value === undefined || value === null) return null;
+  // If object, try common date-carrying fields
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const candidate =
+      obj.first_registration ||
+      obj.firstDate ||
+      obj.date ||
+      obj.value ||
+      obj.regDate ||
+      obj.created_at ||
+      obj.updated_at;
+    return formatDisplayDate(candidate, { monthYear });
+  }
   const raw = typeof value === "number" ? value.toString() : `${value}`.trim();
   if (!raw) return null;
 
@@ -157,7 +170,7 @@ const formatDisplayDate = (
     return `${mm}.${yyyy}`;
   }
 
-  const parsed = new Date(raw);
+    const parsed = new Date(raw);
   if (!Number.isNaN(parsed.getTime())) {
     if (monthYear) {
       return parsed.toLocaleDateString("sq-AL", { month: "2-digit", year: "numeric" });
@@ -364,29 +377,60 @@ const CarInspectionReport = () => {
     fetchInspectionReport();
   }, [fetchInspectionReport]);
 
-  const inspectionOuterData = useMemo(() => {
-    const data =
-      car?.details?.inspect_outer ||
-      car?.inspect?.outer ||
-      car?.inspect?.inspect_outer ||
-      [];
+    const inspectionOuterData = useMemo(() => {
+      // Try multiple potential locations and merge arrays if found
+      const candidates: unknown[] = [];
+      const pushIfArray = (val: unknown) => {
+        if (Array.isArray(val)) candidates.push(...val);
+      };
+      pushIfArray(car?.details?.inspect_outer);
+      pushIfArray(car?.inspect?.outer);
+      pushIfArray(car?.inspect?.inspect_outer);
+      pushIfArray((car as any)?.details?.inspect?.outer);
+      pushIfArray((car as any)?.details?.outer);
+      // Deduplicate by type.code if present
+      const keyed = new Map<string, any>();
+      for (const item of candidates) {
+        const code = (item as any)?.type?.code || (item as any)?.code || JSON.stringify(item);
+        if (!keyed.has(code)) keyed.set(code, item);
+      }
+      return Array.from(keyed.values());
+    }, [car]);
 
-    return Array.isArray(data) ? data : [];
-  }, [car]);
+    const inspectionInnerData = useMemo(() => {
+      const raw =
+        car?.details?.inspect?.inner ||
+        car?.inspect?.inner ||
+        (car as any)?.details?.inspect_inner ||
+        null;
 
-  const inspectionInnerData = useMemo(() => {
-    const data =
-      car?.details?.inspect?.inner ||
-      car?.inspect?.inner ||
-      car?.details?.inspect_inner ||
-      null;
+      if (!raw || typeof raw !== "object") return null;
 
-    if (!data || typeof data !== "object") {
-      return null;
-    }
+      const result: Record<string, unknown> = {};
 
-    return data as Record<string, unknown>;
-  }, [car]);
+      const walk = (obj: any, prefix = "") => {
+        if (!obj || typeof obj !== "object") return;
+        for (const [k, v] of Object.entries(obj)) {
+          const key = prefix ? `${prefix} ${k}` : k;
+          if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+            walk(v, key);
+          } else if (Array.isArray(v)) {
+            // Join simple arrays, or recurse elements
+            const simple = v.every((el) => typeof el !== "object");
+            if (simple) {
+              result[key] = v.join(", ");
+            } else {
+              v.forEach((el, idx) => walk(el, `${key} ${idx + 1}`));
+            }
+          } else {
+            result[key] = v as unknown;
+          }
+        }
+      };
+
+      walk(raw);
+      return result;
+    }, [car]);
 
   const insuranceCarInfo = car?.details?.insurance?.car_info;
 
@@ -489,13 +533,7 @@ const CarInspectionReport = () => {
       ? formatMileage(car.odometer.km)
       : undefined;
 
-    const postedAtDisplay = formatDisplayDate(
-      car.postedAt ||
-        car.details?.posted_at ||
-        car.details?.listing_date ||
-        car.details?.postedDate ||
-        car.insurance_v2?.regDate,
-    );
+    // Removed Posted At display per request
 
     const firstRegistrationDisplay = formatDisplayDate(
       car.firstRegistration ||
@@ -554,7 +592,6 @@ const CarInspectionReport = () => {
 
     const topVehicleInfo = [
       { label: "Vetura", value: carName || car.title || "-" },
-      { label: "Postuar në", value: postedAtDisplay ?? "-" },
       { label: "Regjistrimi i parë", value: firstRegistrationDisplay ?? "-" },
       { label: "Numri i shasisë", value: car.vin || "-" },
       { label: "Karburanti", value: fuelDisplay || "-" },
