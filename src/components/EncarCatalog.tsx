@@ -1119,7 +1119,7 @@ const EncarCatalog = ({
         fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${!showFilters && 'lg:block hidden'}
-        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-96 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg'} 
+        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform'}
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
           <div className="flex items-center justify-between">
@@ -1354,7 +1354,14 @@ const EncarCatalog = ({
                   </div>
                 </div>}
               
-              <div ref={containerRef} className={`transition-all duration-300 ${viewMode === 'list' ? 'flex flex-col gap-2 sm:gap-3' : `grid gap-2 sm:gap-3 lg:gap-4 ${'grid-cols-1 md:grid-cols-4 px-1 sm:px-2'}`} ${isFilterLoading ? 'opacity-50' : ''}`}>
+              <div
+                ref={containerRef}
+                className={`transition-all duration-300 ${
+                  viewMode === 'list'
+                    ? 'flex flex-col gap-2 sm:gap-3'
+                    : 'grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 px-1 sm:px-2'
+                } ${isFilterLoading ? 'opacity-50' : ''}`}
+              >
                 {carsToDisplay.filter(car => {
               // Only show cars with buy_now pricing
               const lot = car.lots?.[0];

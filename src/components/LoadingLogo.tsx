@@ -37,18 +37,19 @@ const LoadingLogo: React.FC<LoadingLogoProps> = ({
       className
     )}>
       <div className="relative flex items-center justify-center">
-        {/* Spinning ring around logo - using Tailwind animate-spin */}
-        <div 
+        {/* Spinning ring around logo with smooth animation */}
+        <div
           className={cn(
-            "absolute border-2 rounded-full animate-spin",
+            "absolute border-2 rounded-full animate-[spin_1.2s_linear_infinite] motion-reduce:animate-none will-change-transform",
             ringSize[size]
-          )} 
-          style={{ 
+          )}
+          style={{
             borderTopColor: 'hsl(var(--primary))',
             borderRightColor: 'hsl(var(--primary) / 0.3)',
             borderBottomColor: 'hsl(var(--primary) / 0.1)',
             borderLeftColor: 'hsl(var(--primary) / 0.3)',
-          }} 
+            animationPlayState: 'running'
+          }}
         />
         
         {/* Static logo - no animation for stability */}
