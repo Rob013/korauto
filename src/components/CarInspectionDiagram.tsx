@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
+import carDiagramTop from '@/assets/car-diagram-top.jpeg';
+import carDiagramBottom from '@/assets/car-diagram-bottom.webp';
 
 interface InspectionItem {
   type: { code: string; title: string };
@@ -29,127 +31,159 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
 
-  // Enhanced car parts with realistic SVG paths
+  // Enhanced car parts mapped to the actual diagram image positions
   const carParts: CarPart[] = [
-    // Hood
+    // Hood (top center of car)
     {
       id: 'hood',
       name: 'Kapak',
       nameEn: 'Hood',
-      path: 'M 180 80 L 320 80 Q 330 80 330 90 L 330 160 Q 330 165 325 165 L 175 165 Q 170 165 170 160 L 170 90 Q 170 80 180 80 Z',
-      labelPos: { x: 250, y: 120 }
+      path: 'M 240 60 L 400 60 Q 410 60 410 70 L 410 180 Q 410 190 400 190 L 240 190 Q 230 190 230 180 L 230 70 Q 230 60 240 60 Z',
+      labelPos: { x: 320, y: 120 }
     },
     // Front Bumper
     {
       id: 'front_bumper',
       name: 'Bamper Para',
       nameEn: 'F. Bumper',
-      path: 'M 160 40 L 340 40 Q 350 40 350 50 L 350 75 Q 350 80 340 80 L 160 80 Q 150 80 150 75 L 150 50 Q 150 40 160 40 Z',
-      labelPos: { x: 250, y: 58 }
+      path: 'M 220 20 L 420 20 Q 435 20 435 35 L 435 55 Q 435 60 420 60 L 220 60 Q 205 60 205 55 L 205 35 Q 205 20 220 20 Z',
+      labelPos: { x: 320, y: 40 }
     },
     // Windshield
     {
       id: 'windshield',
       name: 'Xham Para',
       nameEn: 'Windshield',
-      path: 'M 185 170 L 315 170 Q 325 170 325 180 L 325 210 L 175 210 Q 170 210 170 205 L 170 180 Q 170 170 185 170 Z',
-      labelPos: { x: 250, y: 188 }
+      path: 'M 250 195 L 390 195 Q 400 195 400 205 L 400 235 L 250 235 Q 240 235 240 225 L 240 205 Q 240 195 250 195 Z',
+      labelPos: { x: 320, y: 215 }
     },
     // Left Front Door
     {
       id: 'front_left_door',
       name: 'Derë Para Majtas',
-      nameEn: 'L Front Door',
-      path: 'M 120 170 L 165 170 L 165 260 L 120 260 Q 115 260 115 255 L 115 175 Q 115 170 120 170 Z',
-      labelPos: { x: 140, y: 215 }
+      nameEn: 'L Front',
+      path: 'M 150 195 L 235 195 L 235 310 L 150 310 Q 140 310 140 300 L 140 205 Q 140 195 150 195 Z',
+      labelPos: { x: 185, y: 250 }
     },
     // Right Front Door
     {
       id: 'front_right_door',
       name: 'Derë Para Djathtas',
-      nameEn: 'R Front Door',
-      path: 'M 335 170 L 385 170 Q 390 170 390 175 L 390 255 Q 390 260 385 260 L 335 260 L 335 170 Z',
-      labelPos: { x: 360, y: 215 }
+      nameEn: 'R Front',
+      path: 'M 405 195 L 495 195 Q 505 195 505 205 L 505 300 Q 505 310 495 310 L 405 310 L 405 195 Z',
+      labelPos: { x: 450, y: 250 }
     },
     // Roof
     {
       id: 'roof',
       name: 'Çati',
       nameEn: 'Roof',
-      path: 'M 175 215 L 325 215 L 325 315 L 175 315 L 175 215 Z',
-      labelPos: { x: 250, y: 265 }
+      path: 'M 245 240 L 395 240 L 395 370 L 245 370 L 245 240 Z',
+      labelPos: { x: 320, y: 305 }
     },
     // Left Rear Door
     {
       id: 'rear_left_door',
       name: 'Derë Prapa Majtas',
-      nameEn: 'L Rear Door',
-      path: 'M 115 265 L 165 265 L 165 355 L 115 355 Q 110 355 110 350 L 110 270 Q 110 265 115 265 Z',
-      labelPos: { x: 138, y: 310 }
+      nameEn: 'L Rear',
+      path: 'M 140 315 L 235 315 L 235 430 L 140 430 Q 130 430 130 420 L 130 325 Q 130 315 140 315 Z',
+      labelPos: { x: 185, y: 370 }
     },
     // Right Rear Door
     {
       id: 'rear_right_door',
       name: 'Derë Prapa Djathtas',
-      nameEn: 'R Rear Door',
-      path: 'M 335 265 L 390 265 Q 395 265 395 270 L 395 350 Q 395 355 390 355 L 335 355 L 335 265 Z',
-      labelPos: { x: 362, y: 310 }
+      nameEn: 'R Rear',
+      path: 'M 405 315 L 510 315 Q 520 315 520 325 L 520 420 Q 520 430 510 430 L 405 430 L 405 315 Z',
+      labelPos: { x: 455, y: 370 }
     },
     // Rear Glass
     {
       id: 'rear_glass',
       name: 'Xham Prapa',
-      nameEn: 'Rear Glass',
-      path: 'M 175 320 L 325 320 L 325 355 Q 325 360 315 360 L 185 360 Q 175 360 175 355 L 175 320 Z',
-      labelPos: { x: 250, y: 338 }
+      nameEn: 'R. Glass',
+      path: 'M 245 375 L 395 375 L 395 415 Q 395 425 385 425 L 255 425 Q 245 425 245 415 L 245 375 Z',
+      labelPos: { x: 320, y: 400 }
     },
     // Trunk
     {
       id: 'trunk',
       name: 'Bagazh',
       nameEn: 'Trunk',
-      path: 'M 180 365 L 320 365 Q 330 365 330 375 L 330 445 Q 330 450 325 450 L 175 450 Q 170 450 170 445 L 170 375 Q 170 365 180 365 Z',
-      labelPos: { x: 250, y: 405 }
+      path: 'M 240 430 L 400 430 Q 410 430 410 440 L 410 540 Q 410 550 400 550 L 240 550 Q 230 550 230 540 L 230 440 Q 230 430 240 430 Z',
+      labelPos: { x: 320, y: 485 }
     },
     // Rear Bumper
     {
       id: 'rear_bumper',
       name: 'Bamper Prapa',
       nameEn: 'R. Bumper',
-      path: 'M 160 455 L 340 455 Q 350 455 350 465 L 350 490 Q 350 500 340 500 L 160 500 Q 150 500 150 490 L 150 465 Q 150 455 160 455 Z',
-      labelPos: { x: 250, y: 475 }
+      path: 'M 220 555 L 420 555 Q 435 555 435 570 L 435 590 Q 435 605 420 605 L 220 605 Q 205 605 205 590 L 205 570 Q 205 555 220 555 Z',
+      labelPos: { x: 320, y: 580 }
     },
-    // Left Fender
+    // Left Front Fender
     {
       id: 'left_fender',
       name: 'Paranicë Majtas',
       nameEn: 'L Fender',
-      path: 'M 115 90 L 165 90 L 165 165 L 115 165 Q 110 165 110 160 L 110 95 Q 110 90 115 90 Z',
-      labelPos: { x: 135, y: 125 }
+      path: 'M 140 70 L 225 70 L 225 185 L 140 185 Q 130 185 130 175 L 130 80 Q 130 70 140 70 Z',
+      labelPos: { x: 175, y: 125 }
     },
-    // Right Fender
+    // Right Front Fender
     {
       id: 'right_fender',
       name: 'Paranicë Djathtas',
       nameEn: 'R Fender',
-      path: 'M 335 90 L 390 90 Q 395 90 395 95 L 395 160 Q 395 165 390 165 L 335 165 L 335 90 Z',
-      labelPos: { x: 362, y: 125 }
+      path: 'M 415 70 L 510 70 Q 520 70 520 80 L 520 175 Q 520 185 510 185 L 415 185 L 415 70 Z',
+      labelPos: { x: 465, y: 125 }
     },
     // Left Quarter Panel
     {
       id: 'left_quarter',
       name: 'Panel Prapa Majtas',
       nameEn: 'L Quarter',
-      path: 'M 110 360 L 165 360 L 165 450 L 110 450 Q 105 450 105 445 L 105 365 Q 105 360 110 360 Z',
-      labelPos: { x: 135, y: 405 }
+      path: 'M 130 435 L 225 435 L 225 545 L 130 545 Q 120 545 120 535 L 120 445 Q 120 435 130 435 Z',
+      labelPos: { x: 170, y: 490 }
     },
     // Right Quarter Panel
     {
       id: 'right_quarter',
       name: 'Panel Prapa Djathtas',
       nameEn: 'R Quarter',
-      path: 'M 335 360 L 395 360 Q 400 360 400 365 L 400 445 Q 400 450 395 450 L 335 450 L 335 360 Z',
-      labelPos: { x: 365, y: 405 }
+      path: 'M 415 435 L 520 435 Q 530 435 530 445 L 530 535 Q 530 545 520 545 L 415 545 L 415 435 Z',
+      labelPos: { x: 470, y: 490 }
+    },
+    // Front Left Wheel
+    {
+      id: 'fl_wheel',
+      name: 'Rrota Para Majtas',
+      nameEn: 'FL Wheel',
+      path: 'M 30 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+      labelPos: { x: 30, y: 90 }
+    },
+    // Front Right Wheel
+    {
+      id: 'fr_wheel',
+      name: 'Rrota Para Djathtas',
+      nameEn: 'FR Wheel',
+      path: 'M 610 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+      labelPos: { x: 610, y: 90 }
+    },
+    // Rear Left Wheel
+    {
+      id: 'rl_wheel',
+      name: 'Rrota Prapa Majtas',
+      nameEn: 'RL Wheel',
+      path: 'M 30 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+      labelPos: { x: 30, y: 510 }
+    },
+    // Rear Right Wheel
+    {
+      id: 'rr_wheel',
+      name: 'Rrota Prapa Djathtas',
+      nameEn: 'RR Wheel',
+      path: 'M 610 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+      labelPos: { x: 610, y: 510 }
     },
   ];
 
@@ -311,36 +345,20 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         </div>
 
         {/* Center - Car Diagram */}
-        <div className="lg:col-span-2 flex items-center justify-center p-4">
+        <div className="lg:col-span-2 flex flex-col items-center justify-center gap-4 p-4">
           <div className="relative w-full max-w-md">
-            <svg viewBox="0 0 500 540" className="w-full h-auto drop-shadow-lg">
+            <img src={carDiagramTop} alt="Car Top View" className="w-full h-auto rounded-lg" />
+            <svg viewBox="0 0 640 630" className="absolute inset-0 w-full h-full"  style={{pointerEvents: 'none'}}>
               <defs>
-                <filter id="shadow">
-                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2"/>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
                 </filter>
-                <linearGradient id="carBg" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.2}} />
-                  <stop offset="100%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.1}} />
-                </linearGradient>
               </defs>
-              
-              {/* Car base outline */}
-              <rect x="95" y="30" width="310" height="480" rx="20" fill="url(#carBg)" stroke="hsl(var(--border))" strokeWidth="2" opacity="0.4" />
-              
-              {/* Center line */}
-              <line x1="250" y1="40" x2="250" y2="510" stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4,4" opacity="0.3"/>
-              
-              {/* Direction indicators */}
-              <g>
-                <polygon points="250,20 260,35 240,35" fill="hsl(var(--primary))" opacity="0.6"/>
-                <text x="265" y="30" className="text-[10px] font-medium fill-foreground">Front</text>
-              </g>
-              <g>
-                <polygon points="250,520 240,505 260,505" fill="hsl(var(--muted-foreground))" opacity="0.4"/>
-                <text x="265" y="518" className="text-[10px] fill-muted-foreground">Rear</text>
-              </g>
-              
-              {/* Render all parts */}
+              {/* Render clickable overlay parts */}
               {carParts.map((part) => {
                 const statuses = getPartStatus(part.id);
                 const color = getStatusColor(statuses);
@@ -352,17 +370,17 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                     <path
                       d={part.path}
                       fill={color}
-                      fillOpacity={isHovered || isSelected ? 0.95 : 0.85}
-                      stroke={isSelected ? "hsl(var(--primary))" : isHovered ? "hsl(var(--foreground))" : "hsl(var(--border))"}
-                      strokeWidth={isSelected ? 3 : isHovered ? 2.5 : 1.5}
+                      fillOpacity={statuses.length > 0 ? (isHovered || isSelected ? 0.7 : 0.5) : 0}
+                      stroke={isSelected ? "hsl(var(--primary))" : statuses.length > 0 ? color : "transparent"}
+                      strokeWidth={isSelected ? 4 : statuses.length > 0 ? 3 : 0}
                       className="cursor-pointer transition-all duration-200"
-                      filter={isHovered || isSelected ? "url(#shadow)" : "none"}
+                      filter={statuses.length > 0 && (isHovered || isSelected) ? "url(#glow)" : "none"}
                       onMouseEnter={() => setHoveredPart(part.id)}
                       onMouseLeave={() => setHoveredPart(null)}
                       onClick={() => setSelectedPart(selectedPart === part.id ? null : part.id)}
                       style={{
-                        transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-                        transformOrigin: `${part.labelPos.x}px ${part.labelPos.y}px`,
+                        pointerEvents: 'auto',
+                        mixBlendMode: statuses.length > 0 ? 'multiply' : 'normal'
                       }}
                     />
                     {(isHovered || isSelected) && (
@@ -385,10 +403,18 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             </svg>
             
             {hoveredPart && !selectedPart && (
-              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-foreground/90 text-background px-3 py-1.5 rounded-lg text-xs shadow-lg backdrop-blur-sm">
-                Kliko për detaje
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-foreground/90 text-background px-3 py-1.5 rounded-lg text-xs shadow-lg backdrop-blur-sm z-10">
+                {carParts.find(p => p.id === hoveredPart)?.name} - Kliko për detaje
               </div>
             )}
+          </div>
+          
+          {/* Bottom view diagram */}
+          <div className="relative w-full max-w-md">
+            <img src={carDiagramBottom} alt="Car Bottom View" className="w-full h-auto rounded-lg" />
+            <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
+              Pamja nga poshtë
+            </div>
           </div>
         </div>
 
