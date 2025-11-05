@@ -166,18 +166,18 @@ const EncarCarCard = ({
       onClick={handleCardClick}
     >
       {/* Large Image Section - Enhanced for mobile with bigger thumbnail */}
-      <div className="relative h-48 sm:h-56 bg-gray-100 overflow-hidden">
+      <div className="car-image-wrapper">
         {image ? (
           <img
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="w-full h-full object-cover object-center transition-transform duration-300"
+            className="car-image object-center transition-transform duration-300"
             onError={(e) => {
               e.currentTarget.src = "https://via.placeholder.com/400x300/f5f5f5/999999?text=No+Image";
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+          <div className="car-image flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
             <Car className="h-16 w-16 text-gray-400" />
           </div>
         )}

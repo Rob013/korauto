@@ -26,7 +26,7 @@ const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for real-time updates
 
 export const useCurrencyAPI = () => {
   const [exchangeRate, setExchangeRate] = useState<ExchangeRate>({
-    rate: 0.85, // Default fallback rate USD to EUR (updated to current market rate)
+    rate: 0.87, // Default fallback rate USD to EUR (updated from Google: 1 USD = 0.8703 EUR)
     lastUpdated: new Date().toISOString(),
   });
   const [loading, setLoading] = useState(false);
