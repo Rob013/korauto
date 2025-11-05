@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AdaptiveSelect } from '@/components/ui/adaptive-select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -230,12 +230,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       }}
     >
       {/* Header with active filters count */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 leading-tight">
           <Filter className="h-5 w-5 text-primary transition-transform hover:scale-110" />
           <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           {activeFiltersCount > 0 && (
             <Badge variant="secondary" className="animate-scale-in">{activeFiltersCount}</Badge>
           )}
@@ -321,27 +321,32 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Car className="h-4 w-4" />
                 Marka
               </Label>
-              <Select 
+              <AdaptiveSelect
                 key={`brand-${filters.brand || 'empty'}`}
-                value={filters.brand || ''} 
+                value={filters.brand || ''}
                 onValueChange={handleBrandChange}
-              >
-                <SelectTrigger className="filter-select bg-background">
-                  <SelectValue placeholder="Zgjidhni markën" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover text-popover-foreground border border-border shadow-lg">
-                  {data.brands.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id}>
-                      <div className="flex items-center gap-2">
-                        {brand.image && (
-                          <img src={brand.image} alt={brand.name} className="w-4 h-4 object-contain rounded bg-white dark:bg-white p-0.5 ring-1 ring-border" />
-                        )}
-                        <span>{brand.name} {brand.count && `(${brand.count})`}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Zgjidhni markën"
+                className="filter-select bg-background"
+                options={data.brands.map((brand) => ({
+                  value: brand.id,
+                  label: (
+                    <span className="flex items-center gap-2">
+                      {brand.image && (
+                        <img
+                          src={brand.image}
+                          alt={brand.name}
+                          className="h-4 w-4 rounded bg-white object-contain p-0.5 ring-1 ring-border dark:bg-white"
+                        />
+                      )}
+                      <span>
+                        {brand.name}
+                        {brand.count ? ` (${brand.count})` : ''}
+                      </span>
+                    </span>
+                  ),
+                  icon: brand.image
+                }))}
+              />
             </div>
 
             {/* Model (dependent on brand) */}
@@ -350,23 +355,21 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Settings className="h-4 w-4" />
                 Modeli
               </Label>
-              <Select 
+              <AdaptiveSelect
                 key={`model-${filters.brand || 'no-brand'}-${filters.model || 'empty'}`}
-                value={filters.model || ''} 
+                value={filters.model || ''}
                 onValueChange={(value) => onFiltersChange({ model: value })}
                 disabled={!filters.brand || availableModels.length === 0}
-              >
-                <SelectTrigger className="filter-select bg-background">
-                  <SelectValue placeholder={!filters.brand ? "Zgjidhni markën së pari" : "Zgjidhni modelin"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.name} {model.count && `(${model.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={!filters.brand ? "Zgjidhni markën së pari" : "Zgjidhni modelin"}
+                className="filter-select bg-background"
+                options={(availableModels.length === 0
+                  ? [{ value: '', label: 'Nuk ka modele të disponueshme', disabled: true }]
+                  : availableModels.map((model) => ({
+                    value: model.id,
+                    label: `${model.name}${model.count ? ` (${model.count})` : ''}`
+                  }))
+                )}
+              />
             </div>
 
             {/* Year Range */}
@@ -448,22 +451,17 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Fuel className="h-4 w-4" />
                 Lloji i Karburantit
               </Label>
-              <Select 
+              <AdaptiveSelect
                 key={`fuel-${filters.fuel || 'empty'}`}
-                value={filters.fuel || ''} 
+                value={filters.fuel || ''}
                 onValueChange={(value) => onFiltersChange({ fuel: value })}
-              >
-                <SelectTrigger className="filter-select bg-background">
-                  <SelectValue placeholder="Zgjidhni karburantin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.fuelTypes.map((fuel) => (
-                    <SelectItem key={fuel.id} value={fuel.id}>
-                      {fuel.name} {fuel.count && `(${fuel.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Zgjidhni karburantin"
+                className="filter-select bg-background"
+                options={data.fuelTypes.map((fuel) => ({
+                  value: fuel.id,
+                  label: `${fuel.name}${fuel.count ? ` (${fuel.count})` : ''}`
+                }))}
+              />
             </div>
 
             {/* Transmission */}
@@ -472,22 +470,17 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Settings className="h-4 w-4" />
                 Transmisioni
               </Label>
-              <Select 
+              <AdaptiveSelect
                 key={`transmission-${filters.transmission || 'empty'}`}
-                value={filters.transmission || ''} 
+                value={filters.transmission || ''}
                 onValueChange={(value) => onFiltersChange({ transmission: value })}
-              >
-                <SelectTrigger className="filter-select bg-background">
-                  <SelectValue placeholder="Zgjidhni transmisionin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.transmissions.map((transmission) => (
-                    <SelectItem key={transmission.id} value={transmission.id}>
-                      {transmission.name} {transmission.count && `(${transmission.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Zgjidhni transmisionin"
+                className="filter-select bg-background"
+                options={data.transmissions.map((transmission) => ({
+                  value: transmission.id,
+                  label: `${transmission.name}${transmission.count ? ` (${transmission.count})` : ''}`
+                }))}
+              />
             </div>
 
             {/* Mileage Range */}
@@ -518,22 +511,17 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Car className="h-4 w-4" />
                 Lloji i Trupit
               </Label>
-              <Select 
+              <AdaptiveSelect
                 key={`bodyType-${filters.bodyType || 'empty'}`}
-                value={filters.bodyType || ''} 
+                value={filters.bodyType || ''}
                 onValueChange={(value) => onFiltersChange({ bodyType: value })}
-              >
-                <SelectTrigger className="filter-select bg-background">
-                  <SelectValue placeholder="Zgjidhni llojin e trupit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.bodyTypes.map((bodyType) => (
-                    <SelectItem key={bodyType.id} value={bodyType.id}>
-                      {bodyType.name} {bodyType.count && `(${bodyType.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Zgjidhni llojin e trupit"
+                className="filter-select bg-background"
+                options={data.bodyTypes.map((bodyType) => ({
+                  value: bodyType.id,
+                  label: `${bodyType.name}${bodyType.count ? ` (${bodyType.count})` : ''}`
+                }))}
+              />
             </div>
 
             {/* Color */}
@@ -542,22 +530,17 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Palette className="h-4 w-4" />
                 Ngjyra
               </Label>
-              <Select 
+              <AdaptiveSelect
                 key={`color-${filters.color || 'empty'}`}
-                value={filters.color || ''} 
+                value={filters.color || ''}
                 onValueChange={(value) => onFiltersChange({ color: value })}
-              >
-                <SelectTrigger className="filter-select bg-background">
-                  <SelectValue placeholder="Zgjidhni ngjyrën" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.colors.map((color) => (
-                    <SelectItem key={color.id} value={color.id}>
-                      {color.name} {color.count && `(${color.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Zgjidhni ngjyrën"
+                className="filter-select bg-background"
+                options={data.colors.map((color) => ({
+                  value: color.id,
+                  label: `${color.name}${color.count ? ` (${color.count})` : ''}`
+                }))}
+              />
             </div>
 
             {/* Location */}
@@ -566,22 +549,17 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <MapPin className="h-4 w-4" />
                 Vendndodhja
               </Label>
-              <Select 
+              <AdaptiveSelect
                 key={`location-${filters.location || 'empty'}`}
-                value={filters.location || ''} 
+                value={filters.location || ''}
                 onValueChange={(value) => onFiltersChange({ location: value })}
-              >
-                <SelectTrigger className="filter-select bg-background">
-                  <SelectValue placeholder="Zgjidhni vendndodhjen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name} {location.count && `(${location.count})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Zgjidhni vendndodhjen"
+                className="filter-select bg-background"
+                options={data.locations.map((location) => ({
+                  value: location.id,
+                  label: `${location.name}${location.count ? ` (${location.count})` : ''}`
+                }))}
+              />
             </div>
           </div>
         )}
