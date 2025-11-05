@@ -24,7 +24,7 @@ const HomeSection = () => {
             Gjeni makinën tuaj të përsosur nga Koreja e Jugut me çmimin më të mirë dhe cilësinë e lartë
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8 animate-bounce-in">
+          <div className="flex flex-row flex-wrap gap-3 justify-center items-center mb-8 animate-bounce-in">
             <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/catalog'}>Shfleto Veturat</Button>
             <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/inspections'}>
               Mëso për Inspektimet

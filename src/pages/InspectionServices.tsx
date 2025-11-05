@@ -79,6 +79,10 @@ const InspectionServices = () => {
             <p className="text-lg sm:text-xl md:text-2xl opacity-90 mb-6 sm:mb-8 leading-relaxed">Shërbime të specializuara inspektimi pa pagesë për makina nga Koreja e Jugut dhe nënshkruajmë kontratë garancioni për motorin, transmisionin dhe kilometrazhin pas blerjes!</p>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <Button size="lg" variant="secondary" className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg btn-press-effect shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]" onClick={() => window.open('/garancioni', '_blank')}>
+                <Shield className="h-5 w-5 mr-2" />
+                Mëso më shumë për Garancionin
+              </Button>
               <InspectionRequestForm trigger={<Button size="lg" variant="secondary" className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg btn-press-effect shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]">
                     <FileText className="h-5 w-5 mr-2" />
                     Kërko Inspektim Tani

@@ -1275,7 +1275,7 @@ const EncarCatalog = ({
                   const currentParams = Object.fromEntries(searchParams.entries());
                   currentParams.page = '1';
                   setSearchParams(currentParams);
-                }} placeholder="Sort" className="w-24 sm:w-28 h-8 sm:h-9 text-xs sm:text-sm pl-6" options={getEncarSortOptions().map(option => ({
+                }} placeholder="Sort" className="w-36 sm:w-44 h-8 sm:h-9 text-xs sm:text-sm pl-6" options={getEncarSortOptions().map(option => ({
                   value: option.value,
                   label: option.label
                 }))} />
