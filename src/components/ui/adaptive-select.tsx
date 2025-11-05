@@ -6,6 +6,7 @@ interface SelectOption {
   value: string;
   label: string | React.ReactNode;
   disabled?: boolean;
+  icon?: string;
 }
 
 interface AdaptiveSelectProps {
@@ -132,6 +133,14 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
   className,
   options
 }) => {
+  const selectedOption = options.find(option => option.value === value);
+  const arrowSvg = "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3e%3c/svg%3e";
+  const iconBackground = selectedOption?.icon ? `url("${selectedOption.icon}")` : undefined;
+  const backgroundImage = iconBackground ? `${iconBackground}, url("${arrowSvg}")` : `url("${arrowSvg}")`;
+  const backgroundPosition = iconBackground ? 'left 0.75rem center, right 0.75rem center' : 'right 0.75rem center';
+  const backgroundSize = iconBackground ? '1.5rem 1.5rem, 1rem' : '1rem';
+  const backgroundRepeat = iconBackground ? 'no-repeat, no-repeat' : 'no-repeat';
+
   return (
     <select
       value={value || ''}
@@ -153,10 +162,11 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
         className
       )}
       style={{
-        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3e%3c/svg%3e")`,
-        backgroundPosition: 'right 0.75rem center',
-        backgroundSize: '1rem',
-        backgroundRepeat: 'no-repeat',
+        backgroundImage,
+        backgroundPosition,
+        backgroundSize,
+        backgroundRepeat,
+        paddingLeft: iconBackground ? '3rem' : undefined,
         paddingRight: '2.5rem',
         // iOS Safari specific fixes
         WebkitAppearance: 'none',
@@ -292,10 +302,18 @@ const CustomSelect: React.FC<AdaptiveSelectProps> = ({
   };
 
   const handleSelect = (optionValue: string) => {
+    const option = options.find(opt => opt.value === optionValue);
+    if (!option) return;
+
+    if (option.disabled) {
+      return;
+    }
+
     // Don't allow selection of separator items
     if (optionValue.startsWith('separator-')) {
       return;
     }
+
     onValueChange(optionValue);
     setIsOpen(false);
   };

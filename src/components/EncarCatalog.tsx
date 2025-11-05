@@ -1298,7 +1298,11 @@ const EncarCatalog = ({
               <p className="text-muted-foreground text-xs sm:text-sm">
                 {loading ? (
                   <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <Loader2
+                      className="h-4 w-4 text-primary animate-spin"
+                      aria-hidden="true"
+                      style={{ animation: 'spin 0.9s linear infinite' }}
+                    />
                     Duke ngarkuar...
                   </span>
                 ) : (
