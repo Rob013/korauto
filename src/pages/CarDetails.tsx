@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar, Tag, Armchair, DoorClosed, Cylinder, CircleDot, PaintBucket, Disc3 } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar, Tag, Armchair, DoorClosed, Cylinder, CircleDot, PaintBucket, Disc3, Instagram, Facebook } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -1959,6 +1959,26 @@ const CarDetails = memo(() => {
                   <Button variant="outline" className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => window.open("tel:+38348181116", "_self")}>
                     <Phone className="h-4 w-4 mr-2" />
                     +383 48 181 116
+                  </Button>
+
+                  {/* Instagram */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
+                    onClick={() => window.open("https://www.instagram.com/korauto.ks/", "_blank")}
+                  >
+                    <Instagram className="h-4 w-4 mr-2" />
+                    Instagram
+                  </Button>
+
+                  {/* Facebook */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
+                    onClick={() => window.open("https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr", "_blank")}
+                  >
+                    <Facebook className="h-4 w-4 mr-2" />
+                    Facebook
                   </Button>
 
                   <Button variant="outline" className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => window.open("mailto:info@korauto.com", "_self")}>
