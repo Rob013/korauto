@@ -332,6 +332,11 @@ const LazyCarCard = memo(({
                 <Car className="h-8 w-8 text-muted-foreground" />
               </div>
             )}
+            {insurance_v2?.accidentCnt === 0 && (
+              <div className="absolute top-0.5 left-0.5 bg-green-600/95 text-white px-1.5 py-0.5 rounded text-[8px] font-semibold shadow z-10">
+                Accident free
+              </div>
+            )}
             {lot && (
               <div className="absolute bottom-0.5 right-0.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-1 py-0.5 rounded text-[8px] font-bold shadow-md backdrop-blur-sm">
                 {lot}
@@ -380,7 +385,7 @@ const LazyCarCard = memo(({
               {insurance_v2?.accidentCnt === 0 && (
                 <Badge variant="secondary" className="text-[8px] px-1 py-0 bg-green-50 text-green-700 border-green-200 inline-flex items-center h-4">
                   <Shield className="h-1.5 w-1.5 mr-0.5" />
-                  Clean
+                  Accident free
                 </Badge>
               )}
             </div>
@@ -436,6 +441,11 @@ const LazyCarCard = memo(({
         <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-background/80 backdrop-blur">
           {source === 'encar' ? 'Encar' : source?.toLowerCase()?.includes('kbc') ? 'KBC' : (source || '').toUpperCase()}
         </Badge>
+      </div>
+    )}
+    {insurance_v2?.accidentCnt === 0 && (
+      <div className="absolute top-2 right-2 bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow z-10">
+        Accident free
       </div>
     )}
         {/* Always show single image - swipe functionality removed from car cards */}
@@ -526,7 +536,7 @@ const LazyCarCard = memo(({
           <div className="mb-2">
             <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200">
               <Shield className="h-2.5 w-2.5 mr-1" />
-              Clean
+              Accident free
             </Badge>
           </div>
         )}
