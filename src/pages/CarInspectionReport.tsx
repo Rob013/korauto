@@ -656,59 +656,7 @@ const CarInspectionReport = () => {
       ? car.details?.insurance?.usage_history
       : [];
 
-    // Add insurance_v2 usage data to history list
-    const usageHistoryList: Array<{ description: string; value: string }> = [];
-    
-    // Add existing API usage history
-    apiUsageHistoryList.forEach(item => {
-      usageHistoryList.push({
-        description: item.description || "Informacion i përdorimit",
-        value: item.value || "-"
-      });
-    });
-    
-    // Add carInfoUse1s data
-    if (car.insurance_v2?.carInfoUse1s && Array.isArray(car.insurance_v2.carInfoUse1s)) {
-      car.insurance_v2.carInfoUse1s.forEach((use: any) => {
-        if (use && typeof use === 'object') {
-          usageHistoryList.push({
-            description: use.description || use.type || "Përdorimi i veturës (tipi 1)",
-            value: use.value || use.status || "-"
-          });
-        } else if (use) {
-          usageHistoryList.push({
-            description: "Përdorimi i veturës",
-            value: String(use)
-          });
-        }
-      });
-    }
-
-    // Add carInfoUse2s data
-    if (car.insurance_v2?.carInfoUse2s && Array.isArray(car.insurance_v2.carInfoUse2s)) {
-      car.insurance_v2.carInfoUse2s.forEach((use: any) => {
-        if (use && typeof use === 'object') {
-          usageHistoryList.push({
-            description: use.description || use.type || "Përdorimi i veturës (tipi 2)",
-            value: use.value || use.status || "-"
-          });
-        } else if (use) {
-          usageHistoryList.push({
-            description: "Informacion shtesë i përdorimit",
-            value: String(use)
-          });
-        }
-      });
-    }
-
-    const findUsageValue = (keywords: string[]) => {
-      const match = usageHistoryList.find((entry) => {
-        const description = `${entry.description ?? ""}`.toLowerCase();
-        return keywords.some((keyword) => description.includes(keyword));
-      });
-      return match?.value;
-    };
-
+    // Helper function to convert values to Yes/No in Albanian
     const toYesNo = (value?: string | number | boolean | null) => {
       if (value === undefined || value === null) return null;
       if (typeof value === "boolean") return value ? "Po" : "Jo";
@@ -729,6 +677,115 @@ const CarInspectionReport = () => {
       
       // If we can't determine, return null to show "Nuk ka informata"
       return null;
+    };
+
+    // Translate usage type to Albanian
+    const translateUsageType = (type: string): string => {
+      const translations: Record<string, string> = {
+        'rental': 'Makinë me qira',
+        'rent': 'Makinë me qira',
+        'lease': 'Lidhje kontrate me qira',
+        'business': 'Përdorim komercial',
+        'commercial': 'Përdorim komercial',
+        'private': 'Përdorim privat',
+        'personal': 'Përdorim personal',
+        'taxi': 'Taksi',
+        'ride_sharing': 'Shpërndarje udhëtarësh',
+        'delivery': 'Shpërndarje mallrash',
+        'company': 'Makinë e kompanisë',
+        'government': 'Makinë qeveritare',
+        'loan': 'Kredi/Huamarrje',
+        'mortgage': 'Hipotekë',
+        'ownership_change': 'Ndryshim pronari',
+        'registration_change': 'Ndryshim regjistrimi',
+        'color_change': 'Ndryshim ngjyre',
+        'modification': 'Modifikim',
+        'accident': 'Aksidenti',
+        'repair': 'Riparim',
+        'insurance_claim': 'Kërkesë sigurie',
+      };
+      const normalized = type.toLowerCase().replace(/[_\s]+/g, '_');
+      return translations[normalized] || type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    };
+
+    // Add insurance_v2 usage data to history list
+    const usageHistoryList: Array<{ description: string; value: string }> = [];
+    
+    // Add existing API usage history with proper translations
+    apiUsageHistoryList.forEach(item => {
+      const desc = item.description || "";
+      const translatedDesc = desc ? translateUsageType(desc) : "Informacion i përdorimit";
+      usageHistoryList.push({
+        description: translatedDesc,
+        value: item.value || "-"
+      });
+    });
+    
+    // Add carInfoUse1s data - main usage information
+    if (car.insurance_v2?.carInfoUse1s && Array.isArray(car.insurance_v2.carInfoUse1s)) {
+      car.insurance_v2.carInfoUse1s.forEach((use: any, index: number) => {
+        if (use && typeof use === 'object') {
+          const description = use.description || use.type || use.name || use.category || `Informacion kryesor ${index + 1}`;
+          const value = use.value || use.status || use.result || use.state || "-";
+          usageHistoryList.push({
+            description: translateUsageType(description),
+            value: String(value)
+          });
+        } else if (use && String(use).trim()) {
+          usageHistoryList.push({
+            description: "Lloji i përdorimit",
+            value: String(use)
+          });
+        }
+      });
+    }
+
+    // Add carInfoUse2s data - secondary usage information
+    if (car.insurance_v2?.carInfoUse2s && Array.isArray(car.insurance_v2.carInfoUse2s)) {
+      car.insurance_v2.carInfoUse2s.forEach((use: any, index: number) => {
+        if (use && typeof use === 'object') {
+          const description = use.description || use.type || use.name || use.category || `Informacion shtesë ${index + 1}`;
+          const value = use.value || use.status || use.result || use.state || "-";
+          usageHistoryList.push({
+            description: translateUsageType(description),
+            value: String(value)
+          });
+        } else if (use && String(use).trim()) {
+          usageHistoryList.push({
+            description: "Detaje shtesë",
+            value: String(use)
+          });
+        }
+      });
+    }
+    
+    // Add loan/business info if available
+    if (car.insurance_v2?.loan !== undefined && car.insurance_v2?.loan !== null) {
+      const loanValue = toYesNo(car.insurance_v2.loan);
+      if (loanValue) {
+        usageHistoryList.push({
+          description: "Kredi/Huamarrje",
+          value: loanValue
+        });
+      }
+    }
+    
+    if (car.insurance_v2?.business !== undefined && car.insurance_v2?.business !== null) {
+      const businessValue = toYesNo(car.insurance_v2.business);
+      if (businessValue) {
+        usageHistoryList.push({
+          description: "Përdorim për biznes",
+          value: businessValue
+        });
+      }
+    }
+
+    const findUsageValue = (keywords: string[]) => {
+      const match = usageHistoryList.find((entry) => {
+        const description = `${entry.description ?? ""}`.toLowerCase();
+        return keywords.some((keyword) => description.includes(keyword));
+      });
+      return match?.value;
     };
 
     const rentalUsageValue =
