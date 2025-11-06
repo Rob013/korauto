@@ -514,21 +514,21 @@ const EquipmentOptionsSection = memo(({
               <div className="w-2 h-2 rounded-full bg-primary"></div>
               <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10">
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
               {specificFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
-                  <div key={index} className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-colors min-h-[80px] justify-center ${
+                  <div key={index} className={`flex flex-col items-center gap-1 p-2 rounded-md transition-colors ${
                     feature.hasFeature 
                       ? 'bg-primary/10 border border-primary/30' 
                       : 'bg-gray-100 border border-gray-200'
                   }`}>
-                    <IconComponent className={`h-5 w-5 flex-shrink-0 ${
+                    <IconComponent className={`h-4 w-4 flex-shrink-0 ${
                       feature.hasFeature 
-                        ? 'text-primary font-bold' 
+                        ? 'text-primary' 
                         : 'text-gray-400'
                     }`} />
-                    <span className={`text-xs font-medium text-center leading-tight break-words hyphens-auto max-w-full ${
+                    <span className={`text-[10px] leading-tight text-center line-clamp-2 ${
                       feature.hasFeature 
                         ? 'text-foreground' 
                         : 'text-gray-400'
@@ -563,15 +563,15 @@ const EquipmentOptionsSection = memo(({
                   <div className="flex-1 h-px bg-border"></div>
                   <span className="text-xs text-muted-foreground font-medium">{options.standard.length} pajisje</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                   {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
                     const OptionIcon = getEquipmentIcon(option.toString());
                     return (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/15 hover:border-primary/30 transition-all duration-200 group">
+                      <div key={index} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group">
                         <div className="flex-shrink-0">
-                          <OptionIcon className="h-4 w-4 text-primary" />
+                          <OptionIcon className="h-3.5 w-3.5 text-primary" />
                         </div>
-                        <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{option}</span>
+                        <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">{option}</span>
                       </div>
                     );
                   })}
