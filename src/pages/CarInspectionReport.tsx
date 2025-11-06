@@ -242,20 +242,31 @@ const CarInspectionReport = () => {
 
       const details = lotData.details || {};
       
-      // Extract inspect data from lotData.inspect (primary source as per API support)
-      const inspectData = lotData.inspect || details?.inspect || {};
-      const inspectOuter = inspectData.outer || details?.inspect_outer || lotData.inspect_outer || carData.inspect_outer;
-      const inspectInner = inspectData.inner || details?.inspect?.inner || lotData.inspect?.inner || carData.inspect?.inner;
-      const accidentSummary = inspectData.accident_summary || details?.inspect?.accident_summary;
+      // Extract inspect data from details.inspect (primary source as per API support)
+      const inspectData = details?.inspect || lotData.inspect || {};
+      const inspectOuter = inspectData.outer || details?.inspect_outer || {};
+      const inspectInner = inspectData.inner || {};
+      const accidentSummary = inspectData.accident_summary || {};
+
+      // Extract insurance_v2 data
+      const insuranceV2 = lotData.insurance_v2 || details?.insurance_v2 || {};
+
+      // Extract options data
+      const optionsData = details?.options || {};
+      const optionsExtra = details?.options_extra || [];
 
       console.log('🔍 Inspection Report Data Collection:', {
-        'lotData.inspect': lotData.inspect,
+        'details.inspect': details?.inspect,
         'inspectData.accident_summary': accidentSummary,
         'inspectData.outer': inspectOuter,
         'inspectData.inner': inspectInner,
-        'lotData.insurance_v2': lotData.insurance_v2,
-        'details.options': details?.options,
-        'details.options_extra': details?.options_extra
+        'insurance_v2': insuranceV2,
+        'options': optionsData,
+        'options_extra': optionsExtra,
+        'hasAccidentSummary': Object.keys(accidentSummary).length > 0,
+        'hasOuterData': Object.keys(inspectOuter).length > 0,
+        'hasInsuranceData': Object.keys(insuranceV2).length > 0,
+        'hasOptionsExtra': optionsExtra.length > 0,
       });
 
         const transformed: InspectionReportCar = {
@@ -299,7 +310,7 @@ const CarInspectionReport = () => {
             details?.engine?.displacement,
           damage: lotData.damage || details?.damage || null,
           insurance: lotData.insurance || details?.insurance || carData.insurance,
-          insurance_v2: lotData.insurance_v2 || carData.insurance_v2,
+          insurance_v2: insuranceV2,
           details: {
             ...details,
             inspect_outer: inspectOuter,
@@ -308,11 +319,10 @@ const CarInspectionReport = () => {
               outer: inspectOuter,
               inner: inspectInner,
             },
-            // Include options and options_extra
-            options: details?.options,
-            options_extra: details?.options_extra,
+            options: optionsData,
+            options_extra: optionsExtra,
           },
-          inspect: lotData.inspect || {
+          inspect: {
             accident_summary: accidentSummary,
             outer: inspectOuter,
             inner: inspectInner,
@@ -887,9 +897,10 @@ const CarInspectionReport = () => {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {car.inspect?.accident_summary || car.details?.inspect?.accident_summary ? (
+                  {/* Accident Summary Grid */}
+                  {car.inspect?.accident_summary && Object.keys(car.inspect.accident_summary).length > 0 ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {Object.entries(car.inspect?.accident_summary || car.details?.inspect?.accident_summary || {}).map(([key, value]) => {
+                      {Object.entries(car.inspect.accident_summary).map(([key, value]) => {
                         const isNegative = value === "yes" || value === true;
                         return (
                           <div
@@ -918,30 +929,36 @@ const CarInspectionReport = () => {
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Nuk ka të dhëna të disponueshme për përmbledhjen e aksidenteve</p>
+                      <p>Nuk ka informata për përmbledhjen e aksidenteve</p>
                     </div>
                   )}
 
-                  {/* Outer Damage Details */}
-                  {(car.inspect?.outer || car.details?.inspect?.outer) && (
+                  {/* Outer Damage Details - Display as object with part names as keys */}
+                  {car.inspect?.outer && Object.keys(car.inspect.outer).length > 0 && (
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                         <Wrench className="h-5 w-5 text-primary" />
                         Dëmtime të Jashtme të Karocerisë
                       </h3>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        {Object.entries(car.inspect?.outer || car.details?.inspect?.outer || {}).map(([part, statuses]: [string, any]) => (
+                        {Object.entries(car.inspect.outer).map(([part, statuses]: [string, any]) => (
                           <Card key={part} className="border-border/80">
                             <CardContent className="p-4 space-y-2">
                               <h4 className="font-semibold text-sm capitalize">
                                 {part.replace(/_/g, ' ')}
                               </h4>
                               <div className="flex flex-wrap gap-2">
-                                {Array.isArray(statuses) && statuses.map((status, idx) => (
-                                  <Badge key={idx} variant="destructive" className="text-xs">
-                                    {status}
+                                {Array.isArray(statuses) ? (
+                                  statuses.map((status, idx) => (
+                                    <Badge key={idx} variant="destructive" className="text-xs">
+                                      {status}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {String(statuses)}
                                   </Badge>
-                                ))}
+                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -967,7 +984,7 @@ const CarInspectionReport = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Insurance Summary Stats */}
-                  {car.insurance_v2 && (
+                  {car.insurance_v2 && Object.keys(car.insurance_v2).length > 0 ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
                         <span className="text-xs uppercase tracking-wide text-muted-foreground">Aksidente</span>
@@ -986,7 +1003,7 @@ const CarInspectionReport = () => {
                         <span className="text-2xl font-bold text-foreground">{car.insurance_v2.robberCnt || 0}</span>
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Detailed Accident History */}
                   {car.insurance_v2?.accidents && car.insurance_v2.accidents.length > 0 && (
@@ -1047,10 +1064,10 @@ const CarInspectionReport = () => {
                     </div>
                   )}
 
-                  {!car.insurance_v2 && (
+                  {(!car.insurance_v2 || Object.keys(car.insurance_v2).length === 0) && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Shield className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Nuk ka të dhëna të disponueshme për historinë e sigurimit</p>
+                      <p>Nuk ka informata për historinë e sigurimit</p>
                     </div>
                   )}
                 </CardContent>
@@ -1105,37 +1122,47 @@ const CarInspectionReport = () => {
                   )}
 
                   {/* Standard Options */}
-                  {car.details?.options?.standard && car.details.options.standard.length > 0 && (
+                  {car.details?.options?.standard && Array.isArray(car.details.options.standard) && car.details.options.standard.length > 0 && (
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Pajisje Standarde</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {car.details.options.standard.map((option: any, idx: number) => (
-                          <Badge key={idx} variant="secondary" className="text-sm">
-                            {option}
-                          </Badge>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {car.details.options.standard.map((optionCode: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-border/60 bg-muted/30">
+                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                            <span className="text-sm font-medium">Kodi: {optionCode}</span>
+                          </div>
                         ))}
                       </div>
+                      <p className="text-xs text-muted-foreground italic">
+                        * Kodët duhet të shndërrohen duke përdorur /korea-options API
+                      </p>
                     </div>
                   )}
 
                   {/* Choice Options */}
-                  {car.details?.options?.choice && car.details.options.choice.length > 0 && (
+                  {car.details?.options?.choice && Array.isArray(car.details.options.choice) && car.details.options.choice.length > 0 && (
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Opsione të Zgjedhura</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {car.details.options.choice.map((option: any, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-sm border-primary text-primary">
-                            {option}
-                          </Badge>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {car.details.options.choice.map((optionCode: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+                            <Cog className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium">Kodi: {optionCode}</span>
+                          </div>
                         ))}
                       </div>
+                      <p className="text-xs text-muted-foreground italic">
+                        * Kodët duhet të shndërrohen duke përdorur /korea-options API
+                      </p>
                     </div>
                   )}
 
-                  {!car.details?.options && !car.details?.options_extra && (
+                  {(!car.details?.options_extra || car.details.options_extra.length === 0) && 
+                   (!car.details?.options?.standard || car.details.options.standard.length === 0) && 
+                   (!car.details?.options?.choice || car.details.options.choice.length === 0) && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Cog className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Nuk ka të dhëna të disponueshme për pajisjet dhe opsionet</p>
+                      <p>Nuk ka informata për pajisjet dhe opsionet</p>
                     </div>
                   )}
                 </CardContent>
