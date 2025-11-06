@@ -21,6 +21,7 @@ import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
+import { CAR_PREFETCH_STORAGE_PREFIX, CAR_PREFETCH_TTL } from "@/services/carPrefetch";
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -1137,6 +1138,51 @@ const CarDetails = memo(() => {
       return null;
     }
 
+    const applyDetails = (details: CarDetails) => {
+      setCar(details);
+      setLoading(false);
+      try {
+        sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
+      } catch (storageError) {
+        console.warn('Failed to store in sessionStorage:', storageError);
+      }
+      return details;
+    };
+
+    if (typeof window !== 'undefined') {
+      // Try restoring full details from sessionStorage first for instant paint
+      try {
+        const sessionData = sessionStorage.getItem(`car_${lot}`);
+        if (sessionData) {
+          const restoredCar = JSON.parse(sessionData);
+          console.log('✅ Restored car from sessionStorage');
+          return applyDetails(restoredCar);
+        }
+      } catch (sessionError) {
+        console.warn('Failed to restore from sessionStorage:', sessionError);
+      }
+
+      // Try prefetched payload if available
+      try {
+        const prefetchedRaw = sessionStorage.getItem(`${CAR_PREFETCH_STORAGE_PREFIX}${lot}`);
+        if (prefetchedRaw) {
+          const prefetched = JSON.parse(prefetchedRaw);
+          if (!prefetched?.timestamp || Date.now() - prefetched.timestamp > CAR_PREFETCH_TTL) {
+            sessionStorage.removeItem(`${CAR_PREFETCH_STORAGE_PREFIX}${lot}`);
+          } else if (prefetched?.data) {
+            const lotData = prefetched.data?.lots?.[0];
+            const details = buildCarDetails(prefetched.data, lotData);
+            if (details) {
+              console.log('✅ Hydrated car from prefetched cache payload');
+              return applyDetails(details);
+            }
+          }
+        }
+      } catch (prefetchError) {
+        console.warn('Failed to use prefetched car payload:', prefetchError);
+      }
+    }
+
     try {
       console.log('🔍 Attempting to load from cache for lot:', lot);
       const { data, error } = await supabase
@@ -1157,33 +1203,22 @@ const CarDetails = memo(() => {
         const details = buildCarDetails(cachedCar, lotData);
         if (details) {
           console.log('✅ Successfully built car details from cache');
-          setCar(details);
-          setLoading(false);
-          // Store in sessionStorage for page visibility restoration
           try {
-            sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
+            sessionStorage.setItem(
+              `${CAR_PREFETCH_STORAGE_PREFIX}${lot}`,
+              JSON.stringify({
+                timestamp: Date.now(),
+                data: cachedCar
+              })
+            );
           } catch (storageError) {
-            console.warn('Failed to store in sessionStorage:', storageError);
+            console.warn('Failed to store prefetched cache payload:', storageError);
           }
-          return details;
+          return applyDetails(details);
         }
       }
     } catch (cacheError) {
       console.warn('Cache hydration failed', cacheError);
-    }
-
-    // Try sessionStorage as backup
-    try {
-      const sessionData = sessionStorage.getItem(`car_${lot}`);
-      if (sessionData) {
-        console.log('✅ Restored car from sessionStorage');
-        const restoredCar = JSON.parse(sessionData);
-        setCar(restoredCar);
-        setLoading(false);
-        return restoredCar;
-      }
-    } catch (sessionError) {
-      console.warn('Failed to restore from sessionStorage:', sessionError);
     }
 
     return null;
@@ -1866,7 +1901,7 @@ const CarDetails = memo(() => {
                 {/* Specifications Grid - Reorganized in specific order */}
                 <div className="grid grid-cols-2 gap-1.5 md:gap-3 text-xs md:text-sm items-stretch auto-rows-fr isolate relative z-0">
                   {/* 1. Brand - e.g., Volkswagen */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -1878,7 +1913,7 @@ const CarDetails = memo(() => {
                   </div>
 
                   {/* 2. Model - e.g., A6 35 TDI Quattro (full variant info) */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Tag className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -1944,7 +1979,7 @@ const CarDetails = memo(() => {
                   </div>
 
                   {/* 3. Year - e.g., 2022 */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Calendar className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -1956,7 +1991,7 @@ const CarDetails = memo(() => {
                   </div>
 
                   {/* 4. Mileage */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Gauge className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -1969,7 +2004,7 @@ const CarDetails = memo(() => {
 
                   {/* Cylinders */}
                   {car.cylinders && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Cylinder className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -1983,7 +2018,7 @@ const CarDetails = memo(() => {
 
                   {/* Doors */}
                   {car.details?.doors_count && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <DoorClosed className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -1996,7 +2031,7 @@ const CarDetails = memo(() => {
                   )}
 
                   {/* Fuel Type */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -2009,7 +2044,7 @@ const CarDetails = memo(() => {
 
                   {/* 5. Engine - e.g., 998cc */}
                   {car.details?.engine_volume && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Cog className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -2023,7 +2058,7 @@ const CarDetails = memo(() => {
 
                   {/* Transmission */}
                   {car.transmission && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Settings className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -2037,7 +2072,7 @@ const CarDetails = memo(() => {
 
                   {/* Drivetrain */}
                   {car.drive_wheel?.name && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <CircleDot className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -2051,7 +2086,7 @@ const CarDetails = memo(() => {
 
                   {/* Seats */}
                   {car.details?.seats_count && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -2065,7 +2100,7 @@ const CarDetails = memo(() => {
 
                   {/* Exterior Color */}
                   {car.color && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <PaintBucket className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -2079,7 +2114,7 @@ const CarDetails = memo(() => {
 
                   {/* Interior Color */}
                   {car.details?.interior_color && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
@@ -2093,7 +2128,7 @@ const CarDetails = memo(() => {
 
                   {/* VIN Number */}
                   {car.vin && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-transparent backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
