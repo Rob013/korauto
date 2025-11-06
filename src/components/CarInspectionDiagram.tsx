@@ -291,21 +291,21 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         // Derive from title if codes missing
         const typeText = (item?.type?.title || item?.type?.code || '').toString();
         const low = typeText.toLowerCase();
-        if (low.includes('exchange') || low.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
-        if (low.includes('weld') || low.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });
-        if (low.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
-        if (low.includes('scratch')) statuses.push({ code: 'S', title: 'Scratch' });
-        if (low.includes('corr')) statuses.push({ code: 'U', title: 'Corrosion' });
+        if (low.includes('exchange') || low.includes('replacement') || low.includes('교환')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
+        if (low.includes('weld') || low.includes('sheet metal') || low.includes('용접')) statuses.push({ code: 'W', title: 'Welding' });
+        if (low.includes('repair') || low.includes('simple') || low.includes('수리')) statuses.push({ code: 'A', title: 'Repair' });
+        if (low.includes('scratch') || low.includes('흠집')) statuses.push({ code: 'S', title: 'Scratch' });
+        if (low.includes('corr') || low.includes('부식')) statuses.push({ code: 'U', title: 'Corrosion' });
       }
 
       // Derive from attributes too (if present)
       const attrsText = item.attributes.join(' ').toLowerCase();
       if (attrsText) {
-        if (attrsText.includes('exchange') || attrsText.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
-        if (attrsText.includes('weld') || attrsText.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });
-        if (attrsText.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
-        if (attrsText.includes('scratch')) statuses.push({ code: 'S', title: 'Scratch' });
-        if (attrsText.includes('corr')) statuses.push({ code: 'U', title: 'Corrosion' });
+        if (attrsText.includes('exchange') || attrsText.includes('replacement') || attrsText.includes('교환')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
+        if (attrsText.includes('weld') || attrsText.includes('sheet metal') || attrsText.includes('용접')) statuses.push({ code: 'W', title: 'Welding' });
+        if (attrsText.includes('repair') || attrsText.includes('simple') || attrsText.includes('수리')) statuses.push({ code: 'A', title: 'Repair' });
+        if (attrsText.includes('scratch') || attrsText.includes('흠집')) statuses.push({ code: 'S', title: 'Scratch' });
+        if (attrsText.includes('corr') || attrsText.includes('부식')) statuses.push({ code: 'U', title: 'Corrosion' });
       }
     }
     return statuses;
@@ -315,13 +315,13 @@ const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
   if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
 
   const hasExchange = statuses.some(
-    (s) => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange')
+    (s) => s.code === 'X' || s.code === '2' || s.title.includes('교환') || s.title.includes('exchange')
   );
   const hasWelding = statuses.some(
-    (s) => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld')
+    (s) => s.code === 'W' || s.code === '3' || s.title.includes('용접') || s.title.includes('weld')
   );
   const hasRepair = statuses.some(
-    (s) => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair')
+    (s) => s.code === 'A' || s.code === '1' || s.title.includes('수리') || s.title.includes('repair') || s.title.includes('simple')
   );
 
   // Red for replacement/exchange (Nderrim)
@@ -351,31 +351,31 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   const issueCount = {
     replacements: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
+      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
       return (
-        codes.includes('X') ||
+        codes.includes('X') || codes.includes('2') ||
         t.includes('exchange') || t.includes('replacement') || t.includes('교환')
       );
     }).length,
     welds: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
+      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
       return (
-        codes.includes('W') ||
+        codes.includes('W') || codes.includes('3') ||
         t.includes('weld') || t.includes('sheet metal') || t.includes('용접')
       );
     }).length,
     repairs: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
+      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
       return (
-        codes.includes('A') ||
-        t.includes('repair') || t.includes('수리')
+        codes.includes('A') || codes.includes('1') ||
+        t.includes('repair') || t.includes('simple') || t.includes('수리')
       );
     }).length,
     corrosion: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
+      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
       return (
         codes.includes('U') ||
         t.includes('corr') || t.includes('부식')
@@ -383,7 +383,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
     }).length,
     scratches: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
+      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
       return (
         codes.includes('S') ||
         t.includes('scratch') || t.includes('흠집')
@@ -463,18 +463,18 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       <g>
                         {(() => {
                           const lowTitles = statuses.map((s) => (s.title || '').toString().toLowerCase());
-                          const codes = statuses.map((s) => (s.code || '').toUpperCase());
+                          const codes = statuses.map((s) => (s.code || '').toString().toUpperCase());
 
                           // Check for different types of repairs/replacements from API
                           const hasExchange =
-                            codes.includes('X') ||
+                            codes.includes('X') || codes.includes('2') ||
                             lowTitles.some((t) => t.includes('exchange') || t.includes('replacement') || t.includes('교환'));
                           const hasWeld =
-                            codes.includes('W') ||
+                            codes.includes('W') || codes.includes('3') ||
                             lowTitles.some((t) => t.includes('weld') || t.includes('sheet metal') || t.includes('용접'));
                           const hasRepair =
-                            codes.includes('A') ||
-                            lowTitles.some((t) => t.includes('repair') || t.includes('수리'));
+                            codes.includes('A') || codes.includes('1') ||
+                            lowTitles.some((t) => t.includes('repair') || t.includes('simple') || t.includes('수리'));
                           const hasCorrosion =
                             codes.includes('U') ||
                             lowTitles.some((t) => t.includes('corr') || t.includes('부식'));
@@ -489,7 +489,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                           if (hasExchange || hasWeld) {
                             markers.push({ char: 'N', color: '#dc2626' });
                           }
-                          // Blue R for repair
+                          // Blue R for repair (including simple repairs)
                           if (hasRepair) {
                             markers.push({ char: 'R', color: '#3b82f6' });
                           }
