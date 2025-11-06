@@ -1,6 +1,6 @@
 // Service Worker for caching API responses and static assets with 120fps performance optimization
 // CRITICAL: Update this version number to force cache refresh for all users
-const VERSION = '2025.06.02.001'; // YYYY.MM.DD.BUILD format - Updated for stability fixes
+const VERSION = '2025.06.02.002'; // YYYY.MM.DD.BUILD format - Fixed Vite module loading
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
@@ -126,10 +126,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle build assets (JS, CSS files with hashes)
-  if (url.pathname.startsWith('/assets/') || 
-      url.pathname.endsWith('.js') || 
-      url.pathname.endsWith('.css')) {
+  // CRITICAL: Skip Vite dev server modules and dynamic imports
+  // Don't intercept node_modules, @vite, @id, or any URLs with Vite-specific query params
+  if (url.pathname.includes('/node_modules/') || 
+      url.pathname.includes('/@vite/') || 
+      url.pathname.includes('/@id/') ||
+      url.pathname.includes('/@fs/') ||
+      url.search.includes('?v=') ||
+      url.search.includes('&v=') ||
+      url.search.includes('?import') ||
+      url.search.includes('&import')) {
+    // Let Vite handle its own module resolution
+    return;
+  }
+
+  // Handle build assets (JS, CSS files with hashes) - only production builds
+  if (url.pathname.startsWith('/assets/') && 
+      (url.pathname.endsWith('.js') || url.pathname.endsWith('.css'))) {
     event.respondWith(handleAssetRequest(request));
     return;
   }

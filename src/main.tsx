@@ -23,9 +23,15 @@ if ('serviceWorker' in navigator) {
       .then((registration) => {
         console.log('✅ Service Worker registered:', registration);
 
-        // Check for updates every 30 seconds
+        // Check for updates every 30 seconds with error handling
         setInterval(() => {
-          registration.update();
+          try {
+            registration.update().catch(() => {
+              // Silently ignore update errors
+            });
+          } catch (e) {
+            // Ignore errors during update check
+          }
         }, 30000);
 
         // Listen for service worker updates
