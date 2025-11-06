@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
@@ -188,7 +189,8 @@ const formatDisplayDate = (
 const CarInspectionReport = () => {
   const { id: lot } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { exchangeRate, processFloodDamageText } = useCurrencyAPI();
+  const { exchangeRate, processFloodDamageText, convertKRWtoEUR } = useCurrencyAPI();
+  const { getOptionName, getOptionDescription, loading: optionsLoading } = useKoreaOptions();
   const [car, setCar] = useState<InspectionReportCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -827,139 +829,104 @@ const CarInspectionReport = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="diagram" className="space-y-3">
+            <TabsContent value="diagram" className="space-y-4">
               <Card className="shadow-md">
                 <CardHeader className="flex flex-col gap-1 pb-3">
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5 text-primary" />
                     <CardTitle className="text-xl">
-                      Diagrami i Inspektimit të Automjetit
+                      Diagrami i Inspektimit & Përmbledhje Aksidentesh
                     </CardTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Gjendja vizuale e pjesëve të jashtme dhe panelet e karocerisë
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
-
-                  {inspectionOuterData.length > 0 && (
-                    <div className="grid gap-2 md:grid-cols-2">
-                      {inspectionOuterData.map((item: any, index: number) => (
-                        <Card key={`${item?.type?.code || index}-summary`} className="border-border/80">
-                          <CardHeader className="pb-1">
-                            <div className="flex items-center gap-3">
-                              <Wrench className="h-4 w-4 text-primary" />
-                              <CardTitle className="text-base font-semibold">
-                                {item?.type?.title || "Pjesë e karocerisë"}
-                              </CardTitle>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-1.5">
-                            {item?.statusTypes?.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5">
-                                {item.statusTypes.map((status: any) => (
-                                  <Badge key={`${status?.code}-${status?.title}`} variant="secondary">
-                                    {status?.title}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                            {item?.attributes?.length > 0 && (
-                              <ul className="space-y-1 text-sm text-muted-foreground">
-                                {item.attributes.map((attribute: string, attrIndex: number) => (
-                                  <li key={attrIndex} className="flex items-start gap-2">
-                                    <CheckCircle className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
-                                    <span>{attribute}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* NEW: Accident Summary Tab */}
-            <TabsContent value="accident-summary" className="space-y-4">
-              <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Përmbledhje e Aksidenteve</CardTitle>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Informacion i plotë nga inspektimi për aksidentet dhe dëmtimet
+                    Gjendja vizuale dhe detajet e aksidenteve të automjetit
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Accident Summary Grid */}
-                  {car.inspect?.accident_summary && Object.keys(car.inspect.accident_summary).length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {Object.entries(car.inspect.accident_summary).map(([key, value]) => {
-                        const isNegative = value === "yes" || value === true;
-                        return (
-                          <div
-                            key={key}
-                            className={`flex flex-col gap-2 rounded-lg border p-4 ${
-                              isNegative ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-muted/40'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              {isNegative ? (
-                                <AlertTriangle className="h-4 w-4 text-destructive" />
-                              ) : (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              )}
-                              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                {key.replace(/_/g, ' ')}
+                  {/* Accident Summary Section */}
+                  {car.inspect?.accident_summary && Object.keys(car.inspect.accident_summary).length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        Përmbledhje e Aksidenteve
+                      </h3>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {Object.entries(car.inspect.accident_summary).map(([key, value]) => {
+                          const isNegative = value === "yes" || value === true;
+                          return (
+                            <div
+                              key={key}
+                              className={`flex flex-col gap-2 rounded-lg border p-4 ${
+                                isNegative ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-muted/40'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isNegative ? (
+                                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                                ) : (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                )}
+                                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                  {key.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+                              <span className={`text-lg font-bold ${isNegative ? 'text-destructive' : 'text-green-600'}`}>
+                                {value === "yes" || value === true ? "Po" : value === "no" || value === false ? "Jo" : String(value)}
                               </span>
                             </div>
-                            <span className={`text-lg font-bold ${isNegative ? 'text-destructive' : 'text-green-600'}`}>
-                              {value === "yes" || value === true ? "Po" : value === "no" || value === false ? "Jo" : String(value)}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Nuk ka informata për përmbledhjen e aksidenteve</p>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
+                  
+                  {/* Visual Diagram */}
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Wrench className="h-5 w-5 text-primary" />
+                      Diagrami Vizual i Dëmtimeve
+                    </h3>
+                    <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
+                  </div>
 
-                  {/* Outer Damage Details - Display as object with part names as keys */}
-                  {car.inspect?.outer && Object.keys(car.inspect.outer).length > 0 && (
+                  {/* Outer Damage Details */}
+                  {inspectionOuterData.length > 0 && (
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                         <Wrench className="h-5 w-5 text-primary" />
-                        Dëmtime të Jashtme të Karocerisë
+                        Detajet e Dëmtimeve të Jashtme
                       </h3>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {Object.entries(car.inspect.outer).map(([part, statuses]: [string, any]) => (
-                          <Card key={part} className="border-border/80">
-                            <CardContent className="p-4 space-y-2">
-                              <h4 className="font-semibold text-sm capitalize">
-                                {part.replace(/_/g, ' ')}
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {Array.isArray(statuses) ? (
-                                  statuses.map((status, idx) => (
-                                    <Badge key={idx} variant="destructive" className="text-xs">
-                                      {status}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {String(statuses)}
-                                  </Badge>
-                                )}
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {inspectionOuterData.map((item: any, index: number) => (
+                          <Card key={`${item?.type?.code || index}-summary`} className="border-border/80">
+                            <CardHeader className="pb-1">
+                              <div className="flex items-center gap-3">
+                                <Wrench className="h-4 w-4 text-primary" />
+                                <CardTitle className="text-base font-semibold">
+                                  {item?.type?.title || "Pjesë e karocerisë"}
+                                </CardTitle>
                               </div>
+                            </CardHeader>
+                            <CardContent className="space-y-1.5">
+                              {item?.statusTypes?.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {item.statusTypes.map((status: any) => (
+                                    <Badge key={`${status?.code}-${status?.title}`} variant="secondary">
+                                      {status?.title}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {item?.attributes?.length > 0 && (
+                                <ul className="space-y-1 text-sm text-muted-foreground">
+                                  {item.attributes.map((attribute: string, attrIndex: number) => (
+                                    <li key={attrIndex} className="flex items-start gap-2">
+                                      <CheckCircle className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+                                      <span>{attribute}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </CardContent>
                           </Card>
                         ))}
@@ -969,6 +936,9 @@ const CarInspectionReport = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* NEW: Accident Summary Tab */}
+            <TabsContent value="accident-summary" className="space-y-4">
 
             {/* NEW: Insurance History Tab */}
             <TabsContent value="insurance" className="space-y-4">
@@ -1023,24 +993,24 @@ const CarInspectionReport = () => {
                                 </Badge>
                               </div>
                               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-xs text-muted-foreground">Shpenzimi Total</span>
-                                  <span className="font-bold text-destructive">
-                                    {accident.insuranceBenefit?.toLocaleString() || 0} KRW
-                                  </span>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-xs text-muted-foreground">Punë</span>
-                                  <span className="font-semibold">{accident.laborCost?.toLocaleString() || 0} KRW</span>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-xs text-muted-foreground">Lyerje</span>
-                                  <span className="font-semibold">{accident.paintingCost?.toLocaleString() || 0} KRW</span>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-xs text-muted-foreground">Pjesë</span>
-                                  <span className="font-semibold">{accident.partCost?.toLocaleString() || 0} KRW</span>
-                                </div>
+                                 <div className="flex flex-col gap-1">
+                                   <span className="text-xs text-muted-foreground">Shpenzimi Total</span>
+                                   <span className="font-bold text-destructive">
+                                     €{convertKRWtoEUR(accident.insuranceBenefit || 0).toLocaleString()}
+                                   </span>
+                                 </div>
+                                 <div className="flex flex-col gap-1">
+                                   <span className="text-xs text-muted-foreground">Punë</span>
+                                   <span className="font-semibold">€{convertKRWtoEUR(accident.laborCost || 0).toLocaleString()}</span>
+                                 </div>
+                                 <div className="flex flex-col gap-1">
+                                   <span className="text-xs text-muted-foreground">Lyerje</span>
+                                   <span className="font-semibold">€{convertKRWtoEUR(accident.paintingCost || 0).toLocaleString()}</span>
+                                 </div>
+                                 <div className="flex flex-col gap-1">
+                                   <span className="text-xs text-muted-foreground">Pjesë</span>
+                                   <span className="font-semibold">€{convertKRWtoEUR(accident.partCost || 0).toLocaleString()}</span>
+                                 </div>
                               </div>
                             </CardContent>
                           </Card>
@@ -1126,16 +1096,13 @@ const CarInspectionReport = () => {
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Pajisje Standarde</h3>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {car.details.options.standard.map((optionCode: any, idx: number) => (
+                        {car.details.options.standard.map((optionCode: string, idx: number) => (
                           <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-border/60 bg-muted/30">
                             <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                            <span className="text-sm font-medium">Kodi: {optionCode}</span>
+                            <span className="text-sm font-medium">{getOptionName(optionCode)}</span>
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-muted-foreground italic">
-                        * Kodët duhet të shndërrohen duke përdorur /korea-options API
-                      </p>
                     </div>
                   )}
 
@@ -1144,16 +1111,13 @@ const CarInspectionReport = () => {
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Opsione të Zgjedhura</h3>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {car.details.options.choice.map((optionCode: any, idx: number) => (
+                        {car.details.options.choice.map((optionCode: string, idx: number) => (
                           <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
                             <Cog className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="text-sm font-medium">Kodi: {optionCode}</span>
+                            <span className="text-sm font-medium">{getOptionName(optionCode)}</span>
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-muted-foreground italic">
-                        * Kodët duhet të shndërrohen duke përdorur /korea-options API
-                      </p>
                     </div>
                   )}
 
