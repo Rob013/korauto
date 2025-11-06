@@ -181,113 +181,15 @@ export const measurePerformance = (name: string, fn: () => void | Promise<void>)
   };
 };
 
-/**
- * Prevent forced reflows by batching DOM reads and writes
- */
-export const batchDOMOperations = (() => {
-  let readQueue: Array<() => void> = [];
-  let writeQueue: Array<() => void> = [];
-  let scheduled = false;
-
-  const flush = () => {
-    // Execute all reads first
-    const reads = readQueue;
-    readQueue = [];
-    reads.forEach(fn => fn());
-
-    // Then execute all writes
-    const writes = writeQueue;
-    writeQueue = [];
-    writes.forEach(fn => fn());
-
-    scheduled = false;
-  };
-
-  return {
-    read: (fn: () => void) => {
-      readQueue.push(fn);
-      if (!scheduled) {
-        scheduled = true;
-        requestAnimationFrame(flush);
-      }
-    },
-    write: (fn: () => void) => {
-      writeQueue.push(fn);
-      if (!scheduled) {
-        scheduled = true;
-        requestAnimationFrame(flush);
-      }
-    }
-  };
-})();
-
-/**
- * Cache DOM measurements to avoid repeated reflows
- */
-export class DOMCache {
-  private cache = new Map<string, any>();
-  private rafId: number | null = null;
-
-  get<T>(key: string, getter: () => T): T {
-    if (this.cache.has(key)) {
-      return this.cache.get(key);
-    }
-    const value = getter();
-    this.cache.set(key, value);
-    this.scheduleInvalidation();
-    return value;
-  }
-
-  invalidate() {
-    this.cache.clear();
-  }
-
-  private scheduleInvalidation() {
-    if (this.rafId !== null) return;
-    this.rafId = requestAnimationFrame(() => {
-      this.invalidate();
-      this.rafId = null;
-    });
-  }
-}
-
-/**
- * Safe scroll position getter that prevents forced reflows
- */
-export const getScrollPosition = (() => {
-  let cached = { x: 0, y: 0 };
-  let ticking = false;
-
-  const update = () => {
-    cached = {
-      x: window.pageXOffset,
-      y: window.pageYOffset
-    };
-    ticking = false;
-  };
-
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(update);
-      ticking = true;
-    }
-  }, { passive: true });
-
-  return () => cached;
-})();
-
 export default {
   debounce,
   throttle,
   createIntersectionObserver,
   preloadResource,
   batchDOMUpdates,
-  batchDOMOperations,
   isFastConnection,
   getOptimizedImageUrl,
   memoize,
   createVirtualScrollConfig,
-  measurePerformance,
-  DOMCache,
-  getScrollPosition
+  measurePerformance
 };
