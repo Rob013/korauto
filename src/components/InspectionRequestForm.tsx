@@ -10,7 +10,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { MessageCircle, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInspectionRequest } from "@/utils/analytics";
@@ -46,6 +54,7 @@ const InspectionRequestForm = ({
   carYear,
 }: InspectionRequestFormProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -331,14 +340,144 @@ const InspectionRequestForm = ({
     window.open("/garancioni", "_blank", "noopener,noreferrer");
   }, []);
 
+  const formContent = (
+    <Card className="border-0 shadow-none">
+      <CardContent className="px-2 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="firstName">Emri</Label>
+              <Input
+                id="firstName"
+                name="firstName"
+                type="text"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                required
+                maxLength={50}
+                className={errors.firstName ? "border-destructive" : ""}
+              />
+              {errors.firstName && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.firstName}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="lastName">Mbiemri</Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                required
+                maxLength={50}
+                className={errors.lastName ? "border-destructive" : ""}
+              />
+              {errors.lastName && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.lastName}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                maxLength={100}
+                className={errors.email ? "border-destructive" : ""}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.email}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="whatsappPhone">Numri i telefonit (WhatsApp)</Label>
+              <Input
+                id="whatsappPhone"
+                name="whatsappPhone"
+                type="tel"
+                placeholder="+383 48 111 111"
+                value={formData.whatsappPhone}
+                onChange={handleInputChange}
+                required
+                maxLength={20}
+                className={errors.whatsappPhone ? "border-destructive" : ""}
+              />
+              {errors.whatsappPhone && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.whatsappPhone}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Duke dërguar...
+                  </>
+                ) : (
+                  "Dërgo Kërkesën"
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleOpenWarranty}
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Shiko Garancionin
+              </Button>
+            </div>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>{enhancedTrigger}</DrawerTrigger>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader className="text-left pb-4">
+            <DrawerTitle className="flex items-center gap-2 text-lg">
+              <MessageCircle className="h-5 w-5 text-primary" />
+              Kërkesë për Inspektim
+            </DrawerTitle>
+            <p className="text-sm text-muted-foreground">
+              Plotësoni formularin për të kërkuar shërbimin e inspektimit të
+              makinës.
+            </p>
+          </DrawerHeader>
+          <div className="px-4 pb-4 overflow-y-auto">
+            {formContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{enhancedTrigger}</DialogTrigger>
       <DialogContent
-        className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto fixed z-[100] touch-manipulation"
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto"
         aria-describedby="inspection-form-description"
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={(e) => e.stopPropagation()}
       >
         <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
@@ -353,112 +492,7 @@ const InspectionRequestForm = ({
             makinës.
           </p>
         </DialogHeader>
-        <Card className="border-0 shadow-none">
-          <CardContent className="px-2 py-4">
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="firstName">Emri</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    required
-                    maxLength={50}
-                    className={errors.firstName ? "border-destructive" : ""}
-                  />
-                  {errors.firstName && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.firstName}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Mbiemri</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    required
-                    maxLength={50}
-                    className={errors.lastName ? "border-destructive" : ""}
-                  />
-                  {errors.lastName && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.lastName}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    maxLength={100}
-                    className={errors.email ? "border-destructive" : ""}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="whatsappPhone">Numri i telefonit (WhatsApp)</Label>
-                  <Input
-                    id="whatsappPhone"
-                    name="whatsappPhone"
-                    type="tel"
-                    placeholder="+383 48 111 111"
-                    value={formData.whatsappPhone}
-                    onChange={handleInputChange}
-                    required
-                    maxLength={20}
-                    className={errors.whatsappPhone ? "border-destructive" : ""}
-                  />
-                  {errors.whatsappPhone && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.whatsappPhone}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Duke dërguar...
-                      </>
-                    ) : (
-                      "Dërgo Kërkesën"
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleOpenWarranty}
-                  >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Shiko Garancionin
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        {formContent}
       </DialogContent>
     </Dialog>
   );
