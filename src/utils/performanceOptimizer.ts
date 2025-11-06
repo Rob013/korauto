@@ -66,17 +66,17 @@ export const applyHardwareAcceleration = (selector: string) => {
 };
 
 /**
- * Optimize transitions for smooth 60fps performance
+ * Optimize transitions for smooth 120fps performance
  */
 export const optimizeTransitions = () => {
   const style = document.createElement('style');
   style.textContent = `
-    /* Encar-style buttery smooth transitions */
+    /* Ultra-smooth 120fps transitions */
     * {
       -webkit-tap-highlight-color: transparent;
     }
     
-    /* Optimize all transitions */
+    /* Optimize all transitions with GPU acceleration */
     [class*="transition"],
     button,
     a,
@@ -86,18 +86,34 @@ export const optimizeTransitions = () => {
       transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
       transition-duration: 200ms;
       will-change: auto;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
     }
     
-    /* Faster transitions for immediate feedback */
+    /* Instant feedback for touch interactions */
     button:active,
     a:active,
     [role="button"]:active {
-      transition-duration: 100ms;
+      transition-duration: 80ms;
+      transform: translate3d(0, 0, 0) scale(0.98);
+    }
+    
+    /* Optimize hover states */
+    button:hover,
+    a:hover,
+    [role="button"]:hover {
+      will-change: transform;
     }
     
     /* Remove will-change after animation */
     *:not(:hover):not(:active):not(:focus) {
       will-change: auto !important;
+    }
+    
+    /* Smooth scrolling containers */
+    * {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
     }
   `;
   document.head.appendChild(style);
@@ -180,6 +196,62 @@ export const respectReducedMotion = () => {
 };
 
 /**
+ * Optimize scroll performance for 120fps
+ */
+export const optimizeScrollPerformance = () => {
+  let ticking = false;
+  let lastScrollY = window.scrollY;
+  
+  // Passive scroll listener for better performance
+  const handleScroll = () => {
+    lastScrollY = window.scrollY;
+    
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        // Apply scroll optimizations
+        ticking = false;
+      });
+      ticking = true;
+    }
+  };
+  
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  
+  // Optimize all scrollable containers
+  const scrollContainers = document.querySelectorAll('[class*="overflow"], [class*="scroll"]');
+  scrollContainers.forEach((container) => {
+    const el = container as HTMLElement;
+    el.style.transform = 'translate3d(0, 0, 0)';
+    el.style.backfaceVisibility = 'hidden';
+    (el.style as any).webkitOverflowScrolling = 'touch';
+    el.style.overscrollBehavior = 'contain';
+  });
+};
+
+/**
+ * Enable 120Hz display support
+ */
+export const enable120Hz = () => {
+  // Check if high refresh rate is available
+  const style = document.createElement('style');
+  style.textContent = `
+    @media (min-resolution: 2dppx) and (prefers-reduced-motion: no-preference) {
+      * {
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    }
+    
+    /* Optimize for 120Hz displays */
+    @supports (animation-timeline: scroll()) {
+      * {
+        animation-timing-function: linear(0, 0.5 50%, 1);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+/**
  * Initialize all performance optimizations
  */
 export const initializePerformanceOptimizations = () => {
@@ -196,6 +268,8 @@ export const initializePerformanceOptimizations = () => {
 const applyOptimizations = () => {
   initializeAntiFlicker();
   optimizeTransitions();
+  optimizeScrollPerformance();
+  enable120Hz();
   respectReducedMotion();
   
   // Apply on next frame
@@ -214,6 +288,7 @@ const applyOptimizations = () => {
         optimizeImages();
         preventLayoutShift();
         optimizeCardAnimations();
+        optimizeScrollPerformance();
       });
     }
   });

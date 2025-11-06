@@ -9,9 +9,13 @@ import { inject120FPSStyles } from '@/utils/frameRateOptimizer'
 import initSmoothRuntime from '@/utils/runtimeSmoothness'
 import initAntiFlicker from '@/utils/antiFlicker'
 import { initializePerformanceOptimizations } from '@/utils/performanceOptimizer'
+import { initialize120fpsScrolling } from '@/utils/scroll120fps'
 
 // Initialize performance optimizations immediately
 initializePerformanceOptimizations();
+
+// Initialize ultra-smooth 120fps scrolling
+initialize120fpsScrolling();
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {

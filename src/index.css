@@ -7,7 +7,7 @@
    Ultra-smooth, buttery performance with zero flickering
    ============================================================================ */
 
-/* CRITICAL: Anti-Flicker & Performance */
+/* CRITICAL: Anti-Flicker & 120fps Performance */
 html {
   /* Prevent FOUC */
   visibility: visible !important;
@@ -16,7 +16,7 @@ html {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   
-  /* High-performance smooth scrolling */
+  /* Ultra-smooth scrolling for 120Hz displays */
   scroll-behavior: smooth;
   overflow-x: hidden;
   overflow-y: auto;
@@ -24,9 +24,14 @@ html {
   /* iOS momentum scrolling */
   -webkit-overflow-scrolling: touch;
   
-  /* Scroll optimizations */
+  /* Scroll optimizations for 120fps */
   scroll-padding-top: 80px;
   overflow-anchor: none;
+  
+  /* GPU acceleration */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
   
   /* Font rendering for crispness */
   -webkit-font-smoothing: antialiased;
@@ -41,15 +46,21 @@ body {
   
   /* Prevent overscroll bounce */
   overscroll-behavior-y: contain;
+  overscroll-behavior-x: none;
   
-  /* Hardware acceleration */
+  /* Maximum hardware acceleration for 120fps */
   transform: translate3d(0, 0, 0);
   -webkit-transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: scroll-position;
   
   /* Prevent tap highlight flash */
   -webkit-tap-highlight-color: transparent;
+  
+  /* Smooth font rendering */
+  text-rendering: optimizeSpeed;
 }
 
 /* Remove tap highlight on all interactive elements */
@@ -174,14 +185,46 @@ html.theme-transitioning *::after {
   }
 }
 
-/* Global motion smoothing tuned for high refresh rate (120Hz+) displays */
+/* Global motion smoothing tuned for 120Hz+ high refresh rate displays */
 @media (prefers-reduced-motion: no-preference) {
   :root {
+    --motion-duration-instant: 80ms;
     --motion-duration-fast: 150ms;
     --motion-duration-medium: 220ms;
     --motion-duration-slow: 360ms;
     --motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
     --motion-easing-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-easing-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Optimize all interactive elements for 120fps */
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [role="link"] {
+    transition: all var(--motion-duration-fast) var(--motion-easing-standard);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    will-change: auto;
+  }
+  
+  /* Instant feedback on interaction */
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transition-duration: var(--motion-duration-instant);
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  
+  /* Smooth hover states */
+  button:hover,
+  a:hover,
+  [role="button"]:hover {
+    will-change: transform;
+    transition-duration: var(--motion-duration-fast);
   }
 
   body {
@@ -190,12 +233,7 @@ html.theme-transitioning *::after {
                 opacity var(--motion-duration-medium) var(--motion-easing-standard);
   }
 
-  /* ENCAR-STYLE: Buttery smooth transitions for interactive elements */
-  button,
-  a,
-  input,
-  select,
-  textarea,
+  /* ENCAR-STYLE: Optimize interactive element states */
   .card,
   .sheet,
   .dialog,
@@ -214,8 +252,6 @@ html.theme-transitioning *::after {
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    
-    /* Only use will-change on hover/active */
     will-change: auto;
   }
 
@@ -856,43 +892,109 @@ img[width], img[height] {
 }
 
 /* ============================================================================
-   ENCAR-STYLE MOBILE & HIGH-PERFORMANCE OPTIMIZATIONS
+   ENCAR-STYLE MOBILE & 120FPS HIGH-PERFORMANCE OPTIMIZATIONS
    ============================================================================ */
 
-/* Mobile-specific touch optimizations */
+/* Ultra-smooth scroll containers for 120fps */
+* {
+  /* Scroll containment for better performance */
+  overscroll-behavior: contain;
+  
+  /* Optimize touch actions */
+  touch-action: manipulation;
+}
+
+/* Mobile-specific touch optimizations for 120fps */
 @media (max-width: 768px) {
-  /* Faster transitions on mobile for snappier feel */
+  /* Instant feedback on mobile */
   button,
   a,
   .card {
-    transition-duration: 150ms !important;
+    transition-duration: 120ms !important;
+    will-change: auto;
   }
   
-  /* Optimize mobile scrolling containers */
+  button:active,
+  a:active {
+    transition-duration: 60ms !important;
+  }
+  
+  /* Maximum performance scrolling containers */
   [class*="overflow-"],
-  .scroll-area {
+  .scroll-area,
+  main,
+  [role="main"] {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     scroll-behavior: smooth;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    will-change: scroll-position;
   }
   
-  /* Better mobile card performance */
+  /* Ultra-optimized mobile card performance */
   .card,
-  [class*="card-"] {
+  [class*="card-"],
+  [class*="bg-card"] {
     contain: layout style paint;
     isolation: isolate;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+  
+  /* Optimize grid and flex for smooth scrolling */
+  .grid,
+  .flex,
+  [class*="grid-cols"],
+  [class*="flex-"] {
+    contain: layout style;
+    transform: translate3d(0, 0, 0);
   }
 }
 
-/* High refresh rate optimization (120Hz+) */
-@media (min-resolution: 2dppx) {
+/* High refresh rate optimization (120Hz+ displays) */
+@media (min-resolution: 2dppx) and (prefers-reduced-motion: no-preference) {
   * {
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
   
+  /* Optimize all interactive elements for 120Hz */
   button,
   a,
-  .card {
+  .card,
+  [role="button"],
+  [class*="transition"] {
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+  
+  /* Ultra-smooth scrolling on high refresh displays */
+  html,
+  body,
+  [class*="overflow-"],
+  main {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+  }
+}
+
+/* Desktop-specific 120fps optimizations */
+@media (min-width: 769px) and (prefers-reduced-motion: no-preference) {
+  /* Smooth hover transitions on desktop */
+  button:hover,
+  a:hover,
+  .card:hover {
+    transition-duration: 180ms;
+    will-change: transform, box-shadow;
+  }
+  
+  /* Remove will-change after hover ends */
+  button:not(:hover),
+  a:not(:hover),
+  .card:not(:hover) {
+    will-change: auto;
   }
 }
