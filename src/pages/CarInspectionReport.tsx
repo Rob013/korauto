@@ -667,11 +667,22 @@ const CarInspectionReport = () => {
       if (value === undefined || value === null) return null;
       if (typeof value === "boolean") return value ? "Po" : "Jo";
       if (typeof value === "number") return value > 0 ? "Po" : "Jo";
+      
       const normalized = value.toString().trim().toLowerCase();
       if (!normalized) return null;
-      if (["po", "yes", "true", "1"].includes(normalized)) return "Po";
-      if (["jo", "no", "false", "0"].includes(normalized)) return "Jo";
-      return value.toString();
+      
+      // Check for explicit yes/no strings
+      if (["po", "yes", "true"].includes(normalized)) return "Po";
+      if (["jo", "no", "false"].includes(normalized)) return "Jo";
+      
+      // Handle numeric strings (like "1", "2", "3", etc.)
+      const numValue = parseFloat(normalized);
+      if (!isNaN(numValue)) {
+        return numValue > 0 ? "Po" : "Jo";
+      }
+      
+      // If we can't determine, return null to show "Nuk ka informata"
+      return null;
     };
 
     const rentalUsageValue =
