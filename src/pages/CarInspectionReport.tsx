@@ -800,52 +800,52 @@ const CarInspectionReport = () => {
         </div>
       </div>
 
-        <div className="container-responsive py-4 space-y-4">
-          <Tabs defaultValue="diagram" className="space-y-3">
-            <TabsList className="w-full flex flex-wrap items-stretch gap-2 bg-muted/60 p-1 rounded-lg h-auto md:flex-nowrap md:gap-1">
+        <div className="container-responsive py-2 md:py-4 space-y-3 md:space-y-4">
+          <Tabs defaultValue="diagram" className="space-y-2 md:space-y-3">
+            <TabsList className="w-full flex flex-wrap items-stretch gap-1.5 md:gap-2 bg-muted/60 p-0.5 md:p-1 rounded-lg h-auto">
               <TabsTrigger
                 value="diagram"
-                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
               >
                 Diagrami i Inspektimit të Automjetit
               </TabsTrigger>
               <TabsTrigger
                 value="exterior"
-                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
               >
                 Gjendja e Jashtme
               </TabsTrigger>
               <TabsTrigger
                 value="insurance"
-                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
               >
                 Historia e Sigurimit & Mekanika
               </TabsTrigger>
               <TabsTrigger
                 value="options"
-                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
               >
                 Pajisjet & Opsionet
               </TabsTrigger>
               <TabsTrigger
                 value="warranty"
-                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
+                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
               >
                 Garancioni
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="diagram" className="space-y-4">
+            <TabsContent value="diagram" className="space-y-3 md:space-y-4">
               <Card className="shadow-md">
-                <CardContent className="space-y-6 pt-6">
+                <CardContent className="space-y-4 md:space-y-6 pt-4 md:pt-6">
                   {/* Accident Summary Section */}
                   {car.inspect?.accident_summary && Object.keys(car.inspect.accident_summary).length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                    <div className="space-y-2 md:space-y-3">
+                      <h3 className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-destructive" />
                         Përmbledhje e Aksidenteve
                       </h3>
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-3">
                         {Object.entries(car.inspect.accident_summary).map(([key, value]) => {
                           const isNegative = value === "yes" || value === true;
                           
@@ -879,21 +879,21 @@ const CarInspectionReport = () => {
                           return (
                             <div
                               key={key}
-                              className={`flex flex-col gap-2 rounded-lg border p-4 ${
+                              className={`flex flex-col gap-1.5 md:gap-2 rounded-lg border p-2.5 md:p-4 ${
                                 isNegative ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-muted/40'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5 md:gap-2">
                                 {isNegative ? (
-                                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                                  <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive flex-shrink-0" />
                                 ) : (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                  <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
                                 )}
-                                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                <span className="text-[10px] md:text-xs font-medium uppercase tracking-wide text-muted-foreground leading-tight">
                                   {translateKey(key)}
                                 </span>
                               </div>
-                              <span className={`text-lg font-bold ${isNegative ? 'text-destructive' : 'text-green-600'}`}>
+                              <span className={`text-base md:text-lg font-bold ${isNegative ? 'text-destructive' : 'text-green-600'}`}>
                                 {translateValue(value)}
                               </span>
                             </div>
@@ -904,12 +904,12 @@ const CarInspectionReport = () => {
                   )}
                   
                   {/* Visual Diagram - Using Real API Data */}
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Wrench className="h-5 w-5 text-primary" />
+                  <div className="space-y-2 md:space-y-3">
+                    <h3 className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Wrench className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                       Diagrami Vizual i Dëmtimeve
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Diagrami tregon dëmtimet e vërteta, riparimet dhe ndërrimet e pjesëve sipas të dhënave të inspektimit
                     </p>
                     <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
@@ -917,38 +917,38 @@ const CarInspectionReport = () => {
 
                   {/* Outer Damage Details */}
                   {inspectionOuterData.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                        <Wrench className="h-5 w-5 text-primary" />
+                    <div className="space-y-2 md:space-y-3">
+                      <h3 className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Wrench className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                         Detajet e Dëmtimeve të Jashtme
                       </h3>
                       <div className="grid gap-2 md:grid-cols-2">
                         {inspectionOuterData.map((item: any, index: number) => (
                           <Card key={`${item?.type?.code || index}-summary`} className="border-border/80">
-                            <CardHeader className="pb-1">
-                              <div className="flex items-center gap-3">
-                                <Wrench className="h-4 w-4 text-primary" />
-                                <CardTitle className="text-base font-semibold">
+                            <CardHeader className="pb-1 px-3 pt-3 md:px-6 md:pt-6">
+                              <div className="flex items-center gap-2 md:gap-3">
+                                <Wrench className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                                <CardTitle className="text-sm md:text-base font-semibold">
                                   {item?.type?.title || "Pjesë e karocerisë"}
                                 </CardTitle>
                               </div>
                             </CardHeader>
-                            <CardContent className="space-y-1.5">
+                            <CardContent className="space-y-1.5 px-3 pb-3 md:px-6 md:pb-6">
                               {item?.statusTypes?.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
+                                <div className="flex flex-wrap gap-1 md:gap-1.5">
                                   {item.statusTypes.map((status: any) => (
-                                    <Badge key={`${status?.code}-${status?.title}`} variant="secondary">
+                                    <Badge key={`${status?.code}-${status?.title}`} variant="secondary" className="text-[10px] md:text-xs">
                                       {status?.title}
                                     </Badge>
                                   ))}
                                 </div>
                               )}
                               {item?.attributes?.length > 0 && (
-                                <ul className="space-y-1 text-sm text-muted-foreground">
+                                <ul className="space-y-0.5 md:space-y-1 text-xs md:text-sm text-muted-foreground">
                                   {item.attributes.map((attribute: string, attrIndex: number) => (
-                                    <li key={attrIndex} className="flex items-start gap-2">
-                                      <CheckCircle className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
-                                      <span>{attribute}</span>
+                                    <li key={attrIndex} className="flex items-start gap-1.5 md:gap-2">
+                                      <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                      <span className="leading-tight">{attribute}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -966,73 +966,73 @@ const CarInspectionReport = () => {
             {/* Insurance History & Mechanical System Tab */}
             <TabsContent value="insurance" className="space-y-4">
               <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Historia e Sigurimit dhe Aksidenteve</CardTitle>
+                <CardHeader className="pb-3 md:pb-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                    <CardTitle className="text-base md:text-xl">Historia e Sigurimit dhe Aksidenteve</CardTitle>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground mt-1">
                     Të dhëna të plota nga kompania e sigurimit dhe historia e aksidenteve
                   </p>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-3 md:space-y-6">
                   {/* Insurance Summary Stats */}
                   {car.insurance_v2 && Object.keys(car.insurance_v2).length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Aksidente</span>
-                        <span className="text-2xl font-bold text-destructive">{car.insurance_v2.accidentCnt || 0}</span>
+                    <div className="grid gap-2 grid-cols-2 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      <div className="flex flex-col gap-0.5 md:gap-1 rounded-lg border border-border/60 bg-muted/40 p-2 md:p-3">
+                        <span className="text-[10px] md:text-xs uppercase tracking-wide text-muted-foreground">Aksidente</span>
+                        <span className="text-xl md:text-2xl font-bold text-destructive">{car.insurance_v2.accidentCnt || 0}</span>
                       </div>
-                      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Ndërrimi i Pronarëve</span>
-                        <span className="text-2xl font-bold text-foreground">{car.insurance_v2.ownerChangeCnt || 0}</span>
+                      <div className="flex flex-col gap-0.5 md:gap-1 rounded-lg border border-border/60 bg-muted/40 p-2 md:p-3">
+                        <span className="text-[10px] md:text-xs uppercase tracking-wide text-muted-foreground">Ndërrimi i Pronarëve</span>
+                        <span className="text-xl md:text-2xl font-bold text-foreground">{car.insurance_v2.ownerChangeCnt || 0}</span>
                       </div>
-                      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Humbje Totale</span>
-                        <span className="text-2xl font-bold text-foreground">{car.insurance_v2.totalLossCnt || 0}</span>
+                      <div className="flex flex-col gap-0.5 md:gap-1 rounded-lg border border-border/60 bg-muted/40 p-2 md:p-3">
+                        <span className="text-[10px] md:text-xs uppercase tracking-wide text-muted-foreground">Humbje Totale</span>
+                        <span className="text-xl md:text-2xl font-bold text-foreground">{car.insurance_v2.totalLossCnt || 0}</span>
                       </div>
-                      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Vjedhje</span>
-                        <span className="text-2xl font-bold text-foreground">{car.insurance_v2.robberCnt || 0}</span>
+                      <div className="flex flex-col gap-0.5 md:gap-1 rounded-lg border border-border/60 bg-muted/40 p-2 md:p-3">
+                        <span className="text-[10px] md:text-xs uppercase tracking-wide text-muted-foreground">Vjedhje</span>
+                        <span className="text-xl md:text-2xl font-bold text-foreground">{car.insurance_v2.robberCnt || 0}</span>
                       </div>
                     </div>
                   ) : null}
 
                   {/* Detailed Accident History */}
                   {car.insurance_v2?.accidents && car.insurance_v2.accidents.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-foreground">Detajet e Aksidenteve</h3>
-                      <div className="space-y-3">
+                    <div className="space-y-2 md:space-y-3">
+                      <h3 className="text-base md:text-lg font-semibold text-foreground">Detajet e Aksidenteve</h3>
+                      <div className="space-y-2 md:space-y-3">
                         {car.insurance_v2.accidents.map((accident: any, idx: number) => (
                           <Card key={idx} className="border-l-4 border-l-destructive">
-                            <CardContent className="p-4">
-                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+                            <CardContent className="p-2.5 md:p-4">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-3 mb-2 md:mb-3">
                                 <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-muted-foreground" />
-                                  <span className="font-semibold">{accident.date || 'Data e panjohur'}</span>
+                                  <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
+                                  <span className="text-sm md:text-base font-semibold">{accident.date || 'Data e panjohur'}</span>
                                 </div>
-                                <Badge variant="outline" className="w-fit">
+                                <Badge variant="outline" className="w-fit text-xs">
                                   Tipi: {accident.type === "2" ? "Dëmtimi i vet" : accident.type === "3" ? "Dëmtim nga tjeri" : `Tipi ${accident.type}`}
                                 </Badge>
                               </div>
-                              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                                 <div className="flex flex-col gap-1">
-                                   <span className="text-xs text-muted-foreground">Shpenzimi Total</span>
-                                   <span className="font-bold text-destructive">
+                              <div className="grid gap-1.5 md:gap-2 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
+                                 <div className="flex flex-col gap-0.5 md:gap-1">
+                                   <span className="text-[10px] md:text-xs text-muted-foreground">Shpenzimi Total</span>
+                                   <span className="text-sm md:text-base font-bold text-destructive">
                                      {Math.round(convertKRWtoEUR(accident.insuranceBenefit || 0)).toLocaleString()}€
                                    </span>
                                  </div>
-                                 <div className="flex flex-col gap-1">
-                                   <span className="text-xs text-muted-foreground">Punë</span>
-                                   <span className="font-semibold">{Math.round(convertKRWtoEUR(accident.laborCost || 0)).toLocaleString()}€</span>
+                                 <div className="flex flex-col gap-0.5 md:gap-1">
+                                   <span className="text-[10px] md:text-xs text-muted-foreground">Punë</span>
+                                   <span className="text-sm md:text-base font-semibold">{Math.round(convertKRWtoEUR(accident.laborCost || 0)).toLocaleString()}€</span>
                                  </div>
-                                 <div className="flex flex-col gap-1">
-                                   <span className="text-xs text-muted-foreground">Lyerje</span>
-                                   <span className="font-semibold">{Math.round(convertKRWtoEUR(accident.paintingCost || 0)).toLocaleString()}€</span>
+                                 <div className="flex flex-col gap-0.5 md:gap-1">
+                                   <span className="text-[10px] md:text-xs text-muted-foreground">Lyerje</span>
+                                   <span className="text-sm md:text-base font-semibold">{Math.round(convertKRWtoEUR(accident.paintingCost || 0)).toLocaleString()}€</span>
                                  </div>
-                                 <div className="flex flex-col gap-1">
-                                   <span className="text-xs text-muted-foreground">Pjesë</span>
-                                   <span className="font-semibold">{Math.round(convertKRWtoEUR(accident.partCost || 0)).toLocaleString()}€</span>
+                                 <div className="flex flex-col gap-0.5 md:gap-1">
+                                   <span className="text-[10px] md:text-xs text-muted-foreground">Pjesë</span>
+                                   <span className="text-sm md:text-base font-semibold">{Math.round(convertKRWtoEUR(accident.partCost || 0)).toLocaleString()}€</span>
                                  </div>
                               </div>
                             </CardContent>
@@ -1044,13 +1044,13 @@ const CarInspectionReport = () => {
 
                   {/* Car Info Changes (License Plate Changes) */}
                   {car.insurance_v2?.carInfoChanges && car.insurance_v2.carInfoChanges.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-foreground">Ndryshimet e Informacionit të Makinës</h3>
-                      <div className="space-y-2">
+                    <div className="space-y-2 md:space-y-3">
+                      <h3 className="text-base md:text-lg font-semibold text-foreground">Ndryshimet e Informacionit të Makinës</h3>
+                      <div className="space-y-1.5 md:space-y-2">
                         {car.insurance_v2.carInfoChanges.map((change: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-muted/30">
-                            <span className="font-mono font-semibold">{change.carNo || 'N/A'}</span>
-                            <span className="text-sm text-muted-foreground">{change.date || 'Data e panjohur'}</span>
+                          <div key={idx} className="flex items-center justify-between p-2 md:p-3 rounded-lg border border-border/60 bg-muted/30">
+                            <span className="text-sm md:text-base font-mono font-semibold">{change.carNo || 'N/A'}</span>
+                            <span className="text-xs md:text-sm text-muted-foreground">{change.date || 'Data e panjohur'}</span>
                           </div>
                         ))}
                       </div>
@@ -1069,32 +1069,32 @@ const CarInspectionReport = () => {
               {/* Mechanical System Section */}
               {inspectionInnerData ? (
                 <Card className="shadow-md border-border/80">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <Cog className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-xl">Motori dhe Sistemi Mekanik</CardTitle>
+                  <CardHeader className="pb-3 md:pb-4">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                      <CardTitle className="text-base md:text-xl">Motori dhe Sistemi Mekanik</CardTitle>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">
                       Kontrolli teknik i komponentëve kryesorë të automjetit
                     </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
                       {Object.entries(inspectionInnerData).map(([key, value]) => {
                         const positive = isPositiveStatus(value);
                         return (
                           <div
                             key={key}
-                            className={`p-2 sm:p-3 rounded-lg border text-xs sm:text-sm ${
+                            className={`p-1.5 md:p-2.5 rounded-lg border text-[11px] md:text-sm ${
                               positive
                                 ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
                                 : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
                             }`}
                           >
-                            <span className="font-semibold text-foreground block mb-0.5 sm:mb-1 truncate">
+                            <span className="font-semibold text-foreground block mb-0.5 truncate leading-tight">
                               {formatKeyLabel(key)}
                             </span>
-                            <p className={`font-medium ${positive ? "text-emerald-700" : "text-red-700"}`}>
+                            <p className={`font-medium leading-tight ${positive ? "text-emerald-700" : "text-red-700"}`}>
                               {translateStatusValue(value)}
                             </p>
                           </div>
