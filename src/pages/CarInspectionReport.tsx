@@ -792,28 +792,16 @@ const CarInspectionReport = () => {
                 Diagrami i Inspektimit të Automjetit
               </TabsTrigger>
               <TabsTrigger
-                value="accident-summary"
-                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
-              >
-                Përmbledhje Aksidentesh
-              </TabsTrigger>
-              <TabsTrigger
                 value="exterior"
                 className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
               >
                 Gjendja e Jashtme
               </TabsTrigger>
               <TabsTrigger
-                value="mechanical"
-                className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
-              >
-                Sistemi Mekanik
-              </TabsTrigger>
-              <TabsTrigger
                 value="insurance"
                 className="flex-1 min-w-[10rem] text-sm md:text-base whitespace-normal leading-tight text-center px-3 py-2"
               >
-                Historia e Sigurimit
+                Historia e Sigurimit & Mekanika
               </TabsTrigger>
               <TabsTrigger
                 value="options"
@@ -937,7 +925,7 @@ const CarInspectionReport = () => {
               </Card>
             </TabsContent>
 
-            {/* NEW: Insurance History Tab */}
+            {/* Insurance History & Mechanical System Tab */}
             <TabsContent value="insurance" className="space-y-4">
               <Card className="shadow-md border-border/80">
                 <CardHeader>
@@ -1039,9 +1027,87 @@ const CarInspectionReport = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Mechanical System Section */}
+              {inspectionInnerData ? (
+                <Card className="shadow-md border-border/80">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Cog className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Motori dhe Sistemi Mekanik</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Kontrolli teknik i komponentëve kryesorë të automjetit
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {Object.entries(inspectionInnerData).map(([key, value]) => {
+                        const positive = isPositiveStatus(value);
+                        return (
+                          <div
+                            key={key}
+                            className={`p-2 sm:p-3 rounded-lg border text-xs sm:text-sm ${
+                              positive
+                                ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
+                                : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
+                            }`}
+                          >
+                            <span className="font-semibold text-foreground block mb-0.5 sm:mb-1 truncate">
+                              {formatKeyLabel(key)}
+                            </span>
+                            <p className={`font-medium ${positive ? "text-emerald-700" : "text-red-700"}`}>
+                              {translateStatusValue(value)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {/* Maintenance History */}
+              {car.maintenanceHistory && car.maintenanceHistory.length > 0 && (
+                <Card className="shadow-md border-border/80">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Historia e Mirëmbajtjes</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Shërbimet dhe mirëmbajtjet e regjistruara për automjetin
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {car.maintenanceHistory.map((record: any, index: number) => (
+                      <Card key={index} className="border border-border/60 bg-muted/40">
+                        <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <div className="font-semibold text-foreground">
+                              {record.service_type || record.type || "Shërbim i përgjithshëm"}
+                            </div>
+                            {record.date && (
+                              <Badge variant="outline" className="text-xs">
+                                {record.date}
+                              </Badge>
+                            )}
+                          </div>
+                          {record.description && <p>{record.description}</p>}
+                          {record.mileage && (
+                            <p className="text-xs">
+                              Kilometrazh: <span className="font-medium">{record.mileage}</span>
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
-            {/* NEW: Options & Equipment Tab */}
+            {/* Options & Equipment Tab */}
             <TabsContent value="options" className="space-y-4">
               <Card className="shadow-md border-border/80">
                 <CardHeader>
@@ -1059,31 +1125,37 @@ const CarInspectionReport = () => {
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Opsione Shtesë me Çmim</h3>
                       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-                        {car.details.options_extra.map((option: any, idx: number) => (
-                          <Card key={idx} className="border-primary/20">
-                            <CardContent className="p-4 space-y-2">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-base">{option.name || option.name_original}</h4>
-                                  {option.name_original && option.name && option.name !== option.name_original && (
-                                    <p className="text-xs text-muted-foreground">{option.name_original}</p>
+                        {car.details.options_extra.map((option: any, idx: number) => {
+                          const translatedName = getOptionName(option.code) !== option.code 
+                            ? getOptionName(option.code) 
+                            : (option.name || option.name_original);
+                          const priceInEur = option.price ? convertKRWtoEUR(option.price * 10000) : null;
+                          
+                          return (
+                            <Card key={idx} className="border-primary/20">
+                              <CardContent className="p-4 space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold text-base">{translatedName}</h4>
+                                    {option.name_original && translatedName !== option.name_original && (
+                                      <p className="text-xs text-muted-foreground">{option.name_original}</p>
+                                    )}
+                                  </div>
+                                  {priceInEur && (
+                                    <Badge variant="secondary" className="text-sm font-bold">
+                                      €{priceInEur.toLocaleString()}
+                                    </Badge>
                                   )}
                                 </div>
-                                {option.price && (
-                                  <Badge variant="secondary" className="text-sm font-bold">
-                                    {option.price.toLocaleString()}만원
-                                  </Badge>
+                                {option.description && (
+                                  <p className="text-sm text-muted-foreground leading-relaxed">
+                                    {getOptionDescription(option.code) || option.description}
+                                  </p>
                                 )}
-                              </div>
-                              {option.description && (
-                                <p className="text-sm text-muted-foreground leading-relaxed">{option.description}</p>
-                              )}
-                              {option.code && (
-                                <p className="text-xs text-muted-foreground">Kodi: {option.code}</p>
-                              )}
-                            </CardContent>
-                          </Card>
-                        ))}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1093,12 +1165,15 @@ const CarInspectionReport = () => {
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Pajisje Standarde</h3>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {car.details.options.standard.map((optionCode: string, idx: number) => (
-                          <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-border/60 bg-muted/30">
-                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                            <span className="text-sm font-medium">{getOptionName(optionCode)}</span>
-                          </div>
-                        ))}
+                        {car.details.options.standard.map((optionCode: string, idx: number) => {
+                          const displayName = getOptionName(optionCode);
+                          return (
+                            <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-border/60 bg-muted/30">
+                              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                              <span className="text-sm font-medium">{displayName}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1108,12 +1183,15 @@ const CarInspectionReport = () => {
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Opsione të Zgjedhura</h3>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {car.details.options.choice.map((optionCode: string, idx: number) => (
-                          <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
-                            <Cog className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="text-sm font-medium">{getOptionName(optionCode)}</span>
-                          </div>
-                        ))}
+                        {car.details.options.choice.map((optionCode: string, idx: number) => {
+                          const displayName = getOptionName(optionCode);
+                          return (
+                            <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+                              <Cog className="h-4 w-4 text-primary flex-shrink-0" />
+                              <span className="text-sm font-medium">{displayName}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1448,89 +1526,6 @@ const CarInspectionReport = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="mechanical" className="space-y-6">
-              {inspectionInnerData ? (
-                <Card className="shadow-md border-border/80">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <Cog className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-xl">Motori dhe Sistemi Mekanik</CardTitle>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Kontrolli teknik i komponentëve kryesorë të automjetit
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {Object.entries(inspectionInnerData).map(([key, value]) => {
-                        const positive = isPositiveStatus(value);
-                        return (
-                          <div
-                            key={key}
-                            className={`p-2 sm:p-3 rounded-lg border text-xs sm:text-sm ${
-                              positive
-                                ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
-                                : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
-                            }`}
-                          >
-                            <span className="font-semibold text-foreground block mb-0.5 sm:mb-1 truncate">
-                              {formatKeyLabel(key)}
-                            </span>
-                            <p className={`font-medium ${positive ? "text-emerald-700" : "text-red-700"}`}>
-                              {translateStatusValue(value)}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="shadow-md border-border/80">
-                  <CardContent className="py-10 text-center text-muted-foreground">
-                    Nuk ka të dhëna të detajuara teknike të disponueshme.
-                  </CardContent>
-                </Card>
-              )}
-
-              {car.maintenanceHistory && car.maintenanceHistory.length > 0 && (
-                <Card className="shadow-md border-border/80">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-xl">Historia e Mirëmbajtjes</CardTitle>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Shërbimet dhe mirëmbajtjet e regjistruara për automjetin
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {car.maintenanceHistory.map((record: any, index: number) => (
-                      <Card key={index} className="border border-border/60 bg-muted/40">
-                        <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
-                          <div className="flex flex-wrap justify-between gap-2">
-                            <div className="font-semibold text-foreground">
-                              {record.service_type || record.type || "Shërbim i përgjithshëm"}
-                            </div>
-                            {record.date && (
-                              <Badge variant="outline" className="text-xs">
-                                {record.date}
-                              </Badge>
-                            )}
-                          </div>
-                          {record.description && <p>{record.description}</p>}
-                          {record.mileage && (
-                            <p className="text-xs">
-                              Kilometrazh: <span className="font-medium">{record.mileage}</span>
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
           </Tabs>
 
           <Separator />
