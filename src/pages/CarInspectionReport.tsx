@@ -1304,13 +1304,15 @@ const CarInspectionReport = () => {
                         <div className="flex-1 h-px bg-border"></div>
                         <span className="text-xs text-muted-foreground font-medium">{car.details.options.standard.length} pajisje</span>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2">
                         {(showAllStandard ? car.details.options.standard : car.details.options.standard.slice(0, 6)).map((optionCode: string, idx: number) => {
                           const displayName = getOptionName(optionCode);
                           return (
                             <div key={idx} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group">
                               <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">{displayName}</span>
+                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight">
+                                <span className="font-mono font-semibold">{optionCode}</span> = {displayName}
+                              </span>
                             </div>
                           );
                         })}
@@ -1334,13 +1336,15 @@ const CarInspectionReport = () => {
                         <div className="flex-1 h-px bg-border"></div>
                         <span className="text-xs text-muted-foreground font-medium">{car.details.options.choice.length} opsione</span>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2">
                         {(showAllChoice ? car.details.options.choice : car.details.options.choice.slice(0, 6)).map((optionCode: string, idx: number) => {
                           const displayName = getOptionName(optionCode);
                           return (
                             <div key={idx} className="flex items-center gap-2 p-2 bg-accent/5 border border-accent/20 rounded-md hover:bg-accent/10 hover:border-accent/30 transition-all duration-200 group">
                               <Cog className="h-3.5 w-3.5 text-accent flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight line-clamp-1">{displayName}</span>
+                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight">
+                                <span className="font-mono font-semibold">{optionCode}</span> = {displayName}
+                              </span>
                             </div>
                           );
                         })}

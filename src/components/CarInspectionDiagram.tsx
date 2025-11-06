@@ -295,20 +295,13 @@ const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
   const hasRepair = statuses.some(
     (s) => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair')
   );
-  const hasCorrosion = statuses.some(
-    (s) => s.code === 'U' || s.title.includes('부식') || s.title.includes('corr')
-  );
-  const hasScratch = statuses.some(
-    (s) => s.code === 'S' || s.title.includes('흠집') || s.title.includes('scratch')
-  );
 
-  if (hasExchange) return 'hsl(0 84% 60%)'; // Red for replaced parts
-  if (hasWelding) return 'hsl(217 91% 60%)'; // Blue for welded parts
-  if (hasRepair) return 'hsl(25 95% 53%)'; // Orange
-  if (hasCorrosion) return 'hsl(25 95% 53%)'; // Orange
-  if (hasScratch) return 'hsl(48 96% 53%)'; // Yellow
+  // Red for replacement/exchange (Nderrim)
+  if (hasExchange || hasWelding) return '#dc2626';
+  // Blue for repair (Riparim)
+  if (hasRepair) return '#3b82f6';
 
-  return 'hsl(142 76% 36%)'; // Green
+  return 'hsl(142 76% 36%)'; // Green for normal
 };
 
 const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
@@ -320,11 +313,8 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   const hasCorrosion = statuses.some((s) => s.code === 'U');
   const hasScratch = statuses.some((s) => s.code === 'S');
 
-  if (hasExchange) return 'Pjesë e zëvendësuar (Rreth i kuq)';
-  if (hasWelding) return 'Saldim i kryer (Rreth blu)';
-  if (hasRepair) return 'Pjesë e riparuar (Rreth portokalli)';
-  if (hasCorrosion) return 'Ndryshk i vogël (Rreth portokalli)';
-  if (hasScratch) return 'Gërvishje (Rreth i verdhë)';
+  if (hasExchange || hasWelding) return 'Pjesë e zëvendësuar (N - i kuq)';
+  if (hasRepair) return 'Pjesë e riparuar (R - blu)';
 
   return 'Pjesë normale';
 };
@@ -387,31 +377,17 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
     <div className="space-y-1.5">
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-destructive/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold shadow-sm">N</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#dc2626] text-white text-[9px] font-bold shadow-sm">N</span>
                     Nderrime
                   </span>
-                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.replacements}</Badge>
+                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.replacements + issueCount.welds}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-blue-600/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold shadow-sm">S</span>
-                    Saldime
-                  </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(217 91% 60%)', color: 'white'}}>{issueCount.welds}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
-                  <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>R</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#3b82f6] text-white text-[9px] font-bold shadow-sm">R</span>
                     Riparime
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.repairs}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
-                  <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>K</span>
-                    Korrozion
-                  </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.corrosion}</Badge>
+                  <Badge className="font-mono text-xs bg-[#3b82f6] text-white">{issueCount.repairs}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -478,14 +454,17 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             codes.includes('S') ||
                             lowTitles.some((t) => t.includes('scratch') || t.includes('흠집'));
 
-                          // Collect all markers to display
+                          // Collect markers to display - simplified to N (red) and R (blue)
                           const markers: Array<{ char: string; color: string }> = [];
                           
-                          if (hasExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
-                          if (hasWeld) markers.push({ char: 'S', color: 'hsl(217 91% 60%)' });
-                          if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
-                          if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
-                          if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
+                          // Red N for replacement/exchange/welding
+                          if (hasExchange || hasWeld) {
+                            markers.push({ char: 'N', color: '#dc2626' });
+                          }
+                          // Blue R for repair
+                          if (hasRepair) {
+                            markers.push({ char: 'R', color: '#3b82f6' });
+                          }
 
                           const n = markers.length;
                           const base = part.markerPos || part.labelPos;
