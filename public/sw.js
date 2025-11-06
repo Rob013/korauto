@@ -1,6 +1,6 @@
 // Service Worker for caching API responses and static assets with 120fps performance optimization
 // CRITICAL: Update this version number to force cache refresh for all users
-const VERSION = '2025.06.02.002'; // YYYY.MM.DD.BUILD format - Fixed Vite module loading
+const VERSION = '2025.06.02.003'; // YYYY.MM.DD.BUILD format - Skip all interception in dev mode
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
@@ -123,6 +123,17 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests
   if (request.method !== 'GET') {
+    return;
+  }
+
+  // CRITICAL: Completely skip service worker in development mode
+  // Check if we're in development (Lovable sandbox or localhost)
+  const isDevelopment = url.hostname.includes('lovableproject.com') || 
+                       url.hostname.includes('localhost') ||
+                       url.hostname === '127.0.0.1';
+  
+  if (isDevelopment) {
+    // In development, don't intercept ANY requests - let browser handle everything
     return;
   }
 
