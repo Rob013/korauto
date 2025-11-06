@@ -840,9 +840,6 @@ const CarInspectionReport = () => {
                 <CardHeader className="flex flex-col gap-1 pb-3">
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">
-                      Diagrami i Inspektimit
-                    </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
