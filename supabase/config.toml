@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.ai-car-search]
 verify_jwt = false
+
+[functions.cars-sync]
+verify_jwt = false
