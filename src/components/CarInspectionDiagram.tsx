@@ -427,6 +427,51 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
         <div className="lg:col-span-2 flex flex-col items-center justify-center gap-4 p-4">
           <div className="relative w-full max-w-md">
             <img src={carDiagramTop} alt="Car Top View" className="w-full h-auto rounded-lg" />
+            
+            {/* Overlay markers directly on image */}
+            {carParts.map((part) => {
+              const statuses = getPartStatus(part.id);
+              if (statuses.length === 0 || !part.markerPos) return null;
+              
+              const hasExchange = statuses.some(
+                (s) => s.code === 'X' || s.code === '2' || s.title.includes('교환') || s.title.includes('exchange')
+              );
+              const hasWelding = statuses.some(
+                (s) => s.code === 'W' || s.code === '3' || s.title.includes('용접') || s.title.includes('weld')
+              );
+              const hasRepair = statuses.some(
+                (s) => s.code === 'A' || s.code === '1' || s.title.includes('수리') || s.title.includes('repair')
+              );
+              
+              const markers: Array<{ char: string; color: string }> = [];
+              if (hasExchange || hasWelding) markers.push({ char: 'N', color: '#dc2626' });
+              if (hasRepair) markers.push({ char: 'R', color: '#3b82f6' });
+              
+              if (markers.length === 0) return null;
+              
+              // Convert SVG coordinates (640x630) to percentage
+              const leftPercent = (part.markerPos.x / 640) * 100;
+              const topPercent = (part.markerPos.y / 630) * 100;
+              
+              return markers.map((m, idx) => {
+                const offset = (idx - (markers.length - 1) / 2) * 2; // 2% spacing
+                return (
+                  <div
+                    key={`marker-${part.id}-${idx}`}
+                    className="absolute flex items-center justify-center w-7 h-7 rounded-full text-white text-sm font-bold shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 z-10 animate-in fade-in zoom-in duration-300"
+                    style={{
+                      left: `${leftPercent + offset}%`,
+                      top: `${topPercent}%`,
+                      backgroundColor: m.color,
+                    }}
+                    title={`${part.name} - ${getStatusText(statuses)}`}
+                  >
+                    {m.char}
+                  </div>
+                );
+              });
+            })}
+            
             <svg viewBox="0 0 640 630" className="absolute inset-0 w-full h-full"  style={{pointerEvents: 'none'}}>
               <defs>
                 <filter id="glow">
@@ -437,7 +482,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   </feMerge>
                 </filter>
               </defs>
-              {/* Render clickable overlay parts with circular code markers */}
+              {/* Render clickable overlay parts */}
               {carParts.map((part) => {
                 const statuses = getPartStatus(part.id);
                 const color = getStatusColor(statuses);
@@ -458,81 +503,6 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       style={{ pointerEvents: 'auto' }}
                     />
 
-                    {/* Status markers with detailed codes from API - Show at exact markerPos */}
-                    {statuses.length > 0 && part.markerPos && (
-                      <g>
-                        {(() => {
-                          const lowTitles = statuses.map((s) => (s.title || '').toString().toLowerCase());
-                          const codes = statuses.map((s) => (s.code || '').toString().toUpperCase());
-
-                          // Check for different types of repairs/replacements from API
-                          const hasExchange =
-                            codes.includes('X') || codes.includes('2') ||
-                            lowTitles.some((t) => t.includes('exchange') || t.includes('replacement') || t.includes('교환'));
-                          const hasWeld =
-                            codes.includes('W') || codes.includes('3') ||
-                            lowTitles.some((t) => t.includes('weld') || t.includes('sheet metal') || t.includes('용접'));
-                          const hasRepair =
-                            codes.includes('A') || codes.includes('1') ||
-                            lowTitles.some((t) => t.includes('repair') || t.includes('simple') || t.includes('수리'));
-                          const hasCorrosion =
-                            codes.includes('U') ||
-                            lowTitles.some((t) => t.includes('corr') || t.includes('부식'));
-                          const hasScratch =
-                            codes.includes('S') ||
-                            lowTitles.some((t) => t.includes('scratch') || t.includes('흠집'));
-
-                          // Collect markers to display - simplified to N (red) and R (blue)
-                          const markers: Array<{ char: string; color: string }> = [];
-                          
-                          // Red N for replacement/exchange/welding
-                          if (hasExchange || hasWeld) {
-                            markers.push({ char: 'N', color: '#dc2626' });
-                          }
-                          // Blue R for repair (including simple repairs)
-                          if (hasRepair) {
-                            markers.push({ char: 'R', color: '#3b82f6' });
-                          }
-
-                          const n = markers.length;
-                          const base = part.markerPos || part.labelPos;
-                          const spacing = 16;
-                          
-                          return markers.map((m, idx) => {
-                            const offset = (idx - (n - 1) / 2) * spacing;
-                            const cx = base.x + offset;
-                            const cy = base.y;
-                            return (
-                              <g key={`${part.id}-mrk-${idx}`}>
-                                <circle 
-                                  cx={cx} 
-                                  cy={cy} 
-                                  r={11} 
-                                  fill={m.color} 
-                                  stroke="white" 
-                                  strokeWidth={2}
-                                  filter={isHovered || isSelected ? 'url(#glow)' : undefined}
-                                  className="transition-all duration-200"
-                                />
-                                <text 
-                                  x={cx} 
-                                  y={cy} 
-                                  textAnchor="middle" 
-                                  dominantBaseline="central" 
-                                  fontSize={9} 
-                                  fontWeight={700} 
-                                  fill="white"
-                                  className="pointer-events-none select-none"
-                                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
-                                >
-                                  {m.char}
-                                </text>
-                              </g>
-                            );
-                          });
-                        })()}
-                      </g>
-                    )}
                     {(isHovered || isSelected) && (
                       <text
                         x={part.labelPos.x}
