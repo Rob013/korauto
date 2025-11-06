@@ -11,44 +11,11 @@ import initAntiFlicker from '@/utils/antiFlicker'
 import { initializePerformanceOptimizations } from '@/utils/performanceOptimizer'
 import { initialize120fpsScrolling } from '@/utils/scroll120fps'
 
-// Polyfill for requestIdleCallback
-if (typeof window !== 'undefined' && !('requestIdleCallback' in window)) {
-  (window as any).requestIdleCallback = (cb: Function) => {
-    const start = Date.now();
-    return setTimeout(() => {
-      cb({
-        didTimeout: false,
-        timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
-      });
-    }, 1);
-  };
-}
+// Initialize performance optimizations immediately
+initializePerformanceOptimizations();
 
-// Defer non-critical optimizations to after initial render
-const deferredInit = () => {
-  // Initialize performance optimizations after paint
-  requestIdleCallback(() => {
-    initializePerformanceOptimizations();
-  }, { timeout: 2000 });
-
-  // Initialize ultra-smooth scrolling after first interaction
-  const initScroll = () => {
-    initialize120fpsScrolling();
-  };
-  
-  if (document.readyState === 'complete') {
-    setTimeout(initScroll, 500);
-  } else {
-    window.addEventListener('load', () => setTimeout(initScroll, 500), { once: true });
-  }
-};
-
-// Use requestIdleCallback for non-critical init
-if ('requestIdleCallback' in window) {
-  requestIdleCallback(deferredInit, { timeout: 1000 });
-} else {
-  setTimeout(deferredInit, 0);
-}
+// Initialize ultra-smooth 120fps scrolling
+initialize120fpsScrolling();
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {
