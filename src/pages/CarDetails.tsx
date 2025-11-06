@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar, Disc3, Instagram, Facebook } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar, Tag, Armchair, DoorClosed, Cylinder, CircleDot, PaintBucket, Disc3, Instagram, Facebook } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -19,20 +19,6 @@ import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
-import brandIcon from "@/assets/spec-icons/brand.svg";
-import modelIcon from "@/assets/spec-icons/model.svg";
-import yearIcon from "@/assets/spec-icons/year.svg";
-import mileageIcon from "@/assets/spec-icons/mileage.svg";
-import cylindersIcon from "@/assets/spec-icons/cylinders.svg";
-import doorsIcon from "@/assets/spec-icons/doors.svg";
-import fuelIcon from "@/assets/spec-icons/fuel.svg";
-import engineIcon from "@/assets/spec-icons/engine.svg";
-import transmissionIcon from "@/assets/spec-icons/transmission.svg";
-import drivetrainIcon from "@/assets/spec-icons/drivetrain.svg";
-import seatsIcon from "@/assets/spec-icons/seats.svg";
-import exteriorColorIcon from "@/assets/spec-icons/exterior-color.svg";
-import interiorColorIcon from "@/assets/spec-icons/interior-color.svg";
-import vinIcon from "@/assets/spec-icons/vin.svg";
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -1721,13 +1707,8 @@ const CarDetails = memo(() => {
                   {/* 1. Brand - e.g., Volkswagen */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
-                      <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <img
-                          src={brandIcon}
-                          alt="Brand icon"
-                          className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                          loading="lazy"
-                        />
+                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                        <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1738,13 +1719,8 @@ const CarDetails = memo(() => {
                   {/* 2. Model - e.g., Tiguan */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
-                      <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <img
-                          src={modelIcon}
-                          alt="Model icon"
-                          className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                          loading="lazy"
-                        />
+                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                        <Tag className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1755,13 +1731,8 @@ const CarDetails = memo(() => {
                   {/* 3. Year - e.g., 2022 */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
-                      <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <img
-                          src={yearIcon}
-                          alt="Year icon"
-                          className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                          loading="lazy"
-                        />
+                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                        <Calendar className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1772,13 +1743,8 @@ const CarDetails = memo(() => {
                   {/* 4. Mileage */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
-                      <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <img
-                          src={mileageIcon}
-                          alt="Mileage icon"
-                          className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                          loading="lazy"
-                        />
+                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                        <Gauge className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1790,13 +1756,8 @@ const CarDetails = memo(() => {
                   {car.cylinders && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={cylindersIcon}
-                            alt="Cylinders icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Cylinder className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1809,13 +1770,8 @@ const CarDetails = memo(() => {
                   {car.details?.doors_count && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={doorsIcon}
-                            alt="Doors icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <DoorClosed className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1827,13 +1783,8 @@ const CarDetails = memo(() => {
                   {/* Fuel Type */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
-                      <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <img
-                          src={fuelIcon}
-                          alt="Fuel type icon"
-                          className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                          loading="lazy"
-                        />
+                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                        <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1845,13 +1796,8 @@ const CarDetails = memo(() => {
                   {car.details?.engine_volume && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={engineIcon}
-                            alt="Engine volume icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Cog className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1864,13 +1810,8 @@ const CarDetails = memo(() => {
                   {car.transmission && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={transmissionIcon}
-                            alt="Transmission icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Settings className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1883,13 +1824,8 @@ const CarDetails = memo(() => {
                   {car.drive_wheel?.name && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={drivetrainIcon}
-                            alt="Drivetrain icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <CircleDot className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium uppercase text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1902,13 +1838,8 @@ const CarDetails = memo(() => {
                   {car.details?.seats_count && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={seatsIcon}
-                            alt="Seats icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1921,13 +1852,8 @@ const CarDetails = memo(() => {
                   {car.color && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={exteriorColorIcon}
-                            alt="Exterior color icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <PaintBucket className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1940,13 +1866,8 @@ const CarDetails = memo(() => {
                   {car.details?.interior_color && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={interiorColorIcon}
-                            alt="Interior color icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
@@ -1959,13 +1880,8 @@ const CarDetails = memo(() => {
                   {car.vin && (
                     <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
-                        <div className="p-1.5 md:p-2.5 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <img
-                            src={vinIcon}
-                            alt="VIN icon"
-                            className="h-6 w-6 md:h-8 md:w-8 object-contain"
-                            loading="lazy"
-                          />
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
