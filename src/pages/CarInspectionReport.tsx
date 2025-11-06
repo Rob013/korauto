@@ -937,9 +937,6 @@ const CarInspectionReport = () => {
               </Card>
             </TabsContent>
 
-            {/* NEW: Accident Summary Tab */}
-            <TabsContent value="accident-summary" className="space-y-4">
-
             {/* NEW: Insurance History Tab */}
             <TabsContent value="insurance" className="space-y-4">
               <Card className="shadow-md border-border/80">
