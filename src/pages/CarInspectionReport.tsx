@@ -771,7 +771,7 @@ const CarInspectionReport = () => {
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               {car.lot && (
                 <span className="font-medium text-foreground">
-                  Kodi i lotit: <span className="font-semibold">{car.lot}</span>
+                  Kodi: <span className="font-semibold">{car.lot}</span>
                 </span>
               )}
               {formattedPrice && (
@@ -837,12 +837,7 @@ const CarInspectionReport = () => {
 
             <TabsContent value="diagram" className="space-y-4">
               <Card className="shadow-md">
-                <CardHeader className="flex flex-col gap-1 pb-3">
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-primary" />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pt-6">
                   {/* Accident Summary Section */}
                   {car.inspect?.accident_summary && Object.keys(car.inspect.accident_summary).length > 0 && (
                     <div className="space-y-3">
