@@ -1127,7 +1127,7 @@ const EncarCatalog = ({
         ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform'}
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center gap-4 sm:justify-between">
             <div className="flex items-center gap-2">
               <Filter className={`h-4 w-4 sm:h-5 sm:w-5 ${isMobile ? 'text-primary-foreground' : 'text-primary'}`} />
               <h3 className={`font-semibold ${isMobile ? 'text-sm text-primary-foreground' : 'text-sm sm:text-base'}`}>
