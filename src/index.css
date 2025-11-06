@@ -20,6 +20,9 @@ html {
   color: hsl(var(--foreground));
   scroll-behavior: smooth;
   overflow-x: hidden;
+  /* Enhanced smooth scrolling with momentum */
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-top: 80px;
 }
 
 /* iOS-style smooth theme transitions */
@@ -62,7 +65,7 @@ body {
   contain-intrinsic-size: auto 500px;
 }
 
-/* GPU acceleration - 120fps animations */
+/* GPU acceleration - 120fps animations with scroll optimization */
 @media (prefers-reduced-motion: no-preference) {
   .animate-spin,
   .animate-pulse,
@@ -75,6 +78,22 @@ body {
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     perspective: 1000px;
+  }
+
+  /* Smooth scrolling containers */
+  [class*="overflow-y"],
+  [class*="overflow-auto"],
+  .scroll-smooth {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+  }
+
+  /* Optimize scroll performance for large lists */
+  [role="list"],
+  .grid,
+  .flex {
+    contain: layout style paint;
   }
 }
 
@@ -111,11 +130,12 @@ body {
                 box-shadow var(--motion-duration-medium) var(--motion-easing-standard),
                 color var(--motion-duration-fast) var(--motion-easing-standard),
                 opacity var(--motion-duration-medium) var(--motion-easing-standard);
-    will-change: transform, opacity;
+    will-change: transform;
     transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
   }
 
-  button:hover,
+  button:hover:not(:disabled),
   a:hover,
   .card:hover,
   .sheet:hover,
@@ -126,11 +146,31 @@ body {
     transform: translate3d(0, -2px, 0);
   }
 
-  button:active,
+  button:active:not(:disabled),
   a:active,
   .filter-select:active {
-    transform: scale(0.98);
+    transform: scale(0.98) translate3d(0, 0, 0);
     transition-duration: var(--motion-duration-fast);
+  }
+
+  /* Smooth transitions for images */
+  img {
+    transition: transform var(--motion-duration-medium) var(--motion-easing-standard),
+                opacity var(--motion-duration-medium) var(--motion-easing-standard);
+    backface-visibility: hidden;
+  }
+
+  /* Smooth scroll snap for carousels */
+  [class*="snap-"],
+  .scroll-snap {
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [class*="snap-"] > * {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 }
 
@@ -294,6 +334,8 @@ body {
     scroll-behavior: smooth;
     overflow-x: hidden;
     width: 100%;
+    /* Enhanced momentum scrolling */
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
@@ -307,6 +349,9 @@ body {
     max-width: 100vw;
     transform: translateZ(0);
     backface-visibility: hidden;
+    /* Smooth touch scrolling */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
   }
 
   /* Ensure full-height layout for full-screen sections */

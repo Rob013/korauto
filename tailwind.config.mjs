@@ -126,9 +126,56 @@ const config = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      transitionDuration: {
+        '400': '400ms',
+        '600': '600ms',
+      },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'emphasized': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      },
     },
   },
-  plugins: [animate],
+  plugins: [
+    animate,
+    function({ addUtilities }) {
+      const scrollUtilities = {
+        '.scroll-smooth': {
+          'scroll-behavior': 'smooth',
+          '-webkit-overflow-scrolling': 'touch',
+        },
+        '.scroll-momentum': {
+          '-webkit-overflow-scrolling': 'touch',
+          'overscroll-behavior': 'contain',
+        },
+        '.scroll-snap-x': {
+          'scroll-snap-type': 'x mandatory',
+          '-webkit-overflow-scrolling': 'touch',
+        },
+        '.scroll-snap-y': {
+          'scroll-snap-type': 'y mandatory',
+          '-webkit-overflow-scrolling': 'touch',
+        },
+        '.scroll-snap-both': {
+          'scroll-snap-type': 'both mandatory',
+          '-webkit-overflow-scrolling': 'touch',
+        },
+        '.scroll-snap-start': {
+          'scroll-snap-align': 'start',
+        },
+        '.scroll-snap-center': {
+          'scroll-snap-align': 'center',
+        },
+        '.gpu-accelerate': {
+          'transform': 'translate3d(0, 0, 0)',
+          'backface-visibility': 'hidden',
+          'perspective': '1000px',
+        },
+      };
+      addUtilities(scrollUtilities);
+    },
+  ],
 };
 
 export default config;

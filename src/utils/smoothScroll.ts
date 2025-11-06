@@ -61,11 +61,51 @@ export const unlockScroll = () => {
 };
 
 /**
- * Momentum scrolling helper for iOS
+ * Momentum scrolling helper for iOS with GPU acceleration
  */
 export const enableMomentumScrolling = (element: HTMLElement) => {
   (element.style as any).webkitOverflowScrolling = 'touch';
   element.style.overflowY = 'auto';
+  element.style.transform = 'translate3d(0, 0, 0)';
+  element.style.backfaceVisibility = 'hidden';
+  element.style.overscrollBehavior = 'contain';
+};
+
+/**
+ * Enable GPU acceleration for smooth animations
+ */
+export const enableGPUAcceleration = (element: HTMLElement) => {
+  element.style.transform = 'translate3d(0, 0, 0)';
+  element.style.backfaceVisibility = 'hidden';
+  element.style.perspective = '1000px';
+};
+
+/**
+ * Apply smooth scrolling to container
+ */
+export const applyMomentumScrolling = (element: HTMLElement) => {
+  (element.style as any).webkitOverflowScrolling = 'touch';
+  element.style.overscrollBehavior = 'contain';
+  element.style.scrollBehavior = 'smooth';
+};
+
+/**
+ * Restore scroll position with smooth animation
+ */
+export const restoreScrollPosition = (
+  position: number,
+  immediate: boolean = false
+): void => {
+  const behavior = immediate ? 'auto' : 'smooth';
+  
+  // Small delay to ensure content is rendered
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      top: position,
+      left: 0,
+      behavior,
+    });
+  });
 };
 
 /**
