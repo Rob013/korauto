@@ -7,7 +7,7 @@ export const isTestCar = (car: any): boolean => {
   if (!car) return true;
   
   // Check for test car indicators in title
-  const title = car.title?.toLowerCase() || '';
+  const title = String(car.title || '').toLowerCase();
   const testPatterns = [
     'gjenarta',
     'elite',
@@ -27,8 +27,8 @@ export const isTestCar = (car: any): boolean => {
   }
   
   // Check manufacturer and model names for test patterns
-  const make = car.manufacturer?.name?.toLowerCase() || '';
-  const model = car.model?.name?.toLowerCase() || '';
+  const make = String(car.manufacturer?.name || '').toLowerCase();
+  const model = String(car.model?.name || '').toLowerCase();
   
   // Filter out suspicious makes/models
   if (make.includes('test') || model.includes('test') || 
@@ -56,13 +56,13 @@ export const isTestCar = (car: any): boolean => {
   }
   
   // Check for suspicious VIN patterns
-  const vin = car.vin?.toLowerCase() || '';
+  const vin = String(car.vin || '').toLowerCase();
   if (vin.includes('test') || vin.includes('demo') || vin.length < 10) {
     return true;
   }
   
   // Check for lot numbers that seem like test data
-  const lotNumber = car.lot_number?.toLowerCase() || '';
+  const lotNumber = String(car.lot_number || '').toLowerCase();
   if (lotNumber.includes('test') || lotNumber.includes('demo') || 
       lotNumber.includes('emergency') || lotNumber.startsWith('nis')) {
     return true;
