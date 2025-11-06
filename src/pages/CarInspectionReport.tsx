@@ -1335,23 +1335,6 @@ const CarInspectionReport = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <section className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground">Info gjenerale të veturës</h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {generalVehicleInfo.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-2.5"
-                        >
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                            {item.label}
-                          </span>
-                          <span className="text-sm font-semibold text-foreground">{item.value || "-"}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section className="space-y-3">
                     <h3 className="text-base font-semibold text-foreground">Historia e përdorimit të veturës</h3>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {usageHighlights.map((item) => (
