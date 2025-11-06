@@ -14,15 +14,38 @@
   text-rendering: optimizeLegibility;
 }
 
-/* Prevent FOUC (Flash of Unstyled Content) */
+/* Prevent FOUC (Flash of Unstyled Content) with ENCAR-STYLE scroll setup */
 html {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  
+  /* High-performance smooth scrolling */
   scroll-behavior: smooth;
   overflow-x: hidden;
-  /* Enhanced smooth scrolling with momentum */
+  overflow-y: auto;
+  
+  /* iOS momentum scrolling */
   -webkit-overflow-scrolling: touch;
+  
+  /* Scroll padding for fixed headers */
   scroll-padding-top: 80px;
+  
+  /* Prevent scroll anchoring jumps */
+  overflow-anchor: none;
+}
+
+body {
+  opacity: 1;
+  transition: opacity 0.2s ease-in;
+  
+  /* Prevent overscroll bounce on mobile */
+  overscroll-behavior-y: contain;
+  
+  /* Hardware acceleration for smooth rendering */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* iOS-style smooth theme transitions */
@@ -36,13 +59,6 @@ html.theme-transitioning *::after {
               box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               fill 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-/* Keep animations active during theme transitions to prevent spinners from freezing */
-
-body {
-  opacity: 1;
-  transition: opacity 0.2s ease-in;
 }
 
 @keyframes korauto-spin {
@@ -65,8 +81,9 @@ body {
   contain-intrinsic-size: auto 500px;
 }
 
-/* GPU acceleration - 120fps animations with scroll optimization */
+/* GPU acceleration - 120fps animations with ENCAR-STYLE scroll optimization */
 @media (prefers-reduced-motion: no-preference) {
+  /* Base hardware acceleration for all animated elements */
   .animate-spin,
   .animate-pulse,
   .animate-fade-in,
@@ -77,23 +94,72 @@ body {
     will-change: transform, opacity;
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
     perspective: 1000px;
   }
 
-  /* Smooth scrolling containers */
+  /* ENCAR-STYLE: High-performance scrolling containers */
   [class*="overflow-y"],
   [class*="overflow-auto"],
-  .scroll-smooth {
+  .scroll-smooth,
+  .overflow-y-auto,
+  .overflow-x-auto {
+    /* iOS momentum scrolling */
     -webkit-overflow-scrolling: touch;
+    
+    /* Smooth scroll behavior */
     scroll-behavior: smooth;
+    
+    /* Prevent overscroll bounce */
     overscroll-behavior: contain;
+    
+    /* GPU acceleration for scroll containers */
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* CSS containment for performance */
+    contain: layout style paint;
+    
+    /* Optimize compositing */
+    isolation: isolate;
+    
+    /* Will-change for scroll performance */
+    will-change: scroll-position;
+    
+    /* Optimize touch actions */
+    touch-action: pan-y pan-x;
   }
 
-  /* Optimize scroll performance for large lists */
+  /* Optimize scroll performance for large lists and grids */
   [role="list"],
   .grid,
-  .flex {
+  .flex,
+  [class*="grid-cols"],
+  [class*="flex-"] {
+    /* CSS containment */
+    contain: layout style;
+    
+    /* GPU acceleration */
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+  
+  /* ENCAR-STYLE: Optimize individual cards/items for scrolling */
+  .card,
+  [class*="card-"],
+  [class*="bg-card"],
+  [role="listitem"] {
+    /* GPU layer for each item */
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* Contain to prevent layout recalc during scroll */
     contain: layout style paint;
+    
+    /* Optimize compositing */
+    isolation: isolate;
   }
 }
 
