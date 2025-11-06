@@ -406,56 +406,24 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   </span>
                   <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.repairs}</Badge>
                 </div>
-                {issueCount.corrosion > 0 && (
-                  <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
-                    <span className="text-xs flex items-center gap-1">
-                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>K</span>
-                      Korrozion
-                    </span>
-                    <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.corrosion}</Badge>
-                  </div>
-                )}
-                {issueCount.scratches > 0 && (
-                  <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
-                    <span className="text-xs flex items-center gap-1">
-                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}>G</span>
-                      Gërvishje
-                    </span>
-                    <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'white'}}>{issueCount.scratches}</Badge>
-                  </div>
-                )}
+                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                  <span className="text-xs flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>K</span>
+                    Korrozion
+                  </span>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.corrosion}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
+                  <span className="text-xs flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}>G</span>
+                    Gërvishje
+                  </span>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'white'}}>{issueCount.scratches}</Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Legend - Updated with all API status codes */}
-          <Card className="border border-border">
-            <CardContent className="p-3 lg:p-4">
-              <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet</h4>
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-red-600 text-white shadow-sm">N</div>
-                  <span>Nderrim (pjesë e re)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-blue-600 text-white shadow-sm">S</div>
-                  <span>Saldim</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>R</div>
-                  <span>Riparim</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>K</div>
-                  <span>Korrozion</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}>G</div>
-                  <span>Gërvishje</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Center - Car Diagram */}
