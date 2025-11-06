@@ -1,6 +1,6 @@
 // Service Worker for caching API responses and static assets with 120fps performance optimization
 // CRITICAL: Update this version number to force cache refresh for all users
-const VERSION = '2025.06.02.003'; // YYYY.MM.DD.BUILD format - Skip all interception in dev mode
+const VERSION = '2025.06.02.004'; // YYYY.MM.DD.BUILD format - Performance optimizations applied
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
@@ -32,14 +32,14 @@ const API_CACHE_PATTERNS = [
   /\/api\/cars\?/
 ];
 
-// Cache duration in milliseconds (shorter for fresher content)
+// Cache duration in milliseconds (optimized for performance)
 const CACHE_DURATION = {
   API: 2 * 60 * 1000, // 2 minutes for API responses (reduced for fresher data)
-  STATIC: 12 * 60 * 60 * 1000, // 12 hours for static assets
-  IMAGES: 30 * 60 * 1000, // 30 minutes for images
-  ASSETS: 24 * 60 * 60 * 1000, // 24 hours for versioned assets (JS/CSS)
-  FONTS: 7 * 24 * 60 * 60 * 1000, // 7 days for fonts
-  HIGH_PERFORMANCE: 30 * 60 * 1000 // 30 minutes for performance-critical assets
+  STATIC: 24 * 60 * 60 * 1000, // 24 hours for static assets (increased)
+  IMAGES: 7 * 24 * 60 * 60 * 1000, // 7 days for images (increased significantly)
+  ASSETS: 365 * 24 * 60 * 60 * 1000, // 1 year for versioned assets (JS/CSS with hash)
+  FONTS: 365 * 24 * 60 * 60 * 1000, // 1 year for fonts
+  HIGH_PERFORMANCE: 7 * 24 * 60 * 60 * 1000 // 7 days for performance-critical assets
 };
 
 // Install event - cache static assets and prioritize performance-critical resources

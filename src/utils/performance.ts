@@ -80,6 +80,27 @@ export const batchDOMUpdates = (callback: () => void) => {
 };
 
 /**
+ * Batch DOM reads and writes separately to prevent forced reflows
+ */
+export const batchDOMOperations = (operations: {
+  reads?: Array<() => any>;
+  writes?: Array<() => void>;
+}) => {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      // Execute all reads first
+      const readResults = operations.reads?.map(read => read()) || [];
+      
+      // Then execute all writes
+      requestAnimationFrame(() => {
+        operations.writes?.forEach(write => write());
+        resolve(readResults);
+      });
+    });
+  });
+};
+
+/**
  * Check if we're in a fast connection
  */
 export const isFastConnection = (): boolean => {
@@ -187,6 +208,7 @@ export default {
   createIntersectionObserver,
   preloadResource,
   batchDOMUpdates,
+  batchDOMOperations,
   isFastConnection,
   getOptimizedImageUrl,
   memoize,
