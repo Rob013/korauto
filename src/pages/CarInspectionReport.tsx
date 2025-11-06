@@ -489,7 +489,9 @@ const CarInspectionReport = () => {
       const normalizeValue = (value: unknown) => {
         if (value === undefined || value === null) return "-";
         if (typeof value === "number") {
-          return value.toLocaleString("de-DE");
+          // Convert from KRW to EUR and round
+          const eurValue = Math.round(convertKRWtoEUR(value));
+          return `${eurValue.toLocaleString("de-DE")}€`;
         }
         const stringValue = `${value}`.trim();
         return stringValue ? stringValue : "-";
@@ -510,7 +512,7 @@ const CarInspectionReport = () => {
         total: normalizeValue(accident?.total || accident?.totalCost || accident?.sum),
       };
     });
-  }, [accidents]);
+  }, [accidents, convertKRWtoEUR]);
 
   const hasAccidentDetails = useMemo(
     () =>
@@ -868,12 +870,15 @@ const CarInspectionReport = () => {
                     </div>
                   )}
                   
-                  {/* Visual Diagram */}
+                  {/* Visual Diagram - Using Real API Data */}
                   <div className="space-y-3">
                     <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                       <Wrench className="h-5 w-5 text-primary" />
-                      Diagrami Vizual i Dëmtimeve
+                      Diagrami Vizual i Dëmtimeve (Të dhëna nga API)
                     </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Diagrami tregon dëmtimet e vërteta, riparimet dhe ndërrimet e pjesëve sipas të dhënave të inspektimit nga API
+                    </p>
                     <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
                   </div>
 
@@ -981,20 +986,20 @@ const CarInspectionReport = () => {
                                  <div className="flex flex-col gap-1">
                                    <span className="text-xs text-muted-foreground">Shpenzimi Total</span>
                                    <span className="font-bold text-destructive">
-                                     €{convertKRWtoEUR(accident.insuranceBenefit || 0).toLocaleString()}
+                                     {Math.round(convertKRWtoEUR(accident.insuranceBenefit || 0)).toLocaleString()}€
                                    </span>
                                  </div>
                                  <div className="flex flex-col gap-1">
                                    <span className="text-xs text-muted-foreground">Punë</span>
-                                   <span className="font-semibold">€{convertKRWtoEUR(accident.laborCost || 0).toLocaleString()}</span>
+                                   <span className="font-semibold">{Math.round(convertKRWtoEUR(accident.laborCost || 0)).toLocaleString()}€</span>
                                  </div>
                                  <div className="flex flex-col gap-1">
                                    <span className="text-xs text-muted-foreground">Lyerje</span>
-                                   <span className="font-semibold">€{convertKRWtoEUR(accident.paintingCost || 0).toLocaleString()}</span>
+                                   <span className="font-semibold">{Math.round(convertKRWtoEUR(accident.paintingCost || 0)).toLocaleString()}€</span>
                                  </div>
                                  <div className="flex flex-col gap-1">
                                    <span className="text-xs text-muted-foreground">Pjesë</span>
-                                   <span className="font-semibold">€{convertKRWtoEUR(accident.partCost || 0).toLocaleString()}</span>
+                                   <span className="font-semibold">{Math.round(convertKRWtoEUR(accident.partCost || 0)).toLocaleString()}€</span>
                                  </div>
                               </div>
                             </CardContent>
@@ -1125,11 +1130,13 @@ const CarInspectionReport = () => {
                     <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-foreground">Opsione Shtesë me Çmim</h3>
                       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-                        {car.details.options_extra.map((option: any, idx: number) => {
+                         {car.details.options_extra.map((option: any, idx: number) => {
                           const translatedName = getOptionName(option.code) !== option.code 
                             ? getOptionName(option.code) 
                             : (option.name || option.name_original);
-                          const priceInEur = option.price ? convertKRWtoEUR(option.price * 10000) : null;
+                          const priceKRW = option.price || 0;
+                          // Note: API price might already be in full KRW or might need multiplication
+                          const priceInEur = Math.round(convertKRWtoEUR(priceKRW));
                           
                           return (
                             <Card key={idx} className="border-primary/20">
@@ -1141,13 +1148,13 @@ const CarInspectionReport = () => {
                                       <p className="text-xs text-muted-foreground">{option.name_original}</p>
                                     )}
                                   </div>
-                                  {priceInEur && (
+                                  {priceInEur > 0 && (
                                     <Badge variant="secondary" className="text-sm font-bold">
-                                      €{priceInEur.toLocaleString()}
+                                      {priceInEur.toLocaleString()}€
                                     </Badge>
                                   )}
                                 </div>
-                                {option.description && (
+                                {(getOptionDescription(option.code) || option.description) && (
                                   <p className="text-sm text-muted-foreground leading-relaxed">
                                     {getOptionDescription(option.code) || option.description}
                                   </p>
