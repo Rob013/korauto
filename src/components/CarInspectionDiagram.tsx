@@ -393,7 +393,90 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
 
   return (
     <div className={`w-full ${className}`}>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+      {/* Main Diagram Section - Split View */}
+      <div className="w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border rounded-lg overflow-hidden bg-background">
+          {/* Left Side - Front View (Brenda) */}
+          <div className="border-r border-border">
+            <div className="bg-muted/30 px-4 py-3 border-b border-border">
+              <h3 className="font-semibold text-center text-foreground">Brenda</h3>
+            </div>
+            <div className="relative p-8 bg-muted/10 min-h-[400px] flex items-center justify-center">
+              <img src={carDiagramTop} alt="Car Front View" className="w-full h-auto max-w-lg mx-auto" />
+              
+              {/* Overlay markers on front view */}
+              {carParts.map((part) => {
+                const statuses = getPartStatus(part.id);
+                if (statuses.length === 0 || !part.markerPos) return null;
+                
+                const hasExchange = statuses.some(
+                  (s) => s.code === 'X' || s.code === '2' || s.title.includes('교환') || s.title.includes('exchange')
+                );
+                const hasWelding = statuses.some(
+                  (s) => s.code === 'W' || s.code === '3' || s.title.includes('용접') || s.title.includes('weld')
+                );
+                const hasRepair = statuses.some(
+                  (s) => s.code === 'A' || s.code === '1' || s.title.includes('수리') || s.title.includes('repair')
+                );
+                
+                const markers: Array<{ char: string; color: string }> = [];
+                if (hasExchange || hasWelding) markers.push({ char: 'N', color: '#dc2626' });
+                if (hasRepair) markers.push({ char: 'R', color: '#2563eb' });
+                
+                if (markers.length === 0) return null;
+                
+                // Convert SVG coordinates to percentage
+                const leftPercent = (part.markerPos.x / 640) * 100;
+                const topPercent = (part.markerPos.y / 630) * 100;
+                
+                return markers.map((m, idx) => {
+                  const offset = (idx - (markers.length - 1) / 2) * 2.5;
+                  return (
+                    <div
+                      key={`front-${part.id}-${idx}`}
+                      className="absolute flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 z-10 cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        left: `${leftPercent + offset}%`,
+                        top: `${topPercent}%`,
+                        backgroundColor: m.color,
+                      }}
+                      title={`${part.name} - ${getStatusText(statuses)}`}
+                      onClick={() => setSelectedPart(part.id)}
+                    >
+                      {m.char}
+                    </div>
+                  );
+                });
+              })}
+            </div>
+          </div>
+
+          {/* Right Side - Back View (Jashte) */}
+          <div>
+            <div className="bg-muted/30 px-4 py-3 border-b border-border">
+              <h3 className="font-semibold text-center text-foreground">Jashte</h3>
+            </div>
+            <div className="relative p-8 bg-muted/10 min-h-[400px] flex items-center justify-center">
+              <img src={carDiagramBottom} alt="Car Back View" className="w-full h-auto max-w-lg mx-auto" />
+            </div>
+          </div>
+        </div>
+
+        {/* Legend at Bottom */}
+        <div className="flex items-center justify-center gap-6 py-4 border-t border-border bg-background">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#dc2626] text-white text-xs font-bold shadow-sm border-2 border-white">N</span>
+            <span className="text-sm font-medium text-foreground">Nderrim</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#2563eb] text-white text-xs font-bold shadow-sm border-2 border-white">R</span>
+            <span className="text-sm font-medium text-foreground">Riparim</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Statistics and Details Section Below */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-6">
         {/* Left - Statistics */}
         <div className="space-y-3">
           <Card className="border border-border">
@@ -402,7 +485,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 <AlertTriangle className="h-4 w-4" />
                 Statistika
               </h4>
-    <div className="space-y-1.5">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-destructive/10">
                   <span className="text-xs flex items-center gap-1">
                     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#dc2626] text-white text-[9px] font-bold shadow-sm">N</span>
@@ -412,131 +495,18 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 </div>
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-blue-600/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#3b82f6] text-white text-[9px] font-bold shadow-sm">R</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#2563eb] text-white text-[9px] font-bold shadow-sm">R</span>
                     Riparime
                   </span>
-                  <Badge className="font-mono text-xs bg-[#3b82f6] text-white">{issueCount.repairs}</Badge>
+                  <Badge className="font-mono text-xs bg-[#2563eb] text-white">{issueCount.repairs}</Badge>
                 </div>
               </div>
             </CardContent>
           </Card>
-
         </div>
 
-        {/* Center - Car Diagram */}
-        <div className="lg:col-span-2 flex flex-col items-center justify-center gap-4 p-4">
-          <div className="relative w-full max-w-md">
-            <img src={carDiagramTop} alt="Car Top View" className="w-full h-auto rounded-lg" />
-            
-            {/* Overlay markers directly on image */}
-            {carParts.map((part) => {
-              const statuses = getPartStatus(part.id);
-              if (statuses.length === 0 || !part.markerPos) return null;
-              
-              const hasExchange = statuses.some(
-                (s) => s.code === 'X' || s.code === '2' || s.title.includes('교환') || s.title.includes('exchange')
-              );
-              const hasWelding = statuses.some(
-                (s) => s.code === 'W' || s.code === '3' || s.title.includes('용접') || s.title.includes('weld')
-              );
-              const hasRepair = statuses.some(
-                (s) => s.code === 'A' || s.code === '1' || s.title.includes('수리') || s.title.includes('repair')
-              );
-              
-              const markers: Array<{ char: string; color: string }> = [];
-              if (hasExchange || hasWelding) markers.push({ char: 'N', color: '#dc2626' });
-              if (hasRepair) markers.push({ char: 'R', color: '#3b82f6' });
-              
-              if (markers.length === 0) return null;
-              
-              // Convert SVG coordinates (640x630) to percentage
-              const leftPercent = (part.markerPos.x / 640) * 100;
-              const topPercent = (part.markerPos.y / 630) * 100;
-              
-              return markers.map((m, idx) => {
-                const offset = (idx - (markers.length - 1) / 2) * 2; // 2% spacing
-                return (
-                  <div
-                    key={`marker-${part.id}-${idx}`}
-                    className="absolute flex items-center justify-center w-7 h-7 rounded-full text-white text-sm font-bold shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 z-10 animate-in fade-in zoom-in duration-300"
-                    style={{
-                      left: `${leftPercent + offset}%`,
-                      top: `${topPercent}%`,
-                      backgroundColor: m.color,
-                    }}
-                    title={`${part.name} - ${getStatusText(statuses)}`}
-                  >
-                    {m.char}
-                  </div>
-                );
-              });
-            })}
-            
-            <svg viewBox="0 0 640 630" className="absolute inset-0 w-full h-full"  style={{pointerEvents: 'none'}}>
-              <defs>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-              {/* Render clickable overlay parts */}
-              {carParts.map((part) => {
-                const statuses = getPartStatus(part.id);
-                const color = getStatusColor(statuses);
-                const isHovered = hoveredPart === part.id;
-                const isSelected = selectedPart === part.id;
-                
-                return (
-                  <g key={part.id}>
-                    <path
-                      d={part.path}
-                      fill="transparent"
-                      stroke={isSelected ? "hsl(var(--primary))" : "transparent"}
-                      strokeWidth={isSelected ? 4 : 0}
-                      className="cursor-pointer transition-all duration-200"
-                      onMouseEnter={() => setHoveredPart(part.id)}
-                      onMouseLeave={() => setHoveredPart(null)}
-                      onClick={() => setSelectedPart(selectedPart === part.id ? null : part.id)}
-                      style={{ pointerEvents: 'auto' }}
-                    />
-
-                    {(isHovered || isSelected) && (
-                      <text
-                        x={part.labelPos.x}
-                        y={part.labelPos.y}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="text-[9px] font-semibold pointer-events-none"
-                        fill="hsl(var(--background))"
-                        stroke="hsl(var(--foreground))"
-                        strokeWidth="0.5"
-                      >
-                        {part.name}
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-            </svg>
-            
-            {hoveredPart && !selectedPart && (
-              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-foreground/90 text-background px-3 py-1.5 rounded-lg text-xs shadow-lg backdrop-blur-sm z-10">
-                {carParts.find(p => p.id === hoveredPart)?.name} - Kliko për detaje
-              </div>
-            )}
-          </div>
-          
-          {/* Bottom view diagram */}
-          <div className="relative w-full max-w-md">
-            <img src={carDiagramBottom} alt="Pamja poshtë e makinës" className="w-full h-auto rounded-lg" />
-            <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
-              Pamja nga poshtë
-            </div>
-          </div>
-        </div>
+        {/* Center - Empty or additional info */}
+        <div className="space-y-3"></div>
 
         {/* Right - Details */}
         <div className="space-y-3">
