@@ -314,20 +314,25 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
   if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
 
-  const hasExchange = statuses.some(
-    (s) => s.code === 'X' || s.code === '2' || s.title.includes('교환') || s.title.includes('exchange')
-  );
-  const hasWelding = statuses.some(
-    (s) => s.code === 'W' || s.code === '3' || s.title.includes('용접') || s.title.includes('weld')
-  );
-  const hasRepair = statuses.some(
-    (s) => s.code === 'A' || s.code === '1' || s.title.includes('수리') || s.title.includes('repair') || s.title.includes('simple')
-  );
+  const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
+  const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
 
-  // Red for replacement/exchange (Nderrim)
+  // Check for replacement/exchange codes: X, 2
+  const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
+    normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
+
+  // Check for sheet metal/welding codes: W, 3
+  const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3') ||
+    normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim'));
+
+  // Check for simple repair codes: A, 1
+  const hasRepair = normalizedCodes.some(code => code === 'A' || code === '1') ||
+    normalizedTitles.some(t => t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
+
+  // Red for replacement/exchange/welding (Nderrim - N badge)
   if (hasExchange || hasWelding) return '#dc2626';
-  // Blue for repair (Riparim)
-  if (hasRepair) return '#3b82f6';
+  // Blue for simple repair (Riparim - R badge)
+  if (hasRepair) return '#2563eb';
 
   return 'hsl(142 76% 36%)'; // Green for normal
 };
@@ -351,31 +356,31 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   const issueCount = {
     replacements: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
+      const codes = item.statusTypes?.map(s => String(s.code || '').toUpperCase()) || [];
       return (
         codes.includes('X') || codes.includes('2') ||
-        t.includes('exchange') || t.includes('replacement') || t.includes('교환')
+        t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim')
       );
     }).length,
     welds: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
+      const codes = item.statusTypes?.map(s => String(s.code || '').toUpperCase()) || [];
       return (
         codes.includes('W') || codes.includes('3') ||
-        t.includes('weld') || t.includes('sheet metal') || t.includes('용접')
+        t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim')
       );
     }).length,
     repairs: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
+      const codes = item.statusTypes?.map(s => String(s.code || '').toUpperCase()) || [];
       return (
         codes.includes('A') || codes.includes('1') ||
-        t.includes('repair') || t.includes('simple') || t.includes('수리')
+        t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim')
       );
     }).length,
     corrosion: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
+      const codes = item.statusTypes?.map(s => String(s.code || '').toUpperCase()) || [];
       return (
         codes.includes('U') ||
         t.includes('corr') || t.includes('부식')
@@ -383,7 +388,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
     }).length,
     scratches: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code?.toString()) || [];
+      const codes = item.statusTypes?.map(s => String(s.code || '').toUpperCase()) || [];
       return (
         codes.includes('S') ||
         t.includes('scratch') || t.includes('흠집')
@@ -409,18 +414,24 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 const statuses = getPartStatus(part.id);
                 if (statuses.length === 0 || !part.markerPos) return null;
                 
-                const hasExchange = statuses.some(
-                  (s) => s.code === 'X' || s.code === '2' || s.title.includes('교환') || s.title.includes('exchange')
-                );
-                const hasWelding = statuses.some(
-                  (s) => s.code === 'W' || s.code === '3' || s.title.includes('용접') || s.title.includes('weld')
-                );
-                const hasRepair = statuses.some(
-                  (s) => s.code === 'A' || s.code === '1' || s.title.includes('수리') || s.title.includes('repair')
-                );
+                const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
+                const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
+
+                // N badge: replacement (code 2, X) or sheet metal/welding (code 3, W)
+                const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
+                  normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
+                
+                const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3') ||
+                  normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim'));
+
+                // R badge: simple repair (code 1, A)
+                const hasRepair = normalizedCodes.some(code => code === 'A' || code === '1') ||
+                  normalizedTitles.some(t => t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
                 
                 const markers: Array<{ char: string; color: string }> = [];
+                // Red N badge for replacement or sheet metal
                 if (hasExchange || hasWelding) markers.push({ char: 'N', color: '#dc2626' });
+                // Blue R badge for simple repair
                 if (hasRepair) markers.push({ char: 'R', color: '#2563eb' });
                 
                 if (markers.length === 0) return null;
