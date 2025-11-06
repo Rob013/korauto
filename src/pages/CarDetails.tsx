@@ -1789,46 +1789,12 @@ const CarDetails = memo(() => {
                   <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight">
                     {car.year} {car.make} {car.model}
                   </h1>
-                  {/* Subtitle with variant/generation info */}
-                  <p className="text-sm md:text-base text-muted-foreground font-medium mt-0.5 line-clamp-1">
-                    {(() => {
-                      const parts: string[] = [];
-                      
-                      // Add generation/grade
-                      const grade = car.grade_iaai || car.details?.grade?.name || car.details?.grade;
-                      if (grade && typeof grade === 'string') {
-                        parts.push(grade);
-                      }
-                      
-                      // Add variant
-                      const variant = car.details?.variant?.name || car.details?.variant;
-                      if (variant && typeof variant === 'string' && !parts.join(' ').toLowerCase().includes(variant.toLowerCase())) {
-                        parts.push(variant);
-                      }
-                      
-                      // Add trim
-                      const trim = car.details?.trim?.name || car.details?.trim;
-                      if (trim && typeof trim === 'string' && !parts.join(' ').toLowerCase().includes(trim.toLowerCase())) {
-                        parts.push(trim);
-                      }
-                      
-                      // Add engine info
-                      const engineName = car.engine?.name || car.engine;
-                      const engineStr = typeof engineName === 'string' ? engineName : '';
-                      if (engineStr && !parts.join(' ').toLowerCase().includes(engineStr.toLowerCase())) {
-                        parts.push(engineStr);
-                      }
-                      
-                      // Add drive type
-                      const driveType = car.drive_wheel?.name || car.drive_wheel;
-                      const driveStr = typeof driveType === 'string' ? driveType : '';
-                      if (driveStr && !parts.join(' ').toLowerCase().includes(driveStr.toLowerCase())) {
-                        parts.push(driveStr);
-                      }
-                      
-                      return parts.length > 0 ? parts.join(' ') : car.title || '';
-                    })()}
-                  </p>
+                  {/* Subtitle with variant info - matching car card format */}
+                  {car.title && car.title !== `${car.make} ${car.model}` && (
+                    <p className="text-sm md:text-base text-muted-foreground font-medium mt-0.5 line-clamp-1">
+                      {car.title}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right flex-shrink-0">
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
