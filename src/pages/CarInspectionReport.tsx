@@ -697,7 +697,7 @@ const CarInspectionReport = () => {
 
     const specialAccidentStats = [
       {
-        label: "Flooded?",
+        label: "Vërshuar?",
         value:
           typeof car.insurance_v2?.floodTotalLossCnt === "number"
             ? car.insurance_v2.floodTotalLossCnt > 0
@@ -709,7 +709,7 @@ const CarInspectionReport = () => {
               : "Nuk ka informata",
       },
       {
-        label: "Total loss?",
+        label: "Humbje totale?",
         value:
           typeof car.insurance_v2?.totalLossCnt === "number"
             ? car.insurance_v2.totalLossCnt > 0
