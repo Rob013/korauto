@@ -1044,16 +1044,26 @@ const CarDetails = memo(() => {
       performance_rating: 4.5,
       popularity_score: 85,
       insurance: lotData?.insurance,
-      insurance_v2: lotData?.insurance_v2,
+      insurance_v2: lotData?.insurance_v2 || carData?.insurance_v2,
       location: lotData?.location,
-      inspect: lotData?.inspect,
-      // Merge details from both sources to get all variant info
+      inspect: lotData?.inspect || carData?.inspect,
+      // Merge details from both sources to get all variant info + inspect data
       details: {
         ...(carData?.details || {}),
         ...(lotData?.details || {}),
         grade: carData?.grade || lotData?.grade || carData?.details?.grade || lotData?.details?.grade,
         variant: carData?.variant || lotData?.variant || carData?.details?.variant || lotData?.details?.variant,
         trim: carData?.trim || lotData?.trim || carData?.details?.trim || lotData?.details?.trim,
+        // Include inspect data from lotData.inspect as per API support
+        inspect: lotData?.inspect || lotData?.details?.inspect || {
+          accident_summary: lotData?.inspect?.accident_summary || lotData?.details?.inspect?.accident_summary,
+          outer: lotData?.inspect?.outer || lotData?.details?.inspect?.outer || lotData?.inspect_outer,
+          inner: lotData?.inspect?.inner || lotData?.details?.inspect?.inner,
+        },
+        inspect_outer: lotData?.inspect?.outer || lotData?.details?.inspect_outer || lotData?.inspect_outer,
+        // Include options data
+        options: lotData?.details?.options || carData?.details?.options,
+        options_extra: lotData?.details?.options_extra || carData?.details?.options_extra,
       },
     };
   }, [KBC_DOMAINS, exchangeRate.rate]);

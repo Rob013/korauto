@@ -241,10 +241,22 @@ const CarInspectionReport = () => {
         : undefined;
 
       const details = lotData.details || {};
-      const inspectOuter =
-        details?.inspect_outer || lotData.inspect_outer || carData.inspect_outer;
-      const inspectInner =
-        details?.inspect?.inner || lotData.inspect?.inner || carData.inspect?.inner;
+      
+      // Extract inspect data from lotData.inspect (primary source as per API support)
+      const inspectData = lotData.inspect || details?.inspect || {};
+      const inspectOuter = inspectData.outer || details?.inspect_outer || lotData.inspect_outer || carData.inspect_outer;
+      const inspectInner = inspectData.inner || details?.inspect?.inner || lotData.inspect?.inner || carData.inspect?.inner;
+      const accidentSummary = inspectData.accident_summary || details?.inspect?.accident_summary;
+
+      console.log('🔍 Inspection Report Data Collection:', {
+        'lotData.inspect': lotData.inspect,
+        'inspectData.accident_summary': accidentSummary,
+        'inspectData.outer': inspectOuter,
+        'inspectData.inner': inspectInner,
+        'lotData.insurance_v2': lotData.insurance_v2,
+        'details.options': details?.options,
+        'details.options_extra': details?.options_extra
+      });
 
         const transformed: InspectionReportCar = {
           id: carData.id?.toString() || lot,
@@ -292,11 +304,19 @@ const CarInspectionReport = () => {
             ...details,
             inspect_outer: inspectOuter,
             inspect: {
-              ...details?.inspect,
+              accident_summary: accidentSummary,
+              outer: inspectOuter,
               inner: inspectInner,
             },
+            // Include options and options_extra
+            options: details?.options,
+            options_extra: details?.options_extra,
           },
-          inspect: lotData.inspect,
+          inspect: lotData.inspect || {
+            accident_summary: accidentSummary,
+            outer: inspectOuter,
+            inner: inspectInner,
+          },
           ownerChanges: details?.insurance?.owner_changes || [],
           maintenanceHistory: details?.maintenance_history || [],
           location: lotData.location,
