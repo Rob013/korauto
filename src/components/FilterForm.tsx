@@ -228,11 +228,13 @@ const FilterForm = memo<FilterFormProps>(({
     
     // Map manufacturer name to ID with better matching
     if (aiFilters.manufacturer_name) {
-      const manufacturer = manufacturers.find(m => 
-        m.name.toLowerCase() === aiFilters.manufacturer_name.toLowerCase() ||
-        m.name.toLowerCase().includes(aiFilters.manufacturer_name.toLowerCase()) ||
-        aiFilters.manufacturer_name.toLowerCase().includes(m.name.toLowerCase())
-      );
+      const manufacturer = manufacturers.find(m => {
+        const mName = (m.name || '').toLowerCase();
+        const searchName = (aiFilters.manufacturer_name || '').toLowerCase();
+        return mName === searchName ||
+               mName.includes(searchName) ||
+               searchName.includes(mName);
+      });
       if (manufacturer) {
         console.log('✅ Found manufacturer:', manufacturer.name, 'ID:', manufacturer.id);
         updatedFilters.manufacturer_id = manufacturer.id.toString();
@@ -244,8 +246,8 @@ const FilterForm = memo<FilterFormProps>(({
     // Map model name to ID (only if manufacturer is set) with fuzzy matching
     if (aiFilters.model_name && updatedFilters.manufacturer_id) {
       const model = models.find(m => {
-        const modelNameLower = m.name.toLowerCase();
-        const searchNameLower = aiFilters.model_name.toLowerCase();
+        const modelNameLower = (m.name || '').toLowerCase();
+        const searchNameLower = (aiFilters.model_name || '').toLowerCase();
         
         // Exact match
         if (modelNameLower === searchNameLower) return true;

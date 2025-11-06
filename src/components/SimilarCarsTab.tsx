@@ -27,7 +27,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
         // Get all manufacturers to find the current car's manufacturer ID
         const manufacturers = await fetchManufacturers();
         const currentManufacturer = manufacturers.find(m => 
-          m.name.toLowerCase() === carMake.toLowerCase()
+          (m.name || '').toLowerCase() === (carMake || '').toLowerCase()
         );
 
         if (currentManufacturer) {
@@ -48,7 +48,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
     // Filter cars to show same brand, exclude current car, and only include cars with buy_now pricing
     const filtered = cars
       .filter(car => 
-        car.manufacturer?.name?.toLowerCase() === carMake.toLowerCase() &&
+        (car.manufacturer?.name || '').toLowerCase() === (carMake || '').toLowerCase() &&
         car.id !== currentCarId &&
         car.lots?.[0]?.buy_now && car.lots[0].buy_now > 0
       )

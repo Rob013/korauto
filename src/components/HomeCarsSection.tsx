@@ -142,17 +142,17 @@ const HomeCarsSection = memo(() => {
       }
 
       // Color filter
-      if (filters.color && car.color?.name?.toLowerCase() !== filters.color.toLowerCase()) {
+      if (filters.color && (car.color?.name || '').toLowerCase() !== filters.color.toLowerCase()) {
         return false;
       }
 
       // Fuel type filter
-      if (filters.fuel_type && car.fuel?.name?.toLowerCase() !== filters.fuel_type.toLowerCase()) {
+      if (filters.fuel_type && (car.fuel?.name || '').toLowerCase() !== filters.fuel_type.toLowerCase()) {
         return false;
       }
 
       // Transmission filter
-      if (filters.transmission && car.transmission?.name?.toLowerCase() !== filters.transmission.toLowerCase()) {
+      if (filters.transmission && (car.transmission?.name || '').toLowerCase() !== filters.transmission.toLowerCase()) {
         return false;
       }
 
@@ -189,17 +189,19 @@ const HomeCarsSection = memo(() => {
 
         // Check in lots array
         if (car.lots && Array.isArray(car.lots)) {
-          hasMatchingGrade = car.lots.some((lot: any) => lot.grade_iaai && lot.grade_iaai.toLowerCase().includes(targetGrade));
+          hasMatchingGrade = car.lots.some((lot: any) => 
+            lot.grade_iaai && (lot.grade_iaai || '').toString().toLowerCase().includes(targetGrade)
+          );
         }
 
         // Check in single lot object
         if (!hasMatchingGrade && car.lot && car.lot.grade_iaai) {
-          hasMatchingGrade = car.lot.grade_iaai.toLowerCase().includes(targetGrade);
+          hasMatchingGrade = (car.lot.grade_iaai || '').toString().toLowerCase().includes(targetGrade);
         }
 
         // Check in car title for grade patterns
         if (!hasMatchingGrade && car.title) {
-          hasMatchingGrade = car.title.toLowerCase().includes(targetGrade);
+          hasMatchingGrade = (car.title || '').toString().toLowerCase().includes(targetGrade);
         }
         if (!hasMatchingGrade) {
           return false;
@@ -209,7 +211,12 @@ const HomeCarsSection = memo(() => {
       // Search filter (search in make, model, title, VIN)
       if (filters.search && filters.search.trim()) {
         const searchTerm = filters.search.toLowerCase();
-        const searchFields = [car.manufacturer?.name, car.model?.name, car.title, car.vin].filter(Boolean).join(" ").toLowerCase();
+        const searchFields = [
+          car.manufacturer?.name || '', 
+          car.model?.name || '', 
+          car.title || '', 
+          car.vin || ''
+        ].filter(Boolean).join(" ").toLowerCase();
         if (!searchFields.includes(searchTerm)) {
           return false;
         }

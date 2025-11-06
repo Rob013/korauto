@@ -346,8 +346,8 @@ export const findGenerationYears = (
   if (!model) {
     const modelKeys = Object.keys(manufacturer);
     const fuzzyModelMatch = modelKeys.find(key => 
-      key.toLowerCase().includes(modelName.toLowerCase()) ||
-      modelName.toLowerCase().includes(key.toLowerCase())
+      (key || '').toLowerCase().includes((modelName || '').toLowerCase()) ||
+      (modelName || '').toLowerCase().includes((key || '').toLowerCase())
     );
     if (fuzzyModelMatch) {
       model = manufacturer[fuzzyModelMatch];
@@ -363,8 +363,8 @@ export const findGenerationYears = (
   if (!generation) {
     const generationKeys = Object.keys(model);
     const fuzzyGenerationMatch = generationKeys.find(key =>
-      key.toLowerCase().includes(generationName.toLowerCase()) ||
-      generationName.toLowerCase().includes(key.toLowerCase())
+      (key || '').toLowerCase().includes((generationName || '').toLowerCase()) ||
+      (generationName || '').toLowerCase().includes((key || '').toLowerCase())
     );
     if (fuzzyGenerationMatch) {
       generation = model[fuzzyGenerationMatch];

@@ -283,10 +283,10 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
       // Sort results: exact ID matches first, then lot number matches, then others
       const sortedResults = uniqueResults.sort((a, b) => {
         const termLower = term.toLowerCase();
-        const aIdMatch = a.id.toLowerCase() === termLower;
-        const bIdMatch = b.id.toLowerCase() === termLower;
-        const aLotMatch = a.lot_number?.toLowerCase() === termLower;
-        const bLotMatch = b.lot_number?.toLowerCase() === termLower;
+        const aIdMatch = (a.id || '').toString().toLowerCase() === termLower;
+        const bIdMatch = (b.id || '').toString().toLowerCase() === termLower;
+        const aLotMatch = (a.lot_number || '').toString().toLowerCase() === termLower;
+        const bLotMatch = (b.lot_number || '').toString().toLowerCase() === termLower;
         
         if (aIdMatch && !bIdMatch) return -1;
         if (!aIdMatch && bIdMatch) return 1;

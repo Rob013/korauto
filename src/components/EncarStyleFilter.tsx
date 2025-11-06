@@ -204,7 +204,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const { sorted: prioritizedManufacturers, priorityCount: prioritizedManufacturerCount } = useMemo(() => {
     const excludedBrands = ['mitsubishi', 'alfa romeo', 'alfa-romeo', 'acura', 'mazda', 'dongfeng', 'lotus'];
     const baseList = sortManufacturers(manufacturers).filter(manufacturer =>
-      !excludedBrands.includes(manufacturer.name.toLowerCase())
+      !excludedBrands.includes((manufacturer.name || '').toLowerCase())
     );
     return sortBrandsWithPriority(baseList);
   }, [manufacturers]);

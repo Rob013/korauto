@@ -168,9 +168,9 @@ const LazyCarCard = memo(({
 
   const normalizedSource = typeof source === 'string' ? source : '';
   const sourceBadgeLabel = normalizedSource
-    ? normalizedSource.toLowerCase() === 'encar'
+    ? (normalizedSource || '').toLowerCase() === 'encar'
       ? 'Encar'
-      : normalizedSource.toLowerCase().includes('kbc')
+      : (normalizedSource || '').toLowerCase().includes('kbc')
         ? 'KBC'
         : normalizedSource.toUpperCase()
     : null;
