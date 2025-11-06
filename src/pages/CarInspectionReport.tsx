@@ -17,14 +17,50 @@ import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle,
+  ChevronDown,
   Clock,
   Cog,
   FileText,
   Loader2,
   MapPin,
   Shield,
+  Wind,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
+
+// Equipment icon mappings from CarDetails
+const EQUIPMENT_ICON_MAPPINGS: Array<{
+  icon: LucideIcon;
+  keywords: string[];
+}> = [
+  { icon: Shield, keywords: ["airbag", "abs", "esp", "esc", "asr", "tcs", "tpms", "safety", "alarm", "security"] },
+  { icon: Wind, keywords: ["climat", "klima", "climate", "air condition", "a/c"] },
+  { icon: Cog, keywords: ["engine", "motor", "transmission", "gearbox"] },
+  { icon: CheckCircle, keywords: [] }, // default
+];
+
+const normalizeText = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const matchesKeyword = (normalizedItem: string, keyword: string) => {
+  const normalizedKeyword = normalizeText(keyword.toLowerCase());
+  if (/^[a-z0-9]+$/.test(normalizedKeyword)) {
+    const keywordRegex = new RegExp(`\\b${normalizedKeyword}\\b`, "i");
+    return keywordRegex.test(normalizedItem);
+  }
+  return normalizedItem.includes(normalizedKeyword);
+};
+
+const getEquipmentIcon = (itemName: string): LucideIcon => {
+  const normalizedItem = normalizeText(itemName.toLowerCase());
+  for (const { icon, keywords } of EQUIPMENT_ICON_MAPPINGS) {
+    if (keywords.some((keyword) => matchesKeyword(normalizedItem, keyword))) {
+      return icon;
+    }
+  }
+  return CheckCircle;
+};
 
 interface InspectionReportCar {
   id: string;
@@ -474,6 +510,7 @@ const CarInspectionReport = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAllStandard, setShowAllStandard] = useState(false);
   const [showAllChoice, setShowAllChoice] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   const fetchInspectionReport = useCallback(async () => {
     if (!lot) return;
