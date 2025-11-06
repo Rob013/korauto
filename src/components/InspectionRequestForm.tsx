@@ -335,9 +335,10 @@ const InspectionRequestForm = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{enhancedTrigger}</DialogTrigger>
       <DialogContent
-        className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto"
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto fixed z-[100] touch-manipulation"
         aria-describedby="inspection-form-description"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
       >
         <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
