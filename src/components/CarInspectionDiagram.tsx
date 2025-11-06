@@ -42,7 +42,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Kapak',
       nameEn: 'Hood',
       path: 'M 240 60 L 400 60 Q 410 60 410 70 L 410 180 Q 410 190 400 190 L 240 190 Q 230 190 230 180 L 230 70 Q 230 60 240 60 Z',
-      labelPos: { x: 320, y: 120 }
+      labelPos: { x: 320, y: 120 },
+      markerPos: { x: 320, y: 125 }
     },
     // Front Bumper
     {
@@ -50,7 +51,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Bamper Para',
       nameEn: 'F. Bumper',
       path: 'M 220 20 L 420 20 Q 435 20 435 35 L 435 55 Q 435 60 420 60 L 220 60 Q 205 60 205 55 L 205 35 Q 205 20 220 20 Z',
-      labelPos: { x: 320, y: 40 }
+      labelPos: { x: 320, y: 40 },
+      markerPos: { x: 320, y: 40 }
     },
     // Windshield
     {
@@ -58,7 +60,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Xham Para',
       nameEn: 'Windshield',
       path: 'M 250 195 L 390 195 Q 400 195 400 205 L 400 235 L 250 235 Q 240 235 240 225 L 240 205 Q 240 195 250 195 Z',
-      labelPos: { x: 320, y: 215 }
+      labelPos: { x: 320, y: 215 },
+      markerPos: { x: 320, y: 215 }
     },
     // Left Front Door
     {
@@ -67,7 +70,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'L Front',
       path: 'M 150 195 L 235 195 L 235 310 L 150 310 Q 140 310 140 300 L 140 205 Q 140 195 150 195 Z',
       labelPos: { x: 185, y: 250 },
-      markerPos: { x: 185, y: 255 }
+      markerPos: { x: 170, y: 250 }
     },
     // Right Front Door
     {
@@ -76,7 +79,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'R Front',
       path: 'M 405 195 L 495 195 Q 505 195 505 205 L 505 300 Q 505 310 495 310 L 405 310 L 405 195 Z',
       labelPos: { x: 450, y: 250 },
-      markerPos: { x: 450, y: 255 }
+      markerPos: { x: 470, y: 250 }
     },
     // Roof
     {
@@ -84,7 +87,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Çati',
       nameEn: 'Roof',
       path: 'M 245 240 L 395 240 L 395 370 L 245 370 L 245 240 Z',
-      labelPos: { x: 320, y: 305 }
+      labelPos: { x: 320, y: 305 },
+      markerPos: { x: 320, y: 305 }
     },
     // Left Rear Door
     {
@@ -93,7 +97,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'L Rear',
       path: 'M 140 315 L 235 315 L 235 430 L 140 430 Q 130 430 130 420 L 130 325 Q 130 315 140 315 Z',
       labelPos: { x: 185, y: 370 },
-      markerPos: { x: 185, y: 375 }
+      markerPos: { x: 170, y: 370 }
     },
     // Right Rear Door
     {
@@ -102,7 +106,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'R Rear',
       path: 'M 405 315 L 510 315 Q 520 315 520 325 L 520 420 Q 520 430 510 430 L 405 430 L 405 315 Z',
       labelPos: { x: 455, y: 370 },
-      markerPos: { x: 455, y: 375 }
+      markerPos: { x: 470, y: 370 }
     },
     // Rear Glass
     {
@@ -110,7 +114,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Xham Prapa',
       nameEn: 'R. Glass',
       path: 'M 245 375 L 395 375 L 395 415 Q 395 425 385 425 L 255 425 Q 245 425 245 415 L 245 375 Z',
-      labelPos: { x: 320, y: 400 }
+      labelPos: { x: 320, y: 400 },
+      markerPos: { x: 320, y: 400 }
     },
     // Trunk
     {
@@ -127,7 +132,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Bamper Prapa',
       nameEn: 'R. Bumper',
       path: 'M 220 555 L 420 555 Q 435 555 435 570 L 435 590 Q 435 605 420 605 L 220 605 Q 205 605 205 590 L 205 570 Q 205 555 220 555 Z',
-      labelPos: { x: 320, y: 580 }
+      labelPos: { x: 320, y: 580 },
+      markerPos: { x: 320, y: 580 }
     },
       // Side Sill Panels (approximate positions under doors)
       {
@@ -136,7 +142,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         nameEn: 'Side Sill L',
         path: 'M 135 310 L 235 310 L 235 330 L 135 330 Z',
         labelPos: { x: 185, y: 320 },
-        markerPos: { x: 185, y: 323 }
+        markerPos: { x: 165, y: 323 }
       },
       {
         id: 'side_sill_right',
@@ -144,7 +150,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         nameEn: 'Side Sill R',
         path: 'M 405 310 L 505 310 L 505 330 L 405 330 Z',
         labelPos: { x: 455, y: 320 },
-        markerPos: { x: 455, y: 323 }
+        markerPos: { x: 475, y: 323 }
       },
     // Left Front Fender
     {
@@ -152,7 +158,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Paranicë Majtas',
       nameEn: 'L Fender',
       path: 'M 140 70 L 225 70 L 225 185 L 140 185 Q 130 185 130 175 L 130 80 Q 130 70 140 70 Z',
-      labelPos: { x: 175, y: 125 }
+      labelPos: { x: 175, y: 125 },
+      markerPos: { x: 165, y: 135 }
     },
     // Right Front Fender
     {
@@ -160,7 +167,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Paranicë Djathtas',
       nameEn: 'R Fender',
       path: 'M 415 70 L 510 70 Q 520 70 520 80 L 520 175 Q 520 185 510 185 L 415 185 L 415 70 Z',
-      labelPos: { x: 465, y: 125 }
+      labelPos: { x: 465, y: 125 },
+      markerPos: { x: 475, y: 135 }
     },
     // Left Quarter Panel
     {
@@ -169,7 +177,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'L Quarter',
       path: 'M 130 435 L 225 435 L 225 545 L 130 545 Q 120 545 120 535 L 120 445 Q 120 435 130 435 Z',
       labelPos: { x: 170, y: 490 },
-      markerPos: { x: 170, y: 495 }
+      markerPos: { x: 165, y: 485 }
     },
     // Right Quarter Panel
     {
@@ -178,7 +186,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'R Quarter',
       path: 'M 415 435 L 520 435 Q 530 435 530 445 L 530 535 Q 530 545 520 545 L 415 545 L 415 435 Z',
       labelPos: { x: 470, y: 490 },
-      markerPos: { x: 470, y: 495 }
+      markerPos: { x: 475, y: 485 }
     },
     // Front Left Wheel
     {
@@ -186,7 +194,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Rrota Para Majtas',
       nameEn: 'FL Wheel',
       path: 'M 30 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 30, y: 90 }
+      labelPos: { x: 30, y: 90 },
+      markerPos: { x: 30, y: 90 }
     },
     // Front Right Wheel
     {
@@ -194,7 +203,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Rrota Para Djathtas',
       nameEn: 'FR Wheel',
       path: 'M 610 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 610, y: 90 }
+      labelPos: { x: 610, y: 90 },
+      markerPos: { x: 610, y: 90 }
     },
     // Rear Left Wheel
     {
@@ -202,7 +212,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Rrota Prapa Majtas',
       nameEn: 'RL Wheel',
       path: 'M 30 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 30, y: 510 }
+      labelPos: { x: 30, y: 510 },
+      markerPos: { x: 30, y: 510 }
     },
     // Rear Right Wheel
     {
@@ -210,7 +221,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       name: 'Rrota Prapa Djathtas',
       nameEn: 'RR Wheel',
       path: 'M 610 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 610, y: 510 }
+      labelPos: { x: 610, y: 510 },
+      markerPos: { x: 610, y: 510 }
     },
   ];
 
@@ -446,9 +458,9 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       style={{ pointerEvents: 'auto' }}
                     />
 
-                    {/* Status markers with detailed codes from API */}
-                    {statuses.length > 0 && (
-                      <>
+                    {/* Status markers with detailed codes from API - Show at exact markerPos */}
+                    {statuses.length > 0 && part.markerPos && (
+                      <g>
                         {(() => {
                           const lowTitles = statuses.map((s) => (s.title || '').toString().toLowerCase());
                           const codes = statuses.map((s) => (s.code || '').toUpperCase());
@@ -519,7 +531,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             );
                           });
                         })()}
-                      </>
+                      </g>
                     )}
                     {(isHovered || isSelected) && (
                       <text
