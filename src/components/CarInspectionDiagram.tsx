@@ -329,20 +329,46 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   return 'Pjesë normale';
 };
 
-  // Count issues (simplified to replacements and repairs)
+  // Count all types of issues from API data
   const issueCount = {
     replacements: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
+      const codes = item.statusTypes?.map(s => s.code) || [];
       return (
-        item.statusTypes?.some((s) => s.code === 'X') ||
-        t.includes('exchange') || t.includes('replacement')
+        codes.includes('X') ||
+        t.includes('exchange') || t.includes('replacement') || t.includes('교환')
+      );
+    }).length,
+    welds: inspectionData.filter(item => {
+      const t = (item?.type?.title || '').toString().toLowerCase();
+      const codes = item.statusTypes?.map(s => s.code) || [];
+      return (
+        codes.includes('W') ||
+        t.includes('weld') || t.includes('sheet metal') || t.includes('용접')
       );
     }).length,
     repairs: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
+      const codes = item.statusTypes?.map(s => s.code) || [];
       return (
-        item.statusTypes?.some((s) => s.code === 'W' || s.code === 'A') ||
-        t.includes('weld') || t.includes('sheet metal') || t.includes('repair')
+        codes.includes('A') ||
+        t.includes('repair') || t.includes('수리')
+      );
+    }).length,
+    corrosion: inspectionData.filter(item => {
+      const t = (item?.type?.title || '').toString().toLowerCase();
+      const codes = item.statusTypes?.map(s => s.code) || [];
+      return (
+        codes.includes('U') ||
+        t.includes('corr') || t.includes('부식')
+      );
+    }).length,
+    scratches: inspectionData.filter(item => {
+      const t = (item?.type?.title || '').toString().toLowerCase();
+      const codes = item.statusTypes?.map(s => s.code) || [];
+      return (
+        codes.includes('S') ||
+        t.includes('scratch') || t.includes('흠집')
       );
     }).length,
   };
@@ -358,37 +384,74 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 <AlertTriangle className="h-4 w-4" />
                 Statistika
               </h4>
-    <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
-                  <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold">N</span>
+    <div className="space-y-1.5">
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-destructive/10">
+                  <span className="text-xs flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold shadow-sm">N</span>
                     Nderrime
                   </span>
                   <Badge variant="destructive" className="font-mono text-xs">{issueCount.replacements}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-blue-600/10">
-                  <span className="text-xs lg:text-sm flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold">R</span>
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-blue-600/10">
+                  <span className="text-xs flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold shadow-sm">S</span>
+                    Saldime
+                  </span>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(217 91% 60%)', color: 'white'}}>{issueCount.welds}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                  <span className="text-xs flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>R</span>
                     Riparime
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(217 91% 60%)', color: 'white'}}>{issueCount.repairs}</Badge>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.repairs}</Badge>
                 </div>
+                {issueCount.corrosion > 0 && (
+                  <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                    <span className="text-xs flex items-center gap-1">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>K</span>
+                      Korrozion
+                    </span>
+                    <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.corrosion}</Badge>
+                  </div>
+                )}
+                {issueCount.scratches > 0 && (
+                  <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
+                    <span className="text-xs flex items-center gap-1">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}>G</span>
+                      Gërvishje
+                    </span>
+                    <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'white'}}>{issueCount.scratches}</Badge>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Legend */}
+          {/* Legend - Updated with all API status codes */}
           <Card className="border border-border">
             <CardContent className="p-3 lg:p-4">
-              <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet</h4>
+              <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet nga API</h4>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-red-600 text-white">N</div>
-                  <span>Nderrim (zëvendësim)</span>
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-red-600 text-white shadow-sm">N</div>
+                  <span>Nderrim (pjesë e re)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-blue-600 text-white">R</div>
-                  <span>Riparim / Saldim</span>
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-blue-600 text-white shadow-sm">S</div>
+                  <span>Saldim</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>R</div>
+                  <span>Riparim</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>K</div>
+                  <span>Korrozion</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}>G</div>
+                  <span>Gërvishje</span>
                 </div>
               </div>
             </CardContent>
@@ -430,30 +493,70 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       style={{ pointerEvents: 'auto' }}
                     />
 
-                    {/* Status markers as small circles with code letters (N/R only) */}
+                    {/* Status markers with detailed codes from API */}
                     {statuses.length > 0 && (
                       <>
                         {(() => {
                           const lowTitles = statuses.map((s) => (s.title || '').toString().toLowerCase());
                           const codes = statuses.map((s) => (s.code || '').toUpperCase());
-                          const isExchange = codes.includes('X') || lowTitles.some(t => t.includes('exchange') || t.includes('replacement'));
-                          const isRepair = codes.some(c => c === 'W' || c === 'A') || lowTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('repair'));
 
+                          // Check for different types of repairs/replacements from API
+                          const hasExchange =
+                            codes.includes('X') ||
+                            lowTitles.some((t) => t.includes('exchange') || t.includes('replacement') || t.includes('교환'));
+                          const hasWeld =
+                            codes.includes('W') ||
+                            lowTitles.some((t) => t.includes('weld') || t.includes('sheet metal') || t.includes('용접'));
+                          const hasRepair =
+                            codes.includes('A') ||
+                            lowTitles.some((t) => t.includes('repair') || t.includes('수리'));
+                          const hasCorrosion =
+                            codes.includes('U') ||
+                            lowTitles.some((t) => t.includes('corr') || t.includes('부식'));
+                          const hasScratch =
+                            codes.includes('S') ||
+                            lowTitles.some((t) => t.includes('scratch') || t.includes('흠집'));
+
+                          // Collect all markers to display
                           const markers: Array<{ char: string; color: string }> = [];
-                          if (isExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
-                          if (isRepair) markers.push({ char: 'R', color: 'hsl(217 91% 60%)' });
+                          
+                          if (hasExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
+                          if (hasWeld) markers.push({ char: 'S', color: 'hsl(217 91% 60%)' });
+                          if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
+                          if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
+                          if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
 
                           const n = markers.length;
                           const base = part.markerPos || part.labelPos;
-                          const spacing = 14;
+                          const spacing = 16;
+                          
                           return markers.map((m, idx) => {
                             const offset = (idx - (n - 1) / 2) * spacing;
                             const cx = base.x + offset;
                             const cy = base.y;
                             return (
                               <g key={`${part.id}-mrk-${idx}`}>
-                                <circle cx={cx} cy={cy} r={10} fill={m.color} stroke={m.color} strokeWidth={2} />
-                                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight={700} fill={'white'}>
+                                <circle 
+                                  cx={cx} 
+                                  cy={cy} 
+                                  r={11} 
+                                  fill={m.color} 
+                                  stroke="white" 
+                                  strokeWidth={2}
+                                  filter={isHovered || isSelected ? 'url(#glow)' : undefined}
+                                  className="transition-all duration-200"
+                                />
+                                <text 
+                                  x={cx} 
+                                  y={cy} 
+                                  textAnchor="middle" 
+                                  dominantBaseline="central" 
+                                  fontSize={9} 
+                                  fontWeight={700} 
+                                  fill="white"
+                                  className="pointer-events-none select-none"
+                                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+                                >
                                   {m.char}
                                 </text>
                               </g>
