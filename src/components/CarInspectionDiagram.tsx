@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
-import carDiagramTop from '@/assets/car-diagram-top.jpeg';
-import carDiagramBottom from '@/assets/car-diagram-bottom.webp';
 
 interface InspectionItem {
   type: { code: string; title: string };
@@ -461,8 +459,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
         {/* Center - Car Diagram */}
         <div className="lg:col-span-2 flex flex-col items-center justify-center gap-4 p-4">
           <div className="relative w-full max-w-md">
-            <img src={carDiagramTop} alt="Car Top View" className="w-full h-auto rounded-lg" />
-            <svg viewBox="0 0 640 630" className="absolute inset-0 w-full h-full"  style={{pointerEvents: 'none'}}>
+            <svg viewBox="0 0 640 630" className="w-full h-auto rounded-lg bg-muted/30 border border-border">
               <defs>
                 <filter id="glow">
                   <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -471,8 +468,13 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                     <feMergeNode in="SourceGraphic"/>
                   </feMerge>
                 </filter>
+                <linearGradient id="carBodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.8}} />
+                  <stop offset="100%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.4}} />
+                </linearGradient>
               </defs>
-              {/* Render clickable overlay parts with circular code markers */}
+              
+              {/* Render car body parts with fills */}
               {carParts.map((part) => {
                 const statuses = getPartStatus(part.id);
                 const color = getStatusColor(statuses);
@@ -480,19 +482,30 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 const isSelected = selectedPart === part.id;
                 
                 return (
-                  <g key={part.id}>
+                  <g key={`body-${part.id}`}>
                     <path
                       d={part.path}
-                      fill="transparent"
-                      stroke={isSelected ? "hsl(var(--primary))" : "transparent"}
-                      strokeWidth={isSelected ? 4 : 0}
+                      fill={statuses.length > 0 ? `${color}20` : 'url(#carBodyGradient)'}
+                      stroke={isSelected ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                      strokeWidth={isSelected ? 3 : 1}
                       className="cursor-pointer transition-all duration-200"
                       onMouseEnter={() => setHoveredPart(part.id)}
                       onMouseLeave={() => setHoveredPart(null)}
                       onClick={() => setSelectedPart(selectedPart === part.id ? null : part.id)}
-                      style={{ pointerEvents: 'auto' }}
                     />
-
+                  </g>
+                );
+              })}
+              
+              {/* Render status markers on top */}
+              {carParts.map((part) => {
+                const statuses = getPartStatus(part.id);
+                const color = getStatusColor(statuses);
+                const isHovered = hoveredPart === part.id;
+                const isSelected = selectedPart === part.id;
+                
+                return (
+                  <g key={`marker-${part.id}`}>
                     {/* Status markers with detailed codes from API */}
                     {statuses.length > 0 && (
                       <>
@@ -591,12 +604,32 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
             )}
           </div>
           
-          {/* Bottom view diagram */}
+          {/* Bottom view - simplified representation */}
           <div className="relative w-full max-w-md">
-            <img src={carDiagramBottom} alt="Car Bottom View" className="w-full h-auto rounded-lg" />
-            <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
-              Pamja nga poshtë
-            </div>
+            <svg viewBox="0 0 640 400" className="w-full h-auto rounded-lg bg-muted/30 border border-border">
+              <defs>
+                <linearGradient id="undercarriageGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.6}} />
+                  <stop offset="100%" style={{stopColor: 'hsl(var(--muted))', stopOpacity: 0.3}} />
+                </linearGradient>
+              </defs>
+              
+              {/* Main undercarriage frame */}
+              <rect x="200" y="50" width="240" height="300" rx="10" fill="url(#undercarriageGradient)" stroke="hsl(var(--border))" strokeWidth="2"/>
+              
+              {/* Wheel wells */}
+              <circle cx="230" cy="100" r="35" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
+              <circle cx="410" cy="100" r="35" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
+              <circle cx="230" cy="300" r="35" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
+              <circle cx="410" cy="300" r="35" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
+              
+              {/* Center line elements */}
+              <rect x="300" y="120" width="40" height="160" rx="5" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="1.5"/>
+              
+              <text x="320" y="30" textAnchor="middle" className="text-xs font-medium" fill="hsl(var(--foreground))">
+                Pamja nga poshtë
+              </text>
+            </svg>
           </div>
         </div>
 
