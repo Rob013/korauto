@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHaptics } from "@/hooks/useHaptics";
 import { MessageCircle, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInspectionRequest } from "@/utils/analytics";
@@ -55,6 +56,7 @@ const InspectionRequestForm = ({
 }: InspectionRequestFormProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { impact, notification } = useHaptics();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -137,6 +139,9 @@ const InspectionRequestForm = ({
     console.log("🔵 Form submission triggered!");
     console.log("🔵 Current form data:", formData);
     console.log("🔵 Is submitting:", isSubmitting);
+
+    // Haptic feedback on submit
+    impact('medium');
 
     if (isSubmitting) {
       console.log("⚠️ Already submitting, returning early");
@@ -270,6 +275,9 @@ const InspectionRequestForm = ({
         form_type: carId ? "specific_car" : "general_inquiry",
       });
 
+      // Success haptic feedback
+      notification('success');
+
       toast({
         title: "Kërkesa u dërgua me sukses",
         description:
@@ -277,6 +285,9 @@ const InspectionRequestForm = ({
       });
     } catch (error: any) {
       console.error("❌ Error submitting inspection request:", error);
+
+      // Error haptic feedback
+      notification('error');
 
       let errorMessage =
         "Ndodhi një gabim gjatë dërgimit të kërkesës. Ju lutem provoni përsëri.";
@@ -321,6 +332,7 @@ const InspectionRequestForm = ({
       const originalOnClick = (trigger.props as any)?.onClick;
       return React.cloneElement(trigger as React.ReactElement<any>, {
         onClick: (event: React.MouseEvent<any>) => {
+          impact('light');
           originalOnClick?.(event);
           if (!event.defaultPrevented) {
             setIsOpen(true);
@@ -330,15 +342,19 @@ const InspectionRequestForm = ({
     }
 
     return (
-      <button type="button" onClick={() => setIsOpen(true)} className="w-full">
+      <button type="button" onClick={() => {
+        impact('light');
+        setIsOpen(true);
+      }} className="w-full">
         {trigger}
       </button>
     );
-  }, [trigger]);
+  }, [trigger, impact]);
 
   const handleOpenWarranty = useCallback(() => {
+    impact('light');
     window.open("/garancioni", "_blank", "noopener,noreferrer");
-  }, []);
+  }, [impact]);
 
   const formContent = (
     <Card className="border-0 shadow-none">

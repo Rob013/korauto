@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useHaptics } from "@/hooks/useHaptics";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import type { LucideIcon } from "lucide-react";
 import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Wind, Radar, Tag, Armchair, DoorClosed, Cylinder, CircleDot, PaintBucket, Disc3, Instagram, Facebook, Bluetooth, Usb, Cable, Navigation, Wifi, Smartphone, Speaker, Music, Fan, Snowflake, Flame, Sun, KeyRound, ShieldCheck, Power } from "lucide-react";
@@ -901,6 +902,7 @@ const CarDetails = memo(() => {
   const {
     toast
   } = useToast();
+  const { impact, notification } = useHaptics();
   const {
     goBack,
     restorePageState,
@@ -1350,27 +1352,30 @@ const CarDetails = memo(() => {
     };
   }, [API_BASE_URL, API_KEY, buildCarDetails, fallbackCars, hydrateFromCache, lot, navigate, trackCarView, car]);
   const handleContactWhatsApp = useCallback(() => {
+    impact('light');
     const currentUrl = window.location.href;
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
-  }, [car, lot]);
+  }, [car, lot, impact]);
   const handleShare = useCallback(() => {
+    impact('light');
     navigator.clipboard.writeText(window.location.href);
     toast({
       title: "Link-u u kopjua",
       description: "Link-u i makinës u kopjua në clipboard",
       duration: 3000
     });
-  }, [toast]);
+  }, [toast, impact]);
 
   const handleOpenInspectionReport = useCallback(() => {
+    impact('light');
     const reportLot = car?.lot || lot;
     if (!reportLot) return;
 
     const reportUrl = `/car/${encodeURIComponent(reportLot)}/report`;
     window.open(reportUrl, "_blank", "noopener,noreferrer");
-  }, [car?.lot, lot]);
+  }, [car?.lot, lot, impact]);
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
@@ -1405,13 +1410,14 @@ const CarDetails = memo(() => {
   const carImages = useMemo(() => car?.images || [], [car?.images]);
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
+    impact(isLiked ? 'light' : 'medium');
     setIsLiked(!isLiked);
     toast({
       title: isLiked ? "U hoq nga të preferuarat" : "U shtua në të preferuarat",
       description: isLiked ? "Makina u hoq nga lista juaj e të preferuarave" : "Makina u shtua në listën tuaj të të preferuarave",
       duration: 3000
     });
-  }, [isLiked, toast]);
+  }, [isLiked, toast, impact]);
 
   // Handler for opening gallery images in a new page
   const handleGalleryClick = useCallback((e: React.MouseEvent) => {
@@ -1573,6 +1579,7 @@ const CarDetails = memo(() => {
                         className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
                         onClick={e => {
                           e.stopPropagation();
+                          impact('light');
                           goToPrevious();
                         }}
                         aria-label="Previous image"
@@ -1586,6 +1593,7 @@ const CarDetails = memo(() => {
                         className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
                         onClick={e => {
                           e.stopPropagation();
+                          impact('light');
                           goToNext();
                         }}
                         aria-label="Next image"
@@ -1644,11 +1652,14 @@ const CarDetails = memo(() => {
 
             {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
             {images.length > 1 && (
-              <div className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in" style={{animationDelay: '200ms'}}>
+                <div className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in" style={{animationDelay: '200ms'}}>
                 {images.slice(1, 7).map((image, index) => (
                   <button
                     key={index + 1}
-                    onClick={() => setSelectedImageIndex(index + 1)}
+                    onClick={() => {
+                      impact('light');
+                      setSelectedImageIndex(index + 1);
+                    }}
                     className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                       selectedImageIndex === index + 1 
                         ? 'border-primary shadow-lg scale-105' 
@@ -1722,6 +1733,7 @@ const CarDetails = memo(() => {
                         className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
                         onClick={e => {
                           e.stopPropagation();
+                          impact('light');
                           goToPrevious();
                         }}
                         aria-label="Previous image"
@@ -1735,6 +1747,7 @@ const CarDetails = memo(() => {
                         className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
                         onClick={e => {
                           e.stopPropagation();
+                          impact('light');
                           goToNext();
                         }}
                         aria-label="Next image"
