@@ -877,10 +877,10 @@ const CarInspectionReport = () => {
                   <div className="space-y-3">
                     <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                       <Wrench className="h-5 w-5 text-primary" />
-                      Diagrami Vizual i Dëmtimeve (Të dhëna nga API)
+                      Diagrami Vizual i Dëmtimeve
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Diagrami tregon dëmtimet e vërteta, riparimet dhe ndërrimet e pjesëve sipas të dhënave të inspektimit nga API
+                      Diagrami tregon dëmtimet e vërteta, riparimet dhe ndërrimet e pjesëve sipas të dhënave të inspektimit
                     </p>
                     <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
                   </div>

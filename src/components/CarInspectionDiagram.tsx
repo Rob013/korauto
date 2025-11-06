@@ -576,7 +576,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                         stroke="hsl(var(--foreground))"
                         strokeWidth="0.5"
                       >
-                        {part.nameEn}
+                        {part.name}
                       </text>
                     )}
                   </g>
@@ -593,7 +593,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
           
           {/* Bottom view diagram */}
           <div className="relative w-full max-w-md">
-            <img src={carDiagramBottom} alt="Car Bottom View" className="w-full h-auto rounded-lg" />
+            <img src={carDiagramBottom} alt="Pamja poshtë e makinës" className="w-full h-auto rounded-lg" />
             <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
               Pamja nga poshtë
             </div>
