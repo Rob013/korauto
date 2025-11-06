@@ -401,16 +401,16 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       {/* Main Diagram Section - Split View */}
       <div className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border rounded-lg overflow-hidden bg-background">
-          {/* Left Side - Front View (Brenda) */}
+          {/* Left Side - Outside View (Jashte) */}
           <div className="border-b lg:border-b-0 lg:border-r border-border">
             <div className="bg-muted/30 px-4 py-2 md:py-3 border-b border-border">
-              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Brenda</h3>
+              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Jashte</h3>
             </div>
             <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px]">
               <div className="relative w-full max-w-lg mx-auto">
-                <img src={carDiagramBottom} alt="Car Front View" className="w-full h-auto" />
+                <img src={carDiagramTop} alt="Car Outside View" className="w-full h-auto" />
                 
-                {/* Overlay markers on front view */}
+                {/* Overlay markers on outside/top view */}
                 {carParts.map((part) => {
                   const statuses = getPartStatus(part.id);
                   if (statuses.length === 0) return null;
@@ -434,37 +434,40 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
 
                   if (!showNBadge && !showRBadge) return null;
 
-                  // Position badges on the diagram
+                  // Position badges on the diagram - relative to image dimensions
                   let position = {};
-                  if (part.id === 'hood') position = { top: '15%', left: '50%' };
-                  else if (part.id === 'front_bumper') position = { top: '5%', left: '50%' };
-                  else if (part.id === 'windshield') position = { top: '25%', left: '50%' };
-                  else if (part.id === 'front_left_door') position = { top: '40%', left: '20%' };
-                  else if (part.id === 'front_right_door') position = { top: '40%', right: '20%' };
-                  else if (part.id === 'roof') position = { top: '50%', left: '50%' };
-                  else if (part.id === 'rear_left_door') position = { top: '65%', left: '20%' };
-                  else if (part.id === 'rear_right_door') position = { top: '65%', right: '20%' };
-                  else if (part.id === 'rear_glass') position = { top: '75%', left: '50%' };
-                  else if (part.id === 'trunk') position = { top: '85%', left: '50%' };
-                  else if (part.id === 'rear_bumper') position = { top: '95%', left: '50%' };
-                  else if (part.id === 'left_fender') position = { top: '20%', left: '15%' };
-                  else if (part.id === 'right_fender') position = { top: '20%', right: '15%' };
-                  else if (part.id === 'left_quarter') position = { top: '80%', left: '15%' };
-                  else if (part.id === 'right_quarter') position = { top: '80%', right: '15%' };
-                  else if (part.id === 'side_sill_left') position = { top: '50%', left: '10%' };
-                  else if (part.id === 'side_sill_right') position = { top: '50%', right: '10%' };
-                  else if (part.id === 'fl_wheel') position = { top: '18%', left: '5%' };
-                  else if (part.id === 'fr_wheel') position = { top: '18%', right: '5%' };
-                  else if (part.id === 'rl_wheel') position = { top: '82%', left: '5%' };
-                  else if (part.id === 'rr_wheel') position = { top: '82%', right: '5%' };
+                  if (part.id === 'hood') position = { top: '20%', left: '50%' };
+                  else if (part.id === 'front_bumper') position = { top: '8%', left: '50%' };
+                  else if (part.id === 'windshield') position = { top: '32%', left: '50%' };
+                  else if (part.id === 'front_left_door') position = { top: '42%', left: '25%' };
+                  else if (part.id === 'front_right_door') position = { top: '42%', left: '75%' };
+                  else if (part.id === 'roof') position = { top: '54%', left: '50%' };
+                  else if (part.id === 'rear_left_door') position = { top: '66%', left: '25%' };
+                  else if (part.id === 'rear_right_door') position = { top: '66%', left: '75%' };
+                  else if (part.id === 'rear_glass') position = { top: '78%', left: '50%' };
+                  else if (part.id === 'trunk') position = { top: '88%', left: '50%' };
+                  else if (part.id === 'rear_bumper') position = { top: '96%', left: '50%' };
+                  else if (part.id === 'left_fender') position = { top: '22%', left: '18%' };
+                  else if (part.id === 'right_fender') position = { top: '22%', left: '82%' };
+                  else if (part.id === 'left_quarter') position = { top: '82%', left: '18%' };
+                  else if (part.id === 'right_quarter') position = { top: '82%', left: '82%' };
+                  else if (part.id === 'side_sill_left') position = { top: '53%', left: '15%' };
+                  else if (part.id === 'side_sill_right') position = { top: '53%', left: '85%' };
+                  else if (part.id === 'fl_wheel') position = { top: '20%', left: '8%' };
+                  else if (part.id === 'fr_wheel') position = { top: '20%', left: '92%' };
+                  else if (part.id === 'rl_wheel') position = { top: '84%', left: '8%' };
+                  else if (part.id === 'rr_wheel') position = { top: '84%', left: '92%' };
 
                   return (
                     <div
-                      key={part.id}
-                      className="absolute -translate-x-1/2 -translate-y-1/2"
-                      style={position}
+                      key={`outside-${part.id}`}
+                      className="absolute z-10"
+                      style={{
+                        ...position,
+                        transform: 'translate(-50%, -50%)'
+                      }}
                     >
-                      <div className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full font-bold text-white text-xs md:text-sm shadow-lg"
+                      <div className="flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 border-white"
                         style={{ backgroundColor: showNBadge ? '#dc2626' : '#2563eb' }}>
                         {showNBadge ? 'N' : 'R'}
                       </div>
@@ -475,16 +478,16 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
             </div>
           </div>
 
-          {/* Right Side - Back View (Jashte) */}
+          {/* Right Side - Inside View (Brenda) */}
           <div>
             <div className="bg-muted/30 px-4 py-2 md:py-3 border-b border-border">
-              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Jashte</h3>
+              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Brenda</h3>
             </div>
             <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px]">
               <div className="relative w-full max-w-lg mx-auto">
-                <img src={carDiagramTop} alt="Car Back View" className="w-full h-auto" />
+                <img src={carDiagramBottom} alt="Car Inside View" className="w-full h-auto" />
                 
-                {/* Overlay markers on back view */}
+                {/* Overlay markers on inside/bottom view */}
                 {carParts.map((part) => {
                   const statuses = getPartStatus(part.id);
                   if (statuses.length === 0) return null;
@@ -508,37 +511,40 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
 
                   if (!showNBadge && !showRBadge) return null;
 
-                  // Position badges on the diagram
+                  // Position badges on the diagram - relative to image dimensions
                   let position = {};
-                  if (part.id === 'hood') position = { top: '15%', left: '50%' };
-                  else if (part.id === 'front_bumper') position = { top: '5%', left: '50%' };
-                  else if (part.id === 'windshield') position = { top: '25%', left: '50%' };
-                  else if (part.id === 'front_left_door') position = { top: '40%', left: '20%' };
-                  else if (part.id === 'front_right_door') position = { top: '40%', right: '20%' };
-                  else if (part.id === 'roof') position = { top: '50%', left: '50%' };
-                  else if (part.id === 'rear_left_door') position = { top: '65%', left: '20%' };
-                  else if (part.id === 'rear_right_door') position = { top: '65%', right: '20%' };
-                  else if (part.id === 'rear_glass') position = { top: '75%', left: '50%' };
-                  else if (part.id === 'trunk') position = { top: '85%', left: '50%' };
-                  else if (part.id === 'rear_bumper') position = { top: '95%', left: '50%' };
-                  else if (part.id === 'left_fender') position = { top: '20%', left: '15%' };
-                  else if (part.id === 'right_fender') position = { top: '20%', right: '15%' };
-                  else if (part.id === 'left_quarter') position = { top: '80%', left: '15%' };
-                  else if (part.id === 'right_quarter') position = { top: '80%', right: '15%' };
-                  else if (part.id === 'side_sill_left') position = { top: '50%', left: '10%' };
-                  else if (part.id === 'side_sill_right') position = { top: '50%', right: '10%' };
-                  else if (part.id === 'fl_wheel') position = { top: '18%', left: '5%' };
-                  else if (part.id === 'fr_wheel') position = { top: '18%', right: '5%' };
-                  else if (part.id === 'rl_wheel') position = { top: '82%', left: '5%' };
-                  else if (part.id === 'rr_wheel') position = { top: '82%', right: '5%' };
+                  if (part.id === 'hood') position = { top: '20%', left: '50%' };
+                  else if (part.id === 'front_bumper') position = { top: '8%', left: '50%' };
+                  else if (part.id === 'windshield') position = { top: '32%', left: '50%' };
+                  else if (part.id === 'front_left_door') position = { top: '42%', left: '25%' };
+                  else if (part.id === 'front_right_door') position = { top: '42%', left: '75%' };
+                  else if (part.id === 'roof') position = { top: '54%', left: '50%' };
+                  else if (part.id === 'rear_left_door') position = { top: '66%', left: '25%' };
+                  else if (part.id === 'rear_right_door') position = { top: '66%', left: '75%' };
+                  else if (part.id === 'rear_glass') position = { top: '78%', left: '50%' };
+                  else if (part.id === 'trunk') position = { top: '88%', left: '50%' };
+                  else if (part.id === 'rear_bumper') position = { top: '96%', left: '50%' };
+                  else if (part.id === 'left_fender') position = { top: '22%', left: '18%' };
+                  else if (part.id === 'right_fender') position = { top: '22%', left: '82%' };
+                  else if (part.id === 'left_quarter') position = { top: '82%', left: '18%' };
+                  else if (part.id === 'right_quarter') position = { top: '82%', left: '82%' };
+                  else if (part.id === 'side_sill_left') position = { top: '53%', left: '15%' };
+                  else if (part.id === 'side_sill_right') position = { top: '53%', left: '85%' };
+                  else if (part.id === 'fl_wheel') position = { top: '20%', left: '8%' };
+                  else if (part.id === 'fr_wheel') position = { top: '20%', left: '92%' };
+                  else if (part.id === 'rl_wheel') position = { top: '84%', left: '8%' };
+                  else if (part.id === 'rr_wheel') position = { top: '84%', left: '92%' };
 
                   return (
                     <div
-                      key={part.id}
-                      className="absolute -translate-x-1/2 -translate-y-1/2"
-                      style={position}
+                      key={`inside-${part.id}`}
+                      className="absolute z-10"
+                      style={{
+                        ...position,
+                        transform: 'translate(-50%, -50%)'
+                      }}
                     >
-                      <div className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full font-bold text-white text-xs md:text-sm shadow-lg"
+                      <div className="flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 border-white"
                         style={{ backgroundColor: showNBadge ? '#dc2626' : '#2563eb' }}>
                         {showNBadge ? 'N' : 'R'}
                       </div>
