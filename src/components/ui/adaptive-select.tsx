@@ -17,6 +17,7 @@ interface AdaptiveSelectProps {
   placeholder?: string;
   className?: string;
   options: SelectOption[];
+  forceNative?: boolean;
 }
 
 interface AdaptiveSelectTriggerProps {
@@ -180,13 +181,26 @@ const NativeSelect: React.FC<AdaptiveSelectProps> = ({
       )}
       {options.map((option) => {
         // Extract text content from JSX labels or use the label as-is if it's a string
-        const displayText = typeof option.label === 'string' 
-          ? option.label 
+        const displayText = typeof option.label === 'string'
+          ? option.label
           : extractTextFromJSX(option.label) || option.value;
-        
+
+        if (option.value.startsWith('separator-')) {
+          return (
+            <option
+              key={option.value}
+              value={option.value}
+              disabled
+              className="py-2 px-3 font-semibold text-muted-foreground"
+            >
+              {displayText}
+            </option>
+          );
+        }
+
         return (
-          <option 
-            key={option.value} 
+          <option
+            key={option.value}
             value={option.value}
             disabled={option.disabled}
             className="py-2 px-3 dark:bg-background dark:text-foreground"
@@ -368,6 +382,7 @@ const CustomSelect: React.FC<AdaptiveSelectProps> = ({
 
 // Main Adaptive Select Component with improved device detection
 export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
+  const { forceNative, ...rest } = props;
   const { isIOS, isMac, isAndroid, isMobile, isTouch, isPad } = useDeviceDetection();
 
   // Enhanced logic for when to use native select:
@@ -376,9 +391,13 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
   // 3. Touch devices with small screens - use native
   // 4. Other desktop devices - use custom select for better styling control
   const shouldUseNative = useMemo(() => {
+    if (forceNative) {
+      return true;
+    }
+
     // Always use native on iOS (iPhone, iPad, iPod)
     if (isIOS) return true;
-    
+
     // Always use native on iPad (even when not detected as iOS)
     if (isPad) return true;
     
@@ -393,13 +412,13 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = (props) => {
     
     // Use custom select for non-Apple desktop devices
     return false;
-  }, [isIOS, isPad, isMac, isAndroid, isMobile, isTouch]);
+  }, [forceNative, isIOS, isPad, isMac, isAndroid, isMobile, isTouch]);
 
   if (shouldUseNative) {
     return <NativeSelect {...props} />;
   }
 
-  return <CustomSelect {...props} />;
+  return <CustomSelect {...rest} />;
 };
 
 // Helper components for compatibility with existing Radix UI usage

@@ -42,6 +42,20 @@ body {
   transition: opacity 0.2s ease-in;
 }
 
+@keyframes korauto-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: korauto-spin 0.9s linear infinite;
+  transform-origin: center;
+}
+
 /* Content visibility optimization */
 .optimize-rendering {
   content-visibility: auto;

@@ -17,6 +17,7 @@ import {
   getFallbackGrades,
   debounce as catalogDebounce
 } from '@/utils/catalog-filter';
+import { sortBrandsWithPriority } from '@/utils/brandOrdering';
 
 interface Manufacturer {
   id: number;
@@ -142,8 +143,43 @@ const FilterForm = memo<FilterFormProps>(({
   // Enhanced year range using utility
   const years = useMemo(() => generateYearRange(currentYear), [currentYear]);
 
-  // Memoized sorted manufacturers using utility
-  const sortedManufacturers = useMemo(() => sortManufacturers(manufacturers), [manufacturers]);
+  // Memoized sorted manufacturers with prioritized ordering
+  const manufacturerOrdering = useMemo(() => {
+    const baseManufacturers = sortManufacturers(manufacturers);
+    return sortBrandsWithPriority(baseManufacturers);
+  }, [manufacturers]);
+  const sortedManufacturers = manufacturerOrdering.sorted;
+  const prioritizedManufacturerCount = manufacturerOrdering.priorityCount;
+  const manufacturerOptions = useMemo(() => {
+    const options = sortedManufacturers.map((manufacturer) => ({
+      value: manufacturer.id.toString(),
+      label: (
+        <div className="flex items-center gap-2">
+          {(manufacturer as any).image && (
+            <img
+              src={(manufacturer as any).image}
+              alt={manufacturer.name}
+              className="w-4 h-4 object-contain rounded bg-white dark:bg-muted p-0.5 ring-1 ring-border"
+            />
+          )}
+          <span className="truncate">
+            {manufacturer.name} ({manufacturer.cars_qty})
+          </span>
+        </div>
+      )
+    }));
+
+    if (prioritizedManufacturerCount > 0 && prioritizedManufacturerCount < options.length) {
+      return [
+        { value: 'all', label: 'Të gjitha Markat' },
+        ...options.slice(0, prioritizedManufacturerCount),
+        { value: 'separator-priority-brands', label: 'Të tjerët', disabled: true },
+        ...options.slice(prioritizedManufacturerCount)
+      ];
+    }
+
+    return [{ value: 'all', label: 'Të gjitha Markat' }, ...options];
+  }, [sortedManufacturers, prioritizedManufacturerCount]);
 
   // Using utility for fallback grades
   const getFallbackGradesForManufacturer = useCallback((manufacturerId: string) => {
@@ -289,40 +325,28 @@ const FilterForm = memo<FilterFormProps>(({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="space-y-2">
           <Label htmlFor="manufacturer" className="text-xs sm:text-sm font-medium">Marka</Label>
-          <AdaptiveSelect 
-            value={filters.manufacturer_id || 'all'} 
-            onValueChange={handleBrandChange} 
+          <AdaptiveSelect
+            value={filters.manufacturer_id || 'all'}
+            onValueChange={handleBrandChange}
             disabled={isLoading}
             placeholder={isLoading ? "Po ngarkon..." : "Të gjitha Markat"}
             className="h-10 sm:h-11 text-sm transition-all duration-300"
-            options={[
-              { value: 'all', label: 'Të gjitha Markat' },
-              ...sortedManufacturers.map((manufacturer) => ({
-                value: manufacturer.id.toString(),
-                label: (
-                  <div className="flex items-center gap-2">
-                    {(manufacturer as any).image && (
-                      <img src={(manufacturer as any).image} alt={manufacturer.name} className="w-4 h-4 object-contain rounded bg-white dark:bg-muted p-0.5 ring-1 ring-border" />
-                    )}
-                    <span className="truncate">{manufacturer.name} ({manufacturer.cars_qty})</span>
-                  </div>
-                )
-              }))
-            ]}
+            options={manufacturerOptions}
+            forceNative
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="model" className="text-xs sm:text-sm font-medium">Modeli</Label>
-          <AdaptiveSelect 
-            value={filters.model_id || 'all'} 
+          <AdaptiveSelect
+            value={filters.model_id || 'all'}
             onValueChange={(value) => updateFilter('model_id', value)}
             disabled={!filters.manufacturer_id || isLoading}
-            placeholder={isLoading ? "Po ngarkon..." : (filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidhni markën së pari")}
+            placeholder={isLoading ? "Po ngarkon..." : (filters.manufacturer_id ? "Të gjithë Modelet" : "Zgjidhni markën së pari") }
             className="h-10 sm:h-11 text-sm transition-all duration-300"
             options={[
               { value: 'all', label: 'Të gjithë Modelet' },
-              ...(models && models.length > 0 ? 
+              ...(models && models.length > 0 ?
                 models
                   .filter((model) => model.cars_qty && model.cars_qty > 0)
                   .map((model) => ({
@@ -332,9 +356,9 @@ const FilterForm = memo<FilterFormProps>(({
                 : []
               )
             ]}
+            forceNative
           />
         </div>
-
         <div className="space-y-2">
           <Label htmlFor="year_presets" className="text-xs sm:text-sm font-medium flex items-center gap-1">
             Zgjedhja e Shpejtë e Vitit 
@@ -387,8 +411,8 @@ const FilterForm = memo<FilterFormProps>(({
 
         <div className="space-y-2">
           <Label htmlFor="from_year" className="text-xs sm:text-sm font-medium">Nga Viti</Label>
-          <AdaptiveSelect 
-            value={filters.from_year || 'any'} 
+          <AdaptiveSelect
+            value={filters.from_year || 'any'}
             onValueChange={(value) => updateFilter('from_year', value)}
             placeholder="Të gjithë vitet"
             className="h-10 sm:h-11 text-sm transition-all duration-300"
@@ -399,6 +423,7 @@ const FilterForm = memo<FilterFormProps>(({
                 label: year.toString()
               }))
             ]}
+            forceNative
           />
         </div>
 
@@ -416,6 +441,7 @@ const FilterForm = memo<FilterFormProps>(({
                 label: year.toString()
               }))
             ]}
+            forceNative
           />
         </div>
       </div>
@@ -438,17 +464,17 @@ const FilterForm = memo<FilterFormProps>(({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-1">
               <Label htmlFor="generation" className="text-xs font-medium">Gjenerata</Label>
-              <AdaptiveSelect 
-                value={filters.grade_iaai || 'all'} 
+              <AdaptiveSelect
+                value={filters.grade_iaai || 'all'}
                 onValueChange={(value) => updateFilter('grade_iaai', value)}
                 disabled={!filters.model_id || isLoading || isLoadingGrades}
                 placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGrades ? "Po ngarkon..." : "Të gjitha Gjeneratat"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjitha Gjeneratat' },
-                  ...(grades.length === 0 && isLoadingGrades ? 
+                  ...(grades.length === 0 && isLoadingGrades ?
                     [{ value: 'loading', label: 'Po ngarkon...', disabled: true }] :
-                    grades.length === 0 && filters.model_id ? 
+                    grades.length === 0 && filters.model_id ?
                     [{ value: 'no-grades', label: 'Nuk u gjetën gjenerata', disabled: true }] :
                     grades.map((grade) => ({
                       value: grade.value,
@@ -457,41 +483,43 @@ const FilterForm = memo<FilterFormProps>(({
                     }))
                   )
                 ]}
+                forceNative
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="engine" className="text-xs font-medium">Motori</Label>
-              <AdaptiveSelect 
-                value={(filters as any).engine_spec || 'all'} 
+              <AdaptiveSelect
+                value={(filters as any).engine_spec || 'all'}
                 onValueChange={(value) => updateFilter('engine_spec', value)}
                 disabled={!filters.model_id || isLoading}
                 placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : "Të gjithë Motorët"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjithë Motorët' },
-                  ...(engineVariants && engineVariants.length > 0 ? 
+                  ...(engineVariants && engineVariants.length > 0 ?
                     engineVariants.map((engine) => ({
                       value: engine.value,
                       label: engine.label
-                    })) : 
+                    })) :
                     [{ value: 'no-engines', label: 'Zgjidhni modelin për motorët', disabled: true }]
                   )
                 ]}
+                forceNative
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="trim_level" className="text-xs font-medium">Niveli i Pajisjes</Label>
-              <AdaptiveSelect 
-                value={filters.trim_level || 'all'} 
+              <AdaptiveSelect
+                value={filters.trim_level || 'all'}
                 onValueChange={(value) => updateFilter('trim_level', value)}
                 disabled={!filters.model_id || isLoading}
                 placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : "Të gjithë Nivelet e Pajisjes"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjithë Nivelet e Pajisjes' },
-                  ...(trimLevels.length === 0 && filters.model_id ? 
+                  ...(trimLevels.length === 0 && filters.model_id ?
                     [{ value: 'no-trims', label: 'Nuk u gjetën nivele pajisje', disabled: true }] :
                     trimLevels.map((trim) => ({
                       value: trim.value,
@@ -499,13 +527,14 @@ const FilterForm = memo<FilterFormProps>(({
                     }))
                   )
                 ]}
+                forceNative
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="color" className="text-xs font-medium">Ngjyra</Label>
-              <AdaptiveSelect 
-                value={filters.color || 'all'} 
+              <AdaptiveSelect
+                value={filters.color || 'all'}
                 onValueChange={(value) => updateFilter('color', value)}
                 placeholder="Të gjitha Ngjyrat"
                 className="h-8 text-xs sm:text-sm"
@@ -516,13 +545,14 @@ const FilterForm = memo<FilterFormProps>(({
                     label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
                   }))
                 ]}
+                forceNative
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="fuel_type" className="text-xs font-medium">Lloji i Karburantit</Label>
-              <AdaptiveSelect 
-                value={filters.fuel_type || 'all'} 
+              <AdaptiveSelect
+                value={filters.fuel_type || 'all'}
                 onValueChange={(value) => updateFilter('fuel_type', value)}
                 placeholder="Të gjithë Llojet"
                 className="h-8 text-xs sm:text-sm"
@@ -533,6 +563,7 @@ const FilterForm = memo<FilterFormProps>(({
                     label: name.charAt(0).toUpperCase() + name.slice(1)
                   }))
                 ]}
+                forceNative
               />
             </div>
           </div>
@@ -540,8 +571,8 @@ const FilterForm = memo<FilterFormProps>(({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             <div className="space-y-1">
               <Label htmlFor="transmission" className="text-xs font-medium">Transmisioni</Label>
-              <AdaptiveSelect 
-                value={filters.transmission || 'all'} 
+              <AdaptiveSelect
+                value={filters.transmission || 'all'}
                 onValueChange={(value) => updateFilter('transmission', value)}
                 placeholder="Të gjithë"
                 className="h-8 text-xs sm:text-sm"
@@ -552,13 +583,14 @@ const FilterForm = memo<FilterFormProps>(({
                     label: name.charAt(0).toUpperCase() + name.slice(1)
                   }))
                 ]}
+                forceNative
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="body_type" className="text-xs font-medium">Lloji i Trupit</Label>
-              <AdaptiveSelect 
-                value={filters.body_type || 'all'} 
+              <AdaptiveSelect
+                value={filters.body_type || 'all'}
                 onValueChange={(value) => updateFilter('body_type', value)}
                 placeholder="Të gjithë Llojet"
                 className="h-8 text-xs sm:text-sm"
@@ -569,13 +601,14 @@ const FilterForm = memo<FilterFormProps>(({
                     label: name.charAt(0).toUpperCase() + name.slice(1)
                   }))
                 ]}
+                forceNative
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="seats" className="text-xs font-medium">Numri i Vendeve</Label>
-              <AdaptiveSelect 
-                value={filters.seats_count || 'all'} 
+              <AdaptiveSelect
+                value={filters.seats_count || 'all'}
                 onValueChange={(value) => updateFilter('seats_count', value)}
                 placeholder="Të gjitha"
                 className="h-8 text-xs sm:text-sm"
@@ -588,13 +621,14 @@ const FilterForm = memo<FilterFormProps>(({
                   { value: '8', label: '8 Vende' },
                   { value: '9', label: '9+ Vende' }
                 ]}
+                forceNative
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="max_accidents" className="text-xs font-medium">Aksidente (Maksimale)</Label>
-              <AdaptiveSelect 
-                value={filters.max_accidents || 'all'} 
+              <AdaptiveSelect
+                value={filters.max_accidents || 'all'}
                 onValueChange={(value) => updateFilter('max_accidents', value)}
                 placeholder="Të gjitha"
                 className="h-8 text-xs sm:text-sm"
@@ -604,6 +638,7 @@ const FilterForm = memo<FilterFormProps>(({
                   { value: '1', label: 'Maksimale 1 aksident' },
                   { value: '2', label: 'Maksimale 2 aksidente' }
                 ]}
+                forceNative
               />
             </div>
           </div>

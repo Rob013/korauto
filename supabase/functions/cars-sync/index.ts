@@ -196,6 +196,124 @@ Deno.serve(async (req) => {
       } catch (err: any) {
         return new Response(JSON.stringify({ success: false, error: err?.message || String(err) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
+    } else if (syncAction === 'prefetch_cars') {
+      const rawCarIds = Array.isArray(requestBody.car_ids) ? requestBody.car_ids : [];
+      const carIds = rawCarIds
+        .map((id: any) => {
+          if (typeof id === 'number' || typeof id === 'string') {
+            const cleaned = String(id).trim();
+            return cleaned.length > 0 ? cleaned : null;
+          }
+          return null;
+        })
+        .filter((id): id is string => Boolean(id));
+
+      if (carIds.length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'No car IDs provided for prefetch' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const uniqueIds = Array.from(new Set(carIds));
+      const errors: Array<{ id: string; error: string }> = [];
+      let cachedCount = 0;
+      let encarCount = 0;
+      let kbchachaCount = 0;
+
+      for (const carId of uniqueIds) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/cars/${encodeURIComponent(carId)}`, {
+            headers: {
+              accept: 'application/json',
+              'x-api-key': API_KEY
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(`API ${response.status}`);
+          }
+
+          const payload = await response.json();
+          const carData: Car = payload?.data || payload;
+          if (!carData) {
+            throw new Error('Invalid car response');
+          }
+
+          const lot = Array.isArray(carData.lots) ? carData.lots[0] : undefined;
+          const priceSource = lot?.buy_now ?? (carData as any)?.buy_now ?? (carData as any)?.price ?? null;
+          const normalizedPrice = typeof priceSource === 'number' ? Math.round(priceSource + 2300) : null;
+          const lotDomain = lot?.domain?.name || carData?.provider || (carData as any)?.source_api || '';
+          const domainLower = lotDomain.toLowerCase();
+          if (domainLower.includes('kbchachacha') || domainLower.includes('kb_chachacha')) {
+            kbchachaCount++;
+          } else {
+            encarCount++;
+          }
+
+          const images = Array.isArray(lot?.images?.normal)
+            ? lot?.images?.normal
+            : Array.isArray(lot?.images?.big)
+              ? lot?.images?.big
+              : Array.isArray((carData as any)?.images)
+                ? (carData as any).images
+                : [];
+
+          const mileageLabel = lot?.odometer?.km
+            ? `${lot.odometer.km.toLocaleString()} km`
+            : lot?.odometer?.mi
+              ? `${lot.odometer.mi.toLocaleString()} mi`
+              : null;
+
+          const carCache = {
+            id: String(carData.id ?? carId),
+            api_id: String(carData.id ?? carId),
+            make: carData.manufacturer?.name || (carData as any)?.make || 'Unknown',
+            model: carData.model?.name || (carData as any)?.model || 'Unknown',
+            year: carData.year || (carData as any)?.year || 0,
+            price: normalizedPrice,
+            price_cents: normalizedPrice ? normalizedPrice * 100 : null,
+            vin: carData.vin,
+            fuel: carData.fuel?.name || (carData as any)?.fuel?.name || (carData as any)?.fuel || null,
+            transmission: carData.transmission?.name || (carData as any)?.transmission?.name || (carData as any)?.transmission || null,
+            color: carData.color?.name || (carData as any)?.color?.name || (carData as any)?.color || null,
+            condition: lot?.condition?.name?.replace('run_and_drives', 'Good') || (carData as any)?.condition || null,
+            lot_number: lot?.lot || (carData as any)?.lot_number || null,
+            mileage: mileageLabel,
+            images,
+            source_site: lotDomain,
+            location_country: lot?.location?.country || (carData as any)?.location || 'South Korea',
+            car_data: carData,
+            lot_data: lot || {},
+            last_api_sync: new Date().toISOString(),
+            sale_status: lot?.status === 3 ? 'sold' : lot?.status === 2 ? 'pending' : 'active'
+          } as any;
+
+          const { error: upsertError } = await supabaseClient
+            .from('cars_cache')
+            .upsert(carCache, { onConflict: 'id', ignoreDuplicates: false });
+
+          if (upsertError) {
+            throw new Error(upsertError.message);
+          }
+
+          cachedCount++;
+        } catch (error: any) {
+          errors.push({ id: carId, error: error?.message || String(error) });
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          processed: uniqueIds.length,
+          cached: cachedCount,
+          encarCount,
+          kbchachaCount,
+          errors
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // For status refresh, do a quick incremental sync

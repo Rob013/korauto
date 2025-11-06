@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
@@ -15,6 +15,7 @@ import { useAdminCheck } from "./hooks/useAdminCheck";
 import { CacheUpdateNotification } from "./components/CacheUpdateNotification";
 import { useIsMobile } from "./hooks/use-mobile";
 import { IOSEnhancer } from "./components/IOSEnhancer";
+import PageTransition from "./components/PageTransition";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -83,6 +84,17 @@ const AdminSyncSkeleton = () => (
       ))}
     </div>
   </div>
+);
+
+const renderWithTransition = (
+  Component: React.LazyExoticComponent<React.ComponentType<any>>,
+  fallback: ReactNode = <PageSkeleton />
+) => (
+  <Suspense fallback={fallback}>
+    <PageTransition>
+      <Component />
+    </PageTransition>
+  </Suspense>
 );
 
 const queryClient = new QueryClient({
@@ -156,124 +168,46 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
-            <Route path="/" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Index />
-              </Suspense>
-            } />
-            <Route path="/catalog" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Catalog />
-              </Suspense>
-            } />
-            <Route path="/car/:id" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <CarDetails />
-              </Suspense>
-            } />
-            <Route path="/car/:id/gallery" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <CarGallery />
-              </Suspense>
-            } />
-            <Route path="/car/:id/report" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <CarInspectionReport />
-              </Suspense>
-            } />
-            <Route path="/admin" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AdminDashboard />
-              </Suspense>
-            } />
-            <Route path="/admin/sync" element={
-              <Suspense fallback={<AdminSyncSkeleton />}>
-                <AdminSyncDashboard />
-              </Suspense>
-            } />
-            <Route path="/auth" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AuthPage />
-              </Suspense>
-            } />
-            <Route path="/auth/confirm" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <EmailConfirmationPage />
-              </Suspense>
-            } />
-            <Route path="/account" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <MyAccount />
-              </Suspense>
-            } />
-            <Route path="/favorites" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <FavoritesPage />
-              </Suspense>
-            } />
-            <Route path="/inspections" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <InspectionServices />
-              </Suspense>
-            } />
-            <Route path="/warranty" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Warranty />
-              </Suspense>
-            } />
-            <Route path="/contacts" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Contacts />
-              </Suspense>
-            } />
-            <Route path="/garancioni" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <Warranty />
-              </Suspense>
-            } />
-            <Route path="/tracking" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <ShipmentTracking />
-              </Suspense>
-            } />
-            {/* Demo routes removed - no longer needed */}
-            <Route path="/performance" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <PerformanceDashboard />
-              </Suspense>
-            } />
-            <Route path="/cookie-management" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <CookieManagementDashboard />
-              </Suspense>
-            } />
-            <Route path="/audit-test" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <AuditTestPage />
-              </Suspense>
-            } />
-            <Route path="/api-info-demo" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <ApiInfoDemo />
-              </Suspense>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={
-              <Suspense fallback={<PageSkeleton />}>
-                <NotFound />
-              </Suspense>
-            } />
-          </Routes>
-        </BrowserRouter>
-        <InstallPrompt />
-        <CacheUpdateNotification />
-        <IOSEnhancer />
-        {/* Performance Monitor for admin users only, hidden on mobile */}
-        {isAdmin && !isMobile && (
-          <PerformanceMonitor showDetails={false} />
-        )}
-      </TooltipProvider>
+            <Routes>
+              <Route path="/" element={renderWithTransition(Index)} />
+              <Route path="/catalog" element={renderWithTransition(Catalog)} />
+              <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
+              <Route path="/car/:id/gallery" element={renderWithTransition(CarGallery)} />
+              <Route path="/car/:id/report" element={renderWithTransition(CarInspectionReport)} />
+              <Route path="/admin" element={renderWithTransition(AdminDashboard)} />
+              <Route
+                path="/admin/sync"
+                element={renderWithTransition(AdminSyncDashboard, <AdminSyncSkeleton />)}
+              />
+              <Route path="/auth" element={renderWithTransition(AuthPage)} />
+              <Route path="/auth/confirm" element={renderWithTransition(EmailConfirmationPage)} />
+              <Route path="/account" element={renderWithTransition(MyAccount)} />
+              <Route path="/favorites" element={renderWithTransition(FavoritesPage)} />
+              <Route path="/inspections" element={renderWithTransition(InspectionServices)} />
+              <Route path="/warranty" element={renderWithTransition(Warranty)} />
+              <Route path="/contacts" element={renderWithTransition(Contacts)} />
+              <Route path="/garancioni" element={renderWithTransition(Warranty)} />
+              <Route path="/tracking" element={renderWithTransition(ShipmentTracking)} />
+              {/* Demo routes removed - no longer needed */}
+              <Route path="/performance" element={renderWithTransition(PerformanceDashboard)} />
+              <Route
+                path="/cookie-management"
+                element={renderWithTransition(CookieManagementDashboard)}
+              />
+              <Route path="/audit-test" element={renderWithTransition(AuditTestPage)} />
+              <Route path="/api-info-demo" element={renderWithTransition(ApiInfoDemo)} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={renderWithTransition(NotFound)} />
+            </Routes>
+          </BrowserRouter>
+          <InstallPrompt />
+          <CacheUpdateNotification />
+          <IOSEnhancer />
+          {/* Performance Monitor for admin users only, hidden on mobile */}
+          {isAdmin && !isMobile && (
+            <PerformanceMonitor showDetails={false} />
+          )}
+        </TooltipProvider>
       </StatusRefreshProvider>
     </QueryClientProvider>
   );

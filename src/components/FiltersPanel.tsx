@@ -22,6 +22,7 @@ import {
 import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { validateFilters } from '@/utils/buildQueryParams';
 import { cn } from '@/lib/utils';
+import { sortBrandsWithPriority } from '@/utils/brandOrdering';
 
 interface FiltersData {
   brands: Array<{ id: string; name: string; count?: number; image?: string }>;
@@ -127,6 +128,41 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
   // Validate filters
   const validationErrors = useMemo(() => validateFilters(filters), [filters]);
+  const { sorted: orderedBrands, priorityCount: priorityBrandCount } = useMemo(
+    () => sortBrandsWithPriority(data.brands || []),
+    [data.brands]
+  );
+  const brandOptions = useMemo(() => {
+    const options = orderedBrands.map((brand) => ({
+      value: brand.id,
+      label: (
+        <span className="flex items-center gap-2">
+          {brand.image && (
+            <img
+              src={brand.image}
+              alt={brand.name}
+              className="h-4 w-4 rounded bg-white object-contain p-0.5 ring-1 ring-border dark:bg-white"
+            />
+          )}
+          <span>
+            {brand.name}
+            {brand.count ? ` (${brand.count})` : ''}
+          </span>
+        </span>
+      ),
+      icon: brand.image
+    }));
+
+    if (priorityBrandCount > 0 && priorityBrandCount < options.length) {
+      return [
+        ...options.slice(0, priorityBrandCount),
+        { value: 'separator-priority-brands', label: 'Të tjerët', disabled: true },
+        ...options.slice(priorityBrandCount)
+      ];
+    }
+
+    return options;
+  }, [orderedBrands, priorityBrandCount]);
   const isValid = validationErrors.length === 0;
 
   // Count active filters for badge
@@ -317,40 +353,23 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           >
             {/* Brand */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Car className="h-4 w-4" />
-                Marka
-              </Label>
-              <AdaptiveSelect
-                key={`brand-${filters.brand || 'empty'}`}
-                value={filters.brand || ''}
-                onValueChange={handleBrandChange}
-                placeholder="Zgjidhni markën"
-                className="filter-select bg-background"
-                options={data.brands.map((brand) => ({
-                  value: brand.id,
-                  label: (
-                    <span className="flex items-center gap-2">
-                      {brand.image && (
-                        <img
-                          src={brand.image}
-                          alt={brand.name}
-                          className="h-4 w-4 rounded bg-white object-contain p-0.5 ring-1 ring-border dark:bg-white"
-                        />
-                      )}
-                      <span>
-                        {brand.name}
-                        {brand.count ? ` (${brand.count})` : ''}
-                      </span>
-                    </span>
-                  ),
-                  icon: brand.image
-                }))}
-              />
-            </div>
+          <Label className="flex items-center gap-2">
+            <Car className="h-4 w-4" />
+            Marka
+          </Label>
+          <AdaptiveSelect
+            key={`brand-${filters.brand || 'empty'}`}
+            value={filters.brand || ''}
+            onValueChange={handleBrandChange}
+            placeholder="Zgjidhni markën"
+            className="filter-select bg-background"
+            options={brandOptions}
+            forceNative
+          />
+        </div>
 
-            {/* Model (dependent on brand) */}
-            <div className="space-y-2">
+        {/* Model (dependent on brand) */}
+        <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Modeli
@@ -362,15 +381,16 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 disabled={!filters.brand || availableModels.length === 0}
                 placeholder={!filters.brand ? "Zgjidhni markën së pari" : "Zgjidhni modelin"}
                 className="filter-select bg-background"
-                options={(availableModels.length === 0
-                  ? [{ value: '', label: 'Nuk ka modele të disponueshme', disabled: true }]
-                  : availableModels.map((model) => ({
-                    value: model.id,
-                    label: `${model.name}${model.count ? ` (${model.count})` : ''}`
-                  }))
-                )}
-              />
-            </div>
+            options={(availableModels.length === 0
+              ? [{ value: '', label: 'Nuk ka modele të disponueshme', disabled: true }]
+              : availableModels.map((model) => ({
+                value: model.id,
+                label: `${model.name}${model.count ? ` (${model.count})` : ''}`
+              }))
+            )}
+            forceNative
+          />
+        </div>
 
             {/* Year Range */}
             <div className="space-y-3">
@@ -461,6 +481,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   value: fuel.id,
                   label: `${fuel.name}${fuel.count ? ` (${fuel.count})` : ''}`
                 }))}
+                forceNative
               />
             </div>
 
@@ -480,6 +501,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   value: transmission.id,
                   label: `${transmission.name}${transmission.count ? ` (${transmission.count})` : ''}`
                 }))}
+                forceNative
               />
             </div>
 
@@ -521,6 +543,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   value: bodyType.id,
                   label: `${bodyType.name}${bodyType.count ? ` (${bodyType.count})` : ''}`
                 }))}
+                forceNative
               />
             </div>
 
@@ -540,6 +563,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   value: color.id,
                   label: `${color.name}${color.count ? ` (${color.count})` : ''}`
                 }))}
+                forceNative
               />
             </div>
 
@@ -559,6 +583,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   value: location.id,
                   label: `${location.name}${location.count ? ` (${location.count})` : ''}`
                 }))}
+                forceNative
               />
             </div>
           </div>

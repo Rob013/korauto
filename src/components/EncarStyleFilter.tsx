@@ -39,6 +39,7 @@ import {
   generateYearPresets,
   isStrictFilterMode
 } from '@/utils/catalog-filter';
+import { sortBrandsWithPriority } from '@/utils/brandOrdering';
 import { formatModelName } from '@/utils/modelNameFormatter';
 
 interface Manufacturer {
@@ -200,13 +201,54 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }))
   ], [years, isStrictMode, filters.from_year, filters.to_year]);
 
-  const sortedManufacturers = useMemo(() => {
+  const { sorted: prioritizedManufacturers, priorityCount: prioritizedManufacturerCount } = useMemo(() => {
     const excludedBrands = ['mitsubishi', 'alfa romeo', 'alfa-romeo', 'acura', 'mazda', 'dongfeng', 'lotus'];
-    const sorted = sortManufacturers(manufacturers);
-    return sorted.filter(manufacturer => 
+    const baseList = sortManufacturers(manufacturers).filter(manufacturer =>
       !excludedBrands.includes(manufacturer.name.toLowerCase())
     );
+    return sortBrandsWithPriority(baseList);
   }, [manufacturers]);
+
+  const manufacturerOptions = useMemo(() => {
+    const options = prioritizedManufacturers.map((manufacturer: Manufacturer) => {
+      const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
+      return {
+        value: manufacturer.id.toString(),
+        label: (
+          <div className="flex items-center gap-2 py-1">
+            <img
+              src={logoUrl}
+              alt={manufacturer.name}
+              className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
+              loading="eager"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
+          </div>
+        ),
+        icon: logoUrl
+      };
+    });
+
+    if (prioritizedManufacturerCount > 0 && prioritizedManufacturerCount < options.length) {
+      return [
+        ...options.slice(0, prioritizedManufacturerCount),
+        { value: 'separator-priority-brands', label: 'Të tjerët', disabled: true },
+        ...options.slice(prioritizedManufacturerCount)
+      ];
+    }
+
+    return options;
+  }, [prioritizedManufacturers, prioritizedManufacturerCount]);
+
+  const manufacturerSelectOptions = useMemo(() => {
+    if (!(isStrictMode && filters.manufacturer_id)) {
+      return [{ value: 'all', label: 'Të gjitha markat' }, ...manufacturerOptions];
+    }
+    return manufacturerOptions;
+  }, [isStrictMode, filters.manufacturer_id, manufacturerOptions]);
 
   // Grades are now fetched automatically via useGrades hook
 
@@ -257,31 +299,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             onValueChange={(value) => updateFilter('manufacturer_id', value)}
             placeholder="Zgjidhni markën"
             className="filter-control h-8 text-xs"
-            options={[
-              ...(!(isStrictMode && filters.manufacturer_id)
-                ? [{ value: 'all', label: 'Të gjitha markat' }]
-                : []),
-              ...sortedManufacturers.map((manufacturer: Manufacturer) => {
-                const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
-                return {
-                  value: manufacturer.id.toString(),
-                  label: (
-                    <div className="flex items-center gap-2 py-1">
-                      <img
-                        src={logoUrl}
-                        alt={manufacturer.name}
-                        className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
-                        loading="eager"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                      <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
-                    </div>
-                  )
-                };
-              })
-            ]}
+            options={manufacturerSelectOptions}
+            forceNative
           />
         </div>
 
@@ -311,6 +330,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   };
                 })
             ]}
+            forceNative
           />
         </div>
 
@@ -690,34 +710,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onValueChange={(value) => updateFilter('manufacturer_id', value)}
                 placeholder="Zgjidhni markën"
                 className="filter-control"
-                options={[
-                  ...(!(isStrictMode && filters.manufacturer_id)
-                    ? [{ value: 'all', label: 'Të gjitha markat' }]
-                    : []),
-                  ...sortedManufacturers.map((manufacturer: Manufacturer) => {
-                    const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
-                    return {
-                      value: manufacturer.id.toString(),
-                      label: (
-                        <div className="flex items-center gap-2 py-1">
-                          <img
-                            src={logoUrl}
-                            alt={manufacturer.name}
-                            className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
-                            loading="eager"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                          <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
-                        </div>
-                      )
-                    };
-                  })
-                ]}
+                options={manufacturerSelectOptions}
+                forceNative
               />
             </div>
-
             <div className="space-y-2">
               <Label className="text-sm font-medium">Modeli</Label>
               <AdaptiveSelect
@@ -741,6 +737,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       };
                     })
                 ]}
+                forceNative
               />
             </div>
           </div>
