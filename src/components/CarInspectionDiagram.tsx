@@ -413,13 +413,6 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   </span>
                   <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.corrosion}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(48 96% 53% / 0.1)'}}>
-                  <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(48 96% 53%)'}}>G</span>
-                    Gërvishje
-                  </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(48 96% 53%)', color: 'white'}}>{issueCount.scratches}</Badge>
-                </div>
               </div>
             </CardContent>
           </Card>

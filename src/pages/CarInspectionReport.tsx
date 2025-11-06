@@ -841,12 +841,9 @@ const CarInspectionReport = () => {
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5 text-primary" />
                     <CardTitle className="text-xl">
-                      Diagrami i Inspektimit & Përmbledhje Aksidentesh
+                      Diagrami i Inspektimit
                     </CardTitle>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Gjendja vizuale dhe detajet e aksidenteve të automjetit
-                  </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Accident Summary Section */}
