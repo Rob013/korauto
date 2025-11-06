@@ -992,7 +992,7 @@ const CarDetails = memo(() => {
       damage: lotData?.damage,
       keys_available: lotData?.keys_available,
       airbags: lotData?.airbags,
-      grade_iaai: lotData?.grade_iaai,
+      grade_iaai: lotData?.grade_iaai || carData?.grade?.name || carData?.grade,
       seller: lotData?.seller,
       seller_type: lotData?.seller_type,
       sale_date: lotData?.sale_date,
@@ -1008,7 +1008,14 @@ const CarDetails = memo(() => {
       insurance_v2: lotData?.insurance_v2,
       location: lotData?.location,
       inspect: lotData?.inspect,
-      details: lotData?.details || carData?.details,
+      // Merge details from both sources to get all variant info
+      details: {
+        ...(carData?.details || {}),
+        ...(lotData?.details || {}),
+        grade: carData?.grade || lotData?.grade || carData?.details?.grade || lotData?.details?.grade,
+        variant: carData?.variant || lotData?.variant || carData?.details?.variant || lotData?.details?.variant,
+        trim: carData?.trim || lotData?.trim || carData?.details?.trim || lotData?.details?.trim,
+      },
     };
   }, [KBC_DOMAINS, exchangeRate.rate]);
   
@@ -1802,39 +1809,59 @@ const CarDetails = memo(() => {
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {(() => {
-                        // Build full model specification with variant/trim info
-                        let fullModel = car.model;
-                        const details = car.details;
+                        // Build full model specification with all available variant/trim info from API
+                        let fullModel = car.model || '';
+                        const parts: string[] = [];
                         
-                        // Add variant/grade info if available
-                        if (details?.variant?.name) {
-                          fullModel += ` ${details.variant.name}`;
-                        } else if (details?.grade?.name) {
-                          fullModel += ` ${details.grade.name}`;
+                        console.log('🔍 Building full model from car data:', {
+                          model: car.model,
+                          details: car.details,
+                          grade_iaai: car.grade_iaai,
+                          engine: car.engine,
+                          drive_wheel: car.drive_wheel
+                        });
+                        
+                        // Try to get grade from various sources
+                        const grade = car.grade_iaai || car.details?.grade?.name || car.details?.grade;
+                        if (grade && typeof grade === 'string' && !fullModel.toLowerCase().includes(grade.toLowerCase())) {
+                          parts.push(grade);
                         }
                         
-                        // Add trim info if available  
-                        if (details?.trim?.name && !fullModel.includes(details.trim.name)) {
-                          fullModel += ` ${details.trim.name}`;
+                        // Try to get variant/trim info
+                        const variant = car.details?.variant?.name || car.details?.variant;
+                        if (variant && typeof variant === 'string' && !fullModel.toLowerCase().includes(variant.toLowerCase())) {
+                          parts.push(variant);
                         }
                         
-                        // Add engine displacement if available and not already included
-                        if (car.engine?.name && !fullModel.toLowerCase().includes(car.engine.name.toLowerCase())) {
-                          const engineInfo = car.engine.name.trim();
-                          if (engineInfo && engineInfo !== car.model) {
-                            fullModel += ` ${engineInfo}`;
+                        const trim = car.details?.trim?.name || car.details?.trim;
+                        if (trim && typeof trim === 'string' && !fullModel.toLowerCase().includes(trim.toLowerCase()) && !parts.join(' ').toLowerCase().includes(trim.toLowerCase())) {
+                          parts.push(trim);
+                        }
+                        
+                        // Add engine info
+                        const engineName = car.engine?.name || car.engine;
+                        const engineStr = typeof engineName === 'string' ? engineName : '';
+                        if (engineStr && engineStr !== car.model && !fullModel.toLowerCase().includes(engineStr.toLowerCase())) {
+                          const engineInfo = engineStr.trim();
+                          if (engineInfo && engineInfo.length > 0) {
+                            parts.push(engineInfo);
                           }
                         }
                         
-                        // Add drive type for Quattro, 4WD, xDrive, etc.
-                        if (car.drive_wheel?.name) {
-                          const driveType = car.drive_wheel.name.trim();
-                          if (driveType && !fullModel.toLowerCase().includes(driveType.toLowerCase())) {
-                            fullModel += ` ${driveType}`;
+                        // Add drive type (Quattro, xDrive, 4WD, etc.)
+                        const driveType = car.drive_wheel?.name || car.drive_wheel;
+                        const driveStr = typeof driveType === 'string' ? driveType : '';
+                        if (driveStr && !fullModel.toLowerCase().includes(driveStr.toLowerCase()) && !parts.join(' ').toLowerCase().includes(driveStr.toLowerCase())) {
+                          const driveInfo = driveStr.trim();
+                          if (driveInfo && driveInfo.length > 0) {
+                            parts.push(driveInfo);
                           }
                         }
                         
-                        return fullModel;
+                        // Combine model with all parts
+                        const result = parts.length > 0 ? `${fullModel} ${parts.join(' ')}` : fullModel;
+                        console.log('✅ Full model result:', result);
+                        return result;
                       })()}
                     </span>
                   </div>
