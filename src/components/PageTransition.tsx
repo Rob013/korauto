@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { LazyLoadErrorBoundary } from "./LazyLoadErrorBoundary";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -6,20 +7,22 @@ interface PageTransitionProps {
 
 const PageTransition = ({ children }: PageTransitionProps) => {
   return (
-    <div 
-      className="animate-fade-in optimize-rendering"
-      style={{
-        willChange: 'opacity, transform',
-        transform: 'translate3d(0, 0, 0)',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        WebkitFontSmoothing: 'antialiased',
-        MozOsxFontSmoothing: 'grayscale',
-        isolation: 'isolate'
-      }}
-    >
-      {children}
-    </div>
+    <LazyLoadErrorBoundary>
+      <div 
+        className="animate-fade-in optimize-rendering"
+        style={{
+          willChange: 'opacity, transform',
+          transform: 'translate3d(0, 0, 0)',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
+          isolation: 'isolate'
+        }}
+      >
+        {children}
+      </div>
+    </LazyLoadErrorBoundary>
   );
 };
 

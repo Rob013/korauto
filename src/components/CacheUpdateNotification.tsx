@@ -24,10 +24,24 @@ export const CacheUpdateNotification = () => {
           }
         });
 
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
+        // Check for updates periodically with error handling
+        const updateInterval = setInterval(() => {
+          try {
+            // Only update if we have an active service worker
+            if (registration.active) {
+              registration.update().catch((error) => {
+                console.log('Service worker update check failed (this is normal):', error);
+              });
+            }
+          } catch (error) {
+            console.log('Service worker update error (this is normal):', error);
+          }
         }, 60000); // Check every minute
+
+        // Cleanup interval on unmount
+        return () => clearInterval(updateInterval);
+      }).catch((error) => {
+        console.log('Service worker not ready:', error);
       });
     }
 
