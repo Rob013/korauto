@@ -945,15 +945,6 @@ const CarInspectionReport = () => {
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5">
-                              {item?.statusTypes?.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {item.statusTypes.map((status: any) => (
-                                    <Badge key={`${status?.code}-${status?.title}`} variant="secondary">
-                                      {status?.title}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
                               {item?.attributes?.length > 0 && (
                                 <ul className="space-y-1 text-sm text-muted-foreground">
                                   {item.attributes.map((attribute: string, attrIndex: number) => (
@@ -989,7 +980,7 @@ const CarInspectionReport = () => {
                 <CardContent className="space-y-6">
                   {/* Insurance Summary Stats */}
                   {car.insurance_v2 && Object.keys(car.insurance_v2).length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                       <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
                         <span className="text-xs uppercase tracking-wide text-muted-foreground">Aksidente</span>
                         <span className="text-2xl font-bold text-destructive">{car.insurance_v2.accidentCnt || 0}</span>
@@ -1005,6 +996,14 @@ const CarInspectionReport = () => {
                       <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
                         <span className="text-xs uppercase tracking-wide text-muted-foreground">Vjedhje</span>
                         <span className="text-2xl font-bold text-foreground">{car.insurance_v2.robberCnt || 0}</span>
+                      </div>
+                      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">K (Korruzion)</span>
+                        <span className="text-2xl font-bold text-foreground">{car.insurance_v2.corrosionCnt || car.insurance_v2.rustCnt || 0}</span>
+                      </div>
+                      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/40 p-3">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">G (Gërvishje)</span>
+                        <span className="text-2xl font-bold text-foreground">{car.insurance_v2.scratchCnt || car.insurance_v2.scratchesCnt || 0}</span>
                       </div>
                     </div>
                   ) : null}
