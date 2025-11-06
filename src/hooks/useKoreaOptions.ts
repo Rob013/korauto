@@ -91,7 +91,22 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
 
   const getOptionName = (code: string): string => {
     if (!code) return code;
-    const option = options[code];
+    
+    // Try exact match first
+    let option = options[code];
+    
+    // If not found and code is numeric, try with leading zeros removed
+    if (!option && /^\d+$/.test(code)) {
+      const numericCode = parseInt(code, 10).toString();
+      option = options[numericCode];
+    }
+    
+    // If still not found and code doesn't have leading zeros, try adding them
+    if (!option && /^\d+$/.test(code) && code.length < 3) {
+      const paddedCode = code.padStart(3, '0');
+      option = options[paddedCode];
+    }
+    
     if (!option) return code;
     
     // Return Albanian translation if available, otherwise English name

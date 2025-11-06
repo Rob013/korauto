@@ -431,7 +431,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
           {/* Legend - Updated with all API status codes */}
           <Card className="border border-border">
             <CardContent className="p-3 lg:p-4">
-              <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet nga API</h4>
+              <h4 className="font-semibold mb-3 text-foreground text-sm lg:text-base">Kodet</h4>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold bg-red-600 text-white shadow-sm">N</div>
