@@ -401,12 +401,22 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       {/* Main Diagram Section - Split View */}
       <div className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border rounded-lg overflow-hidden bg-background">
-          {/* Left Side - Front View (Brenda) */}
-          <div className="border-r border-border">
-            <div className="bg-muted/30 px-4 py-3 border-b border-border">
-              <h3 className="font-semibold text-center text-foreground">Brenda</h3>
+          {/* Left Side - Back View (Jashte) */}
+          <div className="border-b lg:border-b-0 lg:border-r border-border">
+            <div className="bg-muted/30 px-4 py-2 md:py-3 border-b border-border">
+              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Jashte</h3>
             </div>
-            <div className="relative p-8 bg-muted/10 min-h-[400px] flex items-center justify-center">
+            <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px] flex items-center justify-center">
+              <img src={carDiagramBottom} alt="Car Back View" className="w-full h-auto max-w-lg mx-auto" />
+            </div>
+          </div>
+
+          {/* Right Side - Front View (Brenda) */}
+          <div>
+            <div className="bg-muted/30 px-4 py-2 md:py-3 border-b border-border">
+              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Brenda</h3>
+            </div>
+            <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px] flex items-center justify-center">
               <img src={carDiagramTop} alt="Car Front View" className="w-full h-auto max-w-lg mx-auto" />
               
               {/* Overlay markers on front view */}
@@ -436,7 +446,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 
                 if (markers.length === 0) return null;
                 
-                // Convert SVG coordinates to percentage
+                // Convert SVG coordinates to percentage - mobile responsive
                 const leftPercent = (part.markerPos.x / 640) * 100;
                 const topPercent = (part.markerPos.y / 630) * 100;
                 
@@ -445,7 +455,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   return (
                     <div
                       key={`front-${part.id}-${idx}`}
-                      className="absolute flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 z-10 cursor-pointer hover:scale-110 transition-transform"
+                      className="absolute flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full text-white text-xs md:text-sm font-bold shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 z-10 cursor-pointer hover:scale-110 transition-transform"
                       style={{
                         left: `${leftPercent + offset}%`,
                         top: `${topPercent}%`,
@@ -461,55 +471,45 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
               })}
             </div>
           </div>
-
-          {/* Right Side - Back View (Jashte) */}
-          <div>
-            <div className="bg-muted/30 px-4 py-3 border-b border-border">
-              <h3 className="font-semibold text-center text-foreground">Jashte</h3>
-            </div>
-            <div className="relative p-8 bg-muted/10 min-h-[400px] flex items-center justify-center">
-              <img src={carDiagramBottom} alt="Car Back View" className="w-full h-auto max-w-lg mx-auto" />
-            </div>
-          </div>
         </div>
 
-        {/* Legend at Bottom */}
-        <div className="flex items-center justify-center gap-6 py-4 border-t border-border bg-background">
+        {/* Legend at Bottom - Mobile Responsive */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 py-3 md:py-4 border-t border-border bg-background">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#dc2626] text-white text-xs font-bold shadow-sm border-2 border-white">N</span>
-            <span className="text-sm font-medium text-foreground">Nderrim</span>
+            <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#dc2626] text-white text-xs font-bold shadow-sm border-2 border-white">N</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">Nderrim (Replacement/Sheet Metal)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#2563eb] text-white text-xs font-bold shadow-sm border-2 border-white">R</span>
-            <span className="text-sm font-medium text-foreground">Riparim</span>
+            <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#2563eb] text-white text-xs font-bold shadow-sm border-2 border-white">R</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">Riparim (Simple Repair)</span>
           </div>
         </div>
       </div>
 
-      {/* Statistics and Details Section Below */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-6">
+      {/* Statistics and Details Section Below - Mobile Responsive */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6 mt-4 md:mt-6">
         {/* Left - Statistics */}
         <div className="space-y-3">
           <Card className="border border-border">
-            <CardContent className="p-3 lg:p-4">
-              <h4 className="font-semibold mb-3 text-foreground flex items-center gap-2 text-sm lg:text-base">
-                <AlertTriangle className="h-4 w-4" />
+            <CardContent className="p-3 md:p-4">
+              <h4 className="font-semibold mb-2 md:mb-3 text-foreground flex items-center gap-2 text-sm md:text-base">
+                <AlertTriangle className="h-3 w-3 md:h-4 md:w-4" />
                 Statistika
               </h4>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-destructive/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#dc2626] text-white text-[9px] font-bold shadow-sm">N</span>
-                    Nderrime
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#dc2626] text-white text-[8px] md:text-[9px] font-bold shadow-sm">N</span>
+                    <span className="text-[10px] md:text-xs">Nderrime</span>
                   </span>
-                  <Badge variant="destructive" className="font-mono text-xs">{issueCount.replacements + issueCount.welds}</Badge>
+                  <Badge variant="destructive" className="font-mono text-[10px] md:text-xs h-5 md:h-auto">{issueCount.replacements + issueCount.welds}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-blue-600/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#2563eb] text-white text-[9px] font-bold shadow-sm">R</span>
-                    Riparime
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#2563eb] text-white text-[8px] md:text-[9px] font-bold shadow-sm">R</span>
+                    <span className="text-[10px] md:text-xs">Riparime</span>
                   </span>
-                  <Badge className="font-mono text-xs bg-[#2563eb] text-white">{issueCount.repairs}</Badge>
+                  <Badge className="font-mono text-[10px] md:text-xs bg-[#2563eb] text-white h-5 md:h-auto">{issueCount.repairs}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -517,7 +517,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
         </div>
 
         {/* Center - Empty or additional info */}
-        <div className="space-y-3"></div>
+        <div className="space-y-3 hidden md:block"></div>
 
         {/* Right - Details */}
         <div className="space-y-3">
