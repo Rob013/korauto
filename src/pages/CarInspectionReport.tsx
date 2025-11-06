@@ -846,6 +846,34 @@ const CarInspectionReport = () => {
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {Object.entries(car.inspect.accident_summary).map(([key, value]) => {
                           const isNegative = value === "yes" || value === true;
+                          
+                          // Translate accident summary keys to Albanian
+                          const translateKey = (k: string) => {
+                            const translations: Record<string, string> = {
+                              'accident': 'Aksidentet',
+                              'simple_repair': 'Riparime të Thjeshta',
+                              'simple repair': 'Riparime të Thjeshta',
+                              'main_framework': 'Korniza Kryesore',
+                              'main framework': 'Korniza Kryesore',
+                              'exterior1rank': 'Vlerësimi i Jashtëm 1',
+                              'exterior2rank': 'Vlerësimi i Jashtëm 2',
+                            };
+                            const normalized = k.toLowerCase().replace(/_/g, ' ');
+                            return translations[normalized] || k.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+                          };
+                          
+                          // Translate values to Albanian
+                          const translateValue = (v: unknown) => {
+                            if (v === "yes" || v === true) return "Po";
+                            if (v === "no" || v === false) return "Jo";
+                            if (typeof v === "string") {
+                              const normalized = v.toLowerCase().trim();
+                              if (normalized === "doesn't exist" || normalized === "does not exist") return "Nuk ekziston";
+                              if (normalized === "exists") return "Ekziston";
+                            }
+                            return String(v);
+                          };
+                          
                           return (
                             <div
                               key={key}
@@ -860,11 +888,11 @@ const CarInspectionReport = () => {
                                   <CheckCircle className="h-4 w-4 text-green-600" />
                                 )}
                                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                  {key.replace(/_/g, ' ')}
+                                  {translateKey(key)}
                                 </span>
                               </div>
                               <span className={`text-lg font-bold ${isNegative ? 'text-destructive' : 'text-green-600'}`}>
-                                {value === "yes" || value === true ? "Po" : value === "no" || value === false ? "Jo" : String(value)}
+                                {translateValue(value)}
                               </span>
                             </div>
                           );
