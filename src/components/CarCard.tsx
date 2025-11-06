@@ -449,9 +449,9 @@ const CarCard = ({
             <div className={`${statusBadge.className} px-3 py-1 rounded text-xs font-bold shadow-lg`}>{statusBadge.text}</div>
           )}
           {insurance_v2?.accidentCnt === 0 && (
-            <div className="bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+            <Badge variant="success" className="shadow-lg">
               Accident free
-            </div>
+            </Badge>
           )}
         </div>
 

@@ -487,29 +487,32 @@ const CarInspectionReport = () => {
         accident?.updated_at;
 
       const normalizeValue = (value: unknown) => {
-        if (value === undefined || value === null) return "-";
+        if (value === undefined || value === null || value === "") return "-";
         if (typeof value === "number") {
-          // Convert from KRW to EUR and round
           const eurValue = Math.round(convertKRWtoEUR(value));
-          return `${eurValue.toLocaleString("de-DE")}€`;
+          return eurValue > 0 ? `${eurValue}€` : "-";
         }
-        const stringValue = `${value}`.trim();
-        return stringValue ? stringValue : "-";
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (!trimmed) return "-";
+          return trimmed;
+        }
+        return String(value) || "-";
       };
 
       return {
-        date: formatDisplayDate(dateValue) ?? "-",
-        part:
-          normalizeValue(
-            accident?.part ||
-              accident?.damagePart ||
-              accident?.component ||
-              accident?.type ||
-              accident?.position,
-          ),
-        paint: normalizeValue(accident?.paint || accident?.paintCost || accident?.painting),
-        labor: normalizeValue(accident?.labor || accident?.laborCost || accident?.workCost),
-        total: normalizeValue(accident?.total || accident?.totalCost || accident?.sum),
+        date: dateValue ? formatDisplayDate(dateValue) ?? dateValue : "-",
+        type: accident?.type === "2" ? "Dëmtimi i vet" : accident?.type === "3" ? "Dëmtim nga tjeri" : accident?.type ? `Tipi ${accident.type}` : "-",
+        part: normalizeValue(
+          accident?.part ||
+            accident?.partCost ||
+            accident?.parts ||
+            accident?.component ||
+            accident?.position,
+        ),
+        paint: normalizeValue(accident?.paintingCost || accident?.paint || accident?.painting),
+        labor: normalizeValue(accident?.laborCost || accident?.labor || accident?.workCost),
+        total: normalizeValue(accident?.insuranceBenefit || accident?.total || accident?.totalCost || accident?.sum),
       };
     });
   }, [accidents, convertKRWtoEUR]);
@@ -1485,7 +1488,7 @@ const CarInspectionReport = () => {
                     <CardTitle className="text-xl">Historia e aksidenteve</CardTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Detaje të aksidenteve të raportuara për automjetin
+                    Detaje të plota të aksidenteve të raportuara për automjetin nga API
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -1496,9 +1499,10 @@ const CarInspectionReport = () => {
                           <tr>
                             {[
                               "Data",
-                              "Pjesa",
-                              "Ngjyrosja",
-                              "Punë dore",
+                              "Tipi",
+                              "Pjesë",
+                              "Lyerje",
+                              "Punë",
                               "Total",
                             ].map((header) => (
                               <th
@@ -1513,12 +1517,15 @@ const CarInspectionReport = () => {
                         </thead>
                         <tbody className="divide-y divide-border/40">
                           {accidentEntries.map((entry, index) => (
-                            <tr key={`accident-${index}`} className="bg-background/80">
-                              <td className="px-2.5 py-1.5 whitespace-nowrap text-foreground">{entry.date}</td>
-                              <td className="px-2.5 py-1.5 text-muted-foreground">{entry.part}</td>
+                            <tr key={`accident-${index}`} className="bg-background/80 hover:bg-muted/30 transition-colors">
+                              <td className="px-2.5 py-1.5 whitespace-nowrap font-medium text-foreground">{entry.date}</td>
+                              <td className="px-2.5 py-1.5 text-muted-foreground">
+                                <Badge variant="outline" className="text-xs">{entry.type}</Badge>
+                              </td>
+                              <td className="px-2.5 py-1.5 text-muted-foreground font-semibold">{entry.part}</td>
                               <td className="px-2.5 py-1.5 text-muted-foreground">{entry.paint}</td>
                               <td className="px-2.5 py-1.5 text-muted-foreground">{entry.labor}</td>
-                              <td className="px-2.5 py-1.5 text-muted-foreground">{entry.total}</td>
+                              <td className="px-2.5 py-1.5 font-bold text-destructive">{entry.total}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1526,7 +1533,7 @@ const CarInspectionReport = () => {
                     </div>
                   ) : (
                     <div className="py-4 text-sm text-muted-foreground text-center">
-                      Nuk ka inspektim për aksidente të raportuara.
+                      Nuk ka aksidente të raportuara për këtë automjet.
                     </div>
                   )}
                 </CardContent>

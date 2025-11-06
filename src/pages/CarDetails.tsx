@@ -2139,17 +2139,6 @@ const CarDetails = memo(() => {
                         </div>
                       </div>}
 
-                    {/* Vehicle Details */}
-                    {car.details && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                        <Button onClick={handleOpenInspectionReport} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
-                          Raporti
-                          <div className="ml-2 flex gap-1">
-                            {car.details?.inspect_outer && <div className="w-2 h-2 bg-yellow-400 rounded-full" title="Visual inspection data available" />}
-                            {(car.details?.inspect?.inner || car.details?.insurance) && <div className="w-2 h-2 bg-orange-400 rounded-full" title="Technical inspection data available" />}
-                            {car.insurance_v2 && <div className="w-2 h-2 bg-red-400 rounded-full" title="Accident history available" />}
-                          </div>
-                        </Button>
-                      </div>}
 
                     {/* Equipment & Options */}
 
@@ -2189,6 +2178,31 @@ const CarDetails = memo(() => {
                     WhatsApp
                   </Button>
 
+                  {car.details && (
+                    <Button onClick={handleOpenInspectionReport} className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Raporti
+                      <div className="ml-2 flex gap-1">
+                        {car.details?.inspect_outer && <div className="w-2 h-2 bg-yellow-400 rounded-full" title="Visual inspection data available" />}
+                        {(car.details?.inspect?.inner || car.details?.insurance) && <div className="w-2 h-2 bg-orange-400 rounded-full" title="Technical inspection data available" />}
+                        {car.insurance_v2 && <div className="w-2 h-2 bg-red-400 rounded-full" title="Accident history available" />}
+                      </div>
+                    </Button>
+                  )}
+
+                  <InspectionRequestForm
+                    trigger={
+                      <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Kërko Inspektim
+                      </Button>
+                    }
+                    carId={car.id}
+                    carMake={car.make}
+                    carModel={car.model}
+                    carYear={car.year}
+                  />
+
                   <Button variant="outline" className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => window.open("tel:+38348181116", "_self")}>
                     <Phone className="h-4 w-4 mr-2" />
                     +383 48 181 116
@@ -2220,20 +2234,8 @@ const CarDetails = memo(() => {
                   </Button>
                 </div>
 
-                {/* Enhanced Inspection Request Button */}
+                {/* Enhanced Additional Buttons */}
                 <div className="border-t border-border pt-4 space-y-3">
-                  <InspectionRequestForm
-                    trigger={
-                      <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Kërko Inspektim
-                      </Button>
-                    }
-                    carId={car.id}
-                    carMake={car.make}
-                    carModel={car.model}
-                    carYear={car.year}
-                  />
 
                   <Button
                     variant="outline"
