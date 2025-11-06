@@ -32,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
+import { preloadCarDetailsPage, prefetchCarDetails } from "@/services/carPrefetch";
 interface CarCardProps {
   id: string;
   make: string;
@@ -386,6 +387,16 @@ const CarCard = ({
     }
   }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
+  const prefetchDetails = useCallback(() => {
+    const identifier = lot ?? id;
+    if (!identifier) {
+      return;
+    }
+
+    void preloadCarDetailsPage();
+    void prefetchCarDetails(identifier);
+  }, [id, lot]);
+
   const handleCardClick = useCallback(() => {
     // Save current page and scroll position before navigating
     const scrollData = {
@@ -399,11 +410,14 @@ const CarCard = ({
       `🚗 Clicked car with ID: ${id}, lot: ${lot}, saved scroll: ${window.scrollY}px`
     );
 
+    // Preload car details data for faster navigation
+    prefetchDetails();
+
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
     // Open car details in new tab (fallback to id if lot is unavailable)
     window.open(`/car/${lot ?? id}`, '_blank');
-  }, [id, lot, setPreviousPage]);
+  }, [id, lot, prefetchDetails, setPreviousPage]);
 
   const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
 
@@ -416,6 +430,9 @@ const CarCard = ({
     <div
       className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps car-card-container"
       onClick={handleCardClick}
+      onMouseEnter={prefetchDetails}
+      onFocus={prefetchDetails}
+      onTouchStart={prefetchDetails}
       style={{
         // Prevent layout shifts by setting fixed dimensions
         minHeight: '360px',
