@@ -78,6 +78,62 @@ body {
   }
 }
 
+/* Global motion smoothing tuned for high refresh rate (120Hz+) displays */
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --motion-duration-fast: 150ms;
+    --motion-duration-medium: 220ms;
+    --motion-duration-slow: 360ms;
+    --motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --motion-easing-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  body {
+    transition: background-color var(--motion-duration-slow) var(--motion-easing-standard),
+                color var(--motion-duration-slow) var(--motion-easing-standard),
+                opacity var(--motion-duration-medium) var(--motion-easing-standard);
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  .card,
+  .sheet,
+  .dialog,
+  .popover,
+  .filter-select,
+  .badge {
+    transition: transform var(--motion-duration-medium) var(--motion-easing-emphasized),
+                background-color var(--motion-duration-fast) var(--motion-easing-standard),
+                border-color var(--motion-duration-fast) var(--motion-easing-standard),
+                box-shadow var(--motion-duration-medium) var(--motion-easing-standard),
+                color var(--motion-duration-fast) var(--motion-easing-standard),
+                opacity var(--motion-duration-medium) var(--motion-easing-standard);
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+  }
+
+  button:hover,
+  a:hover,
+  .card:hover,
+  .sheet:hover,
+  .dialog:hover,
+  .popover:hover,
+  .filter-select:hover,
+  .filter-select:focus {
+    transform: translate3d(0, -2px, 0);
+  }
+
+  button:active,
+  a:active,
+  .filter-select:active {
+    transform: scale(0.98);
+    transition-duration: var(--motion-duration-fast);
+  }
+}
+
 /* iOS Safe Area Support */
 :root {
   --safe-area-inset-top: env(safe-area-inset-top);
