@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle, Info } from "lucide-react";
 import carDiagramTop from '@/assets/car-diagram-top.jpeg';
 import carDiagramBottom from '@/assets/car-diagram-bottom.webp';
+import { mapInspectionTypeToPartId } from '@/utils/inspectionMapping';
 
-interface InspectionItem {
+export interface InspectionItem {
   type: { code: string; title: string };
   statusTypes: Array<{ code: string; title: string }>;
   attributes: string[];
+  mappedPartId?: string | null;
 }
 
 interface CarInspectionDiagramProps {
@@ -213,32 +215,27 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   ];
 
   // Helper: evaluate if an item's title targets a given part id
-  const titleMatchesPart = (title: string, partId: string) => {
-    const t = title.toLowerCase().replace(/\s+/g, ' ').trim();
+  const legacyTitleMatchesPart = (title: string, partId: string) => {
+    const t = title.toLowerCase().replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
 
-    // Strict regex-based mappings to avoid false positives
     const patterns: Array<{ re: RegExp; id: string }> = [
-      // Doors
       { re: /(front\s*)?door.*(left|\blh\b)/i, id: 'front_left_door' },
       { re: /(front\s*)?door.*(right|\brh\b)/i, id: 'front_right_door' },
       { re: /rear\s*door.*(left|\blh\b)/i, id: 'rear_left_door' },
       { re: /rear\s*door.*(right|\brh\b)/i, id: 'rear_right_door' },
-      // Quarters and wheel house
       { re: /(quarter\s*panel|quarter).*\b(left|lh)\b/i, id: 'left_quarter' },
       { re: /(quarter\s*panel|quarter).*\b(right|rh)\b/i, id: 'right_quarter' },
       { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(left|lh)\b/i, id: 'left_quarter' },
       { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(right|rh)\b/i, id: 'right_quarter' },
-      // Side sills
-      { re: /(side\s*sill|sill).*\b(left|lh)\b/i, id: 'side_sill_left' },
-      { re: /(side\s*sill|sill).*\b(right|rh)\b/i, id: 'side_sill_right' },
-      // Bumpers
+      { re: /(side\s*sill|sill|rocker).*\b(left|lh)\b/i, id: 'side_sill_left' },
+      { re: /(side\s*sill|sill|rocker).*\b(right|rh)\b/i, id: 'side_sill_right' },
       { re: /front\s*bumper/i, id: 'front_bumper' },
       { re: /rear\s*bumper/i, id: 'rear_bumper' },
-      // Trunk floor
-      { re: /trunk\s*floor/i, id: 'trunk' },
-      // Fenders
+      { re: /(trunk|decklid|tailgate|boot)/i, id: 'trunk' },
       { re: /(front\s*)?fender.*\b(left|lh)\b/i, id: 'left_fender' },
       { re: /(front\s*)?fender.*\b(right|rh)\b/i, id: 'right_fender' },
+      { re: /(roof|top|ceiling)/i, id: 'roof' },
+      { re: /(hood|bonnet)/i, id: 'hood' },
     ];
 
     const matched = patterns.find((m) => m.re.test(t));
@@ -246,14 +243,33 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     return matched.id === partId;
   };
 
+  const textMatchesPartId = (text: string | null | undefined, partId: string) => {
+    if (!text) return false;
+    const mapped = mapInspectionTypeToPartId({ title: text });
+    if (mapped) {
+      return mapped === partId;
+    }
+    return legacyTitleMatchesPart(text, partId);
+  };
+
+  const itemMatchesPart = (item: InspectionItem, partId: string) => {
+    if (!item) return false;
+    if (item.mappedPartId && item.mappedPartId === partId) return true;
+
+    const mappedFromType = mapInspectionTypeToPartId(item.type);
+    if (mappedFromType && mappedFromType === partId) return true;
+
+    if (textMatchesPartId(item.type?.code, partId)) return true;
+    if (textMatchesPartId(item.type?.title, partId)) return true;
+
+    return item.attributes?.some((attr) => textMatchesPartId(attr, partId)) ?? false;
+  };
+
   // Get part status from inspection data (aggregate across matching items)
   const getPartStatus = (partId: string) => {
     const statuses: Array<{ code: string; title: string }> = [];
     for (const item of inspectionData) {
-      const typeTitle = (item?.type?.title || '').toString();
-      const matches =
-        item?.type?.code === partId ||
-        titleMatchesPart(typeTitle, partId);
+      const matches = itemMatchesPart(item, partId);
       if (!matches) continue;
 
       const st = Array.isArray(item.statusTypes) ? item.statusTypes : [];
@@ -261,7 +277,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         statuses.push(...st);
       } else {
         // Derive from title if codes missing
-        const low = typeTitle.toLowerCase();
+        const typeText = (item?.type?.title || item?.type?.code || '').toString();
+        const low = typeText.toLowerCase();
         if (low.includes('exchange') || low.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
         if (low.includes('weld') || low.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });
         if (low.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
@@ -270,8 +287,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       }
 
       // Derive from attributes too (if present)
-      const attrs = Array.isArray((item as any).attributes) ? ((item as any).attributes as string[]) : [];
-      const attrsText = attrs.join(' ').toLowerCase();
+      const attrsText = item.attributes.join(' ').toLowerCase();
       if (attrsText) {
         if (attrsText.includes('exchange') || attrsText.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
         if (attrsText.includes('weld') || attrsText.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });

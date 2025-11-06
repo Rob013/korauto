@@ -65,7 +65,10 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
         if (data.data && Array.isArray(data.data)) {
           data.data.forEach((option: KoreaOption) => {
             if (option.code) {
-              optionsMap[option.code] = option;
+              const normalizedCode = option.code.toString().trim();
+              if (normalizedCode) {
+                optionsMap[normalizedCode] = option;
+              }
             }
           });
         }
@@ -90,32 +93,36 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
   }, []);
 
   const getOptionName = (code: string): string => {
-    if (!code) return code;
-    
+    if (code === undefined || code === null) return '';
+    const normalizedCode = code.toString().trim();
+    if (!normalizedCode) return '';
+
     // Try exact match first
-    let option = options[code];
-    
+    let option = options[normalizedCode];
+
     // If not found and code is numeric, try with leading zeros removed
-    if (!option && /^\d+$/.test(code)) {
-      const numericCode = parseInt(code, 10).toString();
+    if (!option && /^\d+$/.test(normalizedCode)) {
+      const numericCode = parseInt(normalizedCode, 10).toString();
       option = options[numericCode];
     }
-    
+
     // If still not found and code doesn't have leading zeros, try adding them
-    if (!option && /^\d+$/.test(code) && code.length < 3) {
-      const paddedCode = code.padStart(3, '0');
+    if (!option && /^\d+$/.test(normalizedCode) && normalizedCode.length < 3) {
+      const paddedCode = normalizedCode.padStart(3, '0');
       option = options[paddedCode];
     }
-    
-    if (!option) return code;
-    
+
+    if (!option) return normalizedCode;
+
     // Return Albanian translation if available, otherwise English name
-    return option.name || option.name_original || code;
+    return option.name || option.name_original || normalizedCode;
   };
 
   const getOptionDescription = (code: string): string => {
-    if (!code) return '';
-    const option = options[code];
+    if (code === undefined || code === null) return '';
+    const normalizedCode = code.toString().trim();
+    if (!normalizedCode) return '';
+    const option = options[normalizedCode];
     return option?.description || '';
   };
 
