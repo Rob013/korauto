@@ -1,6 +1,6 @@
 //@ts-nocheck
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
 import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSold } from "@/services/carCache";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
@@ -618,6 +618,51 @@ export const useSecureAuctionAPI = () => {
   const [trimLevelsCache, setTrimLevelsCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
   const [isPrimingCache, setIsPrimingCache] = useState(false);
   const [cachePrimed, setCachePrimed] = useState(false);
+  const prefetchedCarIdsRef = useRef<Set<string>>(new Set());
+
+  const prefetchCarDetails = useCallback(async (carsToCache: Car[]) => {
+    if (!Array.isArray(carsToCache) || carsToCache.length === 0) {
+      return;
+    }
+
+    const newIds = carsToCache
+      .map((car) => {
+        const id = car?.id ?? (car as any)?.api_id;
+        return id ? String(id) : null;
+      })
+      .filter((id): id is string => Boolean(id) && !prefetchedCarIdsRef.current.has(id));
+
+    if (newIds.length === 0) {
+      return;
+    }
+
+    newIds.forEach((id) => prefetchedCarIdsRef.current.add(id));
+
+    const chunkSize = 20;
+    for (let i = 0; i < newIds.length; i += chunkSize) {
+      const chunk = newIds.slice(i, i + chunkSize);
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/cars-sync`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_PUBLISHABLE_KEY
+          },
+          body: JSON.stringify({
+            action: "prefetch_cars",
+            car_ids: chunk
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.warn("Prefetch cars failed", response.status, errorText);
+        }
+      } catch (error) {
+        console.warn("Prefetch cars request failed", error);
+      }
+    }
+  }, []);
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -879,6 +924,8 @@ export const useSecureAuctionAPI = () => {
         setCars((prev) => [...prev, ...activeCars]);
         setCurrentPage(page);
       }
+
+      prefetchCarDetails(activeCars);
     } catch (err: any) {
       console.error("❌ API Error:", err);
       

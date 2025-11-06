@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInspectionRequest } from "@/utils/analytics";
 
@@ -307,9 +307,33 @@ const InspectionRequestForm = ({
     }));
   };
 
+  const enhancedTrigger = useMemo(() => {
+    if (React.isValidElement(trigger)) {
+      const originalOnClick = (trigger.props as any)?.onClick;
+      return React.cloneElement(trigger as React.ReactElement<any>, {
+        onClick: (event: React.MouseEvent<any>) => {
+          originalOnClick?.(event);
+          if (!event.defaultPrevented) {
+            setIsOpen(true);
+          }
+        }
+      });
+    }
+
+    return (
+      <button type="button" onClick={() => setIsOpen(true)} className="w-full">
+        {trigger}
+      </button>
+    );
+  }, [trigger]);
+
+  const handleOpenWarranty = useCallback(() => {
+    window.open("/garancioni", "_blank", "noopener,noreferrer");
+  }, []);
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>{enhancedTrigger}</DialogTrigger>
       <DialogContent
         className="sm:max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto"
         aria-describedby="inspection-form-description"
@@ -405,20 +429,31 @@ const InspectionRequestForm = ({
                     </p>
                   )}
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Duke dërguar...
-                    </>
-                  ) : (
-                    "Dërgo Kërkesën"
-                  )}
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Duke dërguar...
+                      </>
+                    ) : (
+                      "Dërgo Kërkesën"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleOpenWarranty}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Shiko Garancionin
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>
