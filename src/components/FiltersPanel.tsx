@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdaptiveSelect } from '@/components/ui/adaptive-select';
-import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { 
   X, 
@@ -73,9 +72,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   compact = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
-  const [yearRange, setYearRange] = useState([filters.yearMin || data.yearRange.min, filters.yearMax || data.yearRange.max]);
-  const [priceRange, setPriceRange] = useState([filters.priceMin || data.priceRange.min, filters.priceMax || data.priceRange.max]);
-  const [mileageRange, setMileageRange] = useState([filters.mileageMin || data.mileageRange.min, filters.mileageMax || data.mileageRange.max]);
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
 
   // Debounce search term with 250ms delay as specified
@@ -88,37 +84,132 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     }
   }, [debouncedSearchTerm, filters.search, onFiltersChange]);
 
-  // Debounce range updates with 250ms delay
-  const debouncedYearRange = useDebounce(yearRange, 250);
-  const debouncedPriceRange = useDebounce(priceRange, 250);
-  const debouncedMileageRange = useDebounce(mileageRange, 250);
+  const currentYearRange = useMemo(() => [
+    filters.yearMin ?? data.yearRange.min,
+    filters.yearMax ?? data.yearRange.max
+  ], [filters.yearMin, filters.yearMax, data.yearRange.min, data.yearRange.max]);
 
-  useEffect(() => {
-    if (debouncedYearRange[0] !== filters.yearMin || debouncedYearRange[1] !== filters.yearMax) {
-      onFiltersChange({
-        yearMin: debouncedYearRange[0] !== data.yearRange.min ? debouncedYearRange[0] : undefined,
-        yearMax: debouncedYearRange[1] !== data.yearRange.max ? debouncedYearRange[1] : undefined,
-      });
-    }
-  }, [debouncedYearRange, filters.yearMin, filters.yearMax, data.yearRange, onFiltersChange]);
+  const currentPriceRange = useMemo(() => [
+    filters.priceMin ?? data.priceRange.min,
+    filters.priceMax ?? data.priceRange.max
+  ], [filters.priceMin, filters.priceMax, data.priceRange.min, data.priceRange.max]);
 
-  useEffect(() => {
-    if (debouncedPriceRange[0] !== filters.priceMin || debouncedPriceRange[1] !== filters.priceMax) {
-      onFiltersChange({
-        priceMin: debouncedPriceRange[0] !== data.priceRange.min ? debouncedPriceRange[0] : undefined,
-        priceMax: debouncedPriceRange[1] !== data.priceRange.max ? debouncedPriceRange[1] : undefined,
-      });
-    }
-  }, [debouncedPriceRange, filters.priceMin, filters.priceMax, data.priceRange, onFiltersChange]);
+  const currentMileageRange = useMemo(() => [
+    filters.mileageMin ?? data.mileageRange.min,
+    filters.mileageMax ?? data.mileageRange.max
+  ], [filters.mileageMin, filters.mileageMax, data.mileageRange.min, data.mileageRange.max]);
 
-  useEffect(() => {
-    if (debouncedMileageRange[0] !== filters.mileageMin || debouncedMileageRange[1] !== filters.mileageMax) {
-      onFiltersChange({
-        mileageMin: debouncedMileageRange[0] !== data.mileageRange.min ? debouncedMileageRange[0] : undefined,
-        mileageMax: debouncedMileageRange[1] !== data.mileageRange.max ? debouncedMileageRange[1] : undefined,
-      });
+  const yearOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [];
+    for (let year = data.yearRange.min; year <= data.yearRange.max; year++) {
+      options.push({ value: year.toString(), label: year.toString() });
     }
-  }, [debouncedMileageRange, filters.mileageMin, filters.mileageMax, data.mileageRange, onFiltersChange]);
+    return options;
+  }, [data.yearRange.min, data.yearRange.max]);
+
+  const buildSteppedOptions = useCallback((min: number, max: number, step: number, formatter: (value: number) => string) => {
+    const values: number[] = [];
+    const safeStep = Math.max(step, 1);
+
+    for (let value = min; value <= max; value += safeStep) {
+      values.push(value);
+      if (value + safeStep > max && value !== max) {
+        values.push(max);
+        break;
+      }
+    }
+
+    if (!values.includes(max)) {
+      values.push(max);
+    }
+
+    const uniqueValues = Array.from(new Set(values)).sort((a, b) => a - b);
+    return uniqueValues.map((value) => ({ value: value.toString(), label: formatter(value) }));
+  }, []);
+
+  const priceOptions = useMemo(() => buildSteppedOptions(
+    data.priceRange.min,
+    data.priceRange.max,
+    1000,
+    (value) => `€${value.toLocaleString()}`
+  ), [buildSteppedOptions, data.priceRange.min, data.priceRange.max]);
+
+  const mileageOptions = useMemo(() => buildSteppedOptions(
+    data.mileageRange.min,
+    data.mileageRange.max,
+    10000,
+    (value) => `${value.toLocaleString()} km`
+  ), [buildSteppedOptions, data.mileageRange.min, data.mileageRange.max]);
+
+  const descendingYearOptions = useMemo(() => [...yearOptions].reverse(), [yearOptions]);
+  const descendingPriceOptions = useMemo(() => [...priceOptions].reverse(), [priceOptions]);
+  const descendingMileageOptions = useMemo(() => [...mileageOptions].reverse(), [mileageOptions]);
+
+  const handleYearMinChange = useCallback((value: string) => {
+    const selectedMin = value === 'any' ? undefined : Number(value);
+    const currentMax = filters.yearMax ?? data.yearRange.max;
+    const adjustedMax = selectedMin !== undefined && selectedMin > currentMax ? selectedMin : currentMax;
+
+    onFiltersChange({
+      yearMin: selectedMin,
+      yearMax: filters.yearMax !== undefined || adjustedMax !== data.yearRange.max ? adjustedMax : undefined
+    });
+  }, [filters.yearMax, data.yearRange.max, onFiltersChange]);
+
+  const handleYearMaxChange = useCallback((value: string) => {
+    const selectedMax = value === 'any' ? undefined : Number(value);
+    const currentMin = filters.yearMin ?? data.yearRange.min;
+    const adjustedMin = selectedMax !== undefined && selectedMax < currentMin ? selectedMax : currentMin;
+
+    onFiltersChange({
+      yearMin: filters.yearMin !== undefined || adjustedMin !== data.yearRange.min ? adjustedMin : undefined,
+      yearMax: selectedMax,
+    });
+  }, [filters.yearMin, data.yearRange.min, onFiltersChange]);
+
+  const handlePriceMinChange = useCallback((value: string) => {
+    const selectedMin = value === 'any' ? undefined : Number(value);
+    const currentMax = filters.priceMax ?? data.priceRange.max;
+    const adjustedMax = selectedMin !== undefined && selectedMin > currentMax ? selectedMin : currentMax;
+
+    onFiltersChange({
+      priceMin: selectedMin,
+      priceMax: filters.priceMax !== undefined || adjustedMax !== data.priceRange.max ? adjustedMax : undefined,
+    });
+  }, [filters.priceMax, data.priceRange.max, onFiltersChange]);
+
+  const handlePriceMaxChange = useCallback((value: string) => {
+    const selectedMax = value === 'any' ? undefined : Number(value);
+    const currentMin = filters.priceMin ?? data.priceRange.min;
+    const adjustedMin = selectedMax !== undefined && selectedMax < currentMin ? selectedMax : currentMin;
+
+    onFiltersChange({
+      priceMin: filters.priceMin !== undefined || adjustedMin !== data.priceRange.min ? adjustedMin : undefined,
+      priceMax: selectedMax,
+    });
+  }, [filters.priceMin, data.priceRange.min, onFiltersChange]);
+
+  const handleMileageMinChange = useCallback((value: string) => {
+    const selectedMin = value === 'any' ? undefined : Number(value);
+    const currentMax = filters.mileageMax ?? data.mileageRange.max;
+    const adjustedMax = selectedMin !== undefined && selectedMin > currentMax ? selectedMin : currentMax;
+
+    onFiltersChange({
+      mileageMin: selectedMin,
+      mileageMax: filters.mileageMax !== undefined || adjustedMax !== data.mileageRange.max ? adjustedMax : undefined,
+    });
+  }, [filters.mileageMax, data.mileageRange.max, onFiltersChange]);
+
+  const handleMileageMaxChange = useCallback((value: string) => {
+    const selectedMax = value === 'any' ? undefined : Number(value);
+    const currentMin = filters.mileageMin ?? data.mileageRange.min;
+    const adjustedMin = selectedMax !== undefined && selectedMax < currentMin ? selectedMax : currentMin;
+
+    onFiltersChange({
+      mileageMin: filters.mileageMin !== undefined || adjustedMin !== data.mileageRange.min ? adjustedMin : undefined,
+      mileageMax: selectedMax,
+    });
+  }, [filters.mileageMin, data.mileageRange.min, onFiltersChange]);
 
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
@@ -245,11 +336,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         break;
       case 'year':
         onFiltersChange({ yearMin: undefined, yearMax: undefined });
-        setYearRange([data.yearRange.min, data.yearRange.max]);
         break;
       case 'price':
         onFiltersChange({ priceMin: undefined, priceMax: undefined });
-        setPriceRange([data.priceRange.min, data.priceRange.max]);
         break;
     }
   };
@@ -398,20 +487,27 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <Calendar className="h-4 w-4" />
                 Vitet
               </Label>
-              <div className="px-2">
-                <Slider
-                  value={yearRange}
-                  onValueChange={setYearRange}
-                  min={data.yearRange.min}
-                  max={data.yearRange.max}
-                  step={1}
-                  className="w-full"
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <AdaptiveSelect
+                  value={filters.yearMin !== undefined ? filters.yearMin.toString() : 'any'}
+                  onValueChange={handleYearMinChange}
+                  className="filter-select bg-background"
+                  options={[{ value: 'any', label: 'Pa minimum' }, ...yearOptions]}
+                  forceNative
                 />
-                <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                  <span>{yearRange[0]}</span>
-                  <span>{yearRange[1]}</span>
-                </div>
+                <AdaptiveSelect
+                  value={filters.yearMax !== undefined ? filters.yearMax.toString() : 'any'}
+                  onValueChange={handleYearMaxChange}
+                  className="filter-select bg-background"
+                  options={[{ value: 'any', label: 'Pa maksimum' }, ...descendingYearOptions]}
+                  forceNative
+                />
               </div>
+              <p className="text-xs text-muted-foreground">
+                {filters.yearMin === undefined && filters.yearMax === undefined
+                  ? 'Të gjitha vitet'
+                  : `${currentYearRange[0]} - ${currentYearRange[1]}`}
+              </p>
             </div>
 
             {/* Price Range */}
@@ -420,20 +516,27 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <DollarSign className="h-4 w-4" />
                 Çmimi (€)
               </Label>
-              <div className="px-2">
-                <Slider
-                  value={priceRange}
-                  onValueChange={setPriceRange}
-                  min={data.priceRange.min}
-                  max={data.priceRange.max}
-                  step={1000}
-                  className="w-full"
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <AdaptiveSelect
+                  value={filters.priceMin !== undefined ? filters.priceMin.toString() : 'any'}
+                  onValueChange={handlePriceMinChange}
+                  className="filter-select bg-background"
+                  options={[{ value: 'any', label: 'Pa minimum' }, ...priceOptions]}
+                  forceNative
                 />
-                <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                  <span>€{priceRange[0].toLocaleString()}</span>
-                  <span>€{priceRange[1].toLocaleString()}</span>
-                </div>
+                <AdaptiveSelect
+                  value={filters.priceMax !== undefined ? filters.priceMax.toString() : 'any'}
+                  onValueChange={handlePriceMaxChange}
+                  className="filter-select bg-background"
+                  options={[{ value: 'any', label: 'Pa maksimum' }, ...descendingPriceOptions]}
+                  forceNative
+                />
               </div>
+              <p className="text-xs text-muted-foreground">
+                {filters.priceMin === undefined && filters.priceMax === undefined
+                  ? 'Të gjitha çmimet'
+                  : `€${currentPriceRange[0].toLocaleString()} - €${currentPriceRange[1].toLocaleString()}`}
+              </p>
             </div>
           </div>
         )}
@@ -511,20 +614,27 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <MapPin className="h-4 w-4" />
                 Kilometrazhi (km)
               </Label>
-              <div className="px-2">
-                <Slider
-                  value={mileageRange}
-                  onValueChange={setMileageRange}
-                  min={data.mileageRange.min}
-                  max={data.mileageRange.max}
-                  step={10000}
-                  className="w-full"
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <AdaptiveSelect
+                  value={filters.mileageMin !== undefined ? filters.mileageMin.toString() : 'any'}
+                  onValueChange={handleMileageMinChange}
+                  className="filter-select bg-background"
+                  options={[{ value: 'any', label: 'Pa minimum' }, ...mileageOptions]}
+                  forceNative
                 />
-                <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                  <span>{mileageRange[0].toLocaleString()} km</span>
-                  <span>{mileageRange[1].toLocaleString()} km</span>
-                </div>
+                <AdaptiveSelect
+                  value={filters.mileageMax !== undefined ? filters.mileageMax.toString() : 'any'}
+                  onValueChange={handleMileageMaxChange}
+                  className="filter-select bg-background"
+                  options={[{ value: 'any', label: 'Pa maksimum' }, ...descendingMileageOptions]}
+                  forceNative
+                />
               </div>
+              <p className="text-xs text-muted-foreground">
+                {filters.mileageMin === undefined && filters.mileageMax === undefined
+                  ? 'Të gjitha kilometrat'
+                  : `${currentMileageRange[0].toLocaleString()} km - ${currentMileageRange[1].toLocaleString()} km`}
+              </p>
             </div>
 
             {/* Body Type */}
