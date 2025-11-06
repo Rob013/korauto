@@ -16,6 +16,7 @@ import { CacheUpdateNotification } from "./components/CacheUpdateNotification";
 import { useIsMobile } from "./hooks/use-mobile";
 import { IOSEnhancer } from "./components/IOSEnhancer";
 import PageTransition from "./components/PageTransition";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -124,6 +125,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Memory management for heavy load scenarios
+if (typeof window !== 'undefined') {
+  // Clear old queries periodically to prevent memory leaks
+  setInterval(() => {
+    queryClient.getQueryCache().clear();
+  }, 30 * 60 * 1000); // Clear every 30 minutes
+}
+
 const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
@@ -148,6 +157,32 @@ const App = () => {
     };
   }, []);
 
+  // Memory cleanup on unmount and visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Clear some caches when app is hidden to free memory
+        const memoryThreshold = 0.7; // 70% usage threshold
+        if ('memory' in performance) {
+          const memory = (performance as any).memory;
+          if (memory) {
+            const percentUsed = memory.usedJSHeapSize / memory.totalJSHeapSize;
+            if (percentUsed > memoryThreshold) {
+              console.log('🧹 Clearing caches on visibility change...');
+              queryClient.getQueryCache().clear();
+            }
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Log performance information for development
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
@@ -162,54 +197,56 @@ const App = () => {
   }, [supportsHighRefreshRate, targetFPS, currentFPS]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <StatusRefreshProvider intervalHours={6} enabled={true}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={renderWithTransition(Index)} />
-              <Route path="/catalog" element={renderWithTransition(Catalog)} />
-              <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
-              <Route path="/car/:id/gallery" element={renderWithTransition(CarGallery)} />
-              <Route path="/car/:id/report" element={renderWithTransition(CarInspectionReport)} />
-              <Route path="/admin" element={renderWithTransition(AdminDashboard)} />
-              <Route
-                path="/admin/sync"
-                element={renderWithTransition(AdminSyncDashboard, <AdminSyncSkeleton />)}
-              />
-              <Route path="/auth" element={renderWithTransition(AuthPage)} />
-              <Route path="/auth/confirm" element={renderWithTransition(EmailConfirmationPage)} />
-              <Route path="/account" element={renderWithTransition(MyAccount)} />
-              <Route path="/favorites" element={renderWithTransition(FavoritesPage)} />
-              <Route path="/inspections" element={renderWithTransition(InspectionServices)} />
-              <Route path="/warranty" element={renderWithTransition(Warranty)} />
-              <Route path="/contacts" element={renderWithTransition(Contacts)} />
-              <Route path="/garancioni" element={renderWithTransition(Warranty)} />
-              <Route path="/tracking" element={renderWithTransition(ShipmentTracking)} />
-              {/* Demo routes removed - no longer needed */}
-              <Route path="/performance" element={renderWithTransition(PerformanceDashboard)} />
-              <Route
-                path="/cookie-management"
-                element={renderWithTransition(CookieManagementDashboard)}
-              />
-              <Route path="/audit-test" element={renderWithTransition(AuditTestPage)} />
-              <Route path="/api-info-demo" element={renderWithTransition(ApiInfoDemo)} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={renderWithTransition(NotFound)} />
-            </Routes>
-          </BrowserRouter>
-          <InstallPrompt />
-          <CacheUpdateNotification />
-          <IOSEnhancer />
-          {/* Performance Monitor for admin users only, hidden on mobile */}
-          {isAdmin && !isMobile && (
-            <PerformanceMonitor showDetails={false} />
-          )}
-        </TooltipProvider>
-      </StatusRefreshProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <StatusRefreshProvider intervalHours={6} enabled={true}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={renderWithTransition(Index)} />
+                <Route path="/catalog" element={renderWithTransition(Catalog)} />
+                <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
+                <Route path="/car/:id/gallery" element={renderWithTransition(CarGallery)} />
+                <Route path="/car/:id/report" element={renderWithTransition(CarInspectionReport)} />
+                <Route path="/admin" element={renderWithTransition(AdminDashboard)} />
+                <Route
+                  path="/admin/sync"
+                  element={renderWithTransition(AdminSyncDashboard, <AdminSyncSkeleton />)}
+                />
+                <Route path="/auth" element={renderWithTransition(AuthPage)} />
+                <Route path="/auth/confirm" element={renderWithTransition(EmailConfirmationPage)} />
+                <Route path="/account" element={renderWithTransition(MyAccount)} />
+                <Route path="/favorites" element={renderWithTransition(FavoritesPage)} />
+                <Route path="/inspections" element={renderWithTransition(InspectionServices)} />
+                <Route path="/warranty" element={renderWithTransition(Warranty)} />
+                <Route path="/contacts" element={renderWithTransition(Contacts)} />
+                <Route path="/garancioni" element={renderWithTransition(Warranty)} />
+                <Route path="/tracking" element={renderWithTransition(ShipmentTracking)} />
+                {/* Demo routes removed - no longer needed */}
+                <Route path="/performance" element={renderWithTransition(PerformanceDashboard)} />
+                <Route
+                  path="/cookie-management"
+                  element={renderWithTransition(CookieManagementDashboard)}
+                />
+                <Route path="/audit-test" element={renderWithTransition(AuditTestPage)} />
+                <Route path="/api-info-demo" element={renderWithTransition(ApiInfoDemo)} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={renderWithTransition(NotFound)} />
+              </Routes>
+            </BrowserRouter>
+            <InstallPrompt />
+            <CacheUpdateNotification />
+            <IOSEnhancer />
+            {/* Performance Monitor for admin users only, hidden on mobile */}
+            {isAdmin && !isMobile && (
+              <PerformanceMonitor showDetails={false} />
+            )}
+          </TooltipProvider>
+        </StatusRefreshProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

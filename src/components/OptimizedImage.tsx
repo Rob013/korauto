@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useImagePreload } from '@/hooks/useImagePreload';
+import memoryManager from '@/utils/memoryManager';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src?: string;
@@ -27,6 +28,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   onError,
   ...props
 }) => {
+  const cleanupRef = useRef<(() => void) | null>(null);
   
   const {
     imgRef,
@@ -47,6 +49,21 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     if (isLoaded && onLoad) onLoad();
     if (isError && onError) onError();
   }, [isLoaded, isError, onLoad, onError]);
+
+  // Memory management - cleanup on unmount
+  useEffect(() => {
+    if (src) {
+      memoryManager.cacheImage(src, optimizedSrc || src);
+    }
+
+    return () => {
+      // Cleanup image resources on unmount
+      if (imgRef.current) {
+        imgRef.current.src = '';
+        imgRef.current.srcset = '';
+      }
+    };
+  }, [src, optimizedSrc, imgRef]);
 
   return (
     <div className={`relative overflow-hidden ${className}`}>

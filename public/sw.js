@@ -1,6 +1,6 @@
 // Service Worker for caching API responses and static assets with 120fps performance optimization
 // CRITICAL: Update this version number to force cache refresh for all users
-const VERSION = '2025.06.01.001'; // YYYY.MM.DD.BUILD format
+const VERSION = '2025.06.02.001'; // YYYY.MM.DD.BUILD format - Updated for stability fixes
 const CACHE_NAME = `korauto-v${VERSION}`;
 const STATIC_CACHE_NAME = `korauto-static-v${VERSION}`;
 const ASSETS_CACHE_NAME = `korauto-assets-v${VERSION}`;
@@ -75,8 +75,9 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches and notify clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             // Delete ALL old caches to force fresh content
@@ -89,22 +90,29 @@ self.addEventListener('activate', (event) => {
             }
           })
         );
-      })
-      .then(() => {
-        // Claim all clients immediately to ensure they use new cache
-        return self.clients.claim();
-      })
-      .then(() => {
-        // Notify all clients about the update
-        return self.clients.matchAll().then(clients => {
-          clients.forEach(client => {
+      }),
+      // Claim all clients immediately
+      self.clients.claim()
+    ])
+    .then(() => {
+      // Notify all clients about the update safely
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          try {
             client.postMessage({
               type: 'CACHE_UPDATED',
               version: VERSION
             });
-          });
+          } catch (e) {
+            // Ignore errors when posting to clients
+            console.log('Could not post message to client:', e);
+          }
         });
-      })
+      });
+    })
+    .catch(error => {
+      console.error('Service worker activation error:', error);
+    })
   );
 });
 

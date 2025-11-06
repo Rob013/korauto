@@ -46,7 +46,11 @@ export const useStatusRefresh = (options: StatusRefreshOptions = {}) => {
 
   const archiveOldSoldCars = useCallback(async () => {
     try {
-      // Update cars_cache to mark sold cars older than 24 hours for removal
+      // Use a more efficient query with limit to avoid timeouts
+      // Process in smaller batches to prevent database timeout
+      const batchSize = 100;
+      const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
       const { data, error } = await supabase
         .from('cars_cache')
         .update({ 
@@ -54,14 +58,16 @@ export const useStatusRefresh = (options: StatusRefreshOptions = {}) => {
           updated_at: new Date().toISOString()
         })
         .or('sale_status.eq.sold,car_data->>status.eq.3')
-        .lt('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+        .lt('updated_at', cutoffDate)
+        .limit(batchSize);
 
       if (error) {
+        // Log but don't crash on timeout - it's not critical
         console.error('❌ Error archiving old sold cars:', error);
         return;
       }
 
-      console.log('🗂️ Archived old sold cars:', data);
+      console.log('🗂️ Archived old sold cars (batch):', data);
     } catch (error) {
       console.error('❌ Error in archiveOldSoldCars:', error);
     }

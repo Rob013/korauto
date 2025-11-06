@@ -323,6 +323,9 @@ const CarInspectionReport = () => {
           ? calculateFinalPriceEUR(basePrice, exchangeRate.rate)
           : undefined;
 
+        const lotDataAny = lotData as any;
+        const fallbackCarAny = fallbackCar as any;
+        
         setCar({
           id: fallbackCar.id,
           lot: lotData.lot,
@@ -334,25 +337,25 @@ const CarInspectionReport = () => {
             priceEUR,
           mileageKm: lotData.odometer?.km,
           odometer: lotData.odometer,
-          vin: fallbackCar.vin || lotData.vin,
+          vin: fallbackCarAny.vin || lotDataAny.vin,
           fuel:
             fallbackCar.fuel?.name ||
-            lotData.fuel?.name ||
-            fallbackCar.details?.fuel?.name,
+            lotDataAny.fuel?.name ||
+            fallbackCarAny.details?.fuel?.name,
           firstRegistration:
-            lotData.first_registration ||
-            fallbackCar.first_registration ||
-            fallbackCar.details?.first_registration,
-          postedAt: lotData.listed_at || fallbackCar.listed_at,
+            lotDataAny.first_registration ||
+            fallbackCarAny.first_registration ||
+            fallbackCarAny.details?.first_registration,
+          postedAt: lotDataAny.listed_at || fallbackCarAny.listed_at,
           engineDisplacement:
-            fallbackCar.details?.engine_volume ||
-            lotData.insurance_v2?.displacement,
-          damage: lotData.damage || null,
-          insurance: lotData.insurance,
-          insurance_v2: lotData.insurance_v2,
-          details: lotData.details,
-          maintenanceHistory: lotData.details?.maintenance_history || [],
-          ownerChanges: lotData.details?.insurance?.owner_changes || [],
+            fallbackCarAny.details?.engine_volume ||
+            lotDataAny.insurance_v2?.displacement,
+          damage: lotDataAny.damage || null,
+          insurance: lotDataAny.insurance,
+          insurance_v2: lotDataAny.insurance_v2,
+          details: lotDataAny.details,
+          maintenanceHistory: lotDataAny.details?.maintenance_history || [],
+          ownerChanges: lotDataAny.details?.insurance?.owner_changes || [],
         });
         setLoading(false);
         return;
