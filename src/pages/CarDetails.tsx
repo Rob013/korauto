@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Thermometer, Wind, Radar, Tag, Armchair, DoorClosed, Cylinder, CircleDot, PaintBucket, Disc3, Instagram, Facebook } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Wind, Radar, Tag, Armchair, DoorClosed, Cylinder, CircleDot, PaintBucket, Disc3, Instagram, Facebook, Bluetooth, Usb, Cable, Navigation, Wifi, Smartphone, Speaker, Music, Fan, Snowflake, Flame, Sun, KeyRound, ShieldCheck, Power } from "lucide-react";
 import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -176,6 +177,216 @@ const FEATURE_MAPPING: { [key: string]: string } = {
   "1050": "Kontrolli i Temperaturës së Klimatizimit të Prapme"
 };
 
+const normalizeText = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+type EquipmentIconMapping = {
+  icon: LucideIcon;
+  keywords: string[];
+};
+
+const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
+  { icon: Bluetooth, keywords: ["bluetooth", "handsfree", "hands-free", "hands free"] },
+  { icon: Usb, keywords: ["usb"] },
+  { icon: Cable, keywords: ["aux", "auxiliar", "auxiliary"] },
+  {
+    icon: Smartphone,
+    keywords: [
+      "carplay",
+      "android auto",
+      "androidauto",
+      "apple carplay",
+      "smartphone",
+      "smart phone",
+      "smartlink",
+      "smart link",
+      "mirrorlink",
+      "mirror link",
+      "wireless charging"
+    ]
+  },
+  { icon: Wifi, keywords: ["wifi", "wi-fi", "wireless", "hotspot", "hot spot"] },
+  { icon: Navigation, keywords: ["navigation", "navigacion", "navigator", "navi", "gps", "map", "maps"] },
+  {
+    icon: Speaker,
+    keywords: [
+      "audio",
+      "sound",
+      "speaker",
+      "stereo",
+      "subwoofer",
+      "woofer",
+      "surround",
+      "hi-fi",
+      "hifi"
+    ]
+  },
+  { icon: Music, keywords: ["cd", "dvd", "mp3", "media", "entertainment", "multimedia"] },
+  {
+    icon: Radar,
+    keywords: [
+      "sensor",
+      "radar",
+      "parkimi",
+      "parkim",
+      "parking",
+      "park assist",
+      "park distance",
+      "park pilot",
+      "parktronic",
+      "lane assist",
+      "lane keep",
+      "lane keeping",
+      "blind spot",
+      "distance control"
+    ]
+  },
+  {
+    icon: Camera,
+    keywords: [
+      "camera",
+      "kamera",
+      "rear view",
+      "rearview",
+      "360",
+      "surround view",
+      "dashcam",
+      "reverse camera"
+    ]
+  },
+  {
+    icon: Gauge,
+    keywords: [
+      "cruise",
+      "speed control",
+      "kontroll i shpejtesise",
+      "limiter",
+      "adaptive cruise",
+      "pilot assist"
+    ]
+  },
+  {
+    icon: Power,
+    keywords: [
+      "start stop",
+      "start/stop",
+      "start-stop",
+      "startstop",
+      "start stop system",
+      "push start",
+      "push-button start",
+      "push button start",
+      "start button",
+      "keyless go",
+      "remote start"
+    ]
+  },
+  {
+    icon: KeyRound,
+    keywords: [
+      "keyless",
+      "key",
+      "kyce",
+      "remote",
+      "bllokim",
+      "locking",
+      "lock",
+      "central locking",
+      "immobilizer"
+    ]
+  },
+  {
+    icon: ShieldCheck,
+    keywords: [
+      "airbag",
+      "abs",
+      "esp",
+      "esc",
+      "asr",
+      "tcs",
+      "tpms",
+      "safety",
+      "sistemi sigurie",
+      "alarm",
+      "security",
+      "anti theft",
+      "anti-theft",
+      "emergency braking",
+      "collision",
+      "lane departure",
+      "stability control",
+      "kontroll stabiliteti",
+      "monitoring"
+    ]
+  },
+  {
+    icon: Wind,
+    keywords: [
+      "climat",
+      "clima",
+      "klima",
+      "klime",
+      "climate",
+      "air condition",
+      "aircondition",
+      "a/c",
+      "hvac",
+      "aircon"
+    ]
+  },
+  { icon: Snowflake, keywords: ["cooling", "cooled", "cooler", "ventilated", "climatizim", "climatization"] },
+  { icon: Flame, keywords: ["heated", "ngroh", "heat", "defrost", "defog", "heated seat", "heated steering"] },
+  { icon: Fan, keywords: ["ventilated seat", "ventilated seats", "ventilim", "ventiluar", "ventiluara"] },
+  {
+    icon: Armchair,
+    keywords: [
+      "seat",
+      "seats",
+      "ulese",
+      "sedilje",
+      "sedile",
+      "chair",
+      "armchair",
+      "leather",
+      "lekure",
+      "lekur",
+      "alcantara"
+    ]
+  },
+  { icon: Users, keywords: ["pasagjer", "passenger", "family", "rear seats", "row", "isofix", "child"] },
+  { icon: Disc3, keywords: ["wheel", "rrota", "rim", "alloy", "tire", "tyre", "gom", "goma", "pneumatic"] },
+  { icon: Eye, keywords: ["window", "dritare", "glass", "windshield", "sunshade", "xham"] },
+  { icon: Sun, keywords: ["sunroof", "moonroof", "panoram", "panoramik", "panoramic", "tavan"] },
+  { icon: Lightbulb, keywords: ["light", "drite", "drita", "headlight", "xenon", "led", "fog", "daylight", "ndricim"] },
+  { icon: Fuel, keywords: ["fuel", "diesel", "gasoline", "benzin", "nafte", "battery", "electric", "hybrid", "plug in", "plug-in"] },
+  { icon: Cog, keywords: ["engine", "motor", "transmission", "gearbox", "gear", "powertrain", "drivetrain"] },
+  { icon: Settings, keywords: ["suspension", "tuning", "mode", "drive mode", "setup", "adjustable"] },
+  { icon: DoorClosed, keywords: ["door", "dyer", "mirror", "pasqyre", "pasqyra", "pasqyr"] }
+];
+
+const matchesKeyword = (normalizedItem: string, keyword: string) => {
+  const normalizedKeyword = normalizeText(keyword.toLowerCase());
+
+  if (/^[a-z0-9]+$/.test(normalizedKeyword)) {
+    const keywordRegex = new RegExp(`\\b${normalizedKeyword}\\b`, "i");
+    return keywordRegex.test(normalizedItem);
+  }
+
+  return normalizedItem.includes(normalizedKeyword);
+};
+
+const getEquipmentIcon = (itemName: string): LucideIcon => {
+  const normalizedItem = normalizeText(itemName.toLowerCase());
+
+  for (const { icon, keywords } of EQUIPMENT_ICON_MAPPINGS) {
+    if (keywords.some((keyword) => matchesKeyword(normalizedItem, keyword))) {
+      return icon;
+    }
+  }
+
+  return CheckCircle;
+};
+
 interface CarDetails {
   id: string;
   make: string;
@@ -263,176 +474,19 @@ const EquipmentOptionsSection = memo(({
   const INITIAL_SHOW_COUNT = 6;
   const PREVIEW_SHOW_COUNT = 10;
 
-  // Comprehensive helper function to get appropriate icon for equipment item
-  const getEquipmentIcon = (item: string) => {
-    const itemLower = item.toLowerCase();
-    
-    // Climate control & Air conditioning
-    if (itemLower.includes('air conditioning') || itemLower.includes('climate') || itemLower.includes('klima') || 
-        itemLower.includes('a/c') || itemLower.includes('hvac')) 
-      return <Wind className="h-3 w-3 text-primary" />;
-    
-    // Heating
-    if (itemLower.includes('heated') || itemLower.includes('ngroh') || itemLower.includes('heat'))
-      return <Thermometer className="h-3 w-3 text-primary" />;
-    
-    // Safety - Brakes & ABS
-    if (itemLower.includes('brake') || itemLower.includes('frena') || itemLower.includes('abs') || 
-        itemLower.includes('ebd') || itemLower.includes('brake assist'))
-      return <Shield className="h-3 w-3 text-primary" />;
-    
-    // Airbags
-    if (itemLower.includes('airbag'))
-      return <Shield className="h-3 w-3 text-primary" />;
-    
-    // Lighting - LED, Xenon, Headlights
-    if (itemLower.includes('light') || itemLower.includes('dritë') || itemLower.includes('led') || 
-        itemLower.includes('xenon') || itemLower.includes('headlight') || itemLower.includes('lamp'))
-      return <Lightbulb className="h-3 w-3 text-primary" />;
-    
-    // Camera systems
-    if (itemLower.includes('camera') || itemLower.includes('kamerë') || itemLower.includes('view'))
-      return <Camera className="h-3 w-3 text-primary" />;
-    
-    // Parking sensors & Radar
-    if (itemLower.includes('sensor') || itemLower.includes('parking') || itemLower.includes('radar') || 
-        itemLower.includes('proximity') || itemLower.includes('park assist'))
-      return <Radar className="h-3 w-3 text-primary" />;
-    
-    // Navigation & GPS
-    if (itemLower.includes('navigation') || itemLower.includes('gps') || itemLower.includes('navigacion') ||
-        itemLower.includes('maps'))
-      return <MapPin className="h-3 w-3 text-primary" />;
-    
-    // Audio & Entertainment
-    if (itemLower.includes('radio') || itemLower.includes('audio') || itemLower.includes('speaker') ||
-        itemLower.includes('sound') || itemLower.includes('stereo') || itemLower.includes('cd') ||
-        itemLower.includes('bluetooth') || itemLower.includes('usb') || itemLower.includes('aux'))
-      return <MessageCircle className="h-3 w-3 text-primary" />;
-    
-    // Cruise control & Speed control
-    if (itemLower.includes('cruise') || itemLower.includes('speed control') || itemLower.includes('kontroll'))
-      return <Gauge className="h-3 w-3 text-primary" />;
-    
-    // Engine & Transmission
-    if (itemLower.includes('engine') || itemLower.includes('motor') || itemLower.includes('transmission') ||
-        itemLower.includes('gearbox'))
-      return <Cog className="h-3 w-3 text-primary" />;
-    
-    // Seats
-    if (itemLower.includes('seat') || itemLower.includes('ulëse'))
-      return <Users className="h-3 w-3 text-primary" />;
-    
-    // Windows
-    if (itemLower.includes('window') || itemLower.includes('dritare') || itemLower.includes('glass'))
-      return <Eye className="h-3 w-3 text-primary" />;
-    
-    // Wheels & Tires
-    if (itemLower.includes('wheel') || itemLower.includes('alloy') || itemLower.includes('rim') ||
-        itemLower.includes('tire') || itemLower.includes('tyre'))
-      return <Settings className="h-3 w-3 text-primary" />;
-    
-    // Keys & Security
-    if (itemLower.includes('key') || itemLower.includes('keyless') || itemLower.includes('security') ||
-        itemLower.includes('alarm') || itemLower.includes('immobilizer'))
-      return <Shield className="h-3 w-3 text-primary" />;
-    
-    // Default icon for standard equipment
-    return <CheckCircle className="h-3 w-3 text-primary" />;
-  };
-
   // Get specific equipment preview items (up to 10 items from real API data)
   const getSpecificPreviewItems = () => {
     if (!options.standard || options.standard.length === 0) {
       return [];
     }
-    
+
     // Get the first 10 most useful equipment items from the API
     const previewItems = options.standard.slice(0, 10);
-    
-    return previewItems.map((item, index) => {
+
+    return previewItems.map((item) => {
       const itemName = typeof item === 'string' ? item : String(item);
-      
-      // Comprehensive icon mapping based on equipment name
-      const getIconForEquipment = (name: string) => {
-        const itemLower = name.toLowerCase();
-        
-        // Climate control & Air conditioning
-        if (itemLower.includes('air conditioning') || itemLower.includes('climate') || itemLower.includes('klima') || 
-            itemLower.includes('a/c') || itemLower.includes('hvac')) 
-          return Wind;
-        
-        // Heating
-        if (itemLower.includes('heated') || itemLower.includes('ngroh') || itemLower.includes('heat'))
-          return Thermometer;
-        
-        // Safety - Brakes & ABS
-        if (itemLower.includes('brake') || itemLower.includes('frena') || itemLower.includes('abs') || 
-            itemLower.includes('ebd') || itemLower.includes('brake assist'))
-          return Shield;
-        
-        // Airbags
-        if (itemLower.includes('airbag'))
-          return Shield;
-        
-        // Lighting - LED, Xenon, Headlights
-        if (itemLower.includes('light') || itemLower.includes('dritë') || itemLower.includes('led') || 
-            itemLower.includes('xenon') || itemLower.includes('headlight') || itemLower.includes('lamp'))
-          return Lightbulb;
-        
-        // Camera systems
-        if (itemLower.includes('camera') || itemLower.includes('kamerë') || itemLower.includes('view'))
-          return Camera;
-        
-        // Parking sensors & Radar
-        if (itemLower.includes('sensor') || itemLower.includes('parking') || itemLower.includes('radar') || 
-            itemLower.includes('proximity') || itemLower.includes('park assist'))
-          return Radar;
-        
-        // Navigation & GPS
-        if (itemLower.includes('navigation') || itemLower.includes('gps') || itemLower.includes('navigacion') ||
-            itemLower.includes('maps'))
-          return MapPin;
-        
-        // Audio & Entertainment
-        if (itemLower.includes('radio') || itemLower.includes('audio') || itemLower.includes('speaker') ||
-            itemLower.includes('sound') || itemLower.includes('stereo') || itemLower.includes('cd') ||
-            itemLower.includes('bluetooth') || itemLower.includes('usb') || itemLower.includes('aux'))
-          return MessageCircle;
-        
-        // Cruise control & Speed control
-        if (itemLower.includes('cruise') || itemLower.includes('speed control') || itemLower.includes('kontroll'))
-          return Gauge;
-        
-        // Engine & Transmission
-        if (itemLower.includes('engine') || itemLower.includes('motor') || itemLower.includes('transmission') ||
-            itemLower.includes('gearbox'))
-          return Cog;
-        
-        // Seats
-        if (itemLower.includes('seat') || itemLower.includes('ulëse'))
-          return Users;
-        
-        // Windows
-        if (itemLower.includes('window') || itemLower.includes('dritare') || itemLower.includes('glass'))
-          return Eye;
-        
-        // Wheels & Tires
-        if (itemLower.includes('wheel') || itemLower.includes('alloy') || itemLower.includes('rim') ||
-            itemLower.includes('tire') || itemLower.includes('tyre'))
-          return Settings;
-        
-        // Keys & Security
-        if (itemLower.includes('key') || itemLower.includes('keyless') || itemLower.includes('security') ||
-            itemLower.includes('alarm') || itemLower.includes('immobilizer'))
-          return Shield;
-        
-        // Default icon for standard equipment
-        return CheckCircle;
-      };
-      
-      const IconComponent = getIconForEquipment(itemName);
-      
+      const IconComponent = getEquipmentIcon(itemName);
+
       return {
         name: itemName,
         hasFeature: true, // All items from options.standard are available features
@@ -511,15 +565,7 @@ const EquipmentOptionsSection = memo(({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
-                    const itemLower = option.toString().toLowerCase();
-                    let OptionIcon = CheckCircle;
-                    if (itemLower.includes('klime') || itemLower.includes('clima') || itemLower.includes('ac') || itemLower.includes('air conditioning')) OptionIcon = Wind;
-                    else if (itemLower.includes('ngroh') || itemLower.includes('heated')) OptionIcon = Thermometer;
-                    else if (itemLower.includes('kamera') || itemLower.includes('camera')) OptionIcon = Camera;
-                    else if (itemLower.includes('drita') || itemLower.includes('light')) OptionIcon = Lightbulb;
-                    else if (itemLower.includes('sensor') || itemLower.includes('radar') || itemLower.includes('park')) OptionIcon = Radar;
-                    else if (itemLower.includes('audio') || itemLower.includes('multimedia')) OptionIcon = Settings;
-                    else if (itemLower.includes('leather') || itemLower.includes('lëkur')) OptionIcon = Users;
+                    const OptionIcon = getEquipmentIcon(option.toString());
                     return (
                       <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/15 hover:border-primary/30 transition-all duration-200 group">
                         <div className="flex-shrink-0">
@@ -547,15 +593,7 @@ const EquipmentOptionsSection = memo(({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
-                    const itemLower = option.toString().toLowerCase();
-                    let OptionIcon = CheckCircle;
-                    if (itemLower.includes('klime') || itemLower.includes('clima') || itemLower.includes('ac') || itemLower.includes('air conditioning')) OptionIcon = Wind;
-                    else if (itemLower.includes('ngroh') || itemLower.includes('heated')) OptionIcon = Thermometer;
-                    else if (itemLower.includes('kamera') || itemLower.includes('camera')) OptionIcon = Camera;
-                    else if (itemLower.includes('drita') || itemLower.includes('light')) OptionIcon = Lightbulb;
-                    else if (itemLower.includes('sensor') || itemLower.includes('radar') || itemLower.includes('park')) OptionIcon = Radar;
-                    else if (itemLower.includes('audio') || itemLower.includes('multimedia')) OptionIcon = Settings;
-                    else if (itemLower.includes('leather') || itemLower.includes('lëkur')) OptionIcon = Users;
+                    const OptionIcon = getEquipmentIcon(option.toString());
                     return (
                       <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
                         <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-r from-accent/5 to-accent/10 border border-accent/20 rounded-lg sm:rounded-xl hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/15 hover:border-accent/30 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-accent/10 group-hover:-translate-y-0.5">
