@@ -9,15 +9,24 @@ const PageTransition = ({ children }: PageTransitionProps) => {
   return (
     <LazyLoadErrorBoundary>
       <div 
-        className="animate-fade-in optimize-rendering"
+        className="page-transition"
         style={{
-          willChange: 'opacity, transform',
+          /* Hardware acceleration */
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          
+          /* Smooth rendering */
           WebkitFontSmoothing: 'antialiased',
           MozOsxFontSmoothing: 'grayscale',
-          isolation: 'isolate'
+          
+          /* Compositing optimization */
+          isolation: 'isolate',
+          contain: 'layout style paint',
+          
+          /* Smooth fade-in */
+          animation: 'fadeIn 0.2s ease-out',
+          animationFillMode: 'both'
         }}
       >
         {children}

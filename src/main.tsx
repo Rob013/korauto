@@ -8,6 +8,10 @@ import cacheManager from '@/utils/cacheManager'
 import { inject120FPSStyles } from '@/utils/frameRateOptimizer'
 import initSmoothRuntime from '@/utils/runtimeSmoothness'
 import initAntiFlicker from '@/utils/antiFlicker'
+import { initializePerformanceOptimizations } from '@/utils/performanceOptimizer'
+
+// Initialize performance optimizations immediately
+initializePerformanceOptimizations();
 
 // Initialize cache manager and check for updates
 cacheManager.initialize().then((cacheCleared) => {

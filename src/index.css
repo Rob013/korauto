@@ -3,19 +3,16 @@
 @tailwind utilities;
 
 /* ============================================================================
-   iOS-INSPIRED DESIGN SYSTEM
-   Modern, sleek animations and interactions inspired by Apple's design language
+   ENCAR.COM-STYLE PERFORMANCE OPTIMIZATION
+   Ultra-smooth, buttery performance with zero flickering
    ============================================================================ */
 
-/* Anti-Flicker & Performance - Apple-inspired smoothness */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Prevent FOUC (Flash of Unstyled Content) with ENCAR-STYLE scroll setup */
+/* CRITICAL: Anti-Flicker & Performance */
 html {
+  /* Prevent FOUC */
+  visibility: visible !important;
+  
+  /* Background set immediately to prevent flash */
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   
@@ -27,25 +24,39 @@ html {
   /* iOS momentum scrolling */
   -webkit-overflow-scrolling: touch;
   
-  /* Scroll padding for fixed headers */
+  /* Scroll optimizations */
   scroll-padding-top: 80px;
-  
-  /* Prevent scroll anchoring jumps */
   overflow-anchor: none;
+  
+  /* Font rendering for crispness */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  opacity: 1;
-  transition: opacity 0.2s ease-in;
+  /* Start visible to prevent flicker */
+  opacity: 1 !important;
+  visibility: visible !important;
   
-  /* Prevent overscroll bounce on mobile */
+  /* Prevent overscroll bounce */
   overscroll-behavior-y: contain;
   
-  /* Hardware acceleration for smooth rendering */
+  /* Hardware acceleration */
   transform: translate3d(0, 0, 0);
   -webkit-transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  
+  /* Prevent tap highlight flash */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Remove tap highlight on all interactive elements */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* iOS-style smooth theme transitions */
@@ -179,6 +190,7 @@ html.theme-transitioning *::after {
                 opacity var(--motion-duration-medium) var(--motion-easing-standard);
   }
 
+  /* ENCAR-STYLE: Buttery smooth transitions for interactive elements */
   button,
   a,
   input,
@@ -190,17 +202,24 @@ html.theme-transitioning *::after {
   .popover,
   .filter-select,
   .badge {
-    transition: transform var(--motion-duration-medium) var(--motion-easing-emphasized),
+    /* Smooth transitions with optimized timing */
+    transition: transform var(--motion-duration-fast) var(--motion-easing-standard),
                 background-color var(--motion-duration-fast) var(--motion-easing-standard),
                 border-color var(--motion-duration-fast) var(--motion-easing-standard),
                 box-shadow var(--motion-duration-medium) var(--motion-easing-standard),
                 color var(--motion-duration-fast) var(--motion-easing-standard),
-                opacity var(--motion-duration-medium) var(--motion-easing-standard);
-    will-change: transform;
+                opacity var(--motion-duration-fast) var(--motion-easing-standard);
+    
+    /* Hardware acceleration */
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* Only use will-change on hover/active */
+    will-change: auto;
   }
 
+  /* Add will-change only when needed */
   button:hover:not(:disabled),
   a:hover,
   .card:hover,
@@ -209,7 +228,15 @@ html.theme-transitioning *::after {
   .popover:hover,
   .filter-select:hover,
   .filter-select:focus {
-    transform: translate3d(0, -2px, 0);
+    will-change: transform, box-shadow;
+    transform: translate3d(0, -1px, 0);
+  }
+
+  /* Remove will-change after interaction */
+  button:not(:hover):not(:active),
+  a:not(:hover):not(:active),
+  .card:not(:hover):not(:active) {
+    will-change: auto;
   }
 
   button:active:not(:disabled),
@@ -217,13 +244,46 @@ html.theme-transitioning *::after {
   .filter-select:active {
     transform: scale(0.98) translate3d(0, 0, 0);
     transition-duration: var(--motion-duration-fast);
+    will-change: auto;
   }
 
-  /* Smooth transitions for images */
+  /* ANTI-FLICKER: Smooth image loading */
   img {
-    transition: transform var(--motion-duration-medium) var(--motion-easing-standard),
-                opacity var(--motion-duration-medium) var(--motion-easing-standard);
+    /* Prevent layout shift */
+    display: block;
+    max-width: 100%;
+    height: auto;
+    
+    /* Smooth fade-in on load */
+    transition: opacity var(--motion-duration-medium) var(--motion-easing-standard);
+    
+    /* Hardware acceleration */
     backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
+  }
+  
+  /* Image placeholder to prevent flicker */
+  img:not([src]),
+  img[src=""] {
+    opacity: 0.3;
+    background: hsl(var(--muted));
+  }
+
+  /* Page transition animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 4px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  
+  .page-transition {
+    animation: fadeIn 0.2s ease-out;
   }
 
   /* Smooth scroll snap for carousels */
@@ -793,4 +853,46 @@ img[width], img[height] {
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.6);
+}
+
+/* ============================================================================
+   ENCAR-STYLE MOBILE & HIGH-PERFORMANCE OPTIMIZATIONS
+   ============================================================================ */
+
+/* Mobile-specific touch optimizations */
+@media (max-width: 768px) {
+  /* Faster transitions on mobile for snappier feel */
+  button,
+  a,
+  .card {
+    transition-duration: 150ms !important;
+  }
+  
+  /* Optimize mobile scrolling containers */
+  [class*="overflow-"],
+  .scroll-area {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+  }
+  
+  /* Better mobile card performance */
+  .card,
+  [class*="card-"] {
+    contain: layout style paint;
+    isolation: isolate;
+  }
+}
+
+/* High refresh rate optimization (120Hz+) */
+@media (min-resolution: 2dppx) {
+  * {
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  button,
+  a,
+  .card {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
