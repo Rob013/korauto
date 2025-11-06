@@ -1080,9 +1080,10 @@ const CarDetails = memo(() => {
     }
 
     try {
+      console.log('🔍 Attempting to load from cache for lot:', lot);
       const { data, error } = await supabase
         .from('cars_cache')
-        .select('car_data, lot_data, make, model, price, price_usd, lot_number, sale_status, status, images')
+        .select('*')
         .or(`lot_number.eq.${lot},api_id.eq.${lot}`)
         .maybeSingle();
 
@@ -1092,17 +1093,39 @@ const CarDetails = memo(() => {
       }
 
       if (data) {
+        console.log('✅ Found cached car data:', data);
         const cachedCar = transformCachedCarRecord(data);
         const lotData = cachedCar?.lots?.[0];
         const details = buildCarDetails(cachedCar, lotData);
         if (details) {
+          console.log('✅ Successfully built car details from cache');
           setCar(details);
           setLoading(false);
+          // Store in sessionStorage for page visibility restoration
+          try {
+            sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
+          } catch (storageError) {
+            console.warn('Failed to store in sessionStorage:', storageError);
+          }
           return details;
         }
       }
     } catch (cacheError) {
       console.warn('Cache hydration failed', cacheError);
+    }
+
+    // Try sessionStorage as backup
+    try {
+      const sessionData = sessionStorage.getItem(`car_${lot}`);
+      if (sessionData) {
+        console.log('✅ Restored car from sessionStorage');
+        const restoredCar = JSON.parse(sessionData);
+        setCar(restoredCar);
+        setLoading(false);
+        return restoredCar;
+      }
+    } catch (sessionError) {
+      console.warn('Failed to restore from sessionStorage:', sessionError);
     }
 
     return null;
@@ -1170,6 +1193,13 @@ const CarDetails = memo(() => {
 
     const fetchFromApi = async () => {
       if (!lot) return;
+      
+      // Check if car is already loaded (from cache restoration)
+      if (car) {
+        console.log('✅ Car already loaded from cache, skipping API fetch');
+        return;
+      }
+      
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -1215,6 +1245,12 @@ const CarDetails = memo(() => {
 
         setCar(details);
         setLoading(false);
+        // Store in sessionStorage
+        try {
+          sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
+        } catch (storageError) {
+          console.warn('Failed to store in sessionStorage:', storageError);
+        }
         trackCarView(lot, details);
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
@@ -1244,8 +1280,11 @@ const CarDetails = memo(() => {
     };
 
     const loadCar = async () => {
-      await hydrateFromCache();
-      await fetchFromApi();
+      const cachedData = await hydrateFromCache();
+      // Only fetch from API if cache didn't provide data
+      if (!cachedData) {
+        await fetchFromApi();
+      }
     };
 
     loadCar();
@@ -1253,7 +1292,7 @@ const CarDetails = memo(() => {
     return () => {
       isMounted = false;
     };
-  }, [API_BASE_URL, API_KEY, buildCarDetails, fallbackCars, hydrateFromCache, lot, navigate, trackCarView]);
+  }, [API_BASE_URL, API_KEY, buildCarDetails, fallbackCars, hydrateFromCache, lot, navigate, trackCarView, car]);
   const handleContactWhatsApp = useCallback(() => {
     const currentUrl = window.location.href;
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
@@ -1754,7 +1793,7 @@ const CarDetails = memo(() => {
                     </span>
                   </div>
 
-                  {/* 2. Model - e.g., Tiguan */}
+                  {/* 2. Model - e.g., A6 35 TDI Quattro (full variant info) */}
                   <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
@@ -1762,7 +1801,41 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.model}
+                      {(() => {
+                        // Build full model specification with variant/trim info
+                        let fullModel = car.model;
+                        const details = car.details;
+                        
+                        // Add variant/grade info if available
+                        if (details?.variant?.name) {
+                          fullModel += ` ${details.variant.name}`;
+                        } else if (details?.grade?.name) {
+                          fullModel += ` ${details.grade.name}`;
+                        }
+                        
+                        // Add trim info if available  
+                        if (details?.trim?.name && !fullModel.includes(details.trim.name)) {
+                          fullModel += ` ${details.trim.name}`;
+                        }
+                        
+                        // Add engine displacement if available and not already included
+                        if (car.engine?.name && !fullModel.toLowerCase().includes(car.engine.name.toLowerCase())) {
+                          const engineInfo = car.engine.name.trim();
+                          if (engineInfo && engineInfo !== car.model) {
+                            fullModel += ` ${engineInfo}`;
+                          }
+                        }
+                        
+                        // Add drive type for Quattro, 4WD, xDrive, etc.
+                        if (car.drive_wheel?.name) {
+                          const driveType = car.drive_wheel.name.trim();
+                          if (driveType && !fullModel.toLowerCase().includes(driveType.toLowerCase())) {
+                            fullModel += ` ${driveType}`;
+                          }
+                        }
+                        
+                        return fullModel;
+                      })()}
                     </span>
                   </div>
 
