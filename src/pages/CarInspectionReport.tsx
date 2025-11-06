@@ -731,11 +731,6 @@ const CarInspectionReport = () => {
             description: translateUsageType(description),
             value: String(value)
           });
-        } else if (use && String(use).trim()) {
-          usageHistoryList.push({
-            description: "Lloji i përdorimit",
-            value: String(use)
-          });
         }
       });
     }
@@ -749,11 +744,6 @@ const CarInspectionReport = () => {
           usageHistoryList.push({
             description: translateUsageType(description),
             value: String(value)
-          });
-        } else if (use && String(use).trim()) {
-          usageHistoryList.push({
-            description: "Detaje shtesë",
-            value: String(use)
           });
         }
       });
