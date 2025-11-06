@@ -77,7 +77,7 @@ const Index = () => {
       <Header />
       
       {/* Main content with proper landmark */}
-      <main id="main" className="animate-fade-in">
+      <main id="main-content" className="animate-fade-in">
         {/* Lazy load other sections with optimized skeletons */}
         <Suspense fallback={<HomeSectionSkeleton />}>
           <HomeSection />

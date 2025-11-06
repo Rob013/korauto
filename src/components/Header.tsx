@@ -38,7 +38,7 @@ const Header = () => {
   return (
     <header className="bg-background/80 backdrop-blur-xl shadow-[var(--shadow-sm)] border-b border-border/50 sticky top-0 z-50 transition-all duration-300 hover:shadow-[var(--shadow-md)]">
       {/* Main header with proper navigation landmark */}
-      <nav className="container-responsive" role="navigation" aria-label="Main navigation">
+      <nav id="navigation" className="container-responsive" role="navigation" aria-label="Main navigation">
         <div className="flex h-14 sm:h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group min-w-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg" aria-label="KORAUTO kryefaqja">

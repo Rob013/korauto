@@ -174,7 +174,6 @@ export class AccessibilityEnhancer {
     const skipLinks = [
       { href: '#main-content', text: 'Skip to main content' },
       { href: '#navigation', text: 'Skip to navigation' },
-      { href: '#search', text: 'Skip to search' },
       { href: '#footer', text: 'Skip to footer' }
     ];
 

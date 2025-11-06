@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="bg-primary text-primary-foreground py-8">
+    <footer id="footer" className="bg-primary text-primary-foreground py-8">
       <div className="container-responsive">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Company Info */}
