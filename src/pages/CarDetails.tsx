@@ -942,6 +942,19 @@ const CarDetails = memo(() => {
       return null;
     }
 
+    console.log('🏗️ Building car details from API data:', {
+      carData: carData,
+      lotData: lotData,
+      year_sources: {
+        'carData.year': carData?.year,
+        'lotData.year': lotData?.year,
+        'carData.model_year': carData?.model_year,
+        'lotData.model_year': lotData?.model_year,
+        'carData.production_year': carData?.production_year,
+        'lotData.production_year': lotData?.production_year
+      }
+    });
+
     const buyNow = Number(lotData?.buy_now || carData?.buy_now || carData?.price);
     if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
       return null;
@@ -955,26 +968,52 @@ const CarDetails = memo(() => {
     const manufacturerName = carData?.manufacturer?.name || carData?.make || "Unknown";
     const modelName = carData?.model?.name || carData?.model || "Unknown";
 
-    const odometer = lotData?.odometer || (lotData?.odometer_km
-      ? { km: lotData.odometer_km, mi: Math.round(Number(lotData.odometer_km) * 0.621371) }
-      : undefined);
+    // Extract year from multiple possible sources
+    const year = carData?.year 
+      || lotData?.year 
+      || carData?.model_year 
+      || lotData?.model_year 
+      || carData?.production_year 
+      || lotData?.production_year
+      || (carData?.registration_date ? new Date(carData.registration_date).getFullYear() : null)
+      || (lotData?.registration_date ? new Date(lotData.registration_date).getFullYear() : null)
+      || null;
 
-    const images = lotData?.images?.normal || lotData?.images?.big || [];
+    if (!year) {
+      console.warn('⚠️ No year found in car data, using fallback');
+    } else {
+      console.log('✅ Found year:', year);
+    }
+
+    const odometer = lotData?.odometer 
+      || carData?.odometer 
+      || (lotData?.odometer_km ? { km: lotData.odometer_km, mi: Math.round(Number(lotData.odometer_km) * 0.621371) } : null)
+      || (carData?.odometer_km ? { km: carData.odometer_km, mi: Math.round(Number(carData.odometer_km) * 0.621371) } : null)
+      || (lotData?.mileage ? { km: lotData.mileage, mi: Math.round(Number(lotData.mileage) * 0.621371) } : null)
+      || (carData?.mileage ? { km: carData.mileage, mi: Math.round(Number(carData.mileage) * 0.621371) } : null);
+
+    const images = lotData?.images?.normal 
+      || lotData?.images?.big 
+      || carData?.images?.normal 
+      || carData?.images?.big
+      || lotData?.images 
+      || carData?.images 
+      || [];
 
     return {
       id: carData?.id?.toString() || lotData?.lot,
       make: manufacturerName,
       model: modelName,
-      year: carData?.year || 2020,
+      year: year || 2020, // Use extracted year or fallback to 2020
       price,
       image: images?.[0],
       images,
       source_label: sourceLabel,
       vin: carData?.vin,
       mileage: odometer?.km,
-      transmission: carData?.transmission?.name || carData?.transmission,
-      fuel: carData?.fuel?.name || carData?.fuel,
-      color: carData?.color?.name || carData?.color,
+      transmission: carData?.transmission?.name || carData?.transmission || lotData?.transmission?.name || lotData?.transmission,
+      fuel: carData?.fuel?.name || carData?.fuel || lotData?.fuel?.name || lotData?.fuel,
+      color: carData?.color?.name || carData?.color || lotData?.color?.name || lotData?.color,
       condition: lotData?.condition?.name?.replace("run_and_drives", "Good Condition") || carData?.condition,
       lot: lotData?.lot || carData?.lot_number,
       title: carData?.title || lotData?.title,
@@ -982,23 +1021,23 @@ const CarDetails = memo(() => {
         ? {
             km: odometer.km,
             mi: odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
-            status: lotData?.odometer?.status || { name: "Verified" },
+            status: lotData?.odometer?.status || carData?.odometer?.status || { name: "Verified" },
           }
         : undefined,
-      engine: carData?.engine,
-      cylinders: carData?.cylinders,
-      drive_wheel: carData?.drive_wheel,
-      body_type: carData?.body_type,
-      damage: lotData?.damage,
-      keys_available: lotData?.keys_available,
-      airbags: lotData?.airbags,
-      grade_iaai: lotData?.grade_iaai || carData?.grade?.name || carData?.grade,
-      seller: lotData?.seller,
-      seller_type: lotData?.seller_type,
-      sale_date: lotData?.sale_date,
-      bid: lotData?.bid,
-      buy_now: lotData?.buy_now,
-      final_bid: lotData?.final_bid,
+      engine: carData?.engine || lotData?.engine,
+      cylinders: carData?.cylinders || lotData?.cylinders,
+      drive_wheel: carData?.drive_wheel || lotData?.drive_wheel,
+      body_type: carData?.body_type || lotData?.body_type,
+      damage: lotData?.damage || carData?.damage,
+      keys_available: lotData?.keys_available ?? carData?.keys_available,
+      airbags: lotData?.airbags || carData?.airbags,
+      grade_iaai: lotData?.grade_iaai || carData?.grade?.name || carData?.grade || lotData?.grade?.name || lotData?.grade,
+      seller: lotData?.seller || carData?.seller,
+      seller_type: lotData?.seller_type || carData?.seller_type,
+      sale_date: lotData?.sale_date || carData?.sale_date,
+      bid: lotData?.bid || carData?.bid,
+      buy_now: lotData?.buy_now || carData?.buy_now,
+      final_bid: lotData?.final_bid || carData?.final_bid,
       features: getCarFeatures(carData, lotData),
       safety_features: getSafetyFeatures(carData, lotData),
       comfort_features: getComfortFeatures(carData, lotData),

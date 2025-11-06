@@ -40,13 +40,27 @@ export const transformCachedCarRecord = (record: any) => {
   const carData = parseJson<any>(record?.car_data) || {};
   const lotFromCar = Array.isArray(carData?.lots) ? carData.lots[0] : null;
   const lotData = parseJson<any>(record?.lot_data) || lotFromCar || {};
+  
+  // Extract year from multiple sources
+  const year = record?.year 
+    || carData?.year 
+    || lotData?.year 
+    || carData?.model_year 
+    || lotData?.model_year 
+    || carData?.production_year 
+    || lotData?.production_year;
+  
   const images = Array.isArray(record?.images)
     ? record.images
     : Array.isArray(lotData?.images?.normal)
       ? lotData.images.normal
       : Array.isArray(lotData?.images?.big)
         ? lotData.images.big
-        : [];
+        : Array.isArray(carData?.images?.normal)
+          ? carData.images.normal
+          : Array.isArray(carData?.images?.big)
+            ? carData.images.big
+            : [];
 
   const manufacturerName = carData?.manufacturer?.name || record?.make;
   const modelName = carData?.model?.name || record?.model;
@@ -55,6 +69,7 @@ export const transformCachedCarRecord = (record: any) => {
     ...lotData,
     lot: lotData?.lot || record?.lot_number || lotFromCar?.lot,
     buy_now: Number(lotData?.buy_now ?? record?.price ?? lotFromCar?.buy_now ?? 0) || null,
+    year: year, // Include extracted year
     images: lotData?.images || {
       normal: images,
       big: images,
@@ -64,6 +79,7 @@ export const transformCachedCarRecord = (record: any) => {
   const transformed = {
     ...carData,
     id: carData?.id || record?.api_id || record?.id,
+    year: year, // Include extracted year at top level
     manufacturer: carData?.manufacturer || (manufacturerName
       ? {
           id: carData?.manufacturer?.id || record?.manufacturer_id || 0,
