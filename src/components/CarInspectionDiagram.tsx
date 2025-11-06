@@ -401,74 +401,151 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       {/* Main Diagram Section - Split View */}
       <div className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border rounded-lg overflow-hidden bg-background">
-          {/* Left Side - Back View (Jashte) */}
+          {/* Left Side - Front View (Brenda) */}
           <div className="border-b lg:border-b-0 lg:border-r border-border">
-            <div className="bg-muted/30 px-4 py-2 md:py-3 border-b border-border">
-              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Jashte</h3>
-            </div>
-            <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px] flex items-center justify-center">
-              <img src={carDiagramBottom} alt="Car Back View" className="w-full h-auto max-w-lg mx-auto" />
-            </div>
-          </div>
-
-          {/* Right Side - Front View (Brenda) */}
-          <div>
             <div className="bg-muted/30 px-4 py-2 md:py-3 border-b border-border">
               <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Brenda</h3>
             </div>
-            <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px] flex items-center justify-center">
-              <img src={carDiagramTop} alt="Car Front View" className="w-full h-auto max-w-lg mx-auto" />
-              
-              {/* Overlay markers on front view */}
-              {carParts.map((part) => {
-                const statuses = getPartStatus(part.id);
-                if (statuses.length === 0 || !part.markerPos) return null;
+            <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px]">
+              <div className="relative w-full max-w-lg mx-auto">
+                <img src={carDiagramBottom} alt="Car Front View" className="w-full h-auto" />
                 
-                const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
-                const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
+                {/* Overlay markers on front view */}
+                {carParts.map((part) => {
+                  const statuses = getPartStatus(part.id);
+                  if (statuses.length === 0) return null;
+                  
+                  const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
+                  const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
 
-                // N badge: replacement (code 2, X) or sheet metal/welding (code 3, W)
-                const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
-                  normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
-                
-                const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3') ||
-                  normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim'));
+                  // N badge: replacement (code 2, X) or sheet metal/welding (code 3, W)
+                  const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
+                    normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
 
-                // R badge: simple repair (code 1, A)
-                const hasRepair = normalizedCodes.some(code => code === 'A' || code === '1') ||
-                  normalizedTitles.some(t => t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
-                
-                const markers: Array<{ char: string; color: string }> = [];
-                // Red N badge for replacement or sheet metal
-                if (hasExchange || hasWelding) markers.push({ char: 'N', color: '#dc2626' });
-                // Blue R badge for simple repair
-                if (hasRepair) markers.push({ char: 'R', color: '#2563eb' });
-                
-                if (markers.length === 0) return null;
-                
-                // Convert SVG coordinates to percentage - mobile responsive
-                const leftPercent = (part.markerPos.x / 640) * 100;
-                const topPercent = (part.markerPos.y / 630) * 100;
-                
-                return markers.map((m, idx) => {
-                  const offset = (idx - (markers.length - 1) / 2) * 2.5;
+                  const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3') ||
+                    normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim'));
+
+                  // R badge: simple repair (code 1, A)
+                  const hasRepair = normalizedCodes.some(code => code === 'A' || code === '1') ||
+                    normalizedTitles.some(t => t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
+
+                  const showNBadge = hasExchange || hasWelding;
+                  const showRBadge = hasRepair && !showNBadge;
+
+                  if (!showNBadge && !showRBadge) return null;
+
+                  // Position badges on the diagram
+                  let position = {};
+                  if (part.id === 'hood') position = { top: '15%', left: '50%' };
+                  else if (part.id === 'front_bumper') position = { top: '5%', left: '50%' };
+                  else if (part.id === 'windshield') position = { top: '25%', left: '50%' };
+                  else if (part.id === 'front_left_door') position = { top: '40%', left: '20%' };
+                  else if (part.id === 'front_right_door') position = { top: '40%', right: '20%' };
+                  else if (part.id === 'roof') position = { top: '50%', left: '50%' };
+                  else if (part.id === 'rear_left_door') position = { top: '65%', left: '20%' };
+                  else if (part.id === 'rear_right_door') position = { top: '65%', right: '20%' };
+                  else if (part.id === 'rear_glass') position = { top: '75%', left: '50%' };
+                  else if (part.id === 'trunk') position = { top: '85%', left: '50%' };
+                  else if (part.id === 'rear_bumper') position = { top: '95%', left: '50%' };
+                  else if (part.id === 'left_fender') position = { top: '20%', left: '15%' };
+                  else if (part.id === 'right_fender') position = { top: '20%', right: '15%' };
+                  else if (part.id === 'left_quarter') position = { top: '80%', left: '15%' };
+                  else if (part.id === 'right_quarter') position = { top: '80%', right: '15%' };
+                  else if (part.id === 'side_sill_left') position = { top: '50%', left: '10%' };
+                  else if (part.id === 'side_sill_right') position = { top: '50%', right: '10%' };
+                  else if (part.id === 'fl_wheel') position = { top: '18%', left: '5%' };
+                  else if (part.id === 'fr_wheel') position = { top: '18%', right: '5%' };
+                  else if (part.id === 'rl_wheel') position = { top: '82%', left: '5%' };
+                  else if (part.id === 'rr_wheel') position = { top: '82%', right: '5%' };
+
                   return (
                     <div
-                      key={`front-${part.id}-${idx}`}
-                      className="absolute flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full text-white text-xs md:text-sm font-bold shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 z-10 cursor-pointer hover:scale-110 transition-transform"
-                      style={{
-                        left: `${leftPercent + offset}%`,
-                        top: `${topPercent}%`,
-                        backgroundColor: m.color,
-                      }}
-                      title={`${part.name} - ${getStatusText(statuses)}`}
-                      onClick={() => setSelectedPart(part.id)}
+                      key={part.id}
+                      className="absolute -translate-x-1/2 -translate-y-1/2"
+                      style={position}
                     >
-                      {m.char}
+                      <div className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full font-bold text-white text-xs md:text-sm shadow-lg"
+                        style={{ backgroundColor: showNBadge ? '#dc2626' : '#2563eb' }}>
+                        {showNBadge ? 'N' : 'R'}
+                      </div>
                     </div>
                   );
-                });
-              })}
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Back View (Jashte) */}
+          <div>
+            <div className="bg-muted/30 px-4 py-2 md:py-3 border-b border-border">
+              <h3 className="font-semibold text-center text-foreground text-sm md:text-base">Jashte</h3>
+            </div>
+            <div className="relative p-4 md:p-8 bg-muted/10 min-h-[300px] md:min-h-[400px]">
+              <div className="relative w-full max-w-lg mx-auto">
+                <img src={carDiagramTop} alt="Car Back View" className="w-full h-auto" />
+                
+                {/* Overlay markers on back view */}
+                {carParts.map((part) => {
+                  const statuses = getPartStatus(part.id);
+                  if (statuses.length === 0) return null;
+                  
+                  const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
+                  const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
+
+                  // N badge: replacement (code 2, X) or sheet metal/welding (code 3, W)
+                  const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
+                    normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
+
+                  const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3') ||
+                    normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim'));
+
+                  // R badge: simple repair (code 1, A)
+                  const hasRepair = normalizedCodes.some(code => code === 'A' || code === '1') ||
+                    normalizedTitles.some(t => t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
+
+                  const showNBadge = hasExchange || hasWelding;
+                  const showRBadge = hasRepair && !showNBadge;
+
+                  if (!showNBadge && !showRBadge) return null;
+
+                  // Position badges on the diagram
+                  let position = {};
+                  if (part.id === 'hood') position = { top: '15%', left: '50%' };
+                  else if (part.id === 'front_bumper') position = { top: '5%', left: '50%' };
+                  else if (part.id === 'windshield') position = { top: '25%', left: '50%' };
+                  else if (part.id === 'front_left_door') position = { top: '40%', left: '20%' };
+                  else if (part.id === 'front_right_door') position = { top: '40%', right: '20%' };
+                  else if (part.id === 'roof') position = { top: '50%', left: '50%' };
+                  else if (part.id === 'rear_left_door') position = { top: '65%', left: '20%' };
+                  else if (part.id === 'rear_right_door') position = { top: '65%', right: '20%' };
+                  else if (part.id === 'rear_glass') position = { top: '75%', left: '50%' };
+                  else if (part.id === 'trunk') position = { top: '85%', left: '50%' };
+                  else if (part.id === 'rear_bumper') position = { top: '95%', left: '50%' };
+                  else if (part.id === 'left_fender') position = { top: '20%', left: '15%' };
+                  else if (part.id === 'right_fender') position = { top: '20%', right: '15%' };
+                  else if (part.id === 'left_quarter') position = { top: '80%', left: '15%' };
+                  else if (part.id === 'right_quarter') position = { top: '80%', right: '15%' };
+                  else if (part.id === 'side_sill_left') position = { top: '50%', left: '10%' };
+                  else if (part.id === 'side_sill_right') position = { top: '50%', right: '10%' };
+                  else if (part.id === 'fl_wheel') position = { top: '18%', left: '5%' };
+                  else if (part.id === 'fr_wheel') position = { top: '18%', right: '5%' };
+                  else if (part.id === 'rl_wheel') position = { top: '82%', left: '5%' };
+                  else if (part.id === 'rr_wheel') position = { top: '82%', right: '5%' };
+
+                  return (
+                    <div
+                      key={part.id}
+                      className="absolute -translate-x-1/2 -translate-y-1/2"
+                      style={position}
+                    >
+                      <div className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full font-bold text-white text-xs md:text-sm shadow-lg"
+                        style={{ backgroundColor: showNBadge ? '#dc2626' : '#2563eb' }}>
+                        {showNBadge ? 'N' : 'R'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
