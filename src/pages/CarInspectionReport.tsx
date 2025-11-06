@@ -649,11 +649,57 @@ const CarInspectionReport = () => {
       { label: "Pronaret e ndërruar", value: ownerChangesDisplay },
     ];
 
-    const usageHistoryList: Array<{ description?: string; value?: string }> = Array.isArray(
+    // Build comprehensive usage history from API data
+    const apiUsageHistoryList: Array<{ description?: string; value?: string }> = Array.isArray(
       car.details?.insurance?.usage_history,
     )
       ? car.details?.insurance?.usage_history
       : [];
+
+    // Add insurance_v2 usage data to history list
+    const usageHistoryList: Array<{ description: string; value: string }> = [];
+    
+    // Add existing API usage history
+    apiUsageHistoryList.forEach(item => {
+      usageHistoryList.push({
+        description: item.description || "Informacion i përdorimit",
+        value: item.value || "-"
+      });
+    });
+    
+    // Add carInfoUse1s data
+    if (car.insurance_v2?.carInfoUse1s && Array.isArray(car.insurance_v2.carInfoUse1s)) {
+      car.insurance_v2.carInfoUse1s.forEach((use: any) => {
+        if (use && typeof use === 'object') {
+          usageHistoryList.push({
+            description: use.description || use.type || "Përdorimi i veturës (tipi 1)",
+            value: use.value || use.status || "-"
+          });
+        } else if (use) {
+          usageHistoryList.push({
+            description: "Përdorimi i veturës",
+            value: String(use)
+          });
+        }
+      });
+    }
+
+    // Add carInfoUse2s data
+    if (car.insurance_v2?.carInfoUse2s && Array.isArray(car.insurance_v2.carInfoUse2s)) {
+      car.insurance_v2.carInfoUse2s.forEach((use: any) => {
+        if (use && typeof use === 'object') {
+          usageHistoryList.push({
+            description: use.description || use.type || "Përdorimi i veturës (tipi 2)",
+            value: use.value || use.status || "-"
+          });
+        } else if (use) {
+          usageHistoryList.push({
+            description: "Informacion shtesë i përdorimit",
+            value: String(use)
+          });
+        }
+      });
+    }
 
     const findUsageValue = (keywords: string[]) => {
       const match = usageHistoryList.find((entry) => {
@@ -686,13 +732,11 @@ const CarInspectionReport = () => {
     };
 
     const rentalUsageValue =
-      toYesNo(findUsageValue(["rent", "qira", "rental"])) ??
-      toYesNo(car.insurance_v2?.carInfoUse1s?.join(" ")) ??
-      toYesNo(car.insurance_v2?.carInfoUse2s?.join(" ")) ??
+      toYesNo(findUsageValue(["rent", "qira", "rental", "lease", "loan"])) ??
       toYesNo(car.insurance_v2?.loan);
 
     const commercialUsageValue =
-      toYesNo(findUsageValue(["komerc", "biznes", "commercial"])) ??
+      toYesNo(findUsageValue(["komerc", "biznes", "commercial", "business"])) ??
       toYesNo(car.insurance_v2?.business);
 
     const usageHighlights = [
