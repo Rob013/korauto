@@ -25,52 +25,98 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     return { within: withinMarkers, out: outMarkers };
   }
 
-  // Enhanced position mapping for Korean car diagram with better coverage
+  // Enhanced position mapping with accurate coordinates and aliases
   const positionMap: Record<string, { panel: 'within' | 'out', x: number, y: number }> = {
-    // Within panel (top/side view) - left side parts
-    'hood': { panel: 'within', x: 320, y: 120 },
-    'bonnet': { panel: 'within', x: 320, y: 120 },
-    'front_panel': { panel: 'within', x: 320, y: 90 },
-    'front_bumper': { panel: 'within', x: 320, y: 70 },
-    'radiator_support': { panel: 'within', x: 320, y: 100 },
+    // ===== WITHIN PANEL (Top/Side View) =====
     
-    'front_left_door': { panel: 'within', x: 165, y: 230 },
-    'front_door_left': { panel: 'within', x: 165, y: 230 },
-    'rear_left_door': { panel: 'within', x: 165, y: 310 },
-    'rear_door_left': { panel: 'within', x: 165, y: 310 },
-    'left_quarter': { panel: 'within', x: 165, y: 385 },
-    'quarter_panel_left': { panel: 'within', x: 165, y: 385 },
-    'side_sill_left': { panel: 'within', x: 165, y: 270 },
-    'side_sill_panel_left': { panel: 'within', x: 165, y: 270 },
-    'left_fender': { panel: 'within', x: 165, y: 155 },
-    'fender_left': { panel: 'within', x: 165, y: 155 },
-    'roof': { panel: 'within', x: 320, y: 240 },
-    'roof_panel': { panel: 'within', x: 320, y: 240 },
+    // Front section
+    'hood': { panel: 'within', x: 320, y: 130 },
+    'bonnet': { panel: 'within', x: 320, y: 130 },
+    'front_panel': { panel: 'within', x: 320, y: 95 },
+    'front_bumper': { panel: 'within', x: 320, y: 75 },
+    'radiator_support': { panel: 'within', x: 320, y: 105 },
+    'cowl_panel': { panel: 'within', x: 320, y: 160 },
     
-    // Within panel - right side (mirror positions)
-    'front_right_door': { panel: 'within', x: 475, y: 230 },
-    'front_door_right': { panel: 'within', x: 475, y: 230 },
-    'rear_right_door': { panel: 'within', x: 475, y: 310 },
-    'rear_door_right': { panel: 'within', x: 475, y: 310 },
-    'right_quarter': { panel: 'within', x: 475, y: 385 },
-    'quarter_panel_right': { panel: 'within', x: 475, y: 385 },
-    'side_sill_right': { panel: 'within', x: 475, y: 270 },
-    'side_sill_panel_right': { panel: 'within', x: 475, y: 270 },
-    'right_fender': { panel: 'within', x: 475, y: 155 },
-    'fender_right': { panel: 'within', x: 475, y: 155 },
+    // Left side (driver side in Korean cars)
+    'front_left_fender': { panel: 'within', x: 180, y: 160 },
+    'front_fender_left': { panel: 'within', x: 180, y: 160 },
+    'left_fender': { panel: 'within', x: 180, y: 160 },
+    'fender_left': { panel: 'within', x: 180, y: 160 },
     
-    // Out panel (bottom/underside view)
-    'trunk': { panel: 'out', x: 320, y: 380 },
-    'trunk_lid': { panel: 'out', x: 320, y: 400 },
-    'trunk_floor': { panel: 'out', x: 320, y: 350 },
-    'rear_panel': { panel: 'out', x: 320, y: 420 },
-    'rear_bumper': { panel: 'out', x: 320, y: 445 },
-    'rear_wheel_house_left': { panel: 'out', x: 210, y: 370 },
-    'rear_wheel_house_right': { panel: 'out', x: 430, y: 370 },
-    'front_wheel_house_left': { panel: 'out', x: 210, y: 170 },
-    'front_wheel_house_right': { panel: 'out', x: 430, y: 170 },
-    'front_cross_member': { panel: 'out', x: 320, y: 140 },
-    'rear_cross_member': { panel: 'out', x: 320, y: 390 },
+    'front_left_door': { panel: 'within', x: 170, y: 240 },
+    'front_door_left': { panel: 'within', x: 170, y: 240 },
+    
+    'rear_left_door': { panel: 'within', x: 170, y: 315 },
+    'rear_door_left': { panel: 'within', x: 170, y: 315 },
+    
+    'left_quarter_panel': { panel: 'within', x: 175, y: 390 },
+    'quarter_panel_left': { panel: 'within', x: 175, y: 390 },
+    'left_quarter': { panel: 'within', x: 175, y: 390 },
+    'quarter_left': { panel: 'within', x: 175, y: 390 },
+    
+    'side_sill_panel_left': { panel: 'within', x: 165, y: 275 },
+    'side_sill_left': { panel: 'within', x: 165, y: 275 },
+    'rocker_panel_left': { panel: 'within', x: 165, y: 275 },
+    
+    // Right side (passenger side)
+    'front_right_fender': { panel: 'within', x: 460, y: 160 },
+    'front_fender_right': { panel: 'within', x: 460, y: 160 },
+    'right_fender': { panel: 'within', x: 460, y: 160 },
+    'fender_right': { panel: 'within', x: 460, y: 160 },
+    
+    'front_right_door': { panel: 'within', x: 470, y: 240 },
+    'front_door_right': { panel: 'within', x: 470, y: 240 },
+    
+    'rear_right_door': { panel: 'within', x: 470, y: 315 },
+    'rear_door_right': { panel: 'within', x: 470, y: 315 },
+    
+    'right_quarter_panel': { panel: 'within', x: 465, y: 390 },
+    'quarter_panel_right': { panel: 'within', x: 465, y: 390 },
+    'right_quarter': { panel: 'within', x: 465, y: 390 },
+    'quarter_right': { panel: 'within', x: 465, y: 390 },
+    
+    'side_sill_panel_right': { panel: 'within', x: 475, y: 275 },
+    'side_sill_right': { panel: 'within', x: 475, y: 275 },
+    'rocker_panel_right': { panel: 'within', x: 475, y: 275 },
+    
+    // Top/Roof
+    'roof': { panel: 'within', x: 320, y: 250 },
+    'roof_panel': { panel: 'within', x: 320, y: 250 },
+    'sunroof': { panel: 'within', x: 320, y: 235 },
+    
+    // ===== OUT PANEL (Rear/Bottom View) =====
+    
+    // Rear section
+    'trunk': { panel: 'out', x: 320, y: 385 },
+    'trunk_lid': { panel: 'out', x: 320, y: 405 },
+    'deck_lid': { panel: 'out', x: 320, y: 405 },
+    'trunk_floor': { panel: 'out', x: 320, y: 355 },
+    'luggage_floor': { panel: 'out', x: 320, y: 355 },
+    
+    'rear_panel': { panel: 'out', x: 320, y: 425 },
+    'back_panel': { panel: 'out', x: 320, y: 425 },
+    
+    'rear_bumper': { panel: 'out', x: 320, y: 450 },
+    'back_bumper': { panel: 'out', x: 320, y: 450 },
+    
+    // Wheel houses
+    'rear_wheel_house_left': { panel: 'out', x: 215, y: 375 },
+    'rear_wheelhouse_left': { panel: 'out', x: 215, y: 375 },
+    
+    'rear_wheel_house_right': { panel: 'out', x: 425, y: 375 },
+    'rear_wheelhouse_right': { panel: 'out', x: 425, y: 375 },
+    
+    'front_wheel_house_left': { panel: 'out', x: 215, y: 175 },
+    'front_wheelhouse_left': { panel: 'out', x: 215, y: 175 },
+    
+    'front_wheel_house_right': { panel: 'out', x: 425, y: 175 },
+    'front_wheelhouse_right': { panel: 'out', x: 425, y: 175 },
+    
+    // Cross members and structural
+    'front_cross_member': { panel: 'out', x: 320, y: 145 },
+    'rear_cross_member': { panel: 'out', x: 320, y: 395 },
+    'front_rail': { panel: 'out', x: 320, y: 130 },
+    'rear_rail': { panel: 'out', x: 320, y: 410 },
   };
 
   console.log('🔍 Processing inspection data for diagram:', {
@@ -144,10 +190,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
       return;
     }
 
-    // Try to find position for this part using fuzzy matching
-    let bestMatch: string | null = null;
-    let bestScore = 0;
-    
+    // Try to find position using improved matching algorithm
     const normalize = (s: string) =>
       (s || "")
         .toString()
@@ -158,33 +201,102 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
         .replace(/\s+/g, " ")
         .trim();
 
-    const searchTerms = [typeTitle, typeCode, typeTitle.replace(/_/g, ' ')]
-      .map(normalize)
-      .filter(Boolean);
+    let bestMatch: string | null = null;
+    let bestScore = 0;
     
-    Object.keys(positionMap).forEach(partKey => {
-      const partKeyNormalized = normalize(partKey);
-      searchTerms.forEach(term => {
-        if (term && (term.includes(partKeyNormalized) || partKeyNormalized.includes(term))) {
-          const score = Math.min(term.length, partKeyNormalized.length);
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = partKey;
+    const normalizedTitle = normalize(typeTitle);
+    const normalizedCode = normalize(typeCode);
+    
+    // Try exact match first (highest priority)
+    for (const partKey of Object.keys(positionMap)) {
+      const normalizedPartKey = normalize(partKey);
+      
+      // Exact match gets highest score
+      if (normalizedPartKey === normalizedTitle || normalizedPartKey === normalizedCode) {
+        bestMatch = partKey;
+        bestScore = 1000;
+        break;
+      }
+    }
+    
+    // If no exact match, try fuzzy matching
+    if (!bestMatch) {
+      for (const partKey of Object.keys(positionMap)) {
+        const normalizedPartKey = normalize(partKey);
+        
+        // Check if one contains the other (prefer longer matches)
+        if (normalizedTitle && normalizedPartKey) {
+          if (normalizedTitle.includes(normalizedPartKey)) {
+            const score = normalizedPartKey.length * 10;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = partKey;
+            }
+          } else if (normalizedPartKey.includes(normalizedTitle)) {
+            const score = normalizedTitle.length * 10;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = partKey;
+            }
           }
         }
-      });
-    });
+        
+        // Also check code matching
+        if (normalizedCode && normalizedPartKey) {
+          if (normalizedCode.includes(normalizedPartKey) || normalizedPartKey.includes(normalizedCode)) {
+            const score = Math.min(normalizedCode.length, normalizedPartKey.length) * 8;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = partKey;
+            }
+          }
+        }
+      }
+    }
 
     if (bestMatch) {
       const pos = positionMap[bestMatch];
+      
+      // Check for collision with existing markers and offset if needed
+      let finalX = pos.x;
+      let finalY = pos.y;
+      const collisionRadius = 25; // Minimum distance between markers
+      
+      const markersToCheck = pos.panel === 'within' ? withinMarkers : outMarkers;
+      let hasCollision = true;
+      let attempts = 0;
+      const maxAttempts = 8; // Try 8 positions around the original
+      
+      while (hasCollision && attempts < maxAttempts) {
+        hasCollision = false;
+        
+        for (const existingMarker of markersToCheck) {
+          const distance = Math.sqrt(
+            Math.pow(existingMarker.x - finalX, 2) + 
+            Math.pow(existingMarker.y - finalY, 2)
+          );
+          
+          if (distance < collisionRadius) {
+            hasCollision = true;
+            // Offset in a circular pattern
+            const angle = (attempts * Math.PI * 2) / maxAttempts;
+            finalX = pos.x + Math.cos(angle) * collisionRadius;
+            finalY = pos.y + Math.sin(angle) * collisionRadius;
+            break;
+          }
+        }
+        
+        attempts++;
+      }
+      
       const marker: DiagramMarker = {
-        x: pos.x,
-        y: pos.y,
+        x: finalX,
+        y: finalY,
         type: markerType,
         label: item?.type?.title || ''
       };
 
-      console.log(`✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${pos.x}, ${pos.y})`);
+      console.log(`✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? ' [offset for collision]' : ''}`);
 
       if (pos.panel === 'within') {
         withinMarkers.push(marker);
@@ -192,7 +304,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
         outMarkers.push(marker);
       }
     } else {
-      console.warn(`❌ No position mapping found for: "${item?.type?.title}" (searched: ${typeTitle}, ${typeCode})`);
+      console.warn(`❌ No position mapping found for: "${item?.type?.title}" (searched: ${normalizedTitle}, ${normalizedCode})`);
     }
   });
 
