@@ -283,14 +283,111 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
           </Dialog>
         </div>
 
-        {/* Subtitle with result */}
-        <div className="text-center py-3 bg-muted/30 rounded-lg">
-          <p className="text-lg">
-            Rezultati i diagnostikimit për veturën {carInfo.year || carInfo.vin || 'N/A'}{' '}
-            <span className="font-bold text-primary">
-              {exchangeCount === 0 && repairCount === 0 ? 'Pa aksident' : 'Me dëmtime të rregjistruara'}
-            </span>
-          </p>
+        {/* Accident Summary - Permbledhja e Aksidentit */}
+        <div className="space-y-3">
+          <div className="bg-muted/30 rounded-lg p-4 border border-border">
+            <h3 className="font-semibold text-lg mb-3 text-center">Permbledhja e Aksidentit</h3>
+            
+            {/* Main Status */}
+            <div className="text-center py-3 bg-background rounded-lg mb-4 border border-border">
+              <p className="text-lg">
+                Rezultati për veturën {carInfo.year || carInfo.vin || 'N/A'}{' '}
+                <span className={`font-bold ${
+                  exchangeCount === 0 && repairCount === 0 ? 'text-success' : 'text-destructive'
+                }`}>
+                  {exchangeCount === 0 && repairCount === 0 ? 'Pa aksident' : 'Me aksident të regjistruar'}
+                </span>
+              </p>
+            </div>
+
+            {/* Detailed Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Total Parts Checked */}
+              <div className="bg-background rounded-lg p-3 text-center border border-border">
+                <div className="text-2xl font-bold text-foreground">
+                  {FRAME_PARTS.length + EXTERNAL_PANEL_PARTS.length}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">Pjesë të kontrolluara</div>
+              </div>
+
+              {/* Normal Parts */}
+              <div className="bg-background rounded-lg p-3 text-center border border-border">
+                <div className="text-2xl font-bold text-success">
+                  {(FRAME_PARTS.length + EXTERNAL_PANEL_PARTS.length) - exchangeCount - repairCount}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">Normale</div>
+              </div>
+
+              {/* Repaired Parts */}
+              <div className="bg-background rounded-lg p-3 text-center border border-primary/50">
+                <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
+                  {repairCount}
+                  <div className="w-3 h-3 rounded-full bg-primary"></div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">Riparuar/Salduar</div>
+              </div>
+
+              {/* Replaced Parts */}
+              <div className="bg-background rounded-lg p-3 text-center border border-destructive/50">
+                <div className="text-2xl font-bold text-destructive flex items-center justify-center gap-1">
+                  {exchangeCount}
+                  <div className="w-3 h-3 rounded-full bg-destructive"></div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">Zëvendësuar</div>
+              </div>
+            </div>
+
+            {/* Category Breakdown */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {/* Frame Status */}
+              <div className="bg-background rounded-lg p-3 border border-border">
+                <div className="font-semibold text-sm mb-2">Korniza</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Gjendja:</span>
+                  <span className={`text-sm font-semibold ${
+                    FRAME_PARTS.every(p => getPartCategoryStatus(p.partIds) === 'normal') 
+                      ? 'text-success' 
+                      : 'text-destructive'
+                  }`}>
+                    {FRAME_PARTS.every(p => getPartCategoryStatus(p.partIds) === 'normal') 
+                      ? 'Normale' 
+                      : 'Me dëmtime'}
+                  </span>
+                </div>
+              </div>
+
+              {/* External Panel Status */}
+              <div className="bg-background rounded-lg p-3 border border-border">
+                <div className="font-semibold text-sm mb-2">Paneli i Jashtëm</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Gjendja:</span>
+                  <span className={`text-sm font-semibold ${
+                    EXTERNAL_PANEL_PARTS.every(p => getPartCategoryStatus(p.partIds) === 'normal') 
+                      ? 'text-success' 
+                      : 'text-destructive'
+                  }`}>
+                    {EXTERNAL_PANEL_PARTS.every(p => getPartCategoryStatus(p.partIds) === 'normal') 
+                      ? 'Normale' 
+                      : 'Me dëmtime'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="mt-4 pt-3 border-t border-border">
+              <div className="flex items-center justify-center gap-6 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-primary border-2 border-primary"></div>
+                  <span className="text-muted-foreground">Riparuar (W)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-destructive border-2 border-destructive"></div>
+                  <span className="text-muted-foreground">Zëvendësuar (X)</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
