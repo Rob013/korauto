@@ -1316,7 +1316,18 @@ const CarInspectionReport = () => {
                     <p className="text-xs md:text-sm text-muted-foreground">
                       Diagrami tregon dëmtimet e vërteta, riparimet dhe ndërrimet e pjesëve sipas të dhënave të inspektimit
                     </p>
-                    <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
+                    <CarInspectionDiagram 
+                      inspectionData={inspectionOuterData} 
+                      className="mx-auto"
+                      carInfo={{
+                        make: car.make,
+                        model: car.model,
+                        year: car.year?.toString(),
+                        vin: car.vin,
+                        mileage: formatMileage(car.mileageKm || 0)
+                      }}
+                      accidentSummary={car.inspect?.accident_summary}
+                    />
                   </div>
 
                   {/* Outer Damage Details */}

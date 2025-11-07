@@ -25,6 +25,13 @@ interface CarInspectionDiagramProps {
     vin?: string;
     mileage?: string;
   };
+  accidentSummary?: {
+    main_framework?: string;
+    exterior1rank?: string;
+    exterior2rank?: string;
+    simple_repair?: string;
+    accident?: string;
+  };
 }
 
 // Define part categories for Frame and External Panel
@@ -49,7 +56,8 @@ const EXTERNAL_PANEL_PARTS = [
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   inspectionData = [],
   className = "",
-  carInfo = {}
+  carInfo = {},
+  accidentSummary = {}
 }) => {
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
@@ -305,16 +313,60 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
           <div className="bg-muted/30 rounded-lg p-4 border border-border">
             <h3 className="font-semibold text-lg mb-3 text-center">Permbledhja e Aksidentit</h3>
             
-            {/* Main Status - Based on actual inspection data */}
+            {/* Main Status - Based on actual API accident_summary data */}
             <div className="text-center py-3 bg-background rounded-lg mb-4 border border-border">
               <p className="text-lg">
-                Rezultati për veturën {carInfo.year || carInfo.vin || 'N/A'}{' '}
+                Rezultati për veturën {carInfo.year && carInfo.make ? `${carInfo.make} ${carInfo.model} ${carInfo.year}` : carInfo.vin || 'N/A'}{' '}
                 <span className={`font-bold ${
-                  exchangeCount === 0 && repairCount === 0 ? 'text-success' : 'text-destructive'
+                  (accidentSummary?.accident === 'no' || (!accidentSummary?.accident && exchangeCount === 0 && repairCount === 0))
+                    ? 'text-success' 
+                    : 'text-destructive'
                 }`}>
-                  {exchangeCount === 0 && repairCount === 0 ? 'Pa aksident' : 'Me aksident të regjistruar'}
+                  {(accidentSummary?.accident === 'no' || (!accidentSummary?.accident && exchangeCount === 0 && repairCount === 0))
+                    ? 'Pa aksident' 
+                    : 'Me aksident të regjistruar'}
                 </span>
               </p>
+              
+              {/* Show API accident summary details if available */}
+              {accidentSummary && Object.keys(accidentSummary).length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    {accidentSummary.main_framework && (
+                      <div className="flex items-center justify-between px-2 py-1 bg-muted/50 rounded">
+                        <span className="text-muted-foreground">Korniza Kryesore:</span>
+                        <span className={`font-semibold ${accidentSummary.main_framework === 'yes' ? 'text-destructive' : 'text-success'}`}>
+                          {accidentSummary.main_framework === 'yes' ? 'Po' : 'Jo'}
+                        </span>
+                      </div>
+                    )}
+                    {accidentSummary.exterior1rank && (
+                      <div className="flex items-center justify-between px-2 py-1 bg-muted/50 rounded">
+                        <span className="text-muted-foreground">Jashtë (1-Rank):</span>
+                        <span className={`font-semibold ${accidentSummary.exterior1rank === 'yes' ? 'text-destructive' : 'text-success'}`}>
+                          {accidentSummary.exterior1rank === 'yes' ? 'Po' : 'Jo'}
+                        </span>
+                      </div>
+                    )}
+                    {accidentSummary.exterior2rank && (
+                      <div className="flex items-center justify-between px-2 py-1 bg-muted/50 rounded">
+                        <span className="text-muted-foreground">Jashtë (2-Rank):</span>
+                        <span className={`font-semibold ${accidentSummary.exterior2rank === 'yes' ? 'text-destructive' : 'text-success'}`}>
+                          {accidentSummary.exterior2rank === 'yes' ? 'Po' : 'Jo'}
+                        </span>
+                      </div>
+                    )}
+                    {accidentSummary.simple_repair && (
+                      <div className="flex items-center justify-between px-2 py-1 bg-muted/50 rounded">
+                        <span className="text-muted-foreground">Riparim i Thjeshtë:</span>
+                        <span className={`font-semibold ${accidentSummary.simple_repair === 'yes' ? 'text-primary' : 'text-success'}`}>
+                          {accidentSummary.simple_repair === 'yes' ? 'Po' : 'Jo'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Detailed Stats Grid - Based on actual damaged parts count */}
