@@ -35,8 +35,8 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     // ===== WITHIN PANEL (Top/Side View) =====
     
     // Front section
-    'hood': { panel: 'within', x: 320, y: 130 },
-    'bonnet': { panel: 'within', x: 320, y: 130 },
+    'hood': { panel: 'within', x: 320, y: 150 },
+    'bonnet': { panel: 'within', x: 320, y: 150 },
     'front_panel': { panel: 'within', x: 320, y: 95 },
     'front_bumper': { panel: 'within', x: 320, y: 75 },
     'radiator_support': { panel: 'within', x: 320, y: 105 },
@@ -48,13 +48,13 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'left_fender': { panel: 'within', x: 175, y: 218 },
     'fender_left': { panel: 'within', x: 175, y: 218 },
     
-    'front_left_door': { panel: 'within', x: 130, y: 258 },
-    'front_door_left': { panel: 'within', x: 130, y: 258 },
-    'door_front_left': { panel: 'within', x: 130, y: 258 },
+    'front_left_door': { panel: 'within', x: 192, y: 255 },
+    'front_door_left': { panel: 'within', x: 192, y: 255 },
+    'door_front_left': { panel: 'within', x: 192, y: 255 },
     
-    'rear_left_door': { panel: 'within', x: 175, y: 295 },
-    'rear_door_left': { panel: 'within', x: 175, y: 295 },
-    'door_rear_left': { panel: 'within', x: 175, y: 295 },
+    'rear_left_door': { panel: 'within', x: 192, y: 370 },
+    'rear_door_left': { panel: 'within', x: 192, y: 370 },
+    'door_rear_left': { panel: 'within', x: 192, y: 370 },
     
     'left_quarter_panel': { panel: 'within', x: 180, y: 365 },
     'quarter_panel_left': { panel: 'within', x: 180, y: 365 },
@@ -75,12 +75,12 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'right_fender': { panel: 'within', x: 460, y: 160 },
     'fender_right': { panel: 'within', x: 460, y: 160 },
     
-    'front_right_door': { panel: 'within', x: 470, y: 240 },
-    'front_door_right': { panel: 'within', x: 470, y: 240 },
+    'front_right_door': { panel: 'within', x: 448, y: 255 },
+    'front_door_right': { panel: 'within', x: 448, y: 255 },
     
-    'rear_right_door': { panel: 'within', x: 111, y: 349 },
-    'rear_door_right': { panel: 'within', x: 111, y: 349 },
-    'rear_door_(right)_-_replacement': { panel: 'within', x: 111, y: 349 },
+    'rear_right_door': { panel: 'within', x: 448, y: 370 },
+    'rear_door_right': { panel: 'within', x: 448, y: 370 },
+    'rear_door_(right)_-_replacement': { panel: 'within', x: 448, y: 370 },
     
     'right_quarter_panel': { panel: 'within', x: 465, y: 390 },
     'quarter_panel_right': { panel: 'within', x: 465, y: 390 },
