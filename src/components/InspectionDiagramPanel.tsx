@@ -319,16 +319,12 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
 };
 
 const DiagramMarkerWithTooltip: React.FC<{ marker: DiagramMarker; index: number }> = ({ marker, index }) => {
-  const [open, setOpen] = React.useState(false);
-  
   return (
-    <Tooltip open={open} onOpenChange={setOpen}>
+    <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
         <g 
           className="cursor-pointer hover:opacity-90 transition-opacity" 
           style={{ pointerEvents: 'all' }}
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
         >
           <circle
             cx={marker.x}
@@ -338,7 +334,6 @@ const DiagramMarkerWithTooltip: React.FC<{ marker: DiagramMarker; index: number 
             stroke="white"
             strokeWidth="3"
             className="transition-all"
-            style={{ pointerEvents: 'all' }}
           />
           <text
             x={marker.x}
@@ -378,8 +373,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
   const hasData = outerInspectionData && outerInspectionData.length > 0;
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <Card className={`overflow-hidden ${className}`}>
+    <Card className={`overflow-hidden ${className}`}>
         {/* Debug info banner */}
         {hasData && !hasAnyMarkers && (
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
@@ -417,9 +411,11 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
               className="absolute inset-0 w-full h-full"
               style={{ pointerEvents: 'none' }}
             >
-              {within.map((marker, idx) => (
-                <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
-              ))}
+              <TooltipProvider delayDuration={0}>
+                {within.map((marker, idx) => (
+                  <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
+                ))}
+              </TooltipProvider>
             </svg>
           </div>
 
@@ -435,9 +431,11 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
               className="absolute inset-0 w-full h-full"
               style={{ pointerEvents: 'none' }}
             >
-              {out.map((marker, idx) => (
-                <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
-              ))}
+              <TooltipProvider delayDuration={0}>
+                {out.map((marker, idx) => (
+                  <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
+                ))}
+              </TooltipProvider>
             </svg>
           </div>
         </div>
@@ -458,6 +456,5 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           </div>
         </div>
       </Card>
-    </TooltipProvider>
   );
 };
