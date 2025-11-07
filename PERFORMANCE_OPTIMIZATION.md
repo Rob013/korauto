@@ -4,7 +4,7 @@ This document outlines the performance improvements implemented in the Korauto a
 
 ## Overview
 
-The optimization effort focused on improving performance and data loading efficiency through targeted changes to caching strategies, bundle optimization, data fetching patterns, and aggressive prefetching.
+The optimization effort focused on improving performance and data loading efficiency through targeted changes to caching strategies, bundle optimization, and data fetching patterns.
 
 ## Key Performance Improvements
 
@@ -34,20 +34,11 @@ The optimization effort focused on improving performance and data loading effici
   - Static assets: 24hr cache
   - Images: 1hr cache
 
-### 5. Car Details Instant Loading 🚀 (NEW)
-- **SessionStorage-first strategy**: Checks fastest cache first for instant loads
-- **Parallel API fetching**: Multiple endpoints queried simultaneously (not sequential)
-- **Reduced API timeout**: 10s → 5s for faster error handling
-- **Stale-while-revalidate**: Shows cached data instantly, updates in background
-- **Prefetching on hover**: Car data preloaded when user hovers over cards
-- **Background refresh**: Fresh data fetched silently without blocking UI
-
-### 6. New Performance Tools 🛠️
+### 5. New Performance Tools 🛠️
 - **Debounced search**: 300ms delay with result caching
 - **Batch API requestor**: Reduces server load with intelligent batching
 - **Virtual scrolling**: For large lists with configurable overscan
 - **Resource preloader**: Critical asset preloading strategies
-- **Car prefetch hook**: Preloads car data on hover for instant navigation
 
 ## Technical Details
 
@@ -74,29 +65,6 @@ refetchOnMount: 'if-stale',   // Only if data is stale
 API_CACHE: 5 * 60 * 1000,     // 5 minutes
 STATIC_CACHE: 24 * 60 * 60 * 1000, // 24 hours
 IMAGE_CACHE: 60 * 60 * 1000   // 1 hour
-
-// Car Details Loading Strategy
-1. Check sessionStorage (instant ~1ms)
-2. Show cached data immediately if available
-3. Fetch fresh data in background (parallel APIs)
-4. Update UI silently when fresh data arrives
-```
-
-### Car Details Optimization Flow
-```typescript
-// Instant loading strategy
-1. User clicks/hovers on car card
-2. Check sessionStorage → INSTANT load (<5ms)
-3. If not in session, check Supabase cache
-4. Show data immediately (no loading spinner)
-5. Fetch fresh data in parallel from 2 APIs
-6. Update data silently in background
-
-// Prefetch on hover
-onMouseEnter → prefetchCar(lotNumber)
-- Loads data before user clicks
-- Stores in sessionStorage
-- Makes navigation feel instant
 ```
 
 ### Image Optimization
@@ -115,18 +83,12 @@ const imageCache = new Map<string, boolean>();
 - Build time: 14.35s
 - Cache duration: 1hr for cars, 5min for queries
 - No service worker caching
-- Car details load: 2-10 seconds (sequential API calls)
-- No prefetching
 
 ### After Optimization
 - Vendor bundle: 140.41 KB (45.04 KB gzipped) - **13% reduction**
 - Build time: 15.85s (stable with more optimizations)
 - Cache duration: 4hr for cars, 10min for queries
 - Service worker with intelligent caching
-- Car details load: **<50ms instant** (sessionStorage) or **<200ms** (cache)
-- Background refresh: Updates silently without blocking
-- Prefetch on hover: Data ready before click
-- Parallel API calls: 2x faster than sequential
 
 ## Usage Examples
 
@@ -161,18 +123,6 @@ const { preloadCriticalAssets, preloadRouteResources } = useResourcePreloader();
 // Auto-preloads fonts, critical CSS, and images based on connection
 preloadCriticalAssets();
 preloadRouteResources('catalog');
-```
-
-### Car Prefetching (NEW)
-```typescript
-import { useCarPrefetch } from '@/hooks/useCarPrefetch';
-
-const { prefetchCar } = useCarPrefetch();
-
-// Prefetch on hover for instant loading
-<div onMouseEnter={() => prefetchCar(lotNumber)}>
-  {/* Car card */}
-</div>
 ```
 
 ## Best Practices Implemented

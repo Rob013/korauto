@@ -32,7 +32,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
-import { useCarPrefetch } from "@/hooks/useCarPrefetch";
 interface CarCardProps {
   id: string;
   make: string;
@@ -266,7 +265,6 @@ const CarCard = ({
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
-  const { prefetchCar } = useCarPrefetch();
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -407,13 +405,6 @@ const CarCard = ({
     window.open(`/car/${lot ?? id}`, '_blank');
   }, [id, lot, setPreviousPage]);
 
-  // OPTIMIZATION: Prefetch car data on hover for instant loading
-  const handleMouseEnter = useCallback(() => {
-    if (lot || id) {
-      prefetchCar(lot ?? id);
-    }
-  }, [lot, id, prefetchCar]);
-
   const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
 
   // Don't render the component if it should be hidden
@@ -425,8 +416,6 @@ const CarCard = ({
     <div
       className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps car-card-container"
       onClick={handleCardClick}
-      onMouseEnter={handleMouseEnter}
-      onFocus={handleMouseEnter}
       style={{
         // Prevent layout shifts by setting fixed dimensions
         minHeight: '360px',
