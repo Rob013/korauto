@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +6,6 @@ import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { hasRealPricing, calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from '@/utils/carPricing';
 import CarCard from './CarCard';
-import { preloadCarDetailsPage, prefetchCarDetails } from '@/services/carPrefetch';
 
 interface SimilarCarsTabProps {
   carMake: string;
@@ -20,17 +19,6 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
   const { convertUSDtoEUR, exchangeRate } = useCurrencyAPI();
   const [similarCars, setSimilarCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const openCarDetails = useCallback((target: string | number | undefined | null) => {
-    if (target == null || target === '') {
-      return;
-    }
-
-    const identifier = String(target);
-    void preloadCarDetailsPage();
-    void prefetchCarDetails(identifier);
-    navigate(`/car/${identifier}`);
-  }, [navigate]);
 
   useEffect(() => {
     const loadSimilarCars = async () => {
@@ -109,7 +97,7 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
                 <div 
                   key={car.id} 
                   className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card"
-                  onClick={() => openCarDetails(lot?.lot || car.id)}
+                  onClick={() => navigate(`/car/${lot?.lot || car.id}`)}
                 >
                   <div className="font-medium text-foreground">
                     {car.year} {typeof car.manufacturer === 'object' ? car.manufacturer?.name || '' : car.manufacturer || ''} {typeof car.model === 'object' ? car.model?.name || '' : car.model || ''}
