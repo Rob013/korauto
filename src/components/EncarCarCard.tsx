@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { preloadCarDetailsPage, prefetchCarDetails } from "@/services/carPrefetch";
 import { 
   Car, MapPin, Gauge, Fuel, Calendar, Eye,
   Heart, Share2, ArrowRight, MessageCircle, Shield, 
@@ -136,10 +135,7 @@ const EncarCarCard = ({
   const handleCardClick = () => {
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
-
-    void preloadCarDetailsPage();
-    void prefetchCarDetails(id);
-
+    
     // Open in new tab to preserve catalog state and scroll position
     window.open(`/car/${id}`, '_blank');
   };
