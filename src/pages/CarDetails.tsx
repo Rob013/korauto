@@ -1137,21 +1137,31 @@ const CarDetails = memo(() => {
       return null;
     }
 
+    // OPTIMIZATION 1: Try sessionStorage FIRST (fastest)
     try {
-      console.log('🔍 Attempting to load from cache for lot:', lot);
+      const sessionData = sessionStorage.getItem(`car_${lot}`);
+      if (sessionData) {
+        console.log('⚡ Instant load from sessionStorage');
+        const restoredCar = JSON.parse(sessionData);
+        setCar(restoredCar);
+        setLoading(false);
+        return restoredCar;
+      }
+    } catch (sessionError) {
+      console.warn('Failed to restore from sessionStorage:', sessionError);
+    }
+
+    // OPTIMIZATION 2: Load from Supabase cache in parallel with API
+    try {
+      console.log('🔍 Loading from Supabase cache for lot:', lot);
       const { data, error } = await supabase
         .from('cars_cache')
         .select('*')
         .or(`lot_number.eq.${lot},api_id.eq.${lot}`)
         .maybeSingle();
 
-      if (error) {
-        console.warn('Failed to load cached car', error);
-        return null;
-      }
-
-      if (data) {
-        console.log('✅ Found cached car data:', data);
+      if (!error && data) {
+        console.log('✅ Found cached car data');
         const cachedCar = transformCachedCarRecord(data);
         const lotData = cachedCar?.lots?.[0];
         const details = buildCarDetails(cachedCar, lotData);
@@ -1159,7 +1169,7 @@ const CarDetails = memo(() => {
           console.log('✅ Successfully built car details from cache');
           setCar(details);
           setLoading(false);
-          // Store in sessionStorage for page visibility restoration
+          // Store in sessionStorage for faster subsequent loads
           try {
             sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
           } catch (storageError) {
@@ -1170,20 +1180,6 @@ const CarDetails = memo(() => {
       }
     } catch (cacheError) {
       console.warn('Cache hydration failed', cacheError);
-    }
-
-    // Try sessionStorage as backup
-    try {
-      const sessionData = sessionStorage.getItem(`car_${lot}`);
-      if (sessionData) {
-        console.log('✅ Restored car from sessionStorage');
-        const restoredCar = JSON.parse(sessionData);
-        setCar(restoredCar);
-        setLoading(false);
-        return restoredCar;
-      }
-    } catch (sessionError) {
-      console.warn('Failed to restore from sessionStorage:', sessionError);
     }
 
     return null;
@@ -1249,43 +1245,34 @@ const CarDetails = memo(() => {
   useEffect(() => {
     let isMounted = true;
 
-    const fetchFromApi = async () => {
+    const fetchFromApi = async (showLoadingState = true) => {
       if (!lot) return;
       
-      // Check if car is already loaded (from cache restoration)
-      if (car) {
-        console.log('✅ Car already loaded from cache, skipping API fetch');
-        return;
-      }
-      
       try {
+        // OPTIMIZATION: Reduced timeout from 10s to 5s
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        let response: Response;
-        try {
-          response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
+        // OPTIMIZATION: Try both endpoints in parallel instead of sequential
+        const fetchPromises = [
+          fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+            headers: { accept: "*/*", "x-api-key": API_KEY },
             signal: controller.signal
-          });
-        } catch (firstAttemptError) {
-          console.log("First API attempt failed, trying as lot number...");
-          response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
+          }).catch(() => null),
+          fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
+            headers: { accept: "*/*", "x-api-key": API_KEY },
             signal: controller.signal
-          });
-        }
+          }).catch(() => null)
+        ];
 
+        const responses = await Promise.all(fetchPromises);
         clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        // Use the first successful response
+        const response = responses.find(r => r?.ok);
+        
+        if (!response || !response.ok) {
+          throw new Error(`API returned error`);
         }
 
         const data = await response.json();
@@ -1303,7 +1290,7 @@ const CarDetails = memo(() => {
 
         setCar(details);
         setLoading(false);
-        // Store in sessionStorage
+        // Store in sessionStorage for instant future loads
         try {
           sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
         } catch (storageError) {
@@ -1314,6 +1301,7 @@ const CarDetails = memo(() => {
         console.error("Failed to fetch car data:", apiError);
         if (!isMounted) return;
 
+        // Try fallback data
         const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
         if (fallbackCar && fallbackCar.lots?.[0]) {
           const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
@@ -1325,23 +1313,32 @@ const CarDetails = memo(() => {
           }
         }
 
-        const errorMessage = apiError instanceof Error
-          ? apiError.message.includes("Failed to fetch")
-            ? "Unable to connect to the server. Please check your internet connection and try again."
-            : apiError.message.includes("404")
-              ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
-              : "Car not found"
-          : "Car not found";
-        setError(errorMessage);
-        setLoading(false);
+        // Only show error if we don't have cached data
+        if (!car && showLoadingState) {
+          const errorMessage = apiError instanceof Error
+            ? apiError.message.includes("Failed to fetch")
+              ? "Unable to connect to the server. Please check your internet connection and try again."
+              : apiError.message.includes("404")
+                ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
+                : "Car not found"
+            : "Car not found";
+          setError(errorMessage);
+          setLoading(false);
+        }
       }
     };
 
     const loadCar = async () => {
+      // OPTIMIZATION: Load cache immediately, then fetch API in background
       const cachedData = await hydrateFromCache();
-      // Only fetch from API if cache didn't provide data
-      if (!cachedData) {
-        await fetchFromApi();
+      
+      if (cachedData) {
+        // Cache hit! Show data immediately and fetch fresh data in background
+        console.log('⚡ Showing cached data, fetching fresh data in background...');
+        fetchFromApi(false); // Don't show loading state
+      } else {
+        // Cache miss, show loading and fetch
+        await fetchFromApi(true);
       }
     };
 
