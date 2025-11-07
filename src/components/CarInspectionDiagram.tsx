@@ -294,66 +294,36 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         </div>
       </div>
 
-      {/* Car Diagram - 4 views - LARGER */}
+      {/* Car Diagram - 2 views - LARGER */}
       <div className="mb-6 border border-border rounded-lg overflow-hidden bg-background">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
-          {/* Left Side */}
-          <div className="border-r border-border">
-            <div className="relative aspect-square bg-muted/10 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+          {/* Outside View (Jasht) */}
+          <div className="border-b md:border-b-0 md:border-r border-border">
+            <div className="relative w-full bg-muted/10 p-8" style={{ minHeight: '400px' }}>
               <img 
                 src={carDiagramTop} 
-                alt="Pamja e majtë" 
+                alt="Pamja nga jashtë" 
                 className="w-full h-full object-contain"
               />
-              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
-                Majtas
-              </div>
-              {renderDamageIndicators('left')}
-            </div>
-          </div>
-
-          {/* Top View */}
-          <div className="border-r border-border">
-            <div className="relative aspect-square bg-muted/10 p-6">
-              <img 
-                src={carDiagramTop} 
-                alt="Pamja nga sipër" 
-                className="w-full h-full object-contain"
-              />
-              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
-                Nga sipër
+              <div className="absolute top-4 left-4 bg-background/90 px-3 py-2 rounded text-sm font-semibold border border-border">
+                Jashtë
               </div>
               {renderDamageIndicators('top')}
             </div>
           </div>
 
-          {/* Rear View */}
-          <div className="border-r border-border md:border-r">
-            <div className="relative aspect-square bg-muted/10 p-6">
+          {/* Inside View (Mbrenda) */}
+          <div>
+            <div className="relative w-full bg-muted/10 p-8" style={{ minHeight: '400px' }}>
               <img 
                 src={carDiagramBottom} 
-                alt="Pamja nga mbrapa" 
+                alt="Pamja nga brenda" 
                 className="w-full h-full object-contain"
               />
-              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
-                Mbrapa
+              <div className="absolute top-4 left-4 bg-background/90 px-3 py-2 rounded text-sm font-semibold border border-border">
+                Brenda
               </div>
               {renderDamageIndicators('bottom')}
-            </div>
-          </div>
-
-          {/* Right Side */}
-          <div>
-            <div className="relative aspect-square bg-muted/10 p-6">
-              <img 
-                src={carDiagramTop} 
-                alt="Pamja e djathtë" 
-                className="w-full h-full object-contain transform scale-x-[-1]"
-              />
-              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
-                Djathtas
-              </div>
-              {renderDamageIndicators('right')}
             </div>
           </div>
         </div>
