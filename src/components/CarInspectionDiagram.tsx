@@ -251,33 +251,62 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     const statuses: Array<{ code: string; title: string }> = [];
     for (const item of inspectionData) {
       const typeTitle = (item?.type?.title || '').toString();
+      const typeCode = item?.type?.code || '';
+      
+      // Match by code or title
       const matches =
-        item?.type?.code === partId ||
+        typeCode === partId ||
         titleMatchesPart(typeTitle, partId);
+      
       if (!matches) continue;
 
+      // Primary: Use statusTypes array from API
       const st = Array.isArray(item.statusTypes) ? item.statusTypes : [];
       if (st.length > 0) {
         statuses.push(...st);
-      } else {
-        // Derive from title if codes missing
-        const low = typeTitle.toLowerCase();
-        if (low.includes('exchange') || low.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
-        if (low.includes('weld') || low.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });
-        if (low.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
-        if (low.includes('scratch')) statuses.push({ code: 'S', title: 'Scratch' });
-        if (low.includes('corr')) statuses.push({ code: 'U', title: 'Corrosion' });
       }
 
-      // Derive from attributes too (if present)
+      // Check attributes array for RANK indicators (e.g., RANK_ONE, RANK_A, RANK_B)
       const attrs = Array.isArray((item as any).attributes) ? ((item as any).attributes as string[]) : [];
-      const attrsText = attrs.join(' ').toLowerCase();
-      if (attrsText) {
-        if (attrsText.includes('exchange') || attrsText.includes('replacement')) statuses.push({ code: 'X', title: 'Exchange (replacement)' });
-        if (attrsText.includes('weld') || attrsText.includes('sheet metal')) statuses.push({ code: 'W', title: 'Welding' });
-        if (attrsText.includes('repair')) statuses.push({ code: 'A', title: 'Repair' });
-        if (attrsText.includes('scratch')) statuses.push({ code: 'S', title: 'Scratch' });
-        if (attrsText.includes('corr')) statuses.push({ code: 'U', title: 'Corrosion' });
+      const hasHighRank = attrs.some(attr => 
+        typeof attr === 'string' && (
+          attr.includes('RANK_ONE') || 
+          attr.includes('RANK_TWO') || 
+          attr.includes('RANK_A') || 
+          attr.includes('RANK_B') ||
+          attr.includes('RANK_C')
+        )
+      );
+      
+      // If no explicit statusTypes but has high rank attributes, infer from title
+      if (st.length === 0 && hasHighRank) {
+        const low = typeTitle.toLowerCase();
+        if (low.includes('exchange') || low.includes('replacement') || low.includes('교환')) {
+          statuses.push({ code: 'X', title: 'Exchange (replacement)' });
+        }
+        if (low.includes('weld') || low.includes('sheet metal') || low.includes('용접')) {
+          statuses.push({ code: 'W', title: 'Welding' });
+        }
+        if (low.includes('repair') || low.includes('수리')) {
+          statuses.push({ code: 'A', title: 'Repair' });
+        }
+        if (low.includes('scratch') || low.includes('흠집')) {
+          statuses.push({ code: 'S', title: 'Scratch' });
+        }
+        if (low.includes('corr') || low.includes('부식')) {
+          statuses.push({ code: 'U', title: 'Corrosion' });
+        }
+      }
+
+      // Log for debugging
+      if (matches && (st.length > 0 || hasHighRank)) {
+        console.log(`🔍 Part ${partId} matched:`, {
+          typeCode,
+          typeTitle,
+          statusTypes: st,
+          attributes: attrs,
+          inferredStatuses: statuses
+        });
       }
     }
     return statuses;
@@ -286,27 +315,48 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
   if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
 
+  // Check status codes and titles (Korean and English)
   const hasExchange = statuses.some(
-    (s) => s.code === 'X' || s.title.includes('교환') || s.title.includes('exchange')
+    (s) => s.code === 'X' || 
+           s.code === 'N' || // N = Nderruar (Albanian for exchanged)
+           s.title?.toLowerCase().includes('교환') || 
+           s.title?.toLowerCase().includes('exchange') ||
+           s.title?.toLowerCase().includes('replacement') ||
+           s.title?.toLowerCase().includes('replaced')
   );
   const hasWelding = statuses.some(
-    (s) => s.code === 'W' || s.title.includes('용접') || s.title.includes('weld')
+    (s) => s.code === 'W' || 
+           s.code === 'S' || // S = Saldim (Albanian for welding)
+           s.title?.toLowerCase().includes('용접') || 
+           s.title?.toLowerCase().includes('weld') ||
+           s.title?.toLowerCase().includes('sheet metal')
   );
   const hasRepair = statuses.some(
-    (s) => s.code === 'A' || s.title.includes('수리') || s.title.includes('repair')
+    (s) => s.code === 'A' || 
+           s.code === 'R' || // R = Riparuar (Albanian for repaired)
+           s.title?.toLowerCase().includes('수리') || 
+           s.title?.toLowerCase().includes('repair')
   );
   const hasCorrosion = statuses.some(
-    (s) => s.code === 'U' || s.title.includes('부식') || s.title.includes('corr')
+    (s) => s.code === 'U' || 
+           s.code === 'K' || // K = Korrozion (Albanian for corrosion)
+           s.title?.toLowerCase().includes('부식') || 
+           s.title?.toLowerCase().includes('corr')
   );
   const hasScratch = statuses.some(
-    (s) => s.code === 'S' || s.title.includes('흠집') || s.title.includes('scratch')
+    (s) => s.code === 'S' || 
+           s.title?.toLowerCase().includes('흠집') || 
+           s.title?.toLowerCase().includes('scratch')
   );
 
-  if (hasExchange) return 'hsl(0 84% 60%)'; // Red for replaced parts
-  if (hasWelding) return 'hsl(217 91% 60%)'; // Blue for welded parts
-  if (hasRepair) return 'hsl(25 95% 53%)'; // Orange
-  if (hasCorrosion) return 'hsl(25 95% 53%)'; // Orange
-  if (hasScratch) return 'hsl(48 96% 53%)'; // Yellow
+  // RED for critical replacements/exchanges
+  if (hasExchange) return 'hsl(0 84% 60%)';
+  // BLUE for welding
+  if (hasWelding) return 'hsl(217 91% 60%)';
+  // ORANGE for repairs and corrosion
+  if (hasRepair || hasCorrosion) return 'hsl(25 95% 53%)';
+  // YELLOW for scratches
+  if (hasScratch) return 'hsl(48 96% 53%)';
 
   return 'hsl(142 76% 36%)'; // Green
 };
@@ -329,14 +379,22 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   return 'Pjesë normale';
 };
 
-  // Count all types of issues from API data
+  // Count all types of issues from API data with improved detection
   const issueCount = {
     replacements: inspectionData.filter(item => {
       const t = (item?.type?.title || '').toString().toLowerCase();
       const codes = item.statusTypes?.map(s => s.code) || [];
+      const attrs = Array.isArray((item as any).attributes) ? ((item as any).attributes as string[]) : [];
+      const hasRank = attrs.some(attr => typeof attr === 'string' && attr.includes('RANK'));
+      
       return (
-        codes.includes('X') ||
-        t.includes('exchange') || t.includes('replacement') || t.includes('교환')
+        codes.includes('X') || 
+        codes.includes('N') ||
+        t.includes('exchange') || 
+        t.includes('replacement') || 
+        t.includes('replaced') ||
+        t.includes('교환') ||
+        (hasRank && t.includes('exchange'))
       );
     }).length,
     welds: inspectionData.filter(item => {
@@ -344,7 +402,10 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       const codes = item.statusTypes?.map(s => s.code) || [];
       return (
         codes.includes('W') ||
-        t.includes('weld') || t.includes('sheet metal') || t.includes('용접')
+        codes.includes('S') ||
+        t.includes('weld') || 
+        t.includes('sheet metal') || 
+        t.includes('용접')
       );
     }).length,
     repairs: inspectionData.filter(item => {
@@ -352,7 +413,9 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       const codes = item.statusTypes?.map(s => s.code) || [];
       return (
         codes.includes('A') ||
-        t.includes('repair') || t.includes('수리')
+        codes.includes('R') ||
+        t.includes('repair') || 
+        t.includes('수리')
       );
     }).length,
     corrosion: inspectionData.filter(item => {
@@ -360,7 +423,9 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       const codes = item.statusTypes?.map(s => s.code) || [];
       return (
         codes.includes('U') ||
-        t.includes('corr') || t.includes('부식')
+        codes.includes('K') ||
+        t.includes('corr') || 
+        t.includes('부식')
       );
     }).length,
     scratches: inspectionData.filter(item => {
@@ -368,10 +433,23 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       const codes = item.statusTypes?.map(s => s.code) || [];
       return (
         codes.includes('S') ||
-        t.includes('scratch') || t.includes('흠집')
+        t.includes('scratch') || 
+        t.includes('흠집')
       );
     }).length,
   };
+
+  // Log for debugging
+  console.log('📊 Inspection Statistics:', {
+    totalItems: inspectionData.length,
+    issueCount,
+    sampleData: inspectionData.slice(0, 2).map(item => ({
+      title: item?.type?.title,
+      code: item?.type?.code,
+      statusTypes: item.statusTypes,
+      attributes: (item as any).attributes
+    }))
+  });
 
   return (
     <div className={`w-full ${className}`}>
@@ -489,7 +567,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
 
                           const n = markers.length;
                           const base = part.markerPos || part.labelPos;
-                          const spacing = 16;
+                          const spacing = 24; // Increased spacing for bigger markers
                           
                           return markers.map((m, idx) => {
                             const offset = (idx - (n - 1) / 2) * spacing;
@@ -497,26 +575,43 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             const cy = base.y;
                             return (
                               <g key={`${part.id}-mrk-${idx}`}>
+                                {/* Outer glow for better visibility */}
                                 <circle 
                                   cx={cx} 
                                   cy={cy} 
-                                  r={11} 
+                                  r={22} 
                                   fill={m.color} 
-                                  stroke="white" 
-                                  strokeWidth={2}
+                                  fillOpacity={0.15}
+                                  filter="url(#glow)"
+                                />
+                                {/* Main marker - BIGGER AND BOLDER */}
+                                <circle 
+                                  cx={cx} 
+                                  cy={cy} 
+                                  r={16} 
+                                  fill={m.color} 
+                                  fillOpacity={0.5}
+                                  stroke={m.color} 
+                                  strokeWidth={5}
                                   filter={isHovered || isSelected ? 'url(#glow)' : undefined}
                                   className="transition-all duration-200"
                                 />
+                                {/* Text - BIGGER AND BOLDER */}
                                 <text 
                                   x={cx} 
                                   y={cy} 
                                   textAnchor="middle" 
                                   dominantBaseline="central" 
-                                  fontSize={9} 
-                                  fontWeight={700} 
+                                  fontSize={14} 
+                                  fontWeight={900} 
                                   fill="white"
                                   className="pointer-events-none select-none"
-                                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+                                  style={{ 
+                                    textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)',
+                                    paintOrder: 'stroke fill'
+                                  }}
+                                  stroke={m.color}
+                                  strokeWidth="1"
                                 >
                                   {m.char}
                                 </text>
