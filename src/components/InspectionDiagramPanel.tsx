@@ -42,32 +42,32 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'radiator_support': { panel: 'within', x: 320, y: 105 },
     'cowl_panel': { panel: 'within', x: 320, y: 160 },
     
-    // Left side (driver side in Korean cars)
-    'front_left_fender': { panel: 'within', x: 180, y: 160 },
-    'front_fender_left': { panel: 'within', x: 180, y: 160 },
-    'left_fender': { panel: 'within', x: 180, y: 160 },
-    'fender_left': { panel: 'within', x: 180, y: 160 },
+    // Left side (driver side in Korean cars) - PRECISE POSITIONS FROM REFERENCE
+    'front_left_fender': { panel: 'within', x: 172, y: 265 },
+    'front_fender_left': { panel: 'within', x: 172, y: 265 },
+    'left_fender': { panel: 'within', x: 172, y: 265 },
+    'fender_left': { panel: 'within', x: 172, y: 265 },
     
-    'front_left_door': { panel: 'within', x: 125, y: 265 },
-    'front_door_left': { panel: 'within', x: 125, y: 265 },
-    'door_front_left': { panel: 'within', x: 125, y: 265 },
+    'front_left_door': { panel: 'within', x: 125, y: 305 },
+    'front_door_left': { panel: 'within', x: 125, y: 305 },
+    'door_front_left': { panel: 'within', x: 125, y: 305 },
     
-    'rear_left_door': { panel: 'within', x: 125, y: 340 },
-    'rear_door_left': { panel: 'within', x: 125, y: 340 },
-    'door_rear_left': { panel: 'within', x: 125, y: 340 },
+    'rear_left_door': { panel: 'within', x: 172, y: 340 },
+    'rear_door_left': { panel: 'within', x: 172, y: 340 },
+    'door_rear_left': { panel: 'within', x: 172, y: 340 },
     
-    'left_quarter_panel': { panel: 'within', x: 170, y: 410 },
-    'quarter_panel_left': { panel: 'within', x: 170, y: 410 },
-    'left_quarter': { panel: 'within', x: 170, y: 410 },
-    'quarter_left': { panel: 'within', x: 170, y: 410 },
-    'rear_fender_left': { panel: 'within', x: 170, y: 410 },
-    'left_rear_fender': { panel: 'within', x: 170, y: 410 },
+    'left_quarter_panel': { panel: 'within', x: 175, y: 410 },
+    'quarter_panel_left': { panel: 'within', x: 175, y: 410 },
+    'left_quarter': { panel: 'within', x: 175, y: 410 },
+    'quarter_left': { panel: 'within', x: 175, y: 410 },
+    'rear_fender_left': { panel: 'within', x: 175, y: 410 },
+    'left_rear_fender': { panel: 'within', x: 175, y: 410 },
     
-    'side_sill_panel_left': { panel: 'within', x: 155, y: 305 },
-    'side_sill_left': { panel: 'within', x: 155, y: 305 },
-    'rocker_panel_left': { panel: 'within', x: 155, y: 305 },
-    'side_room_panel_left': { panel: 'within', x: 155, y: 305 },
-    'side_panel_left': { panel: 'within', x: 155, y: 305 },
+    'side_sill_panel_left': { panel: 'within', x: 252, y: 780 },
+    'side_sill_left': { panel: 'within', x: 252, y: 780 },
+    'rocker_panel_left': { panel: 'within', x: 252, y: 780 },
+    'side_room_panel_left': { panel: 'within', x: 252, y: 780 },
+    'side_panel_left': { panel: 'within', x: 252, y: 780 },
     
     // Right side (passenger side)
     'front_right_fender': { panel: 'within', x: 460, y: 160 },
@@ -97,13 +97,13 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     
     // ===== OUT PANEL (Rear/Bottom View) =====
     
-    // Rear section
-    'trunk': { panel: 'out', x: 320, y: 385 },
+    // Rear section - PRECISE POSITIONS FROM REFERENCE
+    'trunk': { panel: 'out', x: 837, y: 415 },
     'trunk_lid': { panel: 'out', x: 320, y: 405 },
     'deck_lid': { panel: 'out', x: 320, y: 405 },
-    'trunk_floor': { panel: 'out', x: 320, y: 395 },
-    'luggage_floor': { panel: 'out', x: 320, y: 395 },
-    'floor_trunk': { panel: 'out', x: 320, y: 395 },
+    'trunk_floor': { panel: 'out', x: 903, y: 562 },
+    'luggage_floor': { panel: 'out', x: 903, y: 562 },
+    'floor_trunk': { panel: 'out', x: 903, y: 562 },
     
     'rear_panel': { panel: 'out', x: 320, y: 425 },
     'back_panel': { panel: 'out', x: 320, y: 425 },
@@ -111,11 +111,11 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'rear_bumper': { panel: 'out', x: 320, y: 450 },
     'back_bumper': { panel: 'out', x: 320, y: 450 },
     
-    // Wheel houses
-    'rear_wheel_house_left': { panel: 'out', x: 215, y: 410 },
-    'rear_wheelhouse_left': { panel: 'out', x: 215, y: 410 },
-    'wheel_house_rear_left': { panel: 'out', x: 215, y: 410 },
-    'wheelhouse_rear_left': { panel: 'out', x: 215, y: 410 },
+    // Wheel houses - PRECISE POSITIONS FROM REFERENCE
+    'rear_wheel_house_left': { panel: 'out', x: 903, y: 615 },
+    'rear_wheelhouse_left': { panel: 'out', x: 903, y: 615 },
+    'wheel_house_rear_left': { panel: 'out', x: 903, y: 615 },
+    'wheelhouse_rear_left': { panel: 'out', x: 903, y: 615 },
     
     'rear_wheel_house_right': { panel: 'out', x: 425, y: 410 },
     'rear_wheelhouse_right': { panel: 'out', x: 425, y: 410 },
@@ -276,7 +276,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
       // Check for collision with existing markers and offset if needed
       let finalX = pos.x;
       let finalY = pos.y;
-      const collisionRadius = 18; // Minimum distance between markers
+      const collisionRadius = 35; // Minimum distance between markers
       
       const markersToCheck = pos.panel === 'within' ? withinMarkers : outMarkers;
       let hasCollision = true;
@@ -347,12 +347,12 @@ const DiagramMarkerWithTooltip: React.FC<{
   const topPercent = (marker.y / 600) * 100;
 
   const baseClasses =
-    "absolute -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm border-2 border-background/90 pointer-events-auto transition-all hover:scale-110";
+    "absolute -translate-x-1/2 -translate-y-1/2 w-[30px] h-[30px] rounded-full flex items-center justify-center text-[14px] font-bold shadow-md border-[3px] pointer-events-auto transition-none";
   const variantClasses =
     marker.type === "N"
-      ? "bg-destructive text-destructive-foreground"
-      : "bg-primary text-primary-foreground";
-  const editModeClasses = editMode ? "cursor-move ring-1 ring-yellow-400" : "cursor-pointer";
+      ? "bg-[#E53935] text-white border-white"
+      : "bg-[#E53935] text-white border-white";
+  const editModeClasses = editMode ? "cursor-move ring-2 ring-yellow-400" : "cursor-pointer";
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!editMode) return;
