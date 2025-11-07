@@ -105,7 +105,7 @@ export const fetchCachedCars = async (options: CacheFetchOptions = {}) => {
 
   const { data, error } = await supabase
     .from("cars_cache")
-    .select("api_id, id, make, model, price, price_usd, lot_number, sale_status, status, car_data, lot_data, images, accident_history")
+    .select("api_id, id, make, model, price, price_usd, lot_number, sale_status, car_data, lot_data, images, accident_history")
     .order("updated_at", { ascending: false })
     .limit(limit);
 
@@ -137,6 +137,16 @@ export const triggerInventoryRefresh = async (minutes = 60) => {
       },
       body: JSON.stringify({ triggeredBy: "web" }),
     });
+
+    if (response.status === 409) {
+      // Sync already running - do not treat as fatal error
+      let info: any = {};
+      try {
+        info = await response.json();
+      } catch {}
+      console.warn("Inventory refresh skipped: sync already in progress", info);
+      return { success: true, running: true, ...info };
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to trigger inventory refresh: ${response.status}`);
