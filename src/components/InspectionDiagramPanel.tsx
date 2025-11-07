@@ -265,7 +265,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
       // Check for collision with existing markers and offset if needed
       let finalX = pos.x;
       let finalY = pos.y;
-      const collisionRadius = 25; // Minimum distance between markers
+      const collisionRadius = 18; // Minimum distance between markers
       
       const markersToCheck = pos.panel === 'within' ? withinMarkers : outMarkers;
       let hasCollision = true;
@@ -336,12 +336,12 @@ const DiagramMarkerWithTooltip: React.FC<{
   const topPercent = (marker.y / 600) * 100;
 
   const baseClasses =
-    "absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shadow border border-background/80 pointer-events-auto transition-all";
+    "absolute -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm border-2 border-background/90 pointer-events-auto transition-all hover:scale-110";
   const variantClasses =
     marker.type === "N"
       ? "bg-destructive text-destructive-foreground"
       : "bg-primary text-primary-foreground";
-  const editModeClasses = editMode ? "cursor-move ring-2 ring-yellow-400" : "cursor-pointer";
+  const editModeClasses = editMode ? "cursor-move ring-1 ring-yellow-400" : "cursor-pointer";
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!editMode) return;
@@ -403,7 +403,7 @@ const DiagramMarkerWithTooltip: React.FC<{
       </TooltipTrigger>
       <TooltipContent
         side="top"
-        sideOffset={8}
+        sideOffset={5}
         className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs z-50"
       >
         <div className="font-semibold text-sm">{marker.label}</div>
