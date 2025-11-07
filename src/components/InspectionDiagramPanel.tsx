@@ -35,66 +35,66 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     // ===== WITHIN PANEL (Top/Side View) =====
     
     // Front section
-    'hood': { panel: 'within', x: 320, y: 150 },
-    'bonnet': { panel: 'within', x: 320, y: 150 },
-    'front_panel': { panel: 'within', x: 320, y: 95 },
-    'front_bumper': { panel: 'within', x: 320, y: 75 },
-    'radiator_support': { panel: 'within', x: 320, y: 105 },
-    'cowl_panel': { panel: 'within', x: 320, y: 160 },
+    'hood': { panel: 'within', x: 320, y: 168 },
+    'bonnet': { panel: 'within', x: 320, y: 168 },
+    'front_panel': { panel: 'within', x: 320, y: 104 },
+    'front_bumper': { panel: 'within', x: 320, y: 48 },
+    'radiator_support': { panel: 'within', x: 320, y: 170 },
+    'cowl_panel': { panel: 'within', x: 320, y: 200 },
     
     // Left side (driver side in Korean cars) - EXACT POSITIONS FROM REFERENCE IMAGE
-    'front_left_fender': { panel: 'within', x: 175, y: 218 },
-    'front_fender_left': { panel: 'within', x: 175, y: 218 },
-    'left_fender': { panel: 'within', x: 175, y: 218 },
-    'fender_left': { panel: 'within', x: 175, y: 218 },
-    
-    'front_left_door': { panel: 'within', x: 192, y: 255 },
-    'front_door_left': { panel: 'within', x: 192, y: 255 },
-    'door_front_left': { panel: 'within', x: 192, y: 255 },
-    
-    'rear_left_door': { panel: 'within', x: 192, y: 370 },
-    'rear_door_left': { panel: 'within', x: 192, y: 370 },
-    'door_rear_left': { panel: 'within', x: 192, y: 370 },
-    
-    'left_quarter_panel': { panel: 'within', x: 180, y: 365 },
-    'quarter_panel_left': { panel: 'within', x: 180, y: 365 },
-    'left_quarter': { panel: 'within', x: 180, y: 365 },
-    'quarter_left': { panel: 'within', x: 180, y: 365 },
-    'rear_fender_left': { panel: 'within', x: 180, y: 365 },
-    'left_rear_fender': { panel: 'within', x: 180, y: 365 },
-    
-    'side_sill_panel_left': { panel: 'within', x: 255, y: 535 },
-    'side_sill_left': { panel: 'within', x: 255, y: 535 },
-    'rocker_panel_left': { panel: 'within', x: 255, y: 535 },
-    'side_room_panel_left': { panel: 'within', x: 255, y: 535 },
-    'side_panel_left': { panel: 'within', x: 255, y: 535 },
+    'front_left_fender': { panel: 'within', x: 161, y: 193 },
+    'front_fender_left': { panel: 'within', x: 161, y: 193 },
+    'left_fender': { panel: 'within', x: 161, y: 193 },
+    'fender_left': { panel: 'within', x: 161, y: 193 },
+
+    'front_left_door': { panel: 'within', x: 172, y: 267 },
+    'front_door_left': { panel: 'within', x: 172, y: 267 },
+    'door_front_left': { panel: 'within', x: 172, y: 267 },
+
+    'rear_left_door': { panel: 'within', x: 178, y: 357 },
+    'rear_door_left': { panel: 'within', x: 178, y: 357 },
+    'door_rear_left': { panel: 'within', x: 178, y: 357 },
+
+    'left_quarter_panel': { panel: 'within', x: 173, y: 429 },
+    'quarter_panel_left': { panel: 'within', x: 173, y: 429 },
+    'left_quarter': { panel: 'within', x: 173, y: 429 },
+    'quarter_left': { panel: 'within', x: 173, y: 429 },
+    'rear_fender_left': { panel: 'within', x: 173, y: 429 },
+    'left_rear_fender': { panel: 'within', x: 173, y: 429 },
+
+    'side_sill_panel_left': { panel: 'within', x: 290, y: 510 },
+    'side_sill_left': { panel: 'within', x: 290, y: 510 },
+    'rocker_panel_left': { panel: 'within', x: 290, y: 510 },
+    'side_room_panel_left': { panel: 'within', x: 176, y: 317 },
+    'side_panel_left': { panel: 'within', x: 176, y: 317 },
     
     // Right side (passenger side)
-    'front_right_fender': { panel: 'within', x: 460, y: 160 },
-    'front_fender_right': { panel: 'within', x: 460, y: 160 },
-    'right_fender': { panel: 'within', x: 460, y: 160 },
-    'fender_right': { panel: 'within', x: 460, y: 160 },
-    
-    'front_right_door': { panel: 'within', x: 448, y: 255 },
-    'front_door_right': { panel: 'within', x: 448, y: 255 },
-    
-    'rear_right_door': { panel: 'within', x: 448, y: 370 },
-    'rear_door_right': { panel: 'within', x: 448, y: 370 },
-    'rear_door_(right)_-_replacement': { panel: 'within', x: 448, y: 370 },
-    
-    'right_quarter_panel': { panel: 'within', x: 465, y: 390 },
-    'quarter_panel_right': { panel: 'within', x: 465, y: 390 },
-    'right_quarter': { panel: 'within', x: 465, y: 390 },
-    'quarter_right': { panel: 'within', x: 465, y: 390 },
-    
-    'side_sill_panel_right': { panel: 'within', x: 475, y: 275 },
-    'side_sill_right': { panel: 'within', x: 475, y: 275 },
-    'rocker_panel_right': { panel: 'within', x: 475, y: 275 },
+    'front_right_fender': { panel: 'within', x: 477, y: 193 },
+    'front_fender_right': { panel: 'within', x: 477, y: 193 },
+    'right_fender': { panel: 'within', x: 477, y: 193 },
+    'fender_right': { panel: 'within', x: 477, y: 193 },
+
+    'front_right_door': { panel: 'within', x: 467, y: 267 },
+    'front_door_right': { panel: 'within', x: 467, y: 267 },
+
+    'rear_right_door': { panel: 'within', x: 462, y: 356 },
+    'rear_door_right': { panel: 'within', x: 462, y: 356 },
+    'rear_door_(right)_-_replacement': { panel: 'within', x: 462, y: 356 },
+
+    'right_quarter_panel': { panel: 'within', x: 466, y: 429 },
+    'quarter_panel_right': { panel: 'within', x: 466, y: 429 },
+    'right_quarter': { panel: 'within', x: 466, y: 429 },
+    'quarter_right': { panel: 'within', x: 466, y: 429 },
+
+    'side_sill_panel_right': { panel: 'within', x: 349, y: 510 },
+    'side_sill_right': { panel: 'within', x: 349, y: 510 },
+    'rocker_panel_right': { panel: 'within', x: 349, y: 510 },
     
     // Top/Roof
-    'roof': { panel: 'within', x: 320, y: 250 },
-    'roof_panel': { panel: 'within', x: 320, y: 250 },
-    'sunroof': { panel: 'within', x: 320, y: 235 },
+    'roof': { panel: 'within', x: 320, y: 295 },
+    'roof_panel': { panel: 'within', x: 320, y: 295 },
+    'sunroof': { panel: 'within', x: 320, y: 275 },
     
     // ===== OUT PANEL (Rear/Bottom View) =====
     
