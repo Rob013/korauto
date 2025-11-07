@@ -16,6 +16,7 @@ import { ImageZoom } from "@/components/ImageZoom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
+import DamageSummaryBadge from "@/components/DamageSummaryBadge";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
@@ -2177,6 +2178,78 @@ const CarDetails = memo(() => {
                       </div>}
 
                     {/* Comprehensive Inspection Report */}
+                    {(car.details?.inspect_outer || car.inspect?.outer) && (() => {
+                      // Process inspection data from API
+                      const inspectionOuterData: Array<{
+                        type: { code: string; title: string };
+                        statusTypes: Array<{ code: string; title: string }>;
+                        attributes: string[];
+                      }> = [];
+
+                      // Extract from inspect_outer (array format)
+                      if (Array.isArray(car.details?.inspect_outer)) {
+                        car.details.inspect_outer.forEach((item: any) => {
+                          if (item?.type) {
+                            inspectionOuterData.push({
+                              type: item.type,
+                              statusTypes: Array.isArray(item.statusTypes) ? item.statusTypes : [],
+                              attributes: Array.isArray(item.attributes) ? item.attributes : []
+                            });
+                          }
+                        });
+                      }
+
+                      // Extract from inspect.outer (object format)
+                      if (car.inspect?.outer && typeof car.inspect.outer === 'object') {
+                        Object.entries(car.inspect.outer).forEach(([key, values]) => {
+                          if (Array.isArray(values) && values.length > 0) {
+                            inspectionOuterData.push({
+                              type: { code: key, title: key },
+                              statusTypes: values.map((v: any) => 
+                                typeof v === 'string' 
+                                  ? { code: v, title: v }
+                                  : { code: v?.code || '', title: v?.title || '' }
+                              ),
+                              attributes: []
+                            });
+                          }
+                        });
+                      }
+
+                      if (inspectionOuterData.length === 0) return null;
+
+                      return (
+                        <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                          <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-primary" />
+                            Raporti i Inspektimit
+                          </h4>
+                          
+                          {/* Compact Damage Summary Badge */}
+                          <DamageSummaryBadge inspectionData={inspectionOuterData} />
+                          
+                          {/* Visual Inspection Diagram */}
+                          <div className="mt-4">
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Diagrami vizual tregon pozicionin e saktë të të gjitha dëmtimeve, ndërrimeve dhe riparimeve sipas të dhënave të inspektimit nga API.
+                            </p>
+                            <CarInspectionDiagram inspectionData={inspectionOuterData} />
+                          </div>
+
+                          {car.details && (
+                            <Button 
+                              onClick={handleOpenInspectionReport} 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Shiko Raportin e Plotë të Inspektimit
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>}
               </CardContent>
             </Card>

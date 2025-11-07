@@ -7,6 +7,7 @@ import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
+import DamageSummaryBadge from "@/components/DamageSummaryBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -912,6 +913,10 @@ const CarInspectionReport = () => {
                     <p className="text-xs md:text-sm text-muted-foreground">
                       Diagrami tregon dëmtimet e vërteta, riparimet dhe ndërrimet e pjesëve sipas të dhënave të inspektimit
                     </p>
+                    
+                    {/* Compact Damage Summary Badge */}
+                    <DamageSummaryBadge inspectionData={inspectionOuterData} className="mb-4" />
+                    
                     <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
                   </div>
 
