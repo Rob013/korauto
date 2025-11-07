@@ -48,20 +48,26 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'left_fender': { panel: 'within', x: 180, y: 160 },
     'fender_left': { panel: 'within', x: 180, y: 160 },
     
-    'front_left_door': { panel: 'within', x: 170, y: 240 },
-    'front_door_left': { panel: 'within', x: 170, y: 240 },
+    'front_left_door': { panel: 'within', x: 125, y: 265 },
+    'front_door_left': { panel: 'within', x: 125, y: 265 },
+    'door_front_left': { panel: 'within', x: 125, y: 265 },
     
-    'rear_left_door': { panel: 'within', x: 170, y: 315 },
-    'rear_door_left': { panel: 'within', x: 170, y: 315 },
+    'rear_left_door': { panel: 'within', x: 125, y: 340 },
+    'rear_door_left': { panel: 'within', x: 125, y: 340 },
+    'door_rear_left': { panel: 'within', x: 125, y: 340 },
     
-    'left_quarter_panel': { panel: 'within', x: 175, y: 390 },
-    'quarter_panel_left': { panel: 'within', x: 175, y: 390 },
-    'left_quarter': { panel: 'within', x: 175, y: 390 },
-    'quarter_left': { panel: 'within', x: 175, y: 390 },
+    'left_quarter_panel': { panel: 'within', x: 170, y: 410 },
+    'quarter_panel_left': { panel: 'within', x: 170, y: 410 },
+    'left_quarter': { panel: 'within', x: 170, y: 410 },
+    'quarter_left': { panel: 'within', x: 170, y: 410 },
+    'rear_fender_left': { panel: 'within', x: 170, y: 410 },
+    'left_rear_fender': { panel: 'within', x: 170, y: 410 },
     
-    'side_sill_panel_left': { panel: 'within', x: 165, y: 275 },
-    'side_sill_left': { panel: 'within', x: 165, y: 275 },
-    'rocker_panel_left': { panel: 'within', x: 165, y: 275 },
+    'side_sill_panel_left': { panel: 'within', x: 155, y: 305 },
+    'side_sill_left': { panel: 'within', x: 155, y: 305 },
+    'rocker_panel_left': { panel: 'within', x: 155, y: 305 },
+    'side_room_panel_left': { panel: 'within', x: 155, y: 305 },
+    'side_panel_left': { panel: 'within', x: 155, y: 305 },
     
     // Right side (passenger side)
     'front_right_fender': { panel: 'within', x: 460, y: 160 },
@@ -95,8 +101,9 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'trunk': { panel: 'out', x: 320, y: 385 },
     'trunk_lid': { panel: 'out', x: 320, y: 405 },
     'deck_lid': { panel: 'out', x: 320, y: 405 },
-    'trunk_floor': { panel: 'out', x: 320, y: 355 },
-    'luggage_floor': { panel: 'out', x: 320, y: 355 },
+    'trunk_floor': { panel: 'out', x: 320, y: 395 },
+    'luggage_floor': { panel: 'out', x: 320, y: 395 },
+    'floor_trunk': { panel: 'out', x: 320, y: 395 },
     
     'rear_panel': { panel: 'out', x: 320, y: 425 },
     'back_panel': { panel: 'out', x: 320, y: 425 },
@@ -105,11 +112,15 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'back_bumper': { panel: 'out', x: 320, y: 450 },
     
     // Wheel houses
-    'rear_wheel_house_left': { panel: 'out', x: 215, y: 375 },
-    'rear_wheelhouse_left': { panel: 'out', x: 215, y: 375 },
+    'rear_wheel_house_left': { panel: 'out', x: 215, y: 410 },
+    'rear_wheelhouse_left': { panel: 'out', x: 215, y: 410 },
+    'wheel_house_rear_left': { panel: 'out', x: 215, y: 410 },
+    'wheelhouse_rear_left': { panel: 'out', x: 215, y: 410 },
     
-    'rear_wheel_house_right': { panel: 'out', x: 425, y: 375 },
-    'rear_wheelhouse_right': { panel: 'out', x: 425, y: 375 },
+    'rear_wheel_house_right': { panel: 'out', x: 425, y: 410 },
+    'rear_wheelhouse_right': { panel: 'out', x: 425, y: 410 },
+    'wheel_house_rear_right': { panel: 'out', x: 425, y: 410 },
+    'wheelhouse_rear_right': { panel: 'out', x: 425, y: 410 },
     
     'front_wheel_house_left': { panel: 'out', x: 215, y: 175 },
     'front_wheelhouse_left': { panel: 'out', x: 215, y: 175 },
