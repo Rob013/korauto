@@ -319,45 +319,52 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
 };
 
 const DiagramMarkerWithTooltip: React.FC<{ marker: DiagramMarker; index: number }> = ({ marker, index }) => {
+  const [open, setOpen] = React.useState(false);
+  
   return (
-    <TooltipProvider key={index}>
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger asChild>
-          <g className="cursor-pointer" style={{ pointerEvents: 'all' }}>
-            <circle
-              cx={marker.x}
-              cy={marker.y}
-              r="18"
-              fill={marker.type === 'N' ? '#ef4444' : '#3b82f6'}
-              stroke="white"
-              strokeWidth="3"
-              className="transition-all hover:r-20 hover:opacity-90"
-            />
-            <text
-              x={marker.x}
-              y={marker.y}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="white"
-              fontSize="15"
-              fontWeight="bold"
-              style={{ pointerEvents: 'none' }}
-            >
-              {marker.type}
-            </text>
-          </g>
-        </TooltipTrigger>
-        <TooltipContent 
-          side="top" 
-          className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs"
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <g 
+          className="cursor-pointer hover:opacity-90 transition-opacity" 
+          style={{ pointerEvents: 'all' }}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
         >
-          <div className="font-semibold text-sm">{marker.label}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {marker.type === 'N' ? 'Replacement/Exchange' : 'Repair'}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+          <circle
+            cx={marker.x}
+            cy={marker.y}
+            r="18"
+            fill={marker.type === 'N' ? '#ef4444' : '#3b82f6'}
+            stroke="white"
+            strokeWidth="3"
+            className="transition-all"
+            style={{ pointerEvents: 'all' }}
+          />
+          <text
+            x={marker.x}
+            y={marker.y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="white"
+            fontSize="15"
+            fontWeight="bold"
+            style={{ pointerEvents: 'none', userSelect: 'none' }}
+          >
+            {marker.type}
+          </text>
+        </g>
+      </TooltipTrigger>
+      <TooltipContent 
+        side="top" 
+        sideOffset={8}
+        className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs z-50"
+      >
+        <div className="font-semibold text-sm">{marker.label}</div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {marker.type === 'N' ? 'Shift (Replacement)' : 'Repair'}
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
@@ -371,82 +378,86 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
   const hasData = outerInspectionData && outerInspectionData.length > 0;
 
   return (
-    <Card className={`overflow-hidden ${className}`}>
-      {/* Debug info banner */}
-      {hasData && !hasAnyMarkers && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
-          <p className="text-yellow-800 dark:text-yellow-200">
-            ℹ️ Data received ({outerInspectionData.length} items) but no markers mapped. Check console for details.
-          </p>
+    <TooltipProvider delayDuration={0}>
+      <Card className={`overflow-hidden ${className}`}>
+        {/* Debug info banner */}
+        {hasData && !hasAnyMarkers && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
+            <p className="text-yellow-800 dark:text-yellow-200">
+              ℹ️ Data received ({outerInspectionData.length} items) but no markers mapped. Check console for details.
+            </p>
+          </div>
+        )}
+        {!hasData && (
+          <div className="bg-muted/50 border-b border-border px-4 py-2 text-sm">
+            <p className="text-muted-foreground">
+              No inspection data available for this vehicle.
+            </p>
+          </div>
+        )}
+        <div className="grid grid-cols-2 border-b border-border">
+          <div className="text-center py-3 border-r border-border bg-muted/30 font-semibold">
+            within
+          </div>
+          <div className="text-center py-3 bg-muted/30 font-semibold">
+            out
+          </div>
         </div>
-      )}
-      {!hasData && (
-        <div className="bg-muted/50 border-b border-border px-4 py-2 text-sm">
-          <p className="text-muted-foreground">
-            No inspection data available for this vehicle.
-          </p>
-        </div>
-      )}
-      <div className="grid grid-cols-2 border-b border-border">
-        <div className="text-center py-3 border-r border-border bg-muted/30 font-semibold">
-          within
-        </div>
-        <div className="text-center py-3 bg-muted/30 font-semibold">
-          out
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2">
-        {/* Within panel - interior/side view */}
-        <div className="relative border-r border-border p-4 bg-white dark:bg-muted/5">
-          <img 
-            src={carDiagramFront} 
-            alt="Car side/interior view" 
-            className="w-full h-auto"
-          />
-          <svg 
-            viewBox="0 0 640 600" 
-            className="absolute inset-0 w-full h-full"
-          >
-            {within.map((marker, idx) => (
-              <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
-            ))}
-          </svg>
+        
+        <div className="grid grid-cols-2">
+          {/* Within panel - interior/side view */}
+          <div className="relative border-r border-border p-4 bg-white dark:bg-muted/5">
+            <img 
+              src={carDiagramFront} 
+              alt="Car side/interior view" 
+              className="w-full h-auto"
+            />
+            <svg 
+              viewBox="0 0 640 600" 
+              className="absolute inset-0 w-full h-full"
+              style={{ pointerEvents: 'none' }}
+            >
+              {within.map((marker, idx) => (
+                <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
+              ))}
+            </svg>
+          </div>
+
+          {/* Out panel - underside/bottom view */}
+          <div className="relative p-4 bg-white dark:bg-muted/5">
+            <img 
+              src={carDiagramBack} 
+              alt="Car underside/bottom view" 
+              className="w-full h-auto"
+            />
+            <svg 
+              viewBox="0 0 640 600" 
+              className="absolute inset-0 w-full h-full"
+              style={{ pointerEvents: 'none' }}
+            >
+              {out.map((marker, idx) => (
+                <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
+              ))}
+            </svg>
+          </div>
         </div>
 
-        {/* Out panel - underside/bottom view */}
-        <div className="relative p-4 bg-white dark:bg-muted/5">
-          <img 
-            src={carDiagramBack} 
-            alt="Car underside/bottom view" 
-            className="w-full h-auto"
-          />
-          <svg 
-            viewBox="0 0 640 600" 
-            className="absolute inset-0 w-full h-full"
-          >
-            {out.map((marker, idx) => (
-              <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
-            ))}
-          </svg>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center justify-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
-            N
+        {/* Legend */}
+        <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center justify-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
+              N
+            </div>
+            <span className="text-sm font-medium">shift (Replacement)</span>
           </div>
-          <span className="text-sm font-medium">shift (Replacement)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
-            R
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
+              R
+            </div>
+            <span className="text-sm font-medium">Repair</span>
           </div>
-          <span className="text-sm font-medium">Repair</span>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </TooltipProvider>
   );
 };
