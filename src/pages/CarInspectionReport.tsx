@@ -1143,12 +1143,6 @@ const CarInspectionReport = () => {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {optionsLoading && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Duke ngarkuar listën e pajisjeve…</span>
-                    </div>
-                  )}
                   {/* Extra Options with Details */}
                   {car.details?.options_extra && car.details.options_extra.length > 0 && (
                     <div className="space-y-3">
@@ -1205,28 +1199,17 @@ const CarInspectionReport = () => {
                         <span className="text-xs text-muted-foreground font-medium">{car.details.options.standard.length} pajisje</span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                        {optionsLoading ? (
-                          Array.from({ length: Math.min(6, car.details.options.standard.length) }).map((_, idx) => (
-                            <div
-                              key={`standard-skeleton-${idx}`}
-                              className="h-9 rounded-md bg-muted/60 animate-pulse"
-                            />
-                          ))
-                        ) : (
-                          (showAllStandard ? car.details.options.standard : car.details.options.standard.slice(0, 6)).map((optionCode: string, idx: number) => {
-                            const displayName = getOptionName(optionCode);
-                            return (
-                              <div key={idx} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group">
-                                <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                                <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">
-                                  {displayName === optionCode ? `Opsion ${optionCode}` : displayName}
-                                </span>
-                              </div>
-                            );
-                          })
-                        )}
+                        {(showAllStandard ? car.details.options.standard : car.details.options.standard.slice(0, 6)).map((optionCode: string, idx: number) => {
+                          const displayName = getOptionName(optionCode);
+                          return (
+                            <div key={idx} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group">
+                              <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">{displayName}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                      {car.details.options.standard.length > 6 && !optionsLoading && (
+                      {car.details.options.standard.length > 6 && (
                         <div className="flex justify-center pt-2">
                           <Button variant="outline" size="sm" onClick={() => setShowAllStandard(!showAllStandard)} className="h-9 px-4 text-sm text-primary hover:bg-primary/10 font-medium border-primary/30">
                             {showAllStandard ? `Më pak` : `Shfaq të gjitha (${car.details.options.standard.length - 6} më shumë)`}
@@ -1246,28 +1229,17 @@ const CarInspectionReport = () => {
                         <span className="text-xs text-muted-foreground font-medium">{car.details.options.choice.length} opsione</span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                        {optionsLoading ? (
-                          Array.from({ length: Math.min(6, car.details.options.choice.length) }).map((_, idx) => (
-                            <div
-                              key={`choice-skeleton-${idx}`}
-                              className="h-9 rounded-md bg-muted/60 animate-pulse"
-                            />
-                          ))
-                        ) : (
-                          (showAllChoice ? car.details.options.choice : car.details.options.choice.slice(0, 6)).map((optionCode: string, idx: number) => {
-                            const displayName = getOptionName(optionCode);
-                            return (
-                              <div key={idx} className="flex items-center gap-2 p-2 bg-accent/5 border border-accent/20 rounded-md hover:bg-accent/10 hover:border-accent/30 transition-all duration-200 group">
-                                <Cog className="h-3.5 w-3.5 text-accent flex-shrink-0" />
-                                <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight line-clamp-1">
-                                  {displayName === optionCode ? `Opsion ${optionCode}` : displayName}
-                                </span>
-                              </div>
-                            );
-                          })
-                        )}
+                        {(showAllChoice ? car.details.options.choice : car.details.options.choice.slice(0, 6)).map((optionCode: string, idx: number) => {
+                          const displayName = getOptionName(optionCode);
+                          return (
+                            <div key={idx} className="flex items-center gap-2 p-2 bg-accent/5 border border-accent/20 rounded-md hover:bg-accent/10 hover:border-accent/30 transition-all duration-200 group">
+                              <Cog className="h-3.5 w-3.5 text-accent flex-shrink-0" />
+                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight line-clamp-1">{displayName}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                      {car.details.options.choice.length > 6 && !optionsLoading && (
+                      {car.details.options.choice.length > 6 && (
                         <div className="flex justify-center pt-2">
                           <Button variant="outline" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-9 px-4 text-sm text-accent hover:bg-accent/10 font-medium border-accent/30">
                             {showAllChoice ? `Më pak` : `Shfaq të gjitha (${car.details.options.choice.length - 6} më shumë)`}
