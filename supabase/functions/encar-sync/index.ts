@@ -99,23 +99,20 @@ Deno.serve(async (req) => {
 
     console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
-    // Clean up stuck syncs older than 15 minutes (more aggressive cleanup)
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-    const { data: stuckSyncs, error: cleanupError } = await supabase
+    // Clean up stuck syncs older than 1 hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { error: cleanupError } = await supabase
       .from('sync_status')
       .update({ 
         status: 'failed', 
-        error_message: 'Sync timeout - cleaned up automatically after 15 minutes',
+        error_message: 'Sync timeout - cleaned up automatically',
         completed_at: new Date().toISOString()
       })
       .eq('status', 'running')
-      .lt('started_at', fifteenMinutesAgo)
-      .select()
+      .lt('started_at', oneHourAgo)
 
     if (cleanupError) {
       console.warn('⚠️ Error cleaning up stuck syncs:', cleanupError)
-    } else if (stuckSyncs && stuckSyncs.length > 0) {
-      console.log(`🧹 Cleaned up ${stuckSyncs.length} stuck sync(s)`)
     }
 
     // Check for existing running sync
@@ -171,7 +168,6 @@ Deno.serve(async (req) => {
     let totalArchivedProcessed = 0
     const errors: string[] = []
 
-    // Wrap everything in try-catch to ensure sync status is always updated
     try {
       // ✅ Step 1: Process active cars from /api/cars endpoint
       // Following API Integration Guide: Use ?minutes=X for incremental updates
@@ -473,27 +469,22 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error(`💥 Sync error:`, error)
       
-      // CRITICAL: Always mark sync as failed, even if update fails
-      try {
-        await supabase
-          .from('sync_status')
-          .update({
-            status: 'failed',
-            completed_at: new Date().toISOString(),
-            error_message: error.message || 'Unknown error',
-            cars_processed: totalCarsProcessed,
-            archived_lots_processed: totalArchivedProcessed
-          })
-          .eq('id', syncRecord.id)
-        console.log(`✅ Marked sync ${syncRecord.id} as failed`)
-      } catch (updateError) {
-        console.error(`❌ Failed to update sync status:`, updateError)
-      }
+      // Mark sync as failed
+      await supabase
+        .from('sync_status')
+        .update({
+          status: 'failed',
+          completed_at: new Date().toISOString(),
+          error_message: error.message,
+          cars_processed: totalCarsProcessed,
+          archived_lots_processed: totalArchivedProcessed
+        })
+        .eq('id', syncRecord.id)
 
       return new Response(
         JSON.stringify({
           success: false,
-          error: error.message || 'Sync failed',
+          error: error.message,
           sync_id: syncRecord.id,
           cars_processed: totalCarsProcessed,
           archived_lots_processed: totalArchivedProcessed
