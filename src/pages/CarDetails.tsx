@@ -22,6 +22,7 @@ import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 import { CAR_PREFETCH_STORAGE_PREFIX, CAR_PREFETCH_TTL } from "@/services/carPrefetch";
+import { extractInspectionItemsFromSource, mergeInspectionItems, type InspectionItem } from "@/utils/inspectionDataProcessor";
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -1443,6 +1444,26 @@ const CarDetails = memo(() => {
     }
   }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
   const carImages = useMemo(() => car?.images || [], [car?.images]);
+  
+  // Process inspection data for diagram
+  const inspectionData = useMemo<InspectionItem[]>(() => {
+    if (!car) return [];
+    
+    const sources: unknown[] = [
+      car.details?.inspect,
+      car.details?.inspect_outer,
+      car.inspect,
+      car.inspect?.outer,
+      car.inspect?.inspect_outer,
+      (car as any)?.details?.inspect?.outer,
+      (car as any)?.details?.outer,
+      (car as any)?.inspect_outer,
+    ];
+    
+    const extracted = sources.flatMap((source) => extractInspectionItemsFromSource(source));
+    return mergeInspectionItems(extracted);
+  }, [car]);
+  
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
     impact(isLiked ? 'light' : 'medium');
@@ -2212,6 +2233,21 @@ const CarDetails = memo(() => {
                       </div>}
 
                     {/* Comprehensive Inspection Report */}
+                    {inspectionData.length > 0 && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                        <CarInspectionDiagram
+                          inspectionData={inspectionData}
+                          carInfo={{
+                            make: car.make,
+                            model: car.model,
+                            year: car.year?.toString(),
+                            vin: car.vin,
+                            mileage: formatMileage(car.mileage),
+                          }}
+                          accidentSummary={car.details?.inspect?.accident_summary || car.inspect?.accident_summary}
+                        />
+                      </div>
+                    )}
                   </div>}
               </CardContent>
             </Card>
