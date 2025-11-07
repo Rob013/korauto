@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Car, Gauge, Settings, Fuel, Heart } from "lucide-react";
+import { Car, Gauge, Settings, Fuel, Heart, ShieldCheck, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
@@ -174,18 +174,25 @@ const LazyCarCard = memo(({
         ? 'KBC'
         : normalizedSource.toUpperCase()
     : null;
-  const showAccidentFreeBadge = insurance_v2?.accidentCnt === 0;
+  
+  // Determine accident status
+  const hasAccidentData = insurance_v2 && typeof insurance_v2.accidentCnt === 'number';
+  const isClean = hasAccidentData && insurance_v2.accidentCnt === 0;
+  const hasAccident = hasAccidentData && insurance_v2.accidentCnt > 0;
+  
   const isListView = viewMode === 'list';
   const badgeStyles = isListView
     ? {
         container: 'absolute top-0.5 left-0.5 z-10 flex flex-col gap-1',
         source: 'text-[8px] px-1 py-0 bg-background/80 backdrop-blur',
-        accident: 'bg-green-600/95 text-white px-1.5 py-0.5 rounded text-[8px] font-semibold shadow'
+        clean: 'bg-green-600/95 text-white px-1.5 py-0.5 rounded text-[8px] font-semibold shadow flex items-center gap-0.5',
+        accident: 'bg-orange-600/95 text-white px-1.5 py-0.5 rounded text-[8px] font-semibold shadow flex items-center gap-0.5'
       }
     : {
         container: 'absolute top-2 left-2 z-10 flex flex-col gap-1',
         source: 'text-[10px] px-1.5 py-0.5 bg-background/80 backdrop-blur',
-        accident: 'bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow'
+        clean: 'bg-green-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow flex items-center gap-1',
+        accident: 'bg-orange-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow flex items-center gap-1'
       };
 
   const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
@@ -328,16 +335,23 @@ const LazyCarCard = memo(({
         <div className="flex flex-row gap-1.5 p-1.5">
           {/* Image Section - Very compact in list mode */}
           <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded w-20 h-16 sm:w-24 sm:h-20">
-            {(sourceBadgeLabel || showAccidentFreeBadge) && (
+            {(sourceBadgeLabel || isClean || hasAccident) && (
               <div className={badgeStyles.container}>
                 {sourceBadgeLabel && (
                   <Badge variant="outline" className={`${badgeStyles.source}`}>
                     {sourceBadgeLabel}
                   </Badge>
                 )}
-                {showAccidentFreeBadge && (
+                {isClean && (
+                  <div className={badgeStyles.clean}>
+                    <ShieldCheck className={isListView ? "h-2 w-2" : "h-3 w-3"} />
+                    <span>Clean</span>
+                  </div>
+                )}
+                {hasAccident && (
                   <div className={badgeStyles.accident}>
-                    Accident free
+                    <AlertTriangle className={isListView ? "h-2 w-2" : "h-3 w-3"} />
+                    <span>Accident</span>
                   </div>
                 )}
               </div>
@@ -454,16 +468,23 @@ const LazyCarCard = memo(({
     >
       {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
   <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
-    {(sourceBadgeLabel || showAccidentFreeBadge) && (
+    {(sourceBadgeLabel || isClean || hasAccident) && (
       <div className={badgeStyles.container}>
         {sourceBadgeLabel && (
           <Badge variant="outline" className={`${badgeStyles.source}`}>
             {sourceBadgeLabel}
           </Badge>
         )}
-        {showAccidentFreeBadge && (
+        {isClean && (
+          <div className={badgeStyles.clean}>
+            <ShieldCheck className={isListView ? "h-2 w-2" : "h-3 w-3"} />
+            <span>Clean</span>
+          </div>
+        )}
+        {hasAccident && (
           <div className={badgeStyles.accident}>
-            Accident free
+            <AlertTriangle className={isListView ? "h-2 w-2" : "h-3 w-3"} />
+            <span>Accident</span>
           </div>
         )}
       </div>

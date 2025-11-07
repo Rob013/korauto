@@ -11,7 +11,7 @@ import {
   Car, MapPin, Gauge, Fuel, Calendar, Eye,
   Heart, Share2, ArrowRight, MessageCircle, Shield, 
   AlertTriangle, Key, Settings, Palette, Hash, Info,
-  Award, Wrench, DollarSign, FileText
+  Award, Wrench, DollarSign, FileText, ShieldCheck
 } from "lucide-react";
 import InspectionRequestForm from "./InspectionRequestForm";
 
@@ -194,11 +194,20 @@ const EncarCarCard = ({
               CERTIFIED
             </Badge>
           )}
-          {insurance_v2?.accidentCnt === 0 && (
-            <Badge variant="success" className="shadow-lg flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              Accident free
-            </Badge>
+          {insurance_v2 && typeof insurance_v2.accidentCnt === 'number' && (
+            <>
+              {insurance_v2.accidentCnt === 0 ? (
+                <div className="bg-green-600/95 text-white px-2 py-1 rounded text-xs font-semibold shadow-lg flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" />
+                  <span>Clean</span>
+                </div>
+              ) : (
+                <div className="bg-orange-600/95 text-white px-2 py-1 rounded text-xs font-semibold shadow-lg flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Accident</span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
