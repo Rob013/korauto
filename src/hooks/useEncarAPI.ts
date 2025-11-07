@@ -190,19 +190,25 @@ export const useEncarAPI = (): UseEncarAPIReturn => {
       // Handle various error scenarios with robust null checking
       if (syncError) {
         console.error('❌ Sync function error:', syncError);
-        
-        // Safely extract error message with null checks
-        const errorMessage = syncError?.message || syncError?.details || String(syncError) || 'Unknown error';
-        
-        // Check for specific error types
-        if (errorMessage.includes('JWT') || errorMessage.includes('auth')) {
+        const rawMsg = (syncError as any)?.message || (syncError as any)?.details || String(syncError) || '';
+
+        // Gracefully handle 409 conflicts (sync already running) without throwing
+        if (rawMsg.toLowerCase().includes('sync already in progress')) {
+          console.warn('⚠️ Sync already running. Skipping error and refreshing status...');
+          await getSyncStatus();
+          // Do not set error or throw; just return so UI stays responsive
+          return;
+        }
+
+        // Other error types: extract best message and throw
+        if (rawMsg.includes('JWT') || rawMsg.toLowerCase().includes('auth')) {
           throw new Error('Authentication error - please refresh the page');
-        } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+        } else if (rawMsg.toLowerCase().includes('timeout') || rawMsg.toLowerCase().includes('timed out')) {
           throw new Error('Request timeout - sync may still be running');
-        } else if (errorMessage.includes('500') || errorMessage.includes('Internal')) {
+        } else if (rawMsg.includes('500') || rawMsg.toLowerCase().includes('internal')) {
           throw new Error('Server error - please try again');
         } else {
-          throw new Error(errorMessage);
+          throw new Error(rawMsg || 'Unknown error');
         }
       }
 
