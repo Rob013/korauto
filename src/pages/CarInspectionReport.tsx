@@ -248,11 +248,17 @@ const CarInspectionReport = () => {
 
       const details = lotData.details || {};
       
-      // Extract inspect data from details.inspect (primary source as per API support)
-      const inspectData = details?.inspect || lotData.inspect || {};
-      const inspectOuter = inspectData.outer || details?.inspect_outer || {};
-      const inspectInner = inspectData.inner || {};
-      const accidentSummary = inspectData.accident_summary || {};
+      // Extract inspect data from details.inspect and carData.details
+      const inspectData = details?.inspect || lotData.inspect || (carData as any)?.details?.inspect || {};
+      // Prefer array-based sources for outer inspection details
+      const inspectOuterCandidates: any[] = [];
+      if (Array.isArray(details?.inspect_outer)) inspectOuterCandidates.push(...(details as any).inspect_outer);
+      if (Array.isArray((carData as any)?.details?.inspect_outer)) inspectOuterCandidates.push(...(carData as any).details.inspect_outer);
+      if (Array.isArray((inspectData as any)?.inspect_outer)) inspectOuterCandidates.push(...(inspectData as any).inspect_outer);
+      if (Array.isArray((inspectData as any)?.outer)) inspectOuterCandidates.push(...(inspectData as any).outer);
+      const inspectOuter = inspectOuterCandidates;
+      const inspectInner = (inspectData as any).inner || {};
+      const accidentSummary = (inspectData as any).accident_summary || {};
 
       // Extract insurance_v2 data
       const insuranceV2 = lotData.insurance_v2 || details?.insurance_v2 || {};
