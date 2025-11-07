@@ -252,13 +252,16 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     <div className={`w-full ${className}`}>
       {/* Header with Title and Print Button */}
       <div className="mb-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground">Diagnostikimi i kornizës dhe panelit të jashtëm</h2>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">
+            Diagnostikimi i kornizës dhe panelit të jashtëm
+          </h2>
           <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap">
                 <Printer className="h-4 w-4" />
-                Printo raportin
+                <span className="hidden sm:inline">Printo raportin</span>
+                <span className="sm:hidden">Printo</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -288,7 +291,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
           <div className="bg-muted/30 rounded-lg p-4 border border-border">
             <h3 className="font-semibold text-lg mb-3 text-center">Permbledhja e Aksidentit</h3>
             
-            {/* Main Status */}
+            {/* Main Status - Based on actual inspection data */}
             <div className="text-center py-3 bg-background rounded-lg mb-4 border border-border">
               <p className="text-lg">
                 Rezultati për veturën {carInfo.year || carInfo.vin || 'N/A'}{' '}
@@ -300,25 +303,31 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               </p>
             </div>
 
-            {/* Detailed Stats Grid */}
+            {/* Detailed Stats Grid - Based on actual damaged parts count */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Total Parts Checked */}
               <div className="bg-background rounded-lg p-3 text-center border border-border">
                 <div className="text-2xl font-bold text-foreground">
-                  {FRAME_PARTS.length + EXTERNAL_PANEL_PARTS.length}
+                  {inspectionData.length || (FRAME_PARTS.length + EXTERNAL_PANEL_PARTS.length)}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">Pjesë të kontrolluara</div>
               </div>
 
-              {/* Normal Parts */}
+              {/* Normal Parts - Calculate from actual data */}
               <div className="bg-background rounded-lg p-3 text-center border border-border">
                 <div className="text-2xl font-bold text-success">
-                  {(FRAME_PARTS.length + EXTERNAL_PANEL_PARTS.length) - exchangeCount - repairCount}
+                  {inspectionData.length > 0 
+                    ? inspectionData.filter(item => {
+                        const codes = item.statusTypes?.map(s => String(s.code || '').toUpperCase()) || [];
+                        return !codes.some(c => c === 'X' || c === '2' || c === 'W' || c === '3' || c === 'A' || c === '1');
+                      }).length
+                    : (FRAME_PARTS.length + EXTERNAL_PANEL_PARTS.length) - exchangeCount - repairCount
+                  }
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">Normale</div>
               </div>
 
-              {/* Repaired Parts */}
+              {/* Repaired Parts - From actual data */}
               <div className="bg-background rounded-lg p-3 text-center border border-primary/50">
                 <div className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
                   {repairCount}
@@ -327,7 +336,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                 <div className="text-xs text-muted-foreground mt-1">Riparuar/Salduar</div>
               </div>
 
-              {/* Replaced Parts */}
+              {/* Replaced Parts - From actual data */}
               <div className="bg-background rounded-lg p-3 text-center border border-destructive/50">
                 <div className="text-2xl font-bold text-destructive flex items-center justify-center gap-1">
                   {exchangeCount}
@@ -337,7 +346,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               </div>
             </div>
 
-            {/* Category Breakdown */}
+            {/* Category Breakdown - Based on actual matched parts */}
             <div className="grid grid-cols-2 gap-4 mt-4">
               {/* Frame Status */}
               <div className="bg-background rounded-lg p-3 border border-border">
@@ -352,6 +361,12 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                     {FRAME_PARTS.every(p => getPartCategoryStatus(p.partIds) === 'normal') 
                       ? 'Normale' 
                       : 'Me dëmtime'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">Dëmtime:</span>
+                  <span className="text-sm font-semibold">
+                    {FRAME_PARTS.filter(p => getPartCategoryStatus(p.partIds) !== 'normal').length}
                   </span>
                 </div>
               </div>
@@ -369,6 +384,12 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                     {EXTERNAL_PANEL_PARTS.every(p => getPartCategoryStatus(p.partIds) === 'normal') 
                       ? 'Normale' 
                       : 'Me dëmtime'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">Dëmtime:</span>
+                  <span className="text-sm font-semibold">
+                    {EXTERNAL_PANEL_PARTS.filter(p => getPartCategoryStatus(p.partIds) !== 'normal').length}
                   </span>
                 </div>
               </div>
