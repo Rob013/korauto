@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertTriangle, CheckCircle, Info, Printer } from "lucide-react";
 import carDiagramTop from '@/assets/car-diagram-top.jpeg';
 import carDiagramBottom from '@/assets/car-diagram-bottom.webp';
 import { mapInspectionTypeToPartId } from '@/utils/inspectionMapping';
+import { PrintableInspectionReport } from './PrintableInspectionReport';
 
 export interface InspectionItem {
   type: { code: string; title: string };
@@ -16,6 +19,13 @@ export interface InspectionItem {
 interface CarInspectionDiagramProps {
   inspectionData?: InspectionItem[];
   className?: string;
+  carInfo?: {
+    make?: string;
+    model?: string;
+    year?: string;
+    vin?: string;
+    mileage?: string;
+  };
 }
 
 interface CarPart {
@@ -29,11 +39,13 @@ interface CarPart {
 
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
   inspectionData = [], 
-  className = "" 
+  className = "",
+  carInfo = {}
 }) => {
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [highlightedPart, setHighlightedPart] = useState<string | null>(null);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
 
   // Enhanced car parts mapped to the actual diagram image positions
   const carParts: CarPart[] = [
@@ -462,6 +474,37 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
 
   return (
     <div className={`w-full ${className}`}>
+      {/* Print Button */}
+      <div className="mb-4 flex justify-end">
+        <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Printer className="h-4 w-4" />
+              Print Report
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Printable Inspection Report</DialogTitle>
+            </DialogHeader>
+            <PrintableInspectionReport 
+              inspectionData={inspectionData}
+              carInfo={carInfo}
+              affectedParts={affectedParts}
+            />
+            <div className="mt-4 flex justify-end gap-2 no-print">
+              <Button variant="outline" onClick={() => setShowPrintDialog(false)}>
+                Close
+              </Button>
+              <Button onClick={() => window.print()}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       {/* Main Diagram Section - Split View */}
       <div className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border rounded-lg overflow-hidden bg-background">
