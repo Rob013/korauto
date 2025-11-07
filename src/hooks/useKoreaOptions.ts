@@ -62,11 +62,36 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
         
         // Convert array to map by code for faster lookups
         const optionsMap: Record<string, KoreaOption> = {};
+
+        const registerOption = (option: KoreaOption) => {
+          if (!option || option.code === undefined || option.code === null) {
+            return;
+          }
+
+          const rawCode = option.code.toString().trim();
+          if (!rawCode) {
+            return;
+          }
+
+          const variations = new Set<string>([rawCode, rawCode.toUpperCase()]);
+
+          if (/^\d+$/.test(rawCode)) {
+            const numeric = Number.parseInt(rawCode, 10).toString();
+            variations.add(numeric);
+            variations.add(numeric.padStart(3, '0'));
+            variations.add(rawCode.padStart(3, '0'));
+          }
+
+          variations.forEach((variant) => {
+            if (variant) {
+              optionsMap[variant] = option;
+            }
+          });
+        };
+
         if (data.data && Array.isArray(data.data)) {
           data.data.forEach((option: KoreaOption) => {
-            if (option.code) {
-              optionsMap[option.code] = option;
-            }
+            registerOption(option);
           });
         }
 
@@ -89,33 +114,46 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
     fetchOptions();
   }, []);
 
+  const resolveOption = (code: string): KoreaOption | undefined => {
+    if (code === undefined || code === null) {
+      return undefined;
+    }
+
+    const raw = code.toString().trim();
+    if (!raw) {
+      return undefined;
+    }
+
+    const candidates = new Set<string>([raw, raw.toUpperCase()]);
+
+    if (/^\d+$/.test(raw)) {
+      const numeric = Number.parseInt(raw, 10).toString();
+      candidates.add(numeric);
+      candidates.add(numeric.padStart(3, '0'));
+      candidates.add(raw.padStart(3, '0'));
+    }
+
+    for (const candidate of candidates) {
+      const option = options[candidate];
+      if (option) {
+        return option;
+      }
+    }
+
+    return undefined;
+  };
+
   const getOptionName = (code: string): string => {
-    if (!code) return code;
-    
-    // Try exact match first
-    let option = options[code];
-    
-    // If not found and code is numeric, try with leading zeros removed
-    if (!option && /^\d+$/.test(code)) {
-      const numericCode = parseInt(code, 10).toString();
-      option = options[numericCode];
+    const option = resolveOption(code);
+    if (!option) {
+      return code;
     }
-    
-    // If still not found and code doesn't have leading zeros, try adding them
-    if (!option && /^\d+$/.test(code) && code.length < 3) {
-      const paddedCode = code.padStart(3, '0');
-      option = options[paddedCode];
-    }
-    
-    if (!option) return code;
-    
-    // Return Albanian translation if available, otherwise English name
+
     return option.name || option.name_original || code;
   };
 
   const getOptionDescription = (code: string): string => {
-    if (!code) return '';
-    const option = options[code];
+    const option = resolveOption(code);
     return option?.description || '';
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
@@ -23,6 +23,7 @@ interface CarPart {
   path: string;
   labelPos: { x: number; y: number };
   markerPos?: { x: number; y: number };
+  markerOffset?: { x: number; y: number };
 }
 
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
@@ -33,7 +34,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
 
   // Enhanced car parts mapped to the actual diagram image positions
-  const carParts: CarPart[] = [
+  const carParts: CarPart[] = useMemo(() => [
     // Hood (top center of car)
     {
       id: 'hood',
@@ -65,7 +66,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'L Front',
       path: 'M 150 195 L 235 195 L 235 310 L 150 310 Q 140 310 140 300 L 140 205 Q 140 195 150 195 Z',
       labelPos: { x: 185, y: 250 },
-      markerPos: { x: 185, y: 255 }
+      markerOffset: { x: -26, y: 0 }
     },
     // Right Front Door
     {
@@ -74,7 +75,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'R Front',
       path: 'M 405 195 L 495 195 Q 505 195 505 205 L 505 300 Q 505 310 495 310 L 405 310 L 405 195 Z',
       labelPos: { x: 450, y: 250 },
-      markerPos: { x: 450, y: 255 }
+      markerOffset: { x: 26, y: 0 }
     },
     // Roof
     {
@@ -91,7 +92,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'L Rear',
       path: 'M 140 315 L 235 315 L 235 430 L 140 430 Q 130 430 130 420 L 130 325 Q 130 315 140 315 Z',
       labelPos: { x: 185, y: 370 },
-      markerPos: { x: 185, y: 375 }
+      markerOffset: { x: -24, y: 0 }
     },
     // Right Rear Door
     {
@@ -100,7 +101,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'R Rear',
       path: 'M 405 315 L 510 315 Q 520 315 520 325 L 520 420 Q 520 430 510 430 L 405 430 L 405 315 Z',
       labelPos: { x: 455, y: 370 },
-      markerPos: { x: 455, y: 375 }
+      markerOffset: { x: 24, y: 0 }
     },
     // Rear Glass
     {
@@ -117,7 +118,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'Trunk',
       path: 'M 240 430 L 400 430 Q 410 430 410 440 L 410 540 Q 410 550 400 550 L 240 550 Q 230 550 230 540 L 230 440 Q 230 430 240 430 Z',
       labelPos: { x: 320, y: 485 },
-      markerPos: { x: 320, y: 490 }
+      markerPos: { x: 320, y: 498 }
     },
     // Rear Bumper
     {
@@ -134,7 +135,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         nameEn: 'Side Sill L',
         path: 'M 135 310 L 235 310 L 235 330 L 135 330 Z',
         labelPos: { x: 185, y: 320 },
-        markerPos: { x: 185, y: 323 }
+        markerOffset: { x: -22, y: 0 }
       },
       {
         id: 'side_sill_right',
@@ -142,7 +143,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         nameEn: 'Side Sill R',
         path: 'M 405 310 L 505 310 L 505 330 L 405 330 Z',
         labelPos: { x: 455, y: 320 },
-        markerPos: { x: 455, y: 323 }
+        markerOffset: { x: 22, y: 0 }
       },
     // Left Front Fender
     {
@@ -167,7 +168,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'L Quarter',
       path: 'M 130 435 L 225 435 L 225 545 L 130 545 Q 120 545 120 535 L 120 445 Q 120 435 130 435 Z',
       labelPos: { x: 170, y: 490 },
-      markerPos: { x: 170, y: 495 }
+      markerOffset: { x: -20, y: 0 }
     },
     // Right Quarter Panel
     {
@@ -176,7 +177,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'R Quarter',
       path: 'M 415 435 L 520 435 Q 530 435 530 445 L 530 535 Q 530 545 520 545 L 415 545 L 415 435 Z',
       labelPos: { x: 470, y: 490 },
-      markerPos: { x: 470, y: 495 }
+      markerOffset: { x: 20, y: 0 }
     },
     // Front Left Wheel
     {
@@ -201,16 +202,66 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       nameEn: 'RL Wheel',
       path: 'M 30 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
       labelPos: { x: 30, y: 510 }
-    },
-    // Rear Right Wheel
-    {
-      id: 'rr_wheel',
-      name: 'Rrota Prapa Djathtas',
-      nameEn: 'RR Wheel',
-      path: 'M 610 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 610, y: 510 }
-    },
-  ];
+  },
+  // Rear Right Wheel
+  {
+    id: 'rr_wheel',
+    name: 'Rrota Prapa Djathtas',
+    nameEn: 'RR Wheel',
+    path: 'M 610 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+    labelPos: { x: 610, y: 510 }
+  },
+  ], []);
+
+  const markerPositions = useMemo(() => {
+    const positions: Record<string, { x: number; y: number }> = {};
+
+    const getPathCenter = (path: string) => {
+      const matches = path.match(/-?\d+(?:\.\d+)?/g);
+      if (!matches || matches.length < 2) {
+        return null;
+      }
+
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      for (let i = 0; i < matches.length - 1; i += 2) {
+        const x = Number.parseFloat(matches[i]);
+        const y = Number.parseFloat(matches[i + 1]);
+
+        if (Number.isNaN(x) || Number.isNaN(y)) {
+          continue;
+        }
+
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+
+      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+        return null;
+      }
+
+      return {
+        x: (minX + maxX) / 2,
+        y: (minY + maxY) / 2,
+      };
+    };
+
+    carParts.forEach((part) => {
+      const base = part.markerPos ?? getPathCenter(part.path) ?? part.labelPos;
+      const offset = part.markerOffset ?? { x: 0, y: 0 };
+      positions[part.id] = {
+        x: base.x + offset.x,
+        y: base.y + offset.y,
+      };
+    });
+
+    return positions;
+  }, [carParts]);
 
   // Helper: evaluate if an item's title targets a given part id
   const titleMatchesPart = (title: string, partId: string) => {
@@ -566,7 +617,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                           if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
 
                           const n = markers.length;
-                          const base = part.markerPos || part.labelPos;
+                          const base = markerPositions[part.id] || part.labelPos;
                           const spacing = 24; // Increased spacing for bigger markers
                           
                           return markers.map((m, idx) => {
