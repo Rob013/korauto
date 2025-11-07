@@ -33,6 +33,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 }) => {
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
+  const [highlightedPart, setHighlightedPart] = useState<string | null>(null);
 
   // Enhanced car parts mapped to the actual diagram image positions
   const carParts: CarPart[] = [
@@ -257,10 +258,44 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
   const textMatchesPartId = (text: string | null | undefined, partId: string) => {
     if (!text) return false;
+    const t = text.toLowerCase();
+    
+    // Direct part ID matching
     const mapped = mapInspectionTypeToPartId({ title: text });
     if (mapped) {
       return mapped === partId;
     }
+    
+    // Enhanced keyword matching for better coverage
+    const partKeywords: Record<string, string[]> = {
+      'hood': ['hood', 'bonnet', 'kapak', '후드', '본네트'],
+      'front_bumper': ['front bumper', 'f bumper', 'bamper para', '프론트 범퍼', '앞범퍼'],
+      'rear_bumper': ['rear bumper', 'r bumper', 'bamper prapa', '리어 범퍼', '뒷범퍼'],
+      'trunk': ['trunk', 'boot', 'tailgate', 'decklid', 'bagazh', '트렁크', '트렁크리드'],
+      'front_left_door': ['front left door', 'fl door', 'lh front door', 'derë para majtas', '운전석 앞문', '좌측전면도어'],
+      'front_right_door': ['front right door', 'fr door', 'rh front door', 'derë para djathtas', '조수석 앞문', '우측전면도어'],
+      'rear_left_door': ['rear left door', 'rl door', 'lh rear door', 'derë prapa majtas', '운전석 뒷문', '좌측후면도어'],
+      'rear_right_door': ['rear right door', 'rr door', 'rh rear door', 'derë prapa djathtas', '조수석 뒷문', '우측후면도어'],
+      'left_fender': ['left fender', 'lh fender', 'paranicë majtas', '좌측 펜더', '좌측전면휀더'],
+      'right_fender': ['right fender', 'rh fender', 'paranicë djathtas', '우측 펜더', '우측전면휀더'],
+      'left_quarter': ['left quarter', 'lh quarter', 'panel prapa majtas', '좌측 쿼터', '좌측후면휀더'],
+      'right_quarter': ['right quarter', 'rh quarter', 'panel prapa djathtas', '우측 쿼터', '우측후면휀더'],
+      'roof': ['roof', 'top', 'ceiling', 'çati', '루프', '천장'],
+      'windshield': ['windshield', 'front glass', 'xham para', '앞유리', '전면유리'],
+      'rear_glass': ['rear glass', 'back glass', 'xham prapa', '뒷유리', '후면유리'],
+      'side_sill_left': ['left sill', 'lh sill', 'left rocker', 'panel anësor majtas', '좌측 사이드실'],
+      'side_sill_right': ['right sill', 'rh sill', 'right rocker', 'panel anësor djathtas', '우측 사이드실'],
+      'fl_wheel': ['front left wheel', 'fl wheel', 'rrota para majtas', '좌측전륜'],
+      'fr_wheel': ['front right wheel', 'fr wheel', 'rrota para djathtas', '우측전륜'],
+      'rl_wheel': ['rear left wheel', 'rl wheel', 'rrota prapa majtas', '좌측후륜'],
+      'rr_wheel': ['rear right wheel', 'rr wheel', 'rrota prapa djathtas', '우측후륜'],
+    };
+    
+    const keywords = partKeywords[partId] || [];
+    if (keywords.some(kw => t.includes(kw))) {
+      return true;
+    }
+    
     return legacyTitleMatchesPart(text, partId);
   };
 
@@ -351,6 +386,35 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
 
   return 'Pjesë normale';
 };
+
+  // Get all affected parts with their details
+  const affectedParts = carParts
+    .map(part => {
+      const statuses = getPartStatus(part.id);
+      if (statuses.length === 0) return null;
+      
+      const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
+      const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
+      
+      const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
+        normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
+      
+      const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3' || code === 'A' || code === '1') ||
+        normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim') || 
+          t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
+      
+      const badgeType = hasExchange ? 'X' : hasWelding ? 'W' : null;
+      if (!badgeType) return null;
+      
+      return {
+        ...part,
+        badgeType,
+        statuses,
+        isReplacement: hasExchange,
+        isRepair: hasWelding && !hasExchange
+      };
+    })
+    .filter(Boolean) as Array<CarPart & { badgeType: string; statuses: Array<{ code: string; title: string }>; isReplacement: boolean; isRepair: boolean }>;
 
   // Count all types of issues from API data
   const issueCount = {
@@ -457,19 +521,29 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   else if (part.id === 'rr_wheel') position = { top: '84%', left: '92%' };
 
                   return (
-                    <div
+                    <button
                       key={`outside-${part.id}`}
-                      className="absolute z-10"
+                      className="absolute z-10 transition-transform hover:scale-110 active:scale-95"
                       style={{
                         ...position,
                         transform: 'translate(-50%, -50%)'
                       }}
+                      onClick={() => {
+                        setHighlightedPart(part.id);
+                        setTimeout(() => setHighlightedPart(null), 2000);
+                      }}
+                      onMouseEnter={() => setHoveredPart(part.id)}
+                      onMouseLeave={() => setHoveredPart(null)}
                     >
-                      <div className="flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 border-white"
-                        style={{ backgroundColor: showXBadge ? '#dc2626' : '#2563eb' }}>
+                      <div 
+                        className={`flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 ${
+                          hoveredPart === part.id || highlightedPart === part.id ? 'border-yellow-400 ring-2 ring-yellow-400/50' : 'border-white'
+                        }`}
+                        style={{ backgroundColor: showXBadge ? '#dc2626' : '#2563eb' }}
+                      >
                         {showXBadge ? 'X' : 'W'}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -532,19 +606,29 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   else if (part.id === 'rr_wheel') position = { top: '84%', left: '92%' };
 
                   return (
-                    <div
+                    <button
                       key={`inside-${part.id}`}
-                      className="absolute z-10"
+                      className="absolute z-10 transition-transform hover:scale-110 active:scale-95"
                       style={{
                         ...position,
                         transform: 'translate(-50%, -50%)'
                       }}
+                      onClick={() => {
+                        setHighlightedPart(part.id);
+                        setTimeout(() => setHighlightedPart(null), 2000);
+                      }}
+                      onMouseEnter={() => setHoveredPart(part.id)}
+                      onMouseLeave={() => setHoveredPart(null)}
                     >
-                      <div className="flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 border-white"
-                        style={{ backgroundColor: showXBadge ? '#dc2626' : '#2563eb' }}>
+                      <div 
+                        className={`flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 ${
+                          hoveredPart === part.id || highlightedPart === part.id ? 'border-yellow-400 ring-2 ring-yellow-400/50' : 'border-white'
+                        }`}
+                        style={{ backgroundColor: showXBadge ? '#dc2626' : '#2563eb' }}
+                      >
                         {showXBadge ? 'X' : 'W'}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -565,94 +649,142 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
         </div>
       </div>
 
-      {/* Statistics and Details Section Below - Mobile Responsive */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6 mt-4 md:mt-6">
-        {/* Left - Statistics */}
-        <div className="space-y-3">
+      {/* Comprehensive Parts List Section */}
+      <div className="mt-6 space-y-4">
+        {affectedParts.length > 0 && (
           <Card className="border border-border">
-            <CardContent className="p-3 md:p-4">
-              <h4 className="font-semibold mb-2 md:mb-3 text-foreground flex items-center gap-2 text-sm md:text-base">
-                <AlertTriangle className="h-3 w-3 md:h-4 md:w-4" />
-                Statistika
+            <CardContent className="p-4 md:p-6">
+              <h4 className="font-semibold mb-4 text-foreground flex items-center gap-2 text-base md:text-lg">
+                <AlertTriangle className="h-4 w-4 md:h-5 md:w-5" />
+                Pjesët e Dëmtuara / 손상된 부품
               </h4>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-destructive/10">
-                  <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#dc2626] text-white text-[8px] md:text-[9px] font-bold shadow-sm">X</span>
-                    <span className="text-[10px] md:text-xs">교환</span>
-                  </span>
-                  <Badge variant="destructive" className="font-mono text-[10px] md:text-xs h-5 md:h-auto">{issueCount.replacements}</Badge>
+              
+              {/* Replacements Section */}
+              {affectedParts.some(p => p.isReplacement) && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#dc2626] text-white text-sm font-bold shadow-sm border-2 border-white">X</span>
+                    <h5 className="font-semibold text-sm">교환 (Replacement) - {affectedParts.filter(p => p.isReplacement).length} pjesë</h5>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {affectedParts
+                      .filter(p => p.isReplacement)
+                      .map((part) => (
+                        <button
+                          key={`list-x-${part.id}`}
+                          className={`text-left p-3 rounded-lg border transition-all ${
+                            highlightedPart === part.id 
+                              ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 ring-2 ring-yellow-400/50' 
+                              : 'border-border bg-muted/30 hover:bg-muted/50'
+                          }`}
+                          onClick={() => {
+                            setHighlightedPart(part.id);
+                            setTimeout(() => setHighlightedPart(null), 2000);
+                          }}
+                          onMouseEnter={() => setHoveredPart(part.id)}
+                          onMouseLeave={() => setHoveredPart(null)}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm text-foreground">{part.name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{part.nameEn}</p>
+                            </div>
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#dc2626] text-white text-xs font-bold flex-shrink-0">X</span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {part.statuses.map((s, i) => (
+                              <Badge key={i} variant="outline" className="text-[10px] h-5">{s.code}</Badge>
+                            ))}
+                          </div>
+                        </button>
+                      ))}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-blue-600/10">
-                  <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#2563eb] text-white text-[8px] md:text-[9px] font-bold shadow-sm">W</span>
-                    <span className="text-[10px] md:text-xs">용접/수리</span>
-                  </span>
-                  <Badge className="font-mono text-[10px] md:text-xs bg-[#2563eb] text-white h-5 md:h-auto">{issueCount.welds + issueCount.repairs}</Badge>
+              )}
+              
+              {/* Repairs Section */}
+              {affectedParts.some(p => p.isRepair) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#2563eb] text-white text-sm font-bold shadow-sm border-2 border-white">W</span>
+                    <h5 className="font-semibold text-sm">용접/수리 (Welding/Repair) - {affectedParts.filter(p => p.isRepair).length} pjesë</h5>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {affectedParts
+                      .filter(p => p.isRepair)
+                      .map((part) => (
+                        <button
+                          key={`list-w-${part.id}`}
+                          className={`text-left p-3 rounded-lg border transition-all ${
+                            highlightedPart === part.id 
+                              ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 ring-2 ring-yellow-400/50' 
+                              : 'border-border bg-muted/30 hover:bg-muted/50'
+                          }`}
+                          onClick={() => {
+                            setHighlightedPart(part.id);
+                            setTimeout(() => setHighlightedPart(null), 2000);
+                          }}
+                          onMouseEnter={() => setHoveredPart(part.id)}
+                          onMouseLeave={() => setHoveredPart(null)}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm text-foreground">{part.name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{part.nameEn}</p>
+                            </div>
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#2563eb] text-white text-xs font-bold flex-shrink-0">W</span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {part.statuses.map((s, i) => (
+                              <Badge key={i} variant="outline" className="text-[10px] h-5">{s.code}</Badge>
+                            ))}
+                          </div>
+                        </button>
+                      ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
-        </div>
-
-        {/* Center - Empty or additional info */}
-        <div className="space-y-3 hidden md:block"></div>
-
-        {/* Right - Details */}
-        <div className="space-y-3">
-          {selectedPart ? (
-            <Card className="border border-primary/50 bg-primary/5 animate-in slide-in-from-right-2 duration-200">
-              <CardContent className="p-3 lg:p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-semibold text-foreground text-sm lg:text-base">
-                    {carParts.find(p => p.id === selectedPart)?.name}
-                  </h4>
-                  <button
-                    onClick={() => setSelectedPart(null)}
-                    className="text-muted-foreground hover:text-foreground transition-colors text-lg leading-none"
-                  >
-                    ×
-                  </button>
+        )}
+        
+        {/* Statistics Summary */}
+        <Card className="border border-border">
+          <CardContent className="p-4 md:p-6">
+            <h4 className="font-semibold mb-4 text-foreground flex items-center gap-2 text-base">
+              <Info className="h-4 w-4" />
+              Përmbledhje / 요약
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#dc2626] text-white text-xs font-bold">X</span>
+                  <span className="text-xs font-medium">교환</span>
                 </div>
-                {(() => {
-                  const statuses = getPartStatus(selectedPart);
-                  if (statuses.length === 0) {
-                    return (
-                      <div className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4" style={{color: 'hsl(142 76% 36%)'}} />
-                        <span className="text-muted-foreground">Pjesë normale</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        {statuses.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
-                            <Badge variant="outline" className="font-mono text-xs">{s.code}</Badge>
-                            <span className="text-xs text-muted-foreground">{s.title}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="pt-2 border-t text-xs text-muted-foreground flex items-start gap-2">
-                        <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                        <span>{getStatusText(statuses)}</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border border-border">
-              <CardContent className="p-4 text-center">
-                <p className="text-xs lg:text-sm text-muted-foreground">
-                  Kliko një pjesë për detaje
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                <p className="text-2xl font-bold text-destructive">{issueCount.replacements}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-blue-600/10 border border-blue-600/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#2563eb] text-white text-xs font-bold">W</span>
+                  <span className="text-xs font-medium">용접</span>
+                </div>
+                <p className="text-2xl font-bold text-[#2563eb]">{issueCount.welds}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-blue-600/10 border border-blue-600/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium">수리</span>
+                </div>
+                <p className="text-2xl font-bold text-[#2563eb]">{issueCount.repairs}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted border border-border">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium">총계</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">{affectedParts.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
