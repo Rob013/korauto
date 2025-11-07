@@ -42,32 +42,32 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'radiator_support': { panel: 'within', x: 320, y: 105 },
     'cowl_panel': { panel: 'within', x: 320, y: 160 },
     
-    // Left side (driver side in Korean cars) - PRECISE POSITIONS FROM REFERENCE
-    'front_left_fender': { panel: 'within', x: 172, y: 265 },
-    'front_fender_left': { panel: 'within', x: 172, y: 265 },
-    'left_fender': { panel: 'within', x: 172, y: 265 },
-    'fender_left': { panel: 'within', x: 172, y: 265 },
+    // Left side (driver side in Korean cars) - EXACT POSITIONS FROM REFERENCE IMAGE
+    'front_left_fender': { panel: 'within', x: 175, y: 218 },
+    'front_fender_left': { panel: 'within', x: 175, y: 218 },
+    'left_fender': { panel: 'within', x: 175, y: 218 },
+    'fender_left': { panel: 'within', x: 175, y: 218 },
     
-    'front_left_door': { panel: 'within', x: 125, y: 305 },
-    'front_door_left': { panel: 'within', x: 125, y: 305 },
-    'door_front_left': { panel: 'within', x: 125, y: 305 },
+    'front_left_door': { panel: 'within', x: 130, y: 258 },
+    'front_door_left': { panel: 'within', x: 130, y: 258 },
+    'door_front_left': { panel: 'within', x: 130, y: 258 },
     
-    'rear_left_door': { panel: 'within', x: 172, y: 340 },
-    'rear_door_left': { panel: 'within', x: 172, y: 340 },
-    'door_rear_left': { panel: 'within', x: 172, y: 340 },
+    'rear_left_door': { panel: 'within', x: 175, y: 295 },
+    'rear_door_left': { panel: 'within', x: 175, y: 295 },
+    'door_rear_left': { panel: 'within', x: 175, y: 295 },
     
-    'left_quarter_panel': { panel: 'within', x: 175, y: 410 },
-    'quarter_panel_left': { panel: 'within', x: 175, y: 410 },
-    'left_quarter': { panel: 'within', x: 175, y: 410 },
-    'quarter_left': { panel: 'within', x: 175, y: 410 },
-    'rear_fender_left': { panel: 'within', x: 175, y: 410 },
-    'left_rear_fender': { panel: 'within', x: 175, y: 410 },
+    'left_quarter_panel': { panel: 'within', x: 180, y: 365 },
+    'quarter_panel_left': { panel: 'within', x: 180, y: 365 },
+    'left_quarter': { panel: 'within', x: 180, y: 365 },
+    'quarter_left': { panel: 'within', x: 180, y: 365 },
+    'rear_fender_left': { panel: 'within', x: 180, y: 365 },
+    'left_rear_fender': { panel: 'within', x: 180, y: 365 },
     
-    'side_sill_panel_left': { panel: 'within', x: 252, y: 780 },
-    'side_sill_left': { panel: 'within', x: 252, y: 780 },
-    'rocker_panel_left': { panel: 'within', x: 252, y: 780 },
-    'side_room_panel_left': { panel: 'within', x: 252, y: 780 },
-    'side_panel_left': { panel: 'within', x: 252, y: 780 },
+    'side_sill_panel_left': { panel: 'within', x: 255, y: 535 },
+    'side_sill_left': { panel: 'within', x: 255, y: 535 },
+    'rocker_panel_left': { panel: 'within', x: 255, y: 535 },
+    'side_room_panel_left': { panel: 'within', x: 255, y: 535 },
+    'side_panel_left': { panel: 'within', x: 255, y: 535 },
     
     // Right side (passenger side)
     'front_right_fender': { panel: 'within', x: 460, y: 160 },
@@ -97,13 +97,13 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     
     // ===== OUT PANEL (Rear/Bottom View) =====
     
-    // Rear section - PRECISE POSITIONS FROM REFERENCE
-    'trunk': { panel: 'out', x: 837, y: 415 },
+    // Rear section - EXACT POSITIONS FROM REFERENCE IMAGE
+    'trunk': { panel: 'out', x: 320, y: 415 },
     'trunk_lid': { panel: 'out', x: 320, y: 405 },
     'deck_lid': { panel: 'out', x: 320, y: 405 },
-    'trunk_floor': { panel: 'out', x: 903, y: 562 },
-    'luggage_floor': { panel: 'out', x: 903, y: 562 },
-    'floor_trunk': { panel: 'out', x: 903, y: 562 },
+    'trunk_floor': { panel: 'out', x: 320, y: 415 },
+    'luggage_floor': { panel: 'out', x: 320, y: 415 },
+    'floor_trunk': { panel: 'out', x: 320, y: 415 },
     
     'rear_panel': { panel: 'out', x: 320, y: 425 },
     'back_panel': { panel: 'out', x: 320, y: 425 },
@@ -111,16 +111,16 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'rear_bumper': { panel: 'out', x: 320, y: 450 },
     'back_bumper': { panel: 'out', x: 320, y: 450 },
     
-    // Wheel houses - PRECISE POSITIONS FROM REFERENCE
-    'rear_wheel_house_left': { panel: 'out', x: 903, y: 615 },
-    'rear_wheelhouse_left': { panel: 'out', x: 903, y: 615 },
-    'wheel_house_rear_left': { panel: 'out', x: 903, y: 615 },
-    'wheelhouse_rear_left': { panel: 'out', x: 903, y: 615 },
+    // Wheel houses - EXACT POSITIONS FROM REFERENCE IMAGE
+    'rear_wheel_house_left': { panel: 'out', x: 285, y: 565 },
+    'rear_wheelhouse_left': { panel: 'out', x: 285, y: 565 },
+    'wheel_house_rear_left': { panel: 'out', x: 285, y: 565 },
+    'wheelhouse_rear_left': { panel: 'out', x: 285, y: 565 },
     
-    'rear_wheel_house_right': { panel: 'out', x: 425, y: 410 },
-    'rear_wheelhouse_right': { panel: 'out', x: 425, y: 410 },
-    'wheel_house_rear_right': { panel: 'out', x: 425, y: 410 },
-    'wheelhouse_rear_right': { panel: 'out', x: 425, y: 410 },
+    'rear_wheel_house_right': { panel: 'out', x: 355, y: 565 },
+    'rear_wheelhouse_right': { panel: 'out', x: 355, y: 565 },
+    'wheel_house_rear_right': { panel: 'out', x: 355, y: 565 },
+    'wheelhouse_rear_right': { panel: 'out', x: 355, y: 565 },
     
     'front_wheel_house_left': { panel: 'out', x: 215, y: 175 },
     'front_wheelhouse_left': { panel: 'out', x: 215, y: 175 },
