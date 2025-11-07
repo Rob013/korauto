@@ -6,24 +6,61 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
-import CarInspectionDiagram from "@/components/CarInspectionDiagram";
+import CarInspectionDiagram, { InspectionItem } from "@/components/CarInspectionDiagram";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { mapInspectionTypeToPartId } from "@/utils/inspectionMapping";
 import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle,
+  ChevronDown,
   Clock,
   Cog,
   FileText,
   Loader2,
   MapPin,
   Shield,
+  Wind,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
+
+// Equipment icon mappings from CarDetails
+const EQUIPMENT_ICON_MAPPINGS: Array<{
+  icon: LucideIcon;
+  keywords: string[];
+}> = [
+  { icon: Shield, keywords: ["airbag", "abs", "esp", "esc", "asr", "tcs", "tpms", "safety", "alarm", "security"] },
+  { icon: Wind, keywords: ["climat", "klima", "climate", "air condition", "a/c"] },
+  { icon: Cog, keywords: ["engine", "motor", "transmission", "gearbox"] },
+  { icon: CheckCircle, keywords: [] }, // default
+];
+
+const normalizeText = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const matchesKeyword = (normalizedItem: string, keyword: string) => {
+  const normalizedKeyword = normalizeText(keyword.toLowerCase());
+  if (/^[a-z0-9]+$/.test(normalizedKeyword)) {
+    const keywordRegex = new RegExp(`\\b${normalizedKeyword}\\b`, "i");
+    return keywordRegex.test(normalizedItem);
+  }
+  return normalizedItem.includes(normalizedKeyword);
+};
+
+const getEquipmentIcon = (itemName: string): LucideIcon => {
+  const normalizedItem = normalizeText(itemName.toLowerCase());
+  for (const { icon, keywords } of EQUIPMENT_ICON_MAPPINGS) {
+    if (keywords.some((keyword) => matchesKeyword(normalizedItem, keyword))) {
+      return icon;
+    }
+  }
+  return CheckCircle;
+};
 
 interface InspectionReportCar {
   id: string;
@@ -186,16 +223,294 @@ const formatDisplayDate = (
   return raw.replace(/-/g, ".").replace(/T.*/, "");
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  X: "Exchange (replacement)",
+  W: "Welding",
+  A: "Repair",
+  C: "Panel repair",
+  S: "Scratch",
+  U: "Corrosion",
+  P: "Paint",
+};
+
+const normalizeStatusEntry = (entry: any): { code: string; title: string } | null => {
+  if (entry === null || entry === undefined) return null;
+
+  const buildStatus = (codeRaw: string | null, titleRaw: string | null) => {
+    const code = codeRaw ? codeRaw.trim().toUpperCase() : "";
+    const fallbackTitle = (code && STATUS_LABELS[code]) || undefined;
+    const title = titleRaw?.trim() || fallbackTitle || code;
+    if (!code && !title) return null;
+    return {
+      code: code || (title ? title.charAt(0).toUpperCase() : ""),
+      title: title || code,
+    };
+  };
+
+  if (typeof entry === "string" || typeof entry === "number") {
+    const text = entry.toString().trim();
+    if (!text) return null;
+    const normalizedCode = text.length <= 3 ? text.toUpperCase() : text.charAt(0).toUpperCase();
+    return buildStatus(normalizedCode, text);
+  }
+
+  if (typeof entry === "object") {
+    const codeCandidate =
+      entry.code ??
+      entry.id ??
+      entry.key ??
+      entry.value ??
+      entry.status ??
+      entry.type ??
+      null;
+    const titleCandidate =
+      entry.title ??
+      entry.name ??
+      entry.label ??
+      entry.description ??
+      entry.text ??
+      entry.value ??
+      null;
+    return buildStatus(
+      codeCandidate != null ? String(codeCandidate) : null,
+      titleCandidate != null ? String(titleCandidate) : null,
+    );
+  }
+
+  return null;
+};
+
+const dedupeStatuses = (statuses: Array<{ code: string; title: string }>) => {
+  const seen = new Set<string>();
+  const result: Array<{ code: string; title: string }> = [];
+  for (const status of statuses) {
+    if (!status) continue;
+    const key = `${status.code}|${status.title}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({
+      code: status.code || "",
+      title: status.title || status.code || "",
+    });
+  }
+  return result;
+};
+
+const extractInspectionItemsFromSource = (source: unknown): InspectionItem[] => {
+  const results: InspectionItem[] = [];
+  const visited = new WeakSet<object>();
+
+  const addAttributesFromCandidate = (container: Set<string>, candidate: unknown) => {
+    if (!candidate) return;
+    if (Array.isArray(candidate)) {
+      candidate.forEach((entry) => {
+        if (entry !== null && entry !== undefined) {
+          const text = String(entry).trim();
+          if (text) container.add(text);
+        }
+      });
+      return;
+    }
+    if (typeof candidate === "string") {
+      candidate
+        .split(/[\r\n]+|,|•|\u2022/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .forEach((part) => container.add(part));
+      return;
+    }
+    if (typeof candidate === "object") {
+      Object.values(candidate).forEach((value) => addAttributesFromCandidate(container, value));
+    }
+  };
+
+  const visit = (value: unknown) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (typeof value === "object") {
+      if (visited.has(value)) return;
+      visited.add(value);
+
+      const obj = value as Record<string, any>;
+      const rawType = obj.type ?? obj.part ?? obj.location ?? obj.body_part ?? obj.item;
+
+      let codeCandidate: string | null = null;
+      let titleCandidate: string | null = null;
+
+      const assignFrom = (input: any) => {
+        if (!input) return;
+        if (typeof input === "string" || typeof input === "number") {
+          const text = String(input).trim();
+          if (!text) return;
+          if (!titleCandidate) titleCandidate = text;
+          if (!codeCandidate) codeCandidate = text;
+          return;
+        }
+        if (typeof input === "object") {
+          const code =
+            input.code ??
+            input.id ??
+            input.key ??
+            input.value ??
+            input.part_code ??
+            input.partId ??
+            input.position ??
+            input.slug ??
+            null;
+          const title =
+            input.title ??
+            input.name ??
+            input.label ??
+            input.description ??
+            input.part_name ??
+            input.display ??
+            input.text ??
+            null;
+          if (code != null && !codeCandidate) codeCandidate = String(code);
+          if (title != null && !titleCandidate) titleCandidate = String(title);
+        }
+      };
+
+      assignFrom(rawType);
+      assignFrom(obj);
+
+      if (codeCandidate || titleCandidate) {
+        if (!codeCandidate && titleCandidate) codeCandidate = titleCandidate;
+        if (!titleCandidate && codeCandidate) titleCandidate = codeCandidate;
+
+        const statusCandidates = [
+          obj.statusTypes,
+          obj.status_types,
+          obj.status,
+          obj.statuses,
+          obj.repair_types,
+          obj.repairType,
+          obj.repairs,
+          obj.repair,
+          obj.result,
+          obj.damage_types,
+          obj.simple_repair,
+        ];
+
+        const statuses: Array<{ code: string; title: string }> = [];
+        statusCandidates.forEach((candidate) => {
+          if (!candidate) return;
+          if (Array.isArray(candidate)) {
+            candidate.forEach((entry) => {
+              const normalized = normalizeStatusEntry(entry);
+              if (normalized) statuses.push(normalized);
+            });
+          } else if (typeof candidate === "object") {
+            Object.values(candidate).forEach((entry) => {
+              const normalized = normalizeStatusEntry(entry);
+              if (normalized) statuses.push(normalized);
+            });
+          } else {
+            const normalized = normalizeStatusEntry(candidate);
+            if (normalized) statuses.push(normalized);
+          }
+        });
+
+        const attributes = new Set<string>();
+        [
+          obj.attributes,
+          obj.attribute,
+          obj.attr,
+          obj.descriptions,
+          obj.description,
+          obj.details,
+          obj.detail,
+          obj.comments,
+          obj.comment,
+        ].forEach((candidate) => addAttributesFromCandidate(attributes, candidate));
+
+        const mappedPartId =
+          mapInspectionTypeToPartId({ code: codeCandidate || undefined, title: titleCandidate || undefined }) ||
+          Array.from(attributes)
+            .map((attr) => mapInspectionTypeToPartId(undefined, attr))
+            .find((id): id is string => Boolean(id)) ||
+          null;
+
+        results.push({
+          type: {
+            code: codeCandidate || "",
+            title: titleCandidate || codeCandidate || "",
+          },
+          statusTypes: dedupeStatuses(statuses),
+          attributes: Array.from(attributes),
+          mappedPartId,
+        });
+      }
+
+      Object.values(obj).forEach(visit);
+    }
+  };
+
+  visit(source);
+  return results;
+};
+
+const mergeInspectionItems = (items: InspectionItem[]): InspectionItem[] => {
+  const merged = new Map<string, InspectionItem>();
+
+  for (const item of items) {
+    if (!item?.type) continue;
+    const key = [
+      item.mappedPartId || "",
+      item.type.code || "",
+      item.type.title || "",
+    ]
+      .join("|")
+      .toLowerCase();
+
+    const existing = merged.get(key);
+    if (existing) {
+      const combinedStatuses = dedupeStatuses([...existing.statusTypes, ...item.statusTypes]);
+      const combinedAttributes = Array.from(new Set([...existing.attributes, ...item.attributes]));
+      merged.set(key, {
+        type: {
+          code: existing.type.code || item.type.code || "",
+          title: existing.type.title || item.type.title || existing.type.code || item.type.code || "",
+        },
+        statusTypes: combinedStatuses,
+        attributes: combinedAttributes,
+        mappedPartId: existing.mappedPartId || item.mappedPartId || mapInspectionTypeToPartId(item.type) || null,
+      });
+    } else {
+      merged.set(key, {
+        type: {
+          code: item.type.code || "",
+          title: item.type.title || item.type.code || "",
+        },
+        statusTypes: dedupeStatuses(item.statusTypes),
+        attributes: Array.from(new Set(item.attributes)),
+        mappedPartId: item.mappedPartId || mapInspectionTypeToPartId(item.type) || null,
+      });
+    }
+  }
+
+  return Array.from(merged.values());
+};
+
 const CarInspectionReport = () => {
   const { id: lot } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { exchangeRate, processFloodDamageText, convertKRWtoEUR } = useCurrencyAPI();
-  const { getOptionName, getOptionDescription, loading: optionsLoading } = useKoreaOptions();
+  const {
+    getOptionName,
+    getOptionDescription,
+    loading: optionsLoading,
+    error: optionsError,
+  } = useKoreaOptions();
   const [car, setCar] = useState<InspectionReportCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllStandard, setShowAllStandard] = useState(false);
   const [showAllChoice, setShowAllChoice] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   const fetchInspectionReport = useCallback(async () => {
     if (!lot) return;
@@ -414,24 +729,22 @@ const CarInspectionReport = () => {
     fetchInspectionReport();
   }, [fetchInspectionReport]);
 
-    const inspectionOuterData = useMemo(() => {
-      // Try multiple potential locations and merge arrays if found
-      const candidates: unknown[] = [];
-      const pushIfArray = (val: unknown) => {
-        if (Array.isArray(val)) candidates.push(...val);
-      };
-      pushIfArray(car?.details?.inspect_outer);
-      pushIfArray(car?.inspect?.outer);
-      pushIfArray(car?.inspect?.inspect_outer);
-      pushIfArray((car as any)?.details?.inspect?.outer);
-      pushIfArray((car as any)?.details?.outer);
-      // Deduplicate by type.code if present
-      const keyed = new Map<string, any>();
-      for (const item of candidates) {
-        const code = (item as any)?.type?.code || (item as any)?.code || JSON.stringify(item);
-        if (!keyed.has(code)) keyed.set(code, item);
-      }
-      return Array.from(keyed.values());
+    const inspectionOuterData = useMemo<InspectionItem[]>(() => {
+      if (!car) return [];
+
+      const sources: unknown[] = [
+        car.details?.inspect,
+        car.details?.inspect_outer,
+        car.inspect,
+        car.inspect?.outer,
+        car.inspect?.inspect_outer,
+        (car as any)?.details?.inspect?.outer,
+        (car as any)?.details?.outer,
+        (car as any)?.inspect_outer,
+      ];
+
+      const extracted = sources.flatMap((source) => extractInspectionItemsFromSource(source));
+      return mergeInspectionItems(extracted);
     }, [car]);
 
     const inspectionInnerData = useMemo(() => {
@@ -649,20 +962,14 @@ const CarInspectionReport = () => {
       { label: "Pronaret e ndërruar", value: ownerChangesDisplay },
     ];
 
-    const usageHistoryList: Array<{ description?: string; value?: string }> = Array.isArray(
+    // Build comprehensive usage history from API data
+    const apiUsageHistoryList: Array<{ description?: string; value?: string }> = Array.isArray(
       car.details?.insurance?.usage_history,
     )
       ? car.details?.insurance?.usage_history
       : [];
 
-    const findUsageValue = (keywords: string[]) => {
-      const match = usageHistoryList.find((entry) => {
-        const description = `${entry.description ?? ""}`.toLowerCase();
-        return keywords.some((keyword) => description.includes(keyword));
-      });
-      return match?.value;
-    };
-
+    // Helper function to convert values to Yes/No in Albanian
     const toYesNo = (value?: string | number | boolean | null) => {
       if (value === undefined || value === null) return null;
       if (typeof value === "boolean") return value ? "Po" : "Jo";
@@ -685,14 +992,111 @@ const CarInspectionReport = () => {
       return null;
     };
 
+    // Translate usage type to Albanian
+    const translateUsageType = (type: string): string => {
+      const translations: Record<string, string> = {
+        'rental': 'Makinë me qira',
+        'rent': 'Makinë me qira',
+        'lease': 'Lidhje kontrate me qira',
+        'business': 'Përdorim komercial',
+        'commercial': 'Përdorim komercial',
+        'private': 'Përdorim privat',
+        'personal': 'Përdorim personal',
+        'taxi': 'Taksi',
+        'ride_sharing': 'Shpërndarje udhëtarësh',
+        'delivery': 'Shpërndarje mallrash',
+        'company': 'Makinë e kompanisë',
+        'government': 'Makinë qeveritare',
+        'loan': 'Kredi/Huamarrje',
+        'mortgage': 'Hipotekë',
+        'ownership_change': 'Ndryshim pronari',
+        'registration_change': 'Ndryshim regjistrimi',
+        'color_change': 'Ndryshim ngjyre',
+        'modification': 'Modifikim',
+        'accident': 'Aksidenti',
+        'repair': 'Riparim',
+        'insurance_claim': 'Kërkesë sigurie',
+      };
+      const normalized = type.toLowerCase().replace(/[_\s]+/g, '_');
+      return translations[normalized] || type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    };
+
+    // Add insurance_v2 usage data to history list
+    const usageHistoryList: Array<{ description: string; value: string }> = [];
+    
+    // Add existing API usage history with proper translations
+    apiUsageHistoryList.forEach(item => {
+      const desc = item.description || "";
+      const translatedDesc = desc ? translateUsageType(desc) : "Informacion i përdorimit";
+      usageHistoryList.push({
+        description: translatedDesc,
+        value: item.value || "-"
+      });
+    });
+    
+    // Add carInfoUse1s data - main usage information
+    if (car.insurance_v2?.carInfoUse1s && Array.isArray(car.insurance_v2.carInfoUse1s)) {
+      car.insurance_v2.carInfoUse1s.forEach((use: any, index: number) => {
+        if (use && typeof use === 'object') {
+          const description = use.description || use.type || use.name || use.category || `Informacion kryesor ${index + 1}`;
+          const value = use.value || use.status || use.result || use.state || "-";
+          usageHistoryList.push({
+            description: translateUsageType(description),
+            value: String(value)
+          });
+        }
+      });
+    }
+
+    // Add carInfoUse2s data - secondary usage information
+    if (car.insurance_v2?.carInfoUse2s && Array.isArray(car.insurance_v2.carInfoUse2s)) {
+      car.insurance_v2.carInfoUse2s.forEach((use: any, index: number) => {
+        if (use && typeof use === 'object') {
+          const description = use.description || use.type || use.name || use.category || `Informacion shtesë ${index + 1}`;
+          const value = use.value || use.status || use.result || use.state || "-";
+          usageHistoryList.push({
+            description: translateUsageType(description),
+            value: String(value)
+          });
+        }
+      });
+    }
+    
+    // Add loan/business info if available
+    if (car.insurance_v2?.loan !== undefined && car.insurance_v2?.loan !== null) {
+      const loanValue = toYesNo(car.insurance_v2.loan);
+      if (loanValue) {
+        usageHistoryList.push({
+          description: "Kredi/Huamarrje",
+          value: loanValue
+        });
+      }
+    }
+    
+    if (car.insurance_v2?.business !== undefined && car.insurance_v2?.business !== null) {
+      const businessValue = toYesNo(car.insurance_v2.business);
+      if (businessValue) {
+        usageHistoryList.push({
+          description: "Përdorim për biznes",
+          value: businessValue
+        });
+      }
+    }
+
+    const findUsageValue = (keywords: string[]) => {
+      const match = usageHistoryList.find((entry) => {
+        const description = `${entry.description ?? ""}`.toLowerCase();
+        return keywords.some((keyword) => description.includes(keyword));
+      });
+      return match?.value;
+    };
+
     const rentalUsageValue =
-      toYesNo(findUsageValue(["rent", "qira", "rental"])) ??
-      toYesNo(car.insurance_v2?.carInfoUse1s?.join(" ")) ??
-      toYesNo(car.insurance_v2?.carInfoUse2s?.join(" ")) ??
+      toYesNo(findUsageValue(["rent", "qira", "rental", "lease", "loan"])) ??
       toYesNo(car.insurance_v2?.loan);
 
     const commercialUsageValue =
-      toYesNo(findUsageValue(["komerc", "biznes", "commercial"])) ??
+      toYesNo(findUsageValue(["komerc", "biznes", "commercial", "business"])) ??
       toYesNo(car.insurance_v2?.business);
 
     const usageHighlights = [
@@ -912,7 +1316,18 @@ const CarInspectionReport = () => {
                     <p className="text-xs md:text-sm text-muted-foreground">
                       Diagrami tregon dëmtimet e vërteta, riparimet dhe ndërrimet e pjesëve sipas të dhënave të inspektimit
                     </p>
-                    <CarInspectionDiagram inspectionData={inspectionOuterData} className="mx-auto" />
+                    <CarInspectionDiagram 
+                      inspectionData={inspectionOuterData} 
+                      className="mx-auto"
+                      carInfo={{
+                        make: car.make,
+                        model: car.model,
+                        year: car.year?.toString(),
+                        vin: car.vin,
+                        mileage: formatMileage(car.mileageKm || 0)
+                      }}
+                      accidentSummary={car.inspect?.accident_summary}
+                    />
                   </div>
 
                   {/* Outer Damage Details */}
@@ -923,7 +1338,7 @@ const CarInspectionReport = () => {
                         Detajet e Dëmtimeve të Jashtme
                       </h3>
                       <div className="grid gap-2 md:grid-cols-2">
-                        {inspectionOuterData.map((item: any, index: number) => (
+                        {inspectionOuterData.map((item: InspectionItem, index: number) => (
                           <Card key={`${item?.type?.code || index}-summary`} className="border-border/80">
                             <CardHeader className="pb-1 px-3 pt-3 md:px-6 md:pt-6">
                               <div className="flex items-center gap-2 md:gap-3">
@@ -1156,6 +1571,18 @@ const CarInspectionReport = () => {
                   <p className="text-sm text-muted-foreground">
                     Lista e plotë e pajisjeve standarde dhe opsionale
                   </p>
+                  {optionsLoading && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Duke ngarkuar listën e pajisjeve nga Korea...
+                    </div>
+                  )}
+                  {!optionsLoading && optionsError && (
+                    <div className="flex items-center gap-2 text-xs text-destructive mt-2">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Nuk u arrit të përditësohet lista e opsioneve. Kodet mund të shfaqen pa përkthim.
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Extra Options with Details */}
@@ -1169,9 +1596,11 @@ const CarInspectionReport = () => {
                       </div>
                       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
                          {car.details.options_extra.map((option: any, idx: number) => {
-                          const translatedName = getOptionName(option.code) !== option.code 
-                            ? getOptionName(option.code) 
-                            : (option.name || option.name_original);
+                          const rawCode = option?.code != null ? String(option.code).trim() : "";
+                          const translated = rawCode ? getOptionName(rawCode) : "";
+                          const displayName = translated && translated !== rawCode
+                            ? translated
+                            : option.name || option.name_original || rawCode;
                           const priceKRW = option.price || 0;
                           const priceInEur = Math.round(convertKRWtoEUR(priceKRW));
                           
@@ -1180,8 +1609,11 @@ const CarInspectionReport = () => {
                               <CardContent className="p-4 space-y-2">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1">
-                                    <h4 className="font-semibold text-base">{translatedName}</h4>
-                                    {option.name_original && translatedName !== option.name_original && (
+                                    <h4 className="font-semibold text-base">{displayName}</h4>
+                                    {rawCode && (
+                                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-mono">{rawCode}</p>
+                                    )}
+                                    {option.name_original && displayName !== option.name_original && (
                                       <p className="text-xs text-muted-foreground">{option.name_original}</p>
                                     )}
                                   </div>
@@ -1191,9 +1623,9 @@ const CarInspectionReport = () => {
                                     </Badge>
                                   )}
                                 </div>
-                                {(getOptionDescription(option.code) || option.description) && (
+                                {(getOptionDescription(rawCode) || option.description) && (
                                   <p className="text-sm text-muted-foreground leading-relaxed">
-                                    {getOptionDescription(option.code) || option.description}
+                                    {getOptionDescription(rawCode) || option.description}
                                   </p>
                                 )}
                               </CardContent>
@@ -1213,13 +1645,16 @@ const CarInspectionReport = () => {
                         <div className="flex-1 h-px bg-border"></div>
                         <span className="text-xs text-muted-foreground font-medium">{car.details.options.standard.length} pajisje</span>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2">
                         {(showAllStandard ? car.details.options.standard : car.details.options.standard.slice(0, 6)).map((optionCode: string, idx: number) => {
-                          const displayName = getOptionName(optionCode);
+                          const code = (optionCode ?? "").toString().trim();
+                          const displayName = getOptionName(code);
                           return (
                             <div key={idx} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group">
                               <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">{displayName}</span>
+                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight">
+                                <span className="font-mono font-semibold">{code}</span> = {displayName}
+                              </span>
                             </div>
                           );
                         })}
@@ -1243,13 +1678,16 @@ const CarInspectionReport = () => {
                         <div className="flex-1 h-px bg-border"></div>
                         <span className="text-xs text-muted-foreground font-medium">{car.details.options.choice.length} opsione</span>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2">
                         {(showAllChoice ? car.details.options.choice : car.details.options.choice.slice(0, 6)).map((optionCode: string, idx: number) => {
-                          const displayName = getOptionName(optionCode);
+                          const code = (optionCode ?? "").toString().trim();
+                          const displayName = getOptionName(code);
                           return (
                             <div key={idx} className="flex items-center gap-2 p-2 bg-accent/5 border border-accent/20 rounded-md hover:bg-accent/10 hover:border-accent/30 transition-all duration-200 group">
                               <Cog className="h-3.5 w-3.5 text-accent flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight line-clamp-1">{displayName}</span>
+                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight">
+                                <span className="font-mono font-semibold">{code}</span> = {displayName}
+                              </span>
                             </div>
                           );
                         })}
