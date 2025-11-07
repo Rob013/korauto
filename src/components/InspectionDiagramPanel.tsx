@@ -73,13 +73,28 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'rear_cross_member': { panel: 'out', x: 320, y: 390 },
   };
 
-  console.log('🔍 Processing inspection data for diagram:', inspectionData.length, 'items');
+  console.log('🔍 Processing inspection data for diagram:', {
+    totalItems: inspectionData.length,
+    items: inspectionData.map(item => ({
+      title: item?.type?.title,
+      code: item?.type?.code,
+      statusTypes: item?.statusTypes,
+      attributes: item?.attributes
+    }))
+  });
 
   inspectionData.forEach((item, idx) => {
     const typeTitle = (item?.type?.title || '').toString().toLowerCase();
     const typeCode = (item?.type?.code || '').toString().toLowerCase();
     const statusTypes = item?.statusTypes || [];
     const attributes = item?.attributes || [];
+    
+    console.log(`📋 Processing item ${idx + 1}:`, {
+      typeTitle,
+      typeCode,
+      statusTypes,
+      attributes
+    });
     
     // Determine marker type based on statusTypes and attributes
     let markerType: 'N' | 'R' = 'R';
@@ -106,7 +121,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
       }
     });
 
-    // Check attributes for RANK indicators
+    // Check attributes for RANK indicators - if present, assume there's an issue
     const hasHighRank = attributes.some((attr: string) => 
       typeof attr === 'string' && (
         attr.includes('RANK_ONE') || 
@@ -116,18 +131,18 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
       )
     );
 
-    if (hasHighRank && !hasIssue) {
-      // If has high rank but no explicit status, infer from title
-      if (typeTitle.includes('exchange') || typeTitle.includes('replacement')) {
+    if (hasHighRank) {
+      hasIssue = true;
+      // Keep the markerType from statusTypes, or default to 'N' if no statusTypes found
+      if (statusTypes.length === 0) {
         markerType = 'N';
-        hasIssue = true;
-      } else if (typeTitle.includes('repair') || typeTitle.includes('weld')) {
-        markerType = 'R';
-        hasIssue = true;
       }
     }
 
-    if (!hasIssue) return;
+    if (!hasIssue) {
+      console.log(`⚠️ Skipping item ${idx + 1}: no issue detected`);
+      return;
+    }
 
     // Try to find position for this part using fuzzy matching
     let bestMatch: string | null = null;
@@ -157,7 +172,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
         label: item?.type?.title || ''
       };
 
-      console.log(`📍 Mapped ${typeTitle} → ${bestMatch} (${pos.panel}), type: ${markerType}`);
+      console.log(`✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${pos.x}, ${pos.y})`);
 
       if (pos.panel === 'within') {
         withinMarkers.push(marker);
@@ -165,11 +180,17 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
         outMarkers.push(marker);
       }
     } else {
-      console.warn(`⚠️ No position mapping found for: ${typeTitle}`);
+      console.warn(`❌ No position mapping found for: "${item?.type?.title}" (searched: ${typeTitle}, ${typeCode})`);
     }
   });
 
-  console.log(`✅ Diagram markers: ${withinMarkers.length} within, ${outMarkers.length} out`);
+  console.log(`\n🎯 Final diagram markers:`, {
+    within: withinMarkers.length,
+    out: outMarkers.length,
+    withinItems: withinMarkers.map(m => m.label),
+    outItems: outMarkers.map(m => m.label)
+  });
+  
   return { within: withinMarkers, out: outMarkers };
 };
 
@@ -221,9 +242,27 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
   className = ""
 }) => {
   const { within, out } = mapInspectionToMarkers(outerInspectionData);
+  
+  const hasAnyMarkers = within.length > 0 || out.length > 0;
+  const hasData = outerInspectionData && outerInspectionData.length > 0;
 
   return (
     <Card className={`overflow-hidden ${className}`}>
+      {/* Debug info banner */}
+      {hasData && !hasAnyMarkers && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
+          <p className="text-yellow-800 dark:text-yellow-200">
+            ℹ️ Data received ({outerInspectionData.length} items) but no markers mapped. Check console for details.
+          </p>
+        </div>
+      )}
+      {!hasData && (
+        <div className="bg-muted/50 border-b border-border px-4 py-2 text-sm">
+          <p className="text-muted-foreground">
+            No inspection data available for this vehicle.
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-2 border-b border-border">
         <div className="text-center py-3 border-r border-border bg-muted/30 font-semibold">
           within
