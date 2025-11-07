@@ -319,44 +319,37 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
 };
 
 const DiagramMarkerWithTooltip: React.FC<{ marker: DiagramMarker; index: number }> = ({ marker, index }) => {
+  // Position markers using absolute HTML elements to avoid SVG pointer-event issues
+  const leftPercent = (marker.x / 640) * 100;
+  const topPercent = (marker.y / 600) * 100;
+
+  const baseClasses =
+    "absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shadow border border-background/80 pointer-events-auto";
+  const variantClasses =
+    marker.type === "N"
+      ? "bg-destructive text-destructive-foreground"
+      : "bg-primary text-primary-foreground";
+
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
-        <g 
-          className="cursor-pointer hover:opacity-90 transition-opacity" 
-          style={{ pointerEvents: 'all' }}
+        <button
+          type="button"
+          aria-label={`${marker.label} - ${marker.type === "N" ? "Replacement" : "Repair"}`}
+          className={`${baseClasses} ${variantClasses}`}
+          style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
         >
-          <circle
-            cx={marker.x}
-            cy={marker.y}
-            r="18"
-            fill={marker.type === 'N' ? '#ef4444' : '#3b82f6'}
-            stroke="white"
-            strokeWidth="3"
-            className="transition-all"
-          />
-          <text
-            x={marker.x}
-            y={marker.y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fill="white"
-            fontSize="15"
-            fontWeight="bold"
-            style={{ pointerEvents: 'none', userSelect: 'none' }}
-          >
-            {marker.type}
-          </text>
-        </g>
+          {marker.type}
+        </button>
       </TooltipTrigger>
-      <TooltipContent 
-        side="top" 
+      <TooltipContent
+        side="top"
         sideOffset={8}
         className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs z-50"
       >
         <div className="font-semibold text-sm">{marker.label}</div>
         <div className="text-xs text-muted-foreground mt-1">
-          {marker.type === 'N' ? 'Shift (Replacement)' : 'Repair'}
+          {marker.type === "N" ? "Shift (Replacement)" : "Repair"}
         </div>
       </TooltipContent>
     </Tooltip>
@@ -406,17 +399,13 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
               alt="Car side/interior view" 
               className="w-full h-auto"
             />
-            <svg 
-              viewBox="0 0 640 600" 
-              className="absolute inset-0 w-full h-full"
-              style={{ pointerEvents: 'none' }}
-            >
+            <div className="absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
                 {within.map((marker, idx) => (
                   <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
                 ))}
               </TooltipProvider>
-            </svg>
+            </div>
           </div>
 
           {/* Out panel - underside/bottom view */}
@@ -426,17 +415,13 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
               alt="Car underside/bottom view" 
               className="w-full h-auto"
             />
-            <svg 
-              viewBox="0 0 640 600" 
-              className="absolute inset-0 w-full h-full"
-              style={{ pointerEvents: 'none' }}
-            >
+            <div className="absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
                 {out.map((marker, idx) => (
                   <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
                 ))}
               </TooltipProvider>
-            </svg>
+            </div>
           </div>
         </div>
 
