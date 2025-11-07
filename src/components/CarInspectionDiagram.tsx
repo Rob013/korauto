@@ -346,8 +346,8 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   const hasCorrosion = statuses.some((s) => s.code === 'U');
   const hasScratch = statuses.some((s) => s.code === 'S');
 
-  if (hasExchange || hasWelding) return 'Pjesë e zëvendësuar (N - i kuq)';
-  if (hasRepair) return 'Pjesë e riparuar (R - blu)';
+  if (hasExchange) return 'Pjesë e zëvendësuar (X - red)';
+  if (hasWelding || hasRepair) return 'Pjesë e riparuar (W - blue)';
 
   return 'Pjesë normale';
 };
@@ -418,21 +418,19 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
                   const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
 
-                  // N badge: replacement (code 2, X) or sheet metal/welding (code 3, W)
+                  // X badge: replacement (code 2, X) - red
                   const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
                     normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
 
-                  const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3') ||
-                    normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim'));
+                  // W badge: sheet metal/welding (code 3, W) or simple repair (code 1, A) - blue
+                  const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3' || code === 'A' || code === '1') ||
+                    normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim') || 
+                      t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
 
-                  // R badge: simple repair (code 1, A)
-                  const hasRepair = normalizedCodes.some(code => code === 'A' || code === '1') ||
-                    normalizedTitles.some(t => t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
+                  const showXBadge = hasExchange;
+                  const showWBadge = hasWelding && !showXBadge;
 
-                  const showNBadge = hasExchange || hasWelding;
-                  const showRBadge = hasRepair && !showNBadge;
-
-                  if (!showNBadge && !showRBadge) return null;
+                  if (!showXBadge && !showWBadge) return null;
 
                   // Position badges on the diagram - relative to image dimensions
                   let position = {};
@@ -468,8 +466,8 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       }}
                     >
                       <div className="flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 border-white"
-                        style={{ backgroundColor: showNBadge ? '#dc2626' : '#2563eb' }}>
-                        {showNBadge ? 'N' : 'R'}
+                        style={{ backgroundColor: showXBadge ? '#dc2626' : '#2563eb' }}>
+                        {showXBadge ? 'X' : 'W'}
                       </div>
                     </div>
                   );
@@ -495,21 +493,19 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   const normalizedCodes = statuses.map(s => String(s.code || '').toUpperCase().trim());
                   const normalizedTitles = statuses.map(s => String(s.title || '').toLowerCase());
 
-                  // N badge: replacement (code 2, X) or sheet metal/welding (code 3, W)
+                  // X badge: replacement (code 2, X) - red
                   const hasExchange = normalizedCodes.some(code => code === 'X' || code === '2') ||
                     normalizedTitles.some(t => t.includes('exchange') || t.includes('replacement') || t.includes('교환') || t.includes('nderrim'));
 
-                  const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3') ||
-                    normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim'));
+                  // W badge: sheet metal/welding (code 3, W) or simple repair (code 1, A) - blue
+                  const hasWelding = normalizedCodes.some(code => code === 'W' || code === '3' || code === 'A' || code === '1') ||
+                    normalizedTitles.some(t => t.includes('weld') || t.includes('sheet metal') || t.includes('용접') || t.includes('saldim') || 
+                      t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
 
-                  // R badge: simple repair (code 1, A)
-                  const hasRepair = normalizedCodes.some(code => code === 'A' || code === '1') ||
-                    normalizedTitles.some(t => t.includes('repair') || t.includes('simple') || t.includes('수리') || t.includes('riparim'));
+                  const showXBadge = hasExchange;
+                  const showWBadge = hasWelding && !showXBadge;
 
-                  const showNBadge = hasExchange || hasWelding;
-                  const showRBadge = hasRepair && !showNBadge;
-
-                  if (!showNBadge && !showRBadge) return null;
+                  if (!showXBadge && !showWBadge) return null;
 
                   // Position badges on the diagram - relative to image dimensions
                   let position = {};
@@ -545,8 +541,8 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                       }}
                     >
                       <div className="flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-white text-xs md:text-base shadow-lg border-2 border-white"
-                        style={{ backgroundColor: showNBadge ? '#dc2626' : '#2563eb' }}>
-                        {showNBadge ? 'N' : 'R'}
+                        style={{ backgroundColor: showXBadge ? '#dc2626' : '#2563eb' }}>
+                        {showXBadge ? 'X' : 'W'}
                       </div>
                     </div>
                   );
@@ -559,12 +555,12 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
         {/* Legend at Bottom - Mobile Responsive */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 py-3 md:py-4 border-t border-border bg-background">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#dc2626] text-white text-xs font-bold shadow-sm border-2 border-white">N</span>
-            <span className="text-xs md:text-sm font-medium text-foreground">Nderrim (Replacement/Sheet Metal)</span>
+            <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#dc2626] text-white text-xs font-bold shadow-sm border-2 border-white">X</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">교환 (Exchange/Replacement)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#2563eb] text-white text-xs font-bold shadow-sm border-2 border-white">R</span>
-            <span className="text-xs md:text-sm font-medium text-foreground">Riparim (Simple Repair)</span>
+            <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#2563eb] text-white text-xs font-bold shadow-sm border-2 border-white">W</span>
+            <span className="text-xs md:text-sm font-medium text-foreground">용접/수리 (Welding/Repair)</span>
           </div>
         </div>
       </div>
@@ -582,17 +578,17 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-destructive/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#dc2626] text-white text-[8px] md:text-[9px] font-bold shadow-sm">N</span>
-                    <span className="text-[10px] md:text-xs">Nderrime</span>
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#dc2626] text-white text-[8px] md:text-[9px] font-bold shadow-sm">X</span>
+                    <span className="text-[10px] md:text-xs">교환</span>
                   </span>
-                  <Badge variant="destructive" className="font-mono text-[10px] md:text-xs h-5 md:h-auto">{issueCount.replacements + issueCount.welds}</Badge>
+                  <Badge variant="destructive" className="font-mono text-[10px] md:text-xs h-5 md:h-auto">{issueCount.replacements}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-blue-600/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#2563eb] text-white text-[8px] md:text-[9px] font-bold shadow-sm">R</span>
-                    <span className="text-[10px] md:text-xs">Riparime</span>
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#2563eb] text-white text-[8px] md:text-[9px] font-bold shadow-sm">W</span>
+                    <span className="text-[10px] md:text-xs">용접/수리</span>
                   </span>
-                  <Badge className="font-mono text-[10px] md:text-xs bg-[#2563eb] text-white h-5 md:h-auto">{issueCount.repairs}</Badge>
+                  <Badge className="font-mono text-[10px] md:text-xs bg-[#2563eb] text-white h-5 md:h-auto">{issueCount.welds + issueCount.repairs}</Badge>
                 </div>
               </div>
             </CardContent>
