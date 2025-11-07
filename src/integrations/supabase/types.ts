@@ -663,6 +663,39 @@ export type Database = {
           },
         ]
       }
+      inspection_marker_positions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          panel: string
+          part_key: string
+          updated_at: string | null
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          panel: string
+          part_key: string
+          updated_at?: string | null
+          x: number
+          y: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          panel?: string
+          part_key?: string
+          updated_at?: string | null
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
       inspection_requests: {
         Row: {
           archived: boolean
@@ -675,7 +708,7 @@ export type Database = {
           data_processing_consent: boolean | null
           expires_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           notes: string | null
           privacy_consent: boolean | null
           session_id: string | null
@@ -694,7 +727,7 @@ export type Database = {
           data_processing_consent?: boolean | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           notes?: string | null
           privacy_consent?: boolean | null
           session_id?: string | null
@@ -713,7 +746,7 @@ export type Database = {
           data_processing_consent?: boolean | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           notes?: string | null
           privacy_consent?: boolean | null
           session_id?: string | null
@@ -908,6 +941,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_schedule: {
+        Row: {
+          cars_new: number | null
+          cars_synced: number | null
+          created_at: string
+          error_message: string | null
+          id: string
+          last_sync_at: string
+          next_sync_at: string | null
+          status: string | null
+          sync_type: string
+          updated_at: string
+        }
+        Insert: {
+          cars_new?: number | null
+          cars_synced?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string
+          next_sync_at?: string | null
+          status?: string | null
+          sync_type: string
+          updated_at?: string
+        }
+        Update: {
+          cars_new?: number | null
+          cars_synced?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string
+          next_sync_at?: string | null
+          status?: string | null
+          sync_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sync_status: {
         Row: {
           api_endpoint_cursor: string | null
@@ -1084,7 +1156,7 @@ export type Database = {
           car_id: string | null
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           page_title: string | null
           page_url: string
@@ -1098,7 +1170,7 @@ export type Database = {
           car_id?: string | null
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           page_title?: string | null
           page_url: string
@@ -1112,7 +1184,7 @@ export type Database = {
           car_id?: string | null
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           page_title?: string | null
           page_url?: string
@@ -1128,18 +1200,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      anonymize_old_inspection_requests: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      bulk_merge_from_staging: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      cars_filtered_count: {
-        Args: { p_filters?: Json }
-        Returns: number
-      }
+      anonymize_old_inspection_requests: { Args: never; Returns: number }
+      bulk_merge_from_staging: { Args: never; Returns: Json }
+      cars_filtered_count: { Args: { p_filters?: Json }; Returns: number }
       cars_global_sort_page: {
         Args: {
           p_filters?: Json
@@ -1223,10 +1286,7 @@ export type Database = {
           year: number
         }[]
       }
-      cars_search_sorted: {
-        Args: { req: Json }
-        Returns: Json
-      }
+      cars_search_sorted: { Args: { req: Json }; Returns: Json }
       check_rate_limit: {
         Args: {
           _action: string
@@ -1236,12 +1296,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      generate_sample_cars: {
-        Args: { car_count?: number }
-        Returns: number
-      }
+      generate_sample_cars: { Args: { car_count?: number }; Returns: number }
       get_accurate_sync_progress: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           cache_count: number
           correction_applied: boolean
@@ -1268,26 +1325,11 @@ export type Database = {
           name: string
         }[]
       }
-      get_precise_resume_position: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_real_time_sync_progress: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_resume_position: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_sync_checkpoint: {
-        Args: { sync_id: string }
-        Returns: Json
-      }
-      get_sync_progress: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_precise_resume_position: { Args: never; Returns: Json }
+      get_real_time_sync_progress: { Args: never; Returns: Json }
+      get_resume_position: { Args: never; Returns: Json }
+      get_sync_checkpoint: { Args: { sync_id: string }; Returns: Json }
+      get_sync_progress: { Args: never; Returns: Json }
       get_trims_by_model: {
         Args: { p_model_id: string }
         Returns: {
@@ -1303,22 +1345,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      map_complete_api_data: {
-        Args: { api_record: Json }
-        Returns: Json
-      }
-      mark_missing_inactive: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      remove_old_sold_cars: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      is_admin: { Args: never; Returns: boolean }
+      map_complete_api_data: { Args: { api_record: Json }; Returns: Json }
+      mark_missing_inactive: { Args: never; Returns: Json }
+      remove_old_sold_cars: { Args: never; Returns: undefined }
       save_precise_sync_checkpoint: {
         Args: {
           api_cursor: string
@@ -1333,10 +1363,7 @@ export type Database = {
         Args: { checkpoint_data: Json; sync_id: string }
         Returns: undefined
       }
-      update_sold_car_status: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_sold_car_status: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Edit3, Save, X } from 'lucide-react';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import carDiagramFront from '@/assets/car-diagram-front-korean.png';
 import carDiagramBack from '@/assets/car-diagram-back-korean.png';
 
@@ -318,26 +323,80 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
   return { within: withinMarkers, out: outMarkers };
 };
 
-const DiagramMarkerWithTooltip: React.FC<{ marker: DiagramMarker; index: number }> = ({ marker, index }) => {
-  // Position markers using absolute HTML elements to avoid SVG pointer-event issues
+const DiagramMarkerWithTooltip: React.FC<{ 
+  marker: DiagramMarker; 
+  index: number;
+  editMode: boolean;
+  onDrag?: (x: number, y: number) => void;
+}> = ({ marker, index, editMode, onDrag }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
   const leftPercent = (marker.x / 640) * 100;
   const topPercent = (marker.y / 600) * 100;
 
   const baseClasses =
-    "absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shadow border border-background/80 pointer-events-auto";
+    "absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shadow border border-background/80 pointer-events-auto transition-all";
   const variantClasses =
     marker.type === "N"
       ? "bg-destructive text-destructive-foreground"
       : "bg-primary text-primary-foreground";
+  const editModeClasses = editMode ? "cursor-move ring-2 ring-yellow-400" : "cursor-pointer";
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!editMode) return;
+    e.preventDefault();
+    setIsDragging(true);
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const parentRect = (e.target as HTMLElement).parentElement?.getBoundingClientRect();
+    if (parentRect) {
+      setDragOffset({
+        x: e.clientX - rect.left - rect.width / 2,
+        y: e.clientY - rect.top - rect.height / 2,
+      });
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || !editMode || !onDrag) return;
+    const parentElement = document.querySelector('.diagram-container');
+    if (!parentElement) return;
+    
+    const rect = parentElement.getBoundingClientRect();
+    const x = ((e.clientX - rect.left - dragOffset.x) / rect.width) * 640;
+    const y = ((e.clientY - rect.top - dragOffset.y) / rect.height) * 600;
+    
+    // Clamp values to valid range
+    const clampedX = Math.max(20, Math.min(620, x));
+    const clampedY = Math.max(20, Math.min(580, y));
+    
+    onDrag(clampedX, clampedY);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
 
   return (
-    <Tooltip delayDuration={0}>
+    <Tooltip delayDuration={editMode ? 999999 : 0}>
       <TooltipTrigger asChild>
         <button
           type="button"
           aria-label={`${marker.label} - ${marker.type === "N" ? "Replacement" : "Repair"}`}
-          className={`${baseClasses} ${variantClasses}`}
+          className={`${baseClasses} ${variantClasses} ${editModeClasses}`}
           style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
+          onMouseDown={handleMouseDown}
         >
           {marker.type}
         </button>
@@ -360,28 +419,197 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
   outerInspectionData = [],
   className = ""
 }) => {
+  const { isAdmin } = useAdminCheck();
+  const { toast } = useToast();
+  const [editMode, setEditMode] = useState(false);
+  const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number; panel: string }>>({});
+  const [editedMarkers, setEditedMarkers] = useState<Record<string, { x: number; y: number }>>({});
+  
   const { within, out } = mapInspectionToMarkers(outerInspectionData);
   
-  const hasAnyMarkers = within.length > 0 || out.length > 0;
+  // Load custom positions from database
+  useEffect(() => {
+    const loadCustomPositions = async () => {
+      const { data, error } = await supabase
+        .from('inspection_marker_positions')
+        .select('*');
+      
+      if (error) {
+        console.error('Error loading custom positions:', error);
+        return;
+      }
+      
+      if (data) {
+        const positions: Record<string, { x: number; y: number; panel: string }> = {};
+        data.forEach((pos) => {
+          positions[pos.part_key] = {
+            x: Number(pos.x),
+            y: Number(pos.y),
+            panel: pos.panel,
+          };
+        });
+        setCustomPositions(positions);
+      }
+    };
+    
+    loadCustomPositions();
+  }, []);
+  
+  // Apply custom positions to markers
+  const applyCustomPositions = (markers: DiagramMarker[], panel: 'within' | 'out') => {
+    return markers.map((marker) => {
+      const key = `${panel}_${marker.label.toLowerCase().replace(/\s+/g, '_')}`;
+      const customPos = customPositions[key];
+      const editedPos = editedMarkers[key];
+      
+      if (editedPos) {
+        return { ...marker, x: editedPos.x, y: editedPos.y };
+      }
+      
+      if (customPos && customPos.panel === panel) {
+        return { ...marker, x: customPos.x, y: customPos.y };
+      }
+      
+      return marker;
+    });
+  };
+  
+  const withinWithCustomPos = applyCustomPositions(within, 'within');
+  const outWithCustomPos = applyCustomPositions(out, 'out');
+  
+  const handleMarkerDrag = (marker: DiagramMarker, panel: 'within' | 'out', x: number, y: number) => {
+    const key = `${panel}_${marker.label.toLowerCase().replace(/\s+/g, '_')}`;
+    setEditedMarkers(prev => ({
+      ...prev,
+      [key]: { x, y }
+    }));
+  };
+  
+  const handleSavePositions = async () => {
+    try {
+      const updates = Object.entries(editedMarkers).map(([key, pos]) => {
+        const [panel] = key.split('_');
+        return {
+          part_key: key,
+          panel,
+          x: pos.x,
+          y: pos.y,
+        };
+      });
+      
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('inspection_marker_positions')
+          .upsert(update, { onConflict: 'part_key' });
+        
+        if (error) throw error;
+      }
+      
+      toast({
+        title: "Positions saved",
+        description: `Updated ${updates.length} marker position(s)`,
+      });
+      
+      setEditedMarkers({});
+      setEditMode(false);
+      
+      // Reload positions
+      const { data } = await supabase
+        .from('inspection_marker_positions')
+        .select('*');
+      
+      if (data) {
+        const positions: Record<string, { x: number; y: number; panel: string }> = {};
+        data.forEach((pos) => {
+          positions[pos.part_key] = {
+            x: Number(pos.x),
+            y: Number(pos.y),
+            panel: pos.panel,
+          };
+        });
+        setCustomPositions(positions);
+      }
+    } catch (error) {
+      console.error('Error saving positions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save marker positions",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleCancelEdit = () => {
+    setEditedMarkers({});
+    setEditMode(false);
+  };
+  
+  const hasAnyMarkers = withinWithCustomPos.length > 0 || outWithCustomPos.length > 0;
   const hasData = outerInspectionData && outerInspectionData.length > 0;
 
   return (
     <Card className={`overflow-hidden ${className}`}>
-        {/* Debug info banner */}
-        {hasData && !hasAnyMarkers && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
-            <p className="text-yellow-800 dark:text-yellow-200">
-              ℹ️ Data received ({outerInspectionData.length} items) but no markers mapped. Check console for details.
-            </p>
+      {/* Admin Edit Controls */}
+      {isAdmin && hasAnyMarkers && (
+        <div className="bg-muted/50 border-b border-border px-4 py-3 flex items-center justify-between">
+          <div className="text-sm font-medium">
+            {editMode ? (
+              <span className="text-yellow-600 dark:text-yellow-500">
+                🖱️ Edit Mode: Drag markers to reposition
+              </span>
+            ) : (
+              <span>Diagram Editor</span>
+            )}
           </div>
-        )}
-        {!hasData && (
-          <div className="bg-muted/50 border-b border-border px-4 py-2 text-sm">
-            <p className="text-muted-foreground">
-              No inspection data available for this vehicle.
-            </p>
+          <div className="flex gap-2">
+            {!editMode ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditMode(true)}
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                Edit Positions
+              </Button>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSavePositions}
+                  disabled={Object.keys(editedMarkers).length === 0}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save {Object.keys(editedMarkers).length > 0 && `(${Object.keys(editedMarkers).length})`}
+                </Button>
+              </>
+            )}
           </div>
-        )}
+        </div>
+      )}
+      
+      {/* Debug info banner */}
+      {hasData && !hasAnyMarkers && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
+          <p className="text-yellow-800 dark:text-yellow-200">
+            ℹ️ Data received ({outerInspectionData.length} items) but no markers mapped. Check console for details.
+          </p>
+        </div>
+      )}
+      {!hasData && (
+        <div className="bg-muted/50 border-b border-border px-4 py-2 text-sm">
+          <p className="text-muted-foreground">
+            No inspection data available for this vehicle.
+          </p>
+        </div>
+      )}
         <div className="grid grid-cols-2 border-b border-border">
           <div className="text-center py-3 border-r border-border bg-muted/30 font-semibold">
             within
@@ -393,7 +621,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         
         <div className="grid grid-cols-2">
           {/* Within panel - interior/side view */}
-          <div className="relative border-r border-border p-4 bg-white dark:bg-muted/5">
+          <div className="relative border-r border-border p-4 bg-white dark:bg-muted/5 diagram-container">
             <img 
               src={carDiagramFront} 
               alt="Car side/interior view" 
@@ -401,15 +629,21 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
             />
             <div className="absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
-                {within.map((marker, idx) => (
-                  <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
+                {withinWithCustomPos.map((marker, idx) => (
+                  <DiagramMarkerWithTooltip 
+                    key={idx} 
+                    marker={marker} 
+                    index={idx} 
+                    editMode={editMode}
+                    onDrag={(x, y) => handleMarkerDrag(marker, 'within', x, y)}
+                  />
                 ))}
               </TooltipProvider>
             </div>
           </div>
 
           {/* Out panel - underside/bottom view */}
-          <div className="relative p-4 bg-white dark:bg-muted/5">
+          <div className="relative p-4 bg-white dark:bg-muted/5 diagram-container">
             <img 
               src={carDiagramBack} 
               alt="Car underside/bottom view" 
@@ -417,8 +651,14 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
             />
             <div className="absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
-                {out.map((marker, idx) => (
-                  <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
+                {outWithCustomPos.map((marker, idx) => (
+                  <DiagramMarkerWithTooltip 
+                    key={idx} 
+                    marker={marker} 
+                    index={idx}
+                    editMode={editMode}
+                    onDrag={(x, y) => handleMarkerDrag(marker, 'out', x, y)}
+                  />
                 ))}
               </TooltipProvider>
             </div>
