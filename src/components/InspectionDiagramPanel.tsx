@@ -148,12 +148,24 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     let bestMatch: string | null = null;
     let bestScore = 0;
     
-    const searchTerms = [typeTitle, typeCode, typeTitle.replace(/_/g, ' ')];
+    const normalize = (s: string) =>
+      (s || "")
+        .toString()
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/\(.*?\)/g, "") // remove anything in parentheses
+        .replace(/[^a-z0-9\s]/g, "") // drop punctuation
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const searchTerms = [typeTitle, typeCode, typeTitle.replace(/_/g, ' ')]
+      .map(normalize)
+      .filter(Boolean);
     
     Object.keys(positionMap).forEach(partKey => {
-      const partKeyNormalized = partKey.replace(/_/g, ' ');
+      const partKeyNormalized = normalize(partKey);
       searchTerms.forEach(term => {
-        if (term.includes(partKeyNormalized) || partKeyNormalized.includes(term)) {
+        if (term && (term.includes(partKeyNormalized) || partKeyNormalized.includes(term))) {
           const score = Math.min(term.length, partKeyNormalized.length);
           if (score > bestScore) {
             bestScore = score;
@@ -283,7 +295,6 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           <svg 
             viewBox="0 0 640 600" 
             className="absolute inset-0 w-full h-full"
-            style={{ pointerEvents: 'none' }}
           >
             {within.map((marker, idx) => (
               <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
@@ -301,7 +312,6 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           <svg 
             viewBox="0 0 640 600" 
             className="absolute inset-0 w-full h-full"
-            style={{ pointerEvents: 'none' }}
           >
             {out.map((marker, idx) => (
               <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
