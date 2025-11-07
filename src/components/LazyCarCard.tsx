@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { formatModelName } from "@/utils/modelNameFormatter";
+import { preloadCarDetailsPage, prefetchCarDetails } from "@/services/carPrefetch";
 
 interface LazyCarCardProps {
   id: string;
@@ -242,10 +243,19 @@ const LazyCarCard = memo(({
     }
   }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
+  const prefetchDetails = useCallback(() => {
+    if (!lot) {
+      return;
+    }
+
+    void preloadCarDetailsPage();
+    void prefetchCarDetails(lot);
+  }, [lot]);
+
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Save complete page state including scroll position and filter panel state
     const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
     setCompletePageState({
@@ -255,12 +265,15 @@ const LazyCarCard = memo(({
       timestamp: Date.now()
     });
     
+    // Preload car details data for faster navigation
+    prefetchDetails();
+
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
+
     // Open in new tab
     window.open(`/car/${lot}`, '_blank');
-  }, [setCompletePageState, lot]);
+  }, [prefetchDetails, setCompletePageState, lot]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -275,12 +288,15 @@ const LazyCarCard = memo(({
       timestamp: Date.now()
     });
     
+    // Preload car details data for faster navigation
+    prefetchDetails();
+
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
+
     // Open in new tab
     window.open(`/car/${lot}`, '_blank');
-  }, [setCompletePageState, lot]);
+  }, [prefetchDetails, setCompletePageState, lot]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
@@ -313,10 +329,13 @@ const LazyCarCard = memo(({
   // List mode layout
   if (viewMode === 'list') {
     return (
-      <div 
+      <div
         ref={cardRef}
         className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-lg transition-all duration-300"
         onClick={handleCardClick}
+        onMouseEnter={prefetchDetails}
+        onFocus={prefetchDetails}
+        onTouchStart={prefetchDetails}
         style={{
           willChange: 'transform, opacity',
           transform: 'translate3d(0, 0, 0)',
@@ -440,10 +459,13 @@ const LazyCarCard = memo(({
 
   // Grid mode layout (default)
   return (
-    <div 
+    <div
       ref={cardRef}
       className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl transition-all duration-500 mobile-card-compact compact-modern-card car-card-container"
       onClick={handleCardClick}
+      onMouseEnter={prefetchDetails}
+      onFocus={prefetchDetails}
+      onTouchStart={prefetchDetails}
       style={{
         willChange: 'transform, opacity',
         transform: 'translate3d(0, 0, 0)',

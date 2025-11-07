@@ -5,13 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// API rate limiting - Following integration guide best practices
-const RATE_LIMIT_DELAY = 15000 // 15 seconds between requests to avoid 429 errors
-const MAX_RETRIES = 2 // Reduced retries since we have longer delays
-const BACKOFF_MULTIPLIER = 3 // More aggressive backoff
+// API rate limiting - Optimized for edge function resource limits
+const RATE_LIMIT_DELAY = 3000 // 3 seconds between requests
+const MAX_RETRIES = 1 // Only 1 retry to prevent timeout
+const BACKOFF_MULTIPLIER = 1.5 // Minimal backoff
 const PAGE_SIZE = 250 // Optimal page size per API docs
-const REQUEST_TIMEOUT = 45000 // Longer timeout for large pages
+const REQUEST_TIMEOUT = 30000 // 30 second timeout
 const MAX_PAGES = 500 // Safety limit for full syncs
+const MAX_INCREMENTAL_PAGES = 10 // Limit incremental syncs to prevent resource exhaustion
 
 // Helper function for API requests with retry logic
 async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
@@ -176,8 +177,9 @@ Deno.serve(async (req) => {
       let hasMorePages = true
       let consecutiveErrors = 0
       const MAX_CONSECUTIVE_ERRORS = 3
+      const pageLimit = syncType === 'incremental' ? MAX_INCREMENTAL_PAGES : MAX_PAGES
       
-      while (hasMorePages && currentPage <= MAX_PAGES && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+      while (hasMorePages && currentPage <= pageLimit && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
         // Build URL per page following API guide: /api/cars?minutes=60&page=X&per_page=250
         let pageUrl = `${BASE_URL}/cars?page=${currentPage}&per_page=${PAGE_SIZE}`
         if (syncType !== 'full' && minutes > 0) {
@@ -299,18 +301,19 @@ Deno.serve(async (req) => {
           errors.push(`Page ${currentPage}: ${pageError.message}`)
           consecutiveErrors++
           
-          // If rate limited, wait longer before next attempt
+          // If rate limited, skip to next page instead of retrying
           if (pageError.message.includes('Rate limit')) {
-            console.log(`⏸️ Rate limit detected, waiting 30 seconds...`)
-            await new Promise(resolve => setTimeout(resolve, 30000))
+            console.log(`⚠️ Rate limit detected, skipping to prevent timeout`)
+            hasMorePages = false // Stop pagination on rate limit for incremental syncs
+            break
           }
           
           currentPage++
         }
       }
 
-      if (currentPage > MAX_PAGES) {
-        console.log(`⚠️ Reached maximum page limit (${MAX_PAGES}), stopping pagination`)
+      if (currentPage > pageLimit) {
+        console.log(`⚠️ Reached maximum page limit (${pageLimit}), stopping pagination`)
       }
 
       // 🔄 Step 2: Process archived/sold cars from /api/archived-lots endpoint
