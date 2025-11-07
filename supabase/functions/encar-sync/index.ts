@@ -6,9 +6,9 @@ const corsHeaders = {
 }
 
 // API rate limiting - Following integration guide best practices
-const RATE_LIMIT_DELAY = 15000 // 15 seconds between requests to avoid 429 errors
+const RATE_LIMIT_DELAY = 5000 // 5 seconds between requests to avoid 429 errors
 const MAX_RETRIES = 2 // Reduced retries since we have longer delays
-const BACKOFF_MULTIPLIER = 3 // More aggressive backoff
+const BACKOFF_MULTIPLIER = 2 // Moderate backoff to prevent timeout
 const PAGE_SIZE = 250 // Optimal page size per API docs
 const REQUEST_TIMEOUT = 45000 // Longer timeout for large pages
 const MAX_PAGES = 500 // Safety limit for full syncs
@@ -299,10 +299,10 @@ Deno.serve(async (req) => {
           errors.push(`Page ${currentPage}: ${pageError.message}`)
           consecutiveErrors++
           
-          // If rate limited, wait longer before next attempt
+          // If rate limited, wait before next attempt
           if (pageError.message.includes('Rate limit')) {
-            console.log(`⏸️ Rate limit detected, waiting 30 seconds...`)
-            await new Promise(resolve => setTimeout(resolve, 30000))
+            console.log(`⏸️ Rate limit detected, waiting 10 seconds...`)
+            await new Promise(resolve => setTimeout(resolve, 10000))
           }
           
           currentPage++
