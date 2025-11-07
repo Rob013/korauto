@@ -241,24 +241,25 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             bottom: position.bottom,
           }}
         >
-          <svg width="60" height="60" className="animate-pulse">
+          <svg width="40" height="40" className="animate-pulse">
             <circle
-              cx="30"
-              cy="30"
-              r="25"
+              cx="20"
+              cy="20"
+              r="16"
               fill={color}
-              fillOpacity="0.2"
+              fillOpacity="0.3"
               stroke={color}
-              strokeWidth="3"
-              strokeDasharray="5,5"
+              strokeWidth="4"
+              strokeDasharray="3,3"
             />
             <text
-              x="30"
-              y="35"
+              x="20"
+              y="26"
               textAnchor="middle"
               fill={color}
-              fontSize="20"
-              fontWeight="bold"
+              fontSize="18"
+              fontWeight="900"
+              style={{ textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
             >
               {status === 'exchange' ? 'X' : 'W'}
             </text>
@@ -273,9 +274,9 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {/* Header with Title and Print Button */}
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">
+      <div className="mb-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-lg md:text-xl font-bold text-foreground">
             Diagnostikimi i kornizës dhe panelit të jashtëm
           </h2>
           <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
@@ -309,18 +310,18 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         </div>
       </div>
 
-      {/* Car Diagram - 2 views - LARGER */}
-      <div className="mb-6 border border-border rounded-lg overflow-hidden bg-background">
+      {/* Car Diagram - 2 views - COMPACT */}
+      <div className="mb-4 border border-border rounded-lg overflow-hidden bg-background">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           {/* Outside View (Jasht) */}
           <div className="border-b md:border-b-0 md:border-r border-border">
-            <div className="relative w-full bg-muted/10 p-8" style={{ minHeight: '400px' }}>
+            <div className="relative w-full bg-muted/10 p-4" style={{ minHeight: '280px' }}>
               <img 
                 src={carDiagramTop} 
                 alt="Pamja nga jashtë" 
                 className="w-full h-full object-contain"
               />
-              <div className="absolute top-4 left-4 bg-background/90 px-3 py-2 rounded text-sm font-semibold border border-border">
+              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-semibold border border-border">
                 Jashtë
               </div>
               {renderDamageIndicators('top')}
@@ -329,13 +330,13 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
           {/* Inside View (Mbrenda) */}
           <div>
-            <div className="relative w-full bg-muted/10 p-8" style={{ minHeight: '400px' }}>
+            <div className="relative w-full bg-muted/10 p-4" style={{ minHeight: '280px' }}>
               <img 
                 src={carDiagramBottom} 
                 alt="Pamja nga brenda" 
                 className="w-full h-full object-contain"
               />
-              <div className="absolute top-4 left-4 bg-background/90 px-3 py-2 rounded text-sm font-semibold border border-border">
+              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-semibold border border-border">
                 Brenda
               </div>
               {renderDamageIndicators('bottom')}
@@ -344,15 +345,15 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         </div>
 
         {/* Summary Stats */}
-        <div className="border-t border-border bg-background px-6 py-4">
-          <div className="flex items-center justify-center gap-8 text-sm">
+        <div className="border-t border-border bg-background px-4 py-3">
+          <div className="flex items-center justify-center gap-6 text-xs md:text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-primary"></div>
+              <div className="w-3 h-3 rounded-full bg-primary"></div>
               <span className="text-muted-foreground">Riparime/Saldim</span>{' '}
               <span className="font-bold text-foreground">{repairCount}</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-destructive"></div>
+              <div className="w-3 h-3 rounded-full bg-destructive"></div>
               <span className="text-muted-foreground">Zëvendësime</span>{' '}
               <span className="font-bold text-destructive">{exchangeCount}</span>
             </div>
@@ -386,18 +387,18 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             </TabsList>
 
             <TabsContent value="frame" className="mt-0 border-t border-border">
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Frame Column */}
                   <div>
-                    <h3 className="font-semibold mb-4 text-lg">Korniza</h3>
-                    <div className="space-y-3">
+                    <h3 className="font-semibold mb-3 text-base">Korniza</h3>
+                    <div className="space-y-2">
                       {FRAME_PARTS.map((part, index) => (
                         <div 
                           key={index}
-                          className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
+                          className="flex items-center justify-between py-1.5 border-b border-border last:border-b-0"
                         >
-                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
+                          <span className="text-muted-foreground text-xs md:text-sm">{part.albanian}</span>
                           {renderStatusBadge(getPartCategoryStatus(part.partIds))}
                         </div>
                       ))}
@@ -406,14 +407,14 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
                   {/* External Panel Column */}
                   <div>
-                    <h3 className="font-semibold mb-4 text-lg">Paneli i jashtëm</h3>
-                    <div className="space-y-3">
+                    <h3 className="font-semibold mb-3 text-base">Paneli i jashtëm</h3>
+                    <div className="space-y-2">
                       {EXTERNAL_PANEL_PARTS.map((part, index) => (
                         <div 
                           key={index}
-                          className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
+                          className="flex items-center justify-between py-1.5 border-b border-border last:border-b-0"
                         >
-                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
+                          <span className="text-muted-foreground text-xs md:text-sm">{part.albanian}</span>
                           {renderStatusBadge(getPartCategoryStatus(part.partIds))}
                         </div>
                       ))}
@@ -424,18 +425,18 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
             </TabsContent>
 
             <TabsContent value="external" className="mt-0 border-t border-border">
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* External Panel Column */}
                   <div>
-                    <h3 className="font-semibold mb-4 text-lg">Paneli i jashtëm</h3>
-                    <div className="space-y-3">
+                    <h3 className="font-semibold mb-3 text-base">Paneli i jashtëm</h3>
+                    <div className="space-y-2">
                       {EXTERNAL_PANEL_PARTS.map((part, index) => (
                         <div 
                           key={index}
-                          className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
+                          className="flex items-center justify-between py-1.5 border-b border-border last:border-b-0"
                         >
-                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
+                          <span className="text-muted-foreground text-xs md:text-sm">{part.albanian}</span>
                           {renderStatusBadge(getPartCategoryStatus(part.partIds))}
                         </div>
                       ))}
@@ -444,14 +445,14 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
                   {/* Frame Column */}
                   <div>
-                    <h3 className="font-semibold mb-4 text-lg">Korniza</h3>
-                    <div className="space-y-3">
+                    <h3 className="font-semibold mb-3 text-base">Korniza</h3>
+                    <div className="space-y-2">
                       {FRAME_PARTS.map((part, index) => (
                         <div 
                           key={index}
-                          className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
+                          className="flex items-center justify-between py-1.5 border-b border-border last:border-b-0"
                         >
-                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
+                          <span className="text-muted-foreground text-xs md:text-sm">{part.albanian}</span>
                           {renderStatusBadge(getPartCategoryStatus(part.partIds))}
                         </div>
                       ))}

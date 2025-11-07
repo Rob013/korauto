@@ -64,12 +64,12 @@ const DiagramDemo = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <div className="container-responsive py-8 max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <div className="container-responsive py-4 max-w-6xl mx-auto">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Diagrami i Inspektimit të Automjetit
           </h1>
-          <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+          <p className="text-muted-foreground text-sm md:text-base max-w-2xl mx-auto">
             Diagram interaktiv që tregon gjendjen e pjesëve të automjetit me ngjyra specifike:
             <br />
             <span className="font-semibold text-red-600">E kuqe</span> për pjesë të zëvendësuara dhe 
@@ -77,14 +77,14 @@ const DiagramDemo = () => {
           </p>
         </div>
 
-        <div className="grid gap-8">
+        <div className="grid gap-4">
           {/* Original vs New Comparison */}
           <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
-            <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold mb-4 text-center text-blue-800 dark:text-blue-300">
+            <CardContent className="p-4">
+              <h2 className="text-xl font-semibold mb-3 text-center text-blue-800 dark:text-blue-300">
                 Diagrami Interaktiv i Inspektimit
               </h2>
-              <p className="text-sm text-muted-foreground mb-6 text-center">
+              <p className="text-xs md:text-sm text-muted-foreground mb-4 text-center">
                 Kliko mbi pjesët e automjetit për të parë detajet. Ngjyrat tregojnë gjendjen e secilit pjesë.
                 <br />
                 <span className="font-semibold text-red-600">E kuqe = E zëvendësuar</span> | 
@@ -101,11 +101,11 @@ const DiagramDemo = () => {
 
           {/* Empty state demo */}
           <Card className="border-2 border-gray-200 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900 dark:to-slate-900">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4 text-center">
+            <CardContent className="p-4">
+              <h2 className="text-lg font-semibold mb-3 text-center">
                 Pamja pa të dhëna inspektimi
               </h2>
-              <p className="text-sm text-muted-foreground mb-6 text-center">
+              <p className="text-xs md:text-sm text-muted-foreground mb-4 text-center">
                 Kështu shfaqet diagrami kur nuk ka të dhëna inspektimi disponibla.
               </p>
               
