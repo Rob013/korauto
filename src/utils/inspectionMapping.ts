@@ -20,6 +20,8 @@ const STATUS_PART_PATTERNS: Array<{
     id: 'front_left_door',
     match: (text, raw) => {
       const compact = stripNonAlphanumeric(text);
+      // Also match API format: front_door_left or frontdoorleft
+      if (compact === 'frontdoorleft' || compact === 'frontleftdoor') return true;
       const hasDoor = includesAny(text, ['door']) || raw.includes('도어');
       const hasLeft =
         includesAny(text, ['left', 'lh', 'lfront']) ||
@@ -37,6 +39,8 @@ const STATUS_PART_PATTERNS: Array<{
     id: 'front_right_door',
     match: (text, raw) => {
       const compact = stripNonAlphanumeric(text);
+      // Also match API format: front_door_right or frontdoorright
+      if (compact === 'frontdoorright' || compact === 'frontrightdoor') return true;
       const hasDoor = includesAny(text, ['door']) || raw.includes('도어');
       const hasRight =
         includesAny(text, ['right', 'rh', 'rfront']) ||
@@ -54,6 +58,8 @@ const STATUS_PART_PATTERNS: Array<{
     id: 'rear_left_door',
     match: (text, raw) => {
       const compact = stripNonAlphanumeric(text);
+      // Also match API format: rear_door_left or reardoorleft
+      if (compact === 'reardoorleft' || compact === 'rearleftdoor') return true;
       const hasDoor = includesAny(text, ['door']) || raw.includes('도어');
       const hasLeft = includesAny(text, ['left', 'lh']) || hasKorean(raw, ['좌']) || compact.includes('rl');
       const hasRear = includesAny(text, ['rear', 'back']) || hasKorean(raw, ['뒤', '후']) || compact.startsWith('rl');
@@ -64,6 +70,8 @@ const STATUS_PART_PATTERNS: Array<{
     id: 'rear_right_door',
     match: (text, raw) => {
       const compact = stripNonAlphanumeric(text);
+      // Also match API format: rear_door_right or reardoorright
+      if (compact === 'reardoorright' || compact === 'rearrightdoor') return true;
       const hasDoor = includesAny(text, ['door']) || raw.includes('도어');
       const hasRight = includesAny(text, ['right', 'rh']) || hasKorean(raw, ['우']) || compact.includes('rr');
       const hasRear = includesAny(text, ['rear', 'back']) || hasKorean(raw, ['뒤', '후']) || compact.startsWith('rr');
@@ -123,6 +131,8 @@ const STATUS_PART_PATTERNS: Array<{
   {
     id: 'left_quarter',
     match: (text, raw, compact) => {
+      // Also match API formats
+      if (compact === 'quarterpanelleft' || compact === 'rearwheelhouseleft') return true;
       const hasQuarter = includesAny(text, ['quarter']) || raw.includes('쿼터');
       const hasPanel = includesAny(text, ['panel']) || raw.includes('패널');
       const hasRear = includesAny(text, ['rear']) || hasKorean(raw, ['뒤', '후']);
@@ -134,6 +144,8 @@ const STATUS_PART_PATTERNS: Array<{
   {
     id: 'right_quarter',
     match: (text, raw, compact) => {
+      // Also match API formats
+      if (compact === 'quarterpanelright' || compact === 'rearwheelhouseright') return true;
       const hasQuarter = includesAny(text, ['quarter']) || raw.includes('쿼터');
       const hasPanel = includesAny(text, ['panel']) || raw.includes('패널');
       const hasRear = includesAny(text, ['rear']) || hasKorean(raw, ['뒤', '후']);
@@ -144,7 +156,9 @@ const STATUS_PART_PATTERNS: Array<{
   },
   {
     id: 'side_sill_left',
-    match: (text, raw) => {
+    match: (text, raw, compact) => {
+      // Also match API format: side_sill_panel_left
+      if (compact === 'sidesillpanelleft' || compact === 'sidesilleft') return true;
       const hasSill = includesAny(text, ['sill', 'rocker']) || raw.includes('사이드실');
       const hasLeft = includesAny(text, ['left', 'lh']) || hasKorean(raw, ['좌']);
       return hasSill && hasLeft;
@@ -152,7 +166,9 @@ const STATUS_PART_PATTERNS: Array<{
   },
   {
     id: 'side_sill_right',
-    match: (text, raw) => {
+    match: (text, raw, compact) => {
+      // Also match API format: side_sill_panel_right
+      if (compact === 'sidesillpanelright' || compact === 'sidesillright') return true;
       const hasSill = includesAny(text, ['sill', 'rocker']) || raw.includes('사이드실');
       const hasRight = includesAny(text, ['right', 'rh']) || hasKorean(raw, ['우']);
       return hasSill && hasRight;

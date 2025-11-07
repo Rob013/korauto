@@ -185,24 +185,38 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   const renderDamageIndicators = (view: 'top' | 'bottom' | 'left' | 'right') => {
     const indicators: JSX.Element[] = [];
     
-    // Define positions for each part on each view
-    const partPositions: Record<string, { top?: string; left?: string; bottom?: string; right?: string }> = {
-      // Top view positions
-      hood: { top: '15%', left: '50%' },
-      left_fender: { top: '20%', left: '20%' },
-      right_fender: { top: '20%', right: '20%' },
-      roof: { top: '50%', left: '50%' },
-      trunk: { top: '85%', left: '50%' },
-      front_left_door: { top: '40%', left: '15%' },
-      front_right_door: { top: '40%', right: '15%' },
-      rear_left_door: { top: '60%', left: '15%' },
-      rear_right_door: { top: '60%', right: '15%' },
+    // Define positions for each part - top view (exterior/outside) and bottom view (interior/inside)
+    const partPositions: Record<string, { 
+      top?: string; 
+      left?: string; 
+      bottom?: string; 
+      right?: string;
+      view?: 'top' | 'bottom';
+    }> = {
+      // Outside view (top image - Jashtë)
+      hood: { top: '15%', left: '50%', view: 'top' },
+      left_fender: { top: '25%', left: '15%', view: 'top' },
+      right_fender: { top: '25%', right: '15%', view: 'top' },
+      roof: { top: '50%', left: '50%', view: 'top' },
+      trunk: { top: '85%', left: '50%', view: 'top' },
+      front_left_door: { top: '42%', left: '10%', view: 'top' },
+      front_right_door: { top: '42%', right: '10%', view: 'top' },
+      rear_left_door: { top: '62%', left: '10%', view: 'top' },
+      rear_right_door: { top: '62%', right: '10%', view: 'top' },
+      left_quarter: { top: '75%', left: '15%', view: 'top' },
+      right_quarter: { top: '75%', right: '15%', view: 'top' },
+      side_sill_left: { top: '55%', left: '5%', view: 'top' },
+      side_sill_right: { top: '55%', right: '5%', view: 'top' },
+      front_bumper: { top: '8%', left: '50%', view: 'top' },
+      rear_bumper: { top: '92%', left: '50%', view: 'top' },
     };
 
-    // Only show indicators for top view for now
-    if (view !== 'top') return null;
+    // Filter positions by view
+    const viewPositions = Object.entries(partPositions).filter(
+      ([_, pos]) => pos.view === view
+    );
 
-    Object.entries(partPositions).forEach(([partId, position]) => {
+    viewPositions.forEach(([partId, position]) => {
       const status = getPartStatus(partId);
       if (status === 'normal') return;
 
