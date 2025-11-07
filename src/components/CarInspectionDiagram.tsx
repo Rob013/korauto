@@ -29,21 +29,21 @@ interface CarInspectionDiagramProps {
 
 // Define part categories for Frame and External Panel
 const FRAME_PARTS = [
-  { korean: '프론트 패널 / 인사이드 패널', english: 'Front panel / inside panel', partIds: ['front_panel', 'inside_panel'] },
-  { korean: '앞/뒤 휠하우스', english: 'Front/rear wheelhouse', partIds: ['fl_wheel', 'fr_wheel', 'rl_wheel', 'rr_wheel'] },
-  { korean: 'A,B필러패널 / 대시패널 / 플로어패널', english: 'A,B filler panel / dash panel / floor panel', partIds: ['a_pillar', 'b_pillar', 'dash_panel', 'floor_panel'] },
-  { korean: '사이드실 패널 / 쿼터패널', english: 'Sideroom panel / quarter panel', partIds: ['side_sill_left', 'side_sill_right', 'left_quarter', 'right_quarter'] },
-  { korean: '리어패널 / 트렁크 플로어', english: 'Rear panel / trunk floor', partIds: ['rear_panel', 'trunk'] },
-  { korean: '사이드멤버 / 후프패탈 / 패키지트레이', english: 'Side member / hoop pattal / package tray', partIds: ['side_member', 'package_tray'] },
+  { albanian: 'Paneli përparmë / Paneli i brendshëm', english: 'Front panel / inside panel', partIds: ['front_panel', 'inside_panel'] },
+  { albanian: 'Shtëpia e rrotës përparmë/mbrapa', english: 'Front/rear wheelhouse', partIds: ['fl_wheel', 'fr_wheel', 'rl_wheel', 'rr_wheel'] },
+  { albanian: 'Paneli A,B / Paneli i pultit / Paneli i dyshemesë', english: 'A,B pillar panel / dash panel / floor panel', partIds: ['a_pillar', 'b_pillar', 'dash_panel', 'floor_panel'] },
+  { albanian: 'Paneli anësor / Paneli çerek', english: 'Side sill panel / quarter panel', partIds: ['side_sill_left', 'side_sill_right', 'left_quarter', 'right_quarter'] },
+  { albanian: 'Paneli mbrapa / Dyshemeja e bagazhit', english: 'Rear panel / trunk floor', partIds: ['rear_panel', 'trunk'] },
+  { albanian: 'Anëtari anësor / Tavani / Tavani i paketës', english: 'Side member / roof rail / package tray', partIds: ['side_member', 'package_tray'] },
 ];
 
 const EXTERNAL_PANEL_PARTS = [
-  { korean: '후드', english: 'Hood', partIds: ['hood'] },
-  { korean: '프론트 휀더', english: 'Front fender', partIds: ['left_fender', 'right_fender'] },
-  { korean: '프론트 도어', english: 'Front door', partIds: ['front_left_door', 'front_right_door'] },
-  { korean: '리어 도어', english: 'Rear door', partIds: ['rear_left_door', 'rear_right_door'] },
-  { korean: '트렁크 리드', english: 'Trunk lid', partIds: ['trunk'] },
-  { korean: '루프', english: 'Roof', partIds: ['roof'] },
+  { albanian: 'Kapaku', english: 'Hood', partIds: ['hood'] },
+  { albanian: 'Krahori përparmë', english: 'Front fender', partIds: ['left_fender', 'right_fender'] },
+  { albanian: 'Dera përparmë', english: 'Front door', partIds: ['front_left_door', 'front_right_door'] },
+  { albanian: 'Dera mbrapa', english: 'Rear door', partIds: ['rear_left_door', 'rear_right_door'] },
+  { albanian: 'Kapaku i bagazhit', english: 'Trunk lid', partIds: ['trunk'] },
+  { albanian: 'Çatia', english: 'Roof', partIds: ['roof'] },
 ];
 
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
@@ -173,12 +173,79 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
   const renderStatusBadge = (status: 'normal' | 'repair' | 'exchange') => {
     if (status === 'exchange') {
-      return <span className="text-destructive font-semibold">교환</span>;
+      return <span className="text-destructive font-semibold">Zëvendësuar</span>;
     }
     if (status === 'repair') {
-      return <span className="text-primary font-semibold">교환</span>;
+      return <span className="text-primary font-semibold">Riparuar</span>;
     }
-    return <span className="text-muted-foreground">정상</span>;
+    return <span className="text-muted-foreground">Normal</span>;
+  };
+
+  // Render damage indicators on diagram
+  const renderDamageIndicators = (view: 'top' | 'bottom' | 'left' | 'right') => {
+    const indicators: JSX.Element[] = [];
+    
+    // Define positions for each part on each view
+    const partPositions: Record<string, { top?: string; left?: string; bottom?: string; right?: string }> = {
+      // Top view positions
+      hood: { top: '15%', left: '50%' },
+      left_fender: { top: '20%', left: '20%' },
+      right_fender: { top: '20%', right: '20%' },
+      roof: { top: '50%', left: '50%' },
+      trunk: { top: '85%', left: '50%' },
+      front_left_door: { top: '40%', left: '15%' },
+      front_right_door: { top: '40%', right: '15%' },
+      rear_left_door: { top: '60%', left: '15%' },
+      rear_right_door: { top: '60%', right: '15%' },
+    };
+
+    // Only show indicators for top view for now
+    if (view !== 'top') return null;
+
+    Object.entries(partPositions).forEach(([partId, position]) => {
+      const status = getPartStatus(partId);
+      if (status === 'normal') return;
+
+      const color = status === 'exchange' ? 'rgb(239, 68, 68)' : 'rgb(59, 130, 246)';
+      
+      indicators.push(
+        <div
+          key={partId}
+          className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          style={{
+            top: position.top,
+            left: position.left,
+            right: position.right,
+            bottom: position.bottom,
+          }}
+        >
+          <svg width="60" height="60" className="animate-pulse">
+            <circle
+              cx="30"
+              cy="30"
+              r="25"
+              fill={color}
+              fillOpacity="0.2"
+              stroke={color}
+              strokeWidth="3"
+              strokeDasharray="5,5"
+            />
+            <text
+              x="30"
+              y="35"
+              textAnchor="middle"
+              fill={color}
+              fontSize="20"
+              fontWeight="bold"
+            >
+              {status === 'exchange' ? 'X' : 'W'}
+            </text>
+          </svg>
+        </div>
+      );
+    });
+
+    return indicators;
   };
 
   return (
@@ -186,17 +253,17 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       {/* Header with Title and Print Button */}
       <div className="mb-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground">프레임 및 외부패널 진단</h2>
+          <h2 className="text-2xl font-bold text-foreground">Diagnostikimi i kornizës dhe panelit të jashtëm</h2>
           <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
                 <Printer className="h-4 w-4" />
-                Print Report
+                Printo raportin
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Printable Inspection Report</DialogTitle>
+                <DialogTitle>Raport inspektimi për printim</DialogTitle>
               </DialogHeader>
               <PrintableInspectionReport
                 inspectionData={inspectionData}
@@ -205,11 +272,11 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
               />
               <div className="mt-4 flex justify-end gap-2 no-print">
                 <Button variant="outline" onClick={() => setShowPrintDialog(false)}>
-                  Close
+                  Mbyll
                 </Button>
                 <Button onClick={() => window.print()}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Print
+                  Printo
                 </Button>
               </div>
             </DialogContent>
@@ -219,85 +286,74 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         {/* Subtitle with result */}
         <div className="text-center py-3 bg-muted/30 rounded-lg">
           <p className="text-lg">
-            {carInfo.year || '46무0511'} 차량의 진단 결과{' '}
-            <span className="font-bold text-primary">무사고 차량입니다</span>
+            Rezultati i diagnostikimit për veturën {carInfo.year || carInfo.vin || 'N/A'}{' '}
+            <span className="font-bold text-primary">
+              {exchangeCount === 0 && repairCount === 0 ? 'Pa aksident' : 'Me dëmtime të rregjistruara'}
+            </span>
           </p>
         </div>
       </div>
 
-      {/* Car Diagram - 4 views */}
+      {/* Car Diagram - 4 views - LARGER */}
       <div className="mb-6 border border-border rounded-lg overflow-hidden bg-background">
-        <div className="grid grid-cols-4 gap-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
           {/* Left Side */}
           <div className="border-r border-border">
-            <div className="relative aspect-square bg-muted/10 p-4">
+            <div className="relative aspect-square bg-muted/10 p-6">
               <img 
                 src={carDiagramTop} 
-                alt="Left side view" 
+                alt="Pamja e majtë" 
                 className="w-full h-full object-contain"
               />
-              {/* Badge overlay for left side if needed */}
+              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
+                Majtas
+              </div>
+              {renderDamageIndicators('left')}
             </div>
           </div>
 
           {/* Top View */}
           <div className="border-r border-border">
-            <div className="relative aspect-square bg-muted/10 p-4">
+            <div className="relative aspect-square bg-muted/10 p-6">
               <img 
                 src={carDiagramTop} 
-                alt="Top view" 
+                alt="Pamja nga sipër" 
                 className="w-full h-full object-contain"
               />
-              {/* Hood badge */}
-              {getPartStatus('hood') !== 'normal' && (
-                <div 
-                  className="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                  onMouseEnter={() => setHoveredPart('hood')}
-                  onMouseLeave={() => setHoveredPart(null)}
-                >
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-white text-sm shadow-lg border-2 border-white ${
-                    getPartStatus('hood') === 'exchange' ? 'bg-destructive' : 'bg-primary'
-                  }`}>
-                    X
-                  </div>
-                </div>
-              )}
-              {/* Front fender badge */}
-              {getPartStatus('left_fender') !== 'normal' && (
-                <div 
-                  className="absolute top-[15%] left-[15%] transform -translate-x-1/2 -translate-y-1/2"
-                  onMouseEnter={() => setHoveredPart('left_fender')}
-                  onMouseLeave={() => setHoveredPart(null)}
-                >
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-white text-sm shadow-lg border-2 border-white ${
-                    getPartStatus('left_fender') === 'exchange' ? 'bg-destructive' : 'bg-primary'
-                  }`}>
-                    X
-                  </div>
-                </div>
-              )}
+              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
+                Nga sipër
+              </div>
+              {renderDamageIndicators('top')}
             </div>
           </div>
 
           {/* Rear View */}
-          <div className="border-r border-border">
-            <div className="relative aspect-square bg-muted/10 p-4">
+          <div className="border-r border-border md:border-r">
+            <div className="relative aspect-square bg-muted/10 p-6">
               <img 
                 src={carDiagramBottom} 
-                alt="Rear view" 
+                alt="Pamja nga mbrapa" 
                 className="w-full h-full object-contain"
               />
+              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
+                Mbrapa
+              </div>
+              {renderDamageIndicators('bottom')}
             </div>
           </div>
 
           {/* Right Side */}
           <div>
-            <div className="relative aspect-square bg-muted/10 p-4">
+            <div className="relative aspect-square bg-muted/10 p-6">
               <img 
                 src={carDiagramTop} 
-                alt="Right side view" 
+                alt="Pamja e djathtë" 
                 className="w-full h-full object-contain transform scale-x-[-1]"
               />
+              <div className="absolute top-2 left-2 bg-background/90 px-2 py-1 rounded text-xs font-medium">
+                Djathtas
+              </div>
+              {renderDamageIndicators('right')}
             </div>
           </div>
         </div>
@@ -305,13 +361,15 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         {/* Summary Stats */}
         <div className="border-t border-border bg-background px-6 py-4">
           <div className="flex items-center justify-center gap-8 text-sm">
-            <div>
-              <span className="text-muted-foreground">판금/용접</span>{' '}
-              <span className="font-bold text-foreground">{repairCount}회</span>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-primary"></div>
+              <span className="text-muted-foreground">Riparime/Saldim</span>{' '}
+              <span className="font-bold text-foreground">{repairCount}</span>
             </div>
-            <div>
-              <span className="text-muted-foreground">교환</span>{' '}
-              <span className="font-bold text-primary">{exchangeCount}회</span>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-destructive"></div>
+              <span className="text-muted-foreground">Zëvendësime</span>{' '}
+              <span className="font-bold text-destructive">{exchangeCount}</span>
             </div>
           </div>
         </div>
@@ -321,42 +379,56 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
           <Tabs defaultValue="frame" className="w-full">
             <TabsList className="w-full grid grid-cols-2 rounded-none h-auto">
               <TabsTrigger value="frame" className="rounded-none border-r border-border py-3 data-[state=active]:bg-muted">
-                프레임 <span className="text-primary font-semibold ml-1">정상</span>
+                Korniza{' '}
+                <span className={`font-semibold ml-1 ${
+                  FRAME_PARTS.some(p => getPartCategoryStatus(p.partIds) !== 'normal') 
+                    ? 'text-destructive' 
+                    : 'text-primary'
+                }`}>
+                  {FRAME_PARTS.some(p => getPartCategoryStatus(p.partIds) !== 'normal') ? 'Me dëmtime' : 'Normal'}
+                </span>
               </TabsTrigger>
               <TabsTrigger value="external" className="rounded-none py-3 data-[state=active]:bg-muted">
-                외부패널 <span className="text-destructive font-semibold ml-1">교환</span>
+                Paneli i jashtëm{' '}
+                <span className={`font-semibold ml-1 ${
+                  EXTERNAL_PANEL_PARTS.some(p => getPartCategoryStatus(p.partIds) !== 'normal') 
+                    ? 'text-destructive' 
+                    : 'text-primary'
+                }`}>
+                  {EXTERNAL_PANEL_PARTS.some(p => getPartCategoryStatus(p.partIds) !== 'normal') ? 'Me dëmtime' : 'Normal'}
+                </span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="frame" className="mt-0 border-t border-border">
               <div className="p-6">
-                <div className="grid grid-cols-2 gap-6">
-                  {/* External Panel Column */}
-                  <div>
-                    <h3 className="font-semibold mb-4 text-lg">외부패널</h3>
-                    <div className="space-y-3">
-                      {EXTERNAL_PANEL_PARTS.map((part, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
-                        >
-                          <span className="text-muted-foreground text-sm">{part.korean}</span>
-                          {renderStatusBadge(getPartCategoryStatus(part.partIds))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Frame Column */}
                   <div>
-                    <h3 className="font-semibold mb-4 text-lg">프레임</h3>
+                    <h3 className="font-semibold mb-4 text-lg">Korniza</h3>
                     <div className="space-y-3">
                       {FRAME_PARTS.map((part, index) => (
                         <div 
                           key={index}
                           className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
                         >
-                          <span className="text-muted-foreground text-sm">{part.korean}</span>
+                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
+                          {renderStatusBadge(getPartCategoryStatus(part.partIds))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* External Panel Column */}
+                  <div>
+                    <h3 className="font-semibold mb-4 text-lg">Paneli i jashtëm</h3>
+                    <div className="space-y-3">
+                      {EXTERNAL_PANEL_PARTS.map((part, index) => (
+                        <div 
+                          key={index}
+                          className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
+                        >
+                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
                           {renderStatusBadge(getPartCategoryStatus(part.partIds))}
                         </div>
                       ))}
@@ -368,17 +440,17 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
             <TabsContent value="external" className="mt-0 border-t border-border">
               <div className="p-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* External Panel Column */}
                   <div>
-                    <h3 className="font-semibold mb-4 text-lg">외부패널</h3>
+                    <h3 className="font-semibold mb-4 text-lg">Paneli i jashtëm</h3>
                     <div className="space-y-3">
                       {EXTERNAL_PANEL_PARTS.map((part, index) => (
                         <div 
                           key={index}
                           className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
                         >
-                          <span className="text-muted-foreground text-sm">{part.korean}</span>
+                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
                           {renderStatusBadge(getPartCategoryStatus(part.partIds))}
                         </div>
                       ))}
@@ -387,14 +459,14 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
                   {/* Frame Column */}
                   <div>
-                    <h3 className="font-semibold mb-4 text-lg">프레임</h3>
+                    <h3 className="font-semibold mb-4 text-lg">Korniza</h3>
                     <div className="space-y-3">
                       {FRAME_PARTS.map((part, index) => (
                         <div 
                           key={index}
                           className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
                         >
-                          <span className="text-muted-foreground text-sm">{part.korean}</span>
+                          <span className="text-muted-foreground text-sm">{part.albanian}</span>
                           {renderStatusBadge(getPartCategoryStatus(part.partIds))}
                         </div>
                       ))}
