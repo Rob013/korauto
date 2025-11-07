@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import carDiagramFront from '@/assets/car-diagram-front-korean.png';
 import carDiagramBack from '@/assets/car-diagram-back-korean.png';
 
@@ -24,36 +25,52 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     return { within: withinMarkers, out: outMarkers };
   }
 
-  // Enhanced position mapping for Korean car diagram
+  // Enhanced position mapping for Korean car diagram with better coverage
   const positionMap: Record<string, { panel: 'within' | 'out', x: number, y: number }> = {
-    // Within panel (top/interior view) - left side parts
-    'front_left_door': { panel: 'within', x: 145, y: 230 },
-    'front_door_left': { panel: 'within', x: 145, y: 230 },
-    'rear_left_door': { panel: 'within', x: 145, y: 310 },
-    'rear_door_left': { panel: 'within', x: 145, y: 310 },
-    'left_quarter': { panel: 'within', x: 145, y: 370 },
-    'quarter_panel_left': { panel: 'within', x: 145, y: 370 },
-    'side_sill_left': { panel: 'within', x: 145, y: 270 },
-    'left_fender': { panel: 'within', x: 145, y: 150 },
-    'fender_left': { panel: 'within', x: 145, y: 150 },
+    // Within panel (top/side view) - left side parts
+    'hood': { panel: 'within', x: 320, y: 120 },
+    'bonnet': { panel: 'within', x: 320, y: 120 },
+    'front_panel': { panel: 'within', x: 320, y: 90 },
+    'front_bumper': { panel: 'within', x: 320, y: 70 },
+    'radiator_support': { panel: 'within', x: 320, y: 100 },
+    
+    'front_left_door': { panel: 'within', x: 165, y: 230 },
+    'front_door_left': { panel: 'within', x: 165, y: 230 },
+    'rear_left_door': { panel: 'within', x: 165, y: 310 },
+    'rear_door_left': { panel: 'within', x: 165, y: 310 },
+    'left_quarter': { panel: 'within', x: 165, y: 385 },
+    'quarter_panel_left': { panel: 'within', x: 165, y: 385 },
+    'side_sill_left': { panel: 'within', x: 165, y: 270 },
+    'side_sill_panel_left': { panel: 'within', x: 165, y: 270 },
+    'left_fender': { panel: 'within', x: 165, y: 155 },
+    'fender_left': { panel: 'within', x: 165, y: 155 },
+    'roof': { panel: 'within', x: 320, y: 240 },
+    'roof_panel': { panel: 'within', x: 320, y: 240 },
     
     // Within panel - right side (mirror positions)
-    'front_right_door': { panel: 'within', x: 495, y: 230 },
-    'front_door_right': { panel: 'within', x: 495, y: 230 },
-    'rear_right_door': { panel: 'within', x: 495, y: 310 },
-    'rear_door_right': { panel: 'within', x: 495, y: 310 },
-    'right_quarter': { panel: 'within', x: 495, y: 370 },
-    'quarter_panel_right': { panel: 'within', x: 495, y: 370 },
-    'side_sill_right': { panel: 'within', x: 495, y: 270 },
-    'right_fender': { panel: 'within', x: 495, y: 150 },
-    'fender_right': { panel: 'within', x: 495, y: 150 },
+    'front_right_door': { panel: 'within', x: 475, y: 230 },
+    'front_door_right': { panel: 'within', x: 475, y: 230 },
+    'rear_right_door': { panel: 'within', x: 475, y: 310 },
+    'rear_door_right': { panel: 'within', x: 475, y: 310 },
+    'right_quarter': { panel: 'within', x: 475, y: 385 },
+    'quarter_panel_right': { panel: 'within', x: 475, y: 385 },
+    'side_sill_right': { panel: 'within', x: 475, y: 270 },
+    'side_sill_panel_right': { panel: 'within', x: 475, y: 270 },
+    'right_fender': { panel: 'within', x: 475, y: 155 },
+    'fender_right': { panel: 'within', x: 475, y: 155 },
     
     // Out panel (bottom/underside view)
-    'trunk': { panel: 'out', x: 230, y: 330 },
-    'trunk_floor': { panel: 'out', x: 270, y: 330 },
-    'rear_panel': { panel: 'out', x: 230, y: 370 },
-    'rear_wheel_house_left': { panel: 'out', x: 190, y: 350 },
-    'rear_wheel_house_right': { panel: 'out', x: 450, y: 350 },
+    'trunk': { panel: 'out', x: 320, y: 380 },
+    'trunk_lid': { panel: 'out', x: 320, y: 400 },
+    'trunk_floor': { panel: 'out', x: 320, y: 350 },
+    'rear_panel': { panel: 'out', x: 320, y: 420 },
+    'rear_bumper': { panel: 'out', x: 320, y: 445 },
+    'rear_wheel_house_left': { panel: 'out', x: 210, y: 370 },
+    'rear_wheel_house_right': { panel: 'out', x: 430, y: 370 },
+    'front_wheel_house_left': { panel: 'out', x: 210, y: 170 },
+    'front_wheel_house_right': { panel: 'out', x: 430, y: 170 },
+    'front_cross_member': { panel: 'out', x: 320, y: 140 },
+    'rear_cross_member': { panel: 'out', x: 320, y: 390 },
   };
 
   console.log('🔍 Processing inspection data for diagram:', inspectionData.length, 'items');
@@ -156,6 +173,49 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
   return { within: withinMarkers, out: outMarkers };
 };
 
+const DiagramMarkerWithTooltip: React.FC<{ marker: DiagramMarker; index: number }> = ({ marker, index }) => {
+  return (
+    <TooltipProvider key={index}>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <g className="cursor-pointer" style={{ pointerEvents: 'all' }}>
+            <circle
+              cx={marker.x}
+              cy={marker.y}
+              r="18"
+              fill={marker.type === 'N' ? '#ef4444' : '#3b82f6'}
+              stroke="white"
+              strokeWidth="3"
+              className="transition-all hover:r-20 hover:opacity-90"
+            />
+            <text
+              x={marker.x}
+              y={marker.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="white"
+              fontSize="15"
+              fontWeight="bold"
+              style={{ pointerEvents: 'none' }}
+            >
+              {marker.type}
+            </text>
+          </g>
+        </TooltipTrigger>
+        <TooltipContent 
+          side="top" 
+          className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs"
+        >
+          <div className="font-semibold text-sm">{marker.label}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {marker.type === 'N' ? 'Replacement/Exchange' : 'Repair'}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({ 
   outerInspectionData = [],
   className = ""
@@ -175,75 +235,37 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
       
       <div className="grid grid-cols-2">
         {/* Within panel - interior/side view */}
-        <div className="relative border-r border-border p-4 bg-white">
+        <div className="relative border-r border-border p-4 bg-white dark:bg-muted/5">
           <img 
             src={carDiagramFront} 
-            alt="Car interior view" 
+            alt="Car side/interior view" 
             className="w-full h-auto"
           />
           <svg 
             viewBox="0 0 640 600" 
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full"
+            style={{ pointerEvents: 'none' }}
           >
             {within.map((marker, idx) => (
-              <g key={idx}>
-                <circle
-                  cx={marker.x}
-                  cy={marker.y}
-                  r="16"
-                  fill={marker.type === 'N' ? '#ef4444' : '#3b82f6'}
-                  stroke="white"
-                  strokeWidth="2"
-                />
-                <text
-                  x={marker.x}
-                  y={marker.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="white"
-                  fontSize="14"
-                  fontWeight="bold"
-                >
-                  {marker.type}
-                </text>
-              </g>
+              <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
             ))}
           </svg>
         </div>
 
         {/* Out panel - underside/bottom view */}
-        <div className="relative p-4 bg-white">
+        <div className="relative p-4 bg-white dark:bg-muted/5">
           <img 
             src={carDiagramBack} 
-            alt="Car underside view" 
+            alt="Car underside/bottom view" 
             className="w-full h-auto"
           />
           <svg 
             viewBox="0 0 640 600" 
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full"
+            style={{ pointerEvents: 'none' }}
           >
             {out.map((marker, idx) => (
-              <g key={idx}>
-                <circle
-                  cx={marker.x}
-                  cy={marker.y}
-                  r="16"
-                  fill={marker.type === 'N' ? '#ef4444' : '#3b82f6'}
-                  stroke="white"
-                  strokeWidth="2"
-                />
-                <text
-                  x={marker.x}
-                  y={marker.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="white"
-                  fontSize="14"
-                  fontWeight="bold"
-                >
-                  {marker.type}
-                </text>
-              </g>
+              <DiagramMarkerWithTooltip key={idx} marker={marker} index={idx} />
             ))}
           </svg>
         </div>
@@ -255,7 +277,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
             N
           </div>
-          <span className="text-sm font-medium">shift</span>
+          <span className="text-sm font-medium">shift (Replacement)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
