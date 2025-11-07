@@ -78,8 +78,9 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'front_right_door': { panel: 'within', x: 470, y: 240 },
     'front_door_right': { panel: 'within', x: 470, y: 240 },
     
-    'rear_right_door': { panel: 'within', x: 470, y: 315 },
-    'rear_door_right': { panel: 'within', x: 470, y: 315 },
+    'rear_right_door': { panel: 'within', x: 111, y: 349 },
+    'rear_door_right': { panel: 'within', x: 111, y: 349 },
+    'rear_door_(right)_-_replacement': { panel: 'within', x: 111, y: 349 },
     
     'right_quarter_panel': { panel: 'within', x: 465, y: 390 },
     'quarter_panel_right': { panel: 'within', x: 465, y: 390 },
