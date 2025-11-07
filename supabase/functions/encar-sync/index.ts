@@ -98,42 +98,62 @@ Deno.serve(async (req) => {
 
     console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
-    // Clean up stuck syncs older than 1 hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    // Check for force parameter to override stuck syncs
+    const forceSync = url.searchParams.get('force') === 'true'
+
+    // Clean up stuck syncs older than 15 minutes (more aggressive)
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
     const { error: cleanupError } = await supabase
       .from('sync_status')
       .update({ 
         status: 'failed', 
-        error_message: 'Sync timeout - cleaned up automatically',
+        error_message: 'Sync timeout - cleaned up automatically after 15 minutes',
         completed_at: new Date().toISOString()
       })
       .eq('status', 'running')
-      .lt('started_at', oneHourAgo)
+      .lt('started_at', fifteenMinutesAgo)
 
     if (cleanupError) {
       console.warn('⚠️ Error cleaning up stuck syncs:', cleanupError)
     }
 
-    // Check for existing running sync
-    const { data: existingSync } = await supabase
-      .from('sync_status')
-      .select('id')
-      .eq('status', 'running')
-      .single()
+    // Check for existing running sync (unless force flag is set)
+    if (!forceSync) {
+      const { data: existingSync } = await supabase
+        .from('sync_status')
+        .select('id, started_at')
+        .eq('status', 'running')
+        .single()
 
-    if (existingSync) {
-      console.log(`⚠️ Sync already running: ${existingSync.id}`)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Sync already in progress',
-          existing_sync_id: existingSync.id 
-        }),
-        { 
-          status: 409, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      if (existingSync) {
+        const syncAge = Date.now() - new Date(existingSync.started_at).getTime()
+        const syncAgeMinutes = Math.floor(syncAge / 60000)
+        
+        console.log(`⚠️ Sync already running: ${existingSync.id} (running for ${syncAgeMinutes} minutes)`)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: `Sync already in progress (running for ${syncAgeMinutes} minutes). Add ?force=true to override.`,
+            existing_sync_id: existingSync.id,
+            sync_age_minutes: syncAgeMinutes
+          }),
+          { 
+            status: 409, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+    } else {
+      // Force mode: Mark any existing running syncs as failed
+      console.log('🔄 Force mode enabled - terminating any existing syncs...')
+      await supabase
+        .from('sync_status')
+        .update({ 
+          status: 'failed', 
+          error_message: 'Terminated by forced sync',
+          completed_at: new Date().toISOString()
+        })
+        .eq('status', 'running')
     }
 
     // Create new sync record
