@@ -1,12 +1,11 @@
-import { useEffect, useState, lazy, Suspense } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { lazy, Suspense, useMemo } from "react";
 import Header from "@/components/Header";
 import CarCard from "@/components/CarCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useFavorites } from "@/contexts/FavoritesContext";
 
 const Footer = lazy(() => import("@/components/Footer"));
 
@@ -29,94 +28,22 @@ const FooterSkeleton = () => (
   </footer>
 );
 
-interface FavoriteCar {
-  id: string;
-  car_id: string;
-  user_id: string;
-  created_at: string;
-  // Car details from join
-  cars?: {
-    make: string;
-    model: string;
-    year: number;
-    price: number;
-    image_url?: string;
-  };
-}
-
 const FavoritesPage = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [favorites, setFavorites] = useState<FavoriteCar[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, favorites, loading } = useFavorites();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      
-      if (user) {
-        fetchFavorites(user.id);
-      } else {
-        setLoading(false);
-      }
-    };
-    
-    getUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchFavorites(session.user.id);
-      } else {
-        setFavorites([]);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchFavorites = async (userId: string) => {
-    try {
-      // Since the database structure is uncertain, use mock data for now
-      const mockFavorites: FavoriteCar[] = [
-        {
-          id: '1',
-          car_id: '1',
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          cars: {
-            make: 'BMW',
-            model: 'M3',
-            year: 2022,
-            price: 67300,
-            image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'
-          }
-        },
-        {
-          id: '2',
-          car_id: '2',
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          cars: {
-            make: 'Mercedes-Benz',
-            model: 'C-Class',
-            year: 2021,
-            price: 47300,
-            image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800'
-          }
-        }
-      ];
-      
-      setFavorites(mockFavorites);
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const favoriteCards = useMemo(
+    () =>
+      favorites.map((favorite) => ({
+        id: favorite.id,
+        carId: favorite.car_id,
+        make: favorite.car_make ?? "Unknown",
+        model: favorite.car_model ?? "Unknown",
+        year: favorite.car_year ?? 0,
+        price: favorite.car_price ?? 0,
+        image: favorite.car_image ?? undefined,
+      })),
+    [favorites]
+  );
 
   if (!user) {
     return (
@@ -169,8 +96,8 @@ const FavoritesPage = () => {
             <Heart className="h-8 w-8 text-red-500" />
             <div>
               <h1 className="text-3xl font-bold">Makinat e Mia të Preferuara</h1>
-              <p className="text-muted-foreground">
-                {favorites.length} makinë{favorites.length !== 1 ? 'a' : ''} e ruajtur
+                <p className="text-muted-foreground">
+                  {favoriteCards.length} makinë{favoriteCards.length !== 1 ? 'a' : ''} e ruajtur
               </p>
             </div>
           </div>
@@ -180,7 +107,7 @@ const FavoritesPage = () => {
           </Button>
         </div>
 
-        {favorites.length === 0 ? (
+          {favoriteCards.length === 0 ? (
           <div className="text-center py-16">
             <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
             <h2 className="text-2xl font-semibold mb-4">Asnjë të Preferuar Akoma</h2>
@@ -193,15 +120,15 @@ const FavoritesPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {favorites.map((favorite) => (
+              {favoriteCards.map((favorite) => (
               <CarCard
-                key={favorite.id}
-                id={favorite.car_id}
-                make={favorite.cars?.make || 'Unknown'}
-                model={favorite.cars?.model || 'Unknown'}
-                year={favorite.cars?.year || 0}
-                price={favorite.cars?.price || 0}
-                image={favorite.cars?.image_url}
+                  key={favorite.id}
+                  id={favorite.carId}
+                  make={favorite.make}
+                  model={favorite.model}
+                  year={favorite.year}
+                  price={favorite.price}
+                  image={favorite.image}
               />
             ))}
           </div>

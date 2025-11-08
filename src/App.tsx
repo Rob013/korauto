@@ -17,6 +17,7 @@ import { useIsMobile } from "./hooks/use-mobile";
 import { IOSEnhancer } from "./components/IOSEnhancer";
 import PageTransition from "./components/PageTransition";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { FavoritesProvider } from "./contexts/FavoritesContext";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -201,15 +202,16 @@ const App = () => {
     }
   }, [supportsHighRefreshRate, targetFPS, currentFPS]);
 
-  return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <StatusRefreshProvider intervalHours={6} enabled={true}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <FavoritesProvider>
+            <StatusRefreshProvider intervalHours={6} enabled={true}>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
                 <Route path="/" element={renderWithTransition(Index)} />
                 <Route path="/catalog" element={renderWithTransition(Catalog)} />
                 <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
@@ -239,17 +241,18 @@ const App = () => {
                 <Route path="/api-info-demo" element={renderWithTransition(ApiInfoDemo)} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={renderWithTransition(NotFound)} />
-              </Routes>
-            </BrowserRouter>
-            <InstallPrompt />
-            <CacheUpdateNotification />
-            <IOSEnhancer />
-            {/* Performance Monitor for admin users only, hidden on mobile */}
-            {isAdmin && !isMobile && (
-              <PerformanceMonitor showDetails={false} />
-            )}
-          </TooltipProvider>
-        </StatusRefreshProvider>
+                  </Routes>
+                </BrowserRouter>
+                <InstallPrompt />
+                <CacheUpdateNotification />
+                <IOSEnhancer />
+                {/* Performance Monitor for admin users only, hidden on mobile */}
+                {isAdmin && !isMobile && (
+                  <PerformanceMonitor showDetails={false} />
+                )}
+              </TooltipProvider>
+            </StatusRefreshProvider>
+          </FavoritesProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
