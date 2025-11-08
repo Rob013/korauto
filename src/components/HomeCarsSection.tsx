@@ -1,6 +1,6 @@
 // @ts-nocheck
 import LazyCarCard from "./LazyCarCard";
-import { memo, useState, useEffect, useMemo, useCallback } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
@@ -14,7 +14,7 @@ import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing, filterCarsWithRealPricing } from "@/utils/carPricing";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
@@ -43,7 +43,6 @@ const HomeCarsSection = memo(() => {
     threshold: 0.1,
     triggerOnce: true
   });
-  const isMobileDevice = useIsMobile();
   const {
     cars,
     loading,
@@ -231,25 +230,30 @@ const HomeCarsSection = memo(() => {
     });
   };
 
-    // Type conversion to match the sorting hook interface using live API data only
-    const carsForSorting = useMemo(() => {
-      const cleanedCars = filterOutTestCars(cars);
-      const carsWithRealPricing = filterCarsWithRealPricing(cleanedCars);
-
-      return carsWithRealPricing.map(car => {
-        const lot = car.lots?.[0];
-        const priceUSD = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
-        const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
-
-        return {
-          ...car,
-          price_eur: priceEUR,
-          status: String(car.status || ""),
-          lot_number: String(car.lot_number || ""),
-          cylinders: Number(car.cylinders || 0)
-        };
-      });
-    }, [cars, exchangeRate.rate]);
+  // Type conversion to match the sorting hook interface - use fallback data if API fails
+  const carsForSorting = useMemo(() => {
+    // Use fallback data when there's an error and no cars loaded and we aren't loading
+    const shouldUseFallback = !loading && (error || cars.length === 0);
+    const sourceCars = shouldUseFallback ? fallbackCars : cars;
+    const cleanedCars = filterOutTestCars(sourceCars);
+    // Filter to show cars that have real pricing (buy_now, final_bid, or price)
+    const carsWithRealPricing = filterCarsWithRealPricing(cleanedCars);
+    
+    return carsWithRealPricing.map(car => {
+      // Calculate EUR price using current exchange rate from the best available price
+      const lot = car.lots?.[0];
+      const priceUSD = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
+      const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
+      
+      return {
+        ...car,
+        price_eur: priceEUR, // Add calculated EUR price
+        status: String(car.status || ""),
+        lot_number: String(car.lot_number || ""),
+        cylinders: Number(car.cylinders || 0)
+      };
+    });
+  }, [cars, error, exchangeRate.rate, loading]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
@@ -299,20 +303,16 @@ const HomeCarsSection = memo(() => {
       setTimeout(preloadImages, 100);
     }
   }, [displayedCars]);
-    useEffect(() => {
-      // Calculate daily page based on day of month (1-31)
-      const today = new Date();
-      const dayOfMonth = today.getDate(); // 1-31
-      const dailyPage = (dayOfMonth - 1) % 10 + 1; // Cycle through pages 1-10
-      const initialPerPage = isMobileDevice ? "24" : "50";
+  useEffect(() => {
+    // Calculate daily page based on day of month (1-31)
+    const today = new Date();
+    const dayOfMonth = today.getDate(); // 1-31
+    const dailyPage = (dayOfMonth - 1) % 10 + 1; // Cycle through pages 1-10
 
-      fetchCars(
-        dailyPage,
-        {
-          per_page: initialPerPage,
-        },
-        true
-      );
+    // Load initial data with 50 cars from daily page - increased for better visibility
+    fetchCars(dailyPage, {
+      per_page: "50"
+    }, true);
 
     // Load manufacturers with caching
     const loadManufacturers = async () => {
@@ -339,14 +339,10 @@ const HomeCarsSection = memo(() => {
       }
     };
     loadManufacturers();
-    }, [fetchCars, isMobileDevice]);
-    useEffect(() => {
-      refreshInventory(45);
-    }, [refreshInventory]);
-
-    const handleRetryFetch = useCallback(() => {
-      fetchCars(1, { ...filters }, true);
-    }, [fetchCars, filters]);
+  }, []);
+  useEffect(() => {
+    refreshInventory(45);
+  }, [refreshInventory]);
   const handleFiltersChange = (newFilters: APIFilters) => {
     // Check if generation is being selected
     if (newFilters.generation_id && newFilters.generation_id !== filters.generation_id) {
@@ -490,26 +486,17 @@ const HomeCarsSection = memo(() => {
           
         </div>
 
-          {error && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-3 mb-6 sm:mb-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mx-2 sm:mx-0">
-              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-              <div className="flex flex-col gap-3 sm:gap-2">
-                <span className="text-blue-800 dark:text-blue-200 text-sm sm:text-base text-left">
-                  Nuk arritëm të ngarkojmë inventarin live. Ju lutemi provoni përsëri për të parë të dhënat më të fundit.
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button size="sm" onClick={handleRetryFetch} disabled={loading}>
-                    Provo përsëri
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+        {error && <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mx-2 sm:mx-0">
+            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="text-blue-800 dark:text-blue-200 text-sm sm:text-base text-left sm:text-center">
+              {cars.length === 0 ? "Shfaqen makina të përzgjedhura. Për përditësime të reja, kontaktoni: +38348181116" : "Problem me lidhjen API: Disa funksione mund të jenë të kufizuara."}
+            </span>
+          </div>}
 
         {/* Filter Form */}
-          {showFilters && <div className="mb-6 sm:mb-8">
-              <EncarStyleFilter filters={pendingFilters} manufacturers={manufacturers} models={models} filterCounts={filterCounts} onFiltersChange={handleFiltersChange} onClearFilters={handleClearFilters} onManufacturerChange={handleManufacturerChange} onModelChange={handleModelChange} onFetchGrades={fetchGrades} onFetchTrimLevels={fetchTrimLevels} isHomepage={true} onSearchCars={handleSearchCars} />
-            </div>}
+        {showFilters && <div className="mb-6 sm:mb-8">
+            <EncarStyleFilter filters={pendingFilters} manufacturers={manufacturers.length > 0 ? manufacturers : fallbackManufacturers} models={models} filterCounts={filterCounts} onFiltersChange={handleFiltersChange} onClearFilters={handleClearFilters} onManufacturerChange={handleManufacturerChange} onModelChange={handleModelChange} onFetchGrades={fetchGrades} onFetchTrimLevels={fetchTrimLevels} isHomepage={true} onSearchCars={handleSearchCars} />
+          </div>}
 
         {/* Daily Selection Badge */}
         <div className="text-center mb-6 sm:mb-8">
@@ -534,14 +521,11 @@ const HomeCarsSection = memo(() => {
                 <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-2"></div>
                 <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded w-3/4"></div>
               </div>)}
-            </div> : carsToDisplay.length === 0 ? <div className="text-center py-8 sm:py-12 px-4">
-              <p className="text-base sm:text-lg text-muted-foreground mb-4">
-                {error ? "Nuk arritëm të ngarkojmë inventarin. Ju lutemi provoni përsëri." : "Nuk ka makina të disponueshme."}
-              </p>
-              {error && <Button size="sm" onClick={handleRetryFetch} disabled={loading}>
-                  Provo përsëri
-                </Button>}
-            </div> : <>
+          </div> : carsToDisplay.length === 0 ? <div className="text-center py-8 sm:py-12 px-4">
+            <p className="text-base sm:text-lg text-muted-foreground mb-4">
+              Nuk ka makina të disponueshme.
+            </p>
+          </div> : <>
             <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container ${isInView ? 'stagger-animation' : ''}`}>
               {displayedCars.map(car => {
             const lot = car.lots?.[0];

@@ -364,8 +364,13 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
 
   // Open car details
   const openCarDetails = useCallback((carId: string) => {
-    window.location.href = `/car/${carId}`;
-  }, []);
+    const url = `/car/${carId}`;
+    window.open(url, '_blank');
+    toast({
+      title: 'Opening car details',
+      description: `Opening car details for ID: ${carId}`,
+    });
+  }, [toast]);
 
   // Cleanup timeout on unmount
   useEffect(() => {

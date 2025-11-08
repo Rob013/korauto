@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { trackApiFailure } from '@/utils/analytics';
 
 interface KoreaOption {
   id: number;
@@ -48,27 +46,24 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
           }
         }
 
-          console.log('🌐 Fetching Korea options from secure edge function');
-          const { data, error: edgeError } = await supabase.functions.invoke('secure-cars-api', {
-            body: {
-              endpoint: 'korea-options'
-            }
-          });
+        console.log('🌐 Fetching Korea options from API');
+        const response = await fetch('https://auctionsapi.com/api/korea-options', {
+          headers: {
+            'x-api-key': 'd00985c77981fe8d26be16735f932ed1',
+            'Accept': 'application/json',
+          },
+        });
 
-          if (edgeError) {
-            throw new Error(edgeError.message || 'Failed to fetch Korea options');
-          }
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status}`);
+        }
 
-          if (data?.error) {
-            throw new Error(data.error);
-          }
-
-          const payload = data?.data ?? data;
+        const data = await response.json();
         
         // Convert array to map by code for faster lookups
         const optionsMap: Record<string, KoreaOption> = {};
-          if (payload && Array.isArray(payload)) {
-            payload.forEach((option: KoreaOption) => {
+        if (data.data && Array.isArray(data.data)) {
+          data.data.forEach((option: KoreaOption) => {
             if (option.code) {
               optionsMap[option.code] = option;
             }
@@ -85,7 +80,6 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
         setOptions(optionsMap);
       } catch (err) {
         console.error('Failed to fetch Korea options:', err);
-          trackApiFailure('korea-options', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch options');
       } finally {
         setLoading(false);

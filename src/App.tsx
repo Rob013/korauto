@@ -17,7 +17,6 @@ import { useIsMobile } from "./hooks/use-mobile";
 import { IOSEnhancer } from "./components/IOSEnhancer";
 import PageTransition from "./components/PageTransition";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { FavoritesProvider } from "./contexts/FavoritesContext";
 
 // Lazy load all pages for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -126,6 +125,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Memory management for heavy load scenarios
+if (typeof window !== 'undefined') {
+  // Clear old queries periodically to prevent memory leaks
+  setInterval(() => {
+    queryClient.getQueryCache().clear();
+  }, 30 * 60 * 1000); // Clear every 30 minutes
+}
+
 const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
@@ -144,7 +151,7 @@ const App = () => {
     const enhancer = AccessibilityEnhancer.getInstance();
     enhancer.init();
     enhancer.addSkipLinks();
-
+    
     return () => {
       enhancer.destroy();
     };
@@ -170,22 +177,9 @@ const App = () => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
+    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  // Clear old queries periodically to prevent memory leaks
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const intervalId = window.setInterval(() => {
-      queryClient.getQueryCache().clear();
-    }, 30 * 60 * 1000); // Clear every 30 minutes
-
-    return () => {
-      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -202,16 +196,15 @@ const App = () => {
     }
   }, [supportsHighRefreshRate, targetFPS, currentFPS]);
 
-    return (
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <FavoritesProvider>
-            <StatusRefreshProvider intervalHours={6} enabled={true}>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <StatusRefreshProvider intervalHours={6} enabled={true}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
                 <Route path="/" element={renderWithTransition(Index)} />
                 <Route path="/catalog" element={renderWithTransition(Catalog)} />
                 <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
@@ -241,18 +234,17 @@ const App = () => {
                 <Route path="/api-info-demo" element={renderWithTransition(ApiInfoDemo)} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={renderWithTransition(NotFound)} />
-                  </Routes>
-                </BrowserRouter>
-                <InstallPrompt />
-                <CacheUpdateNotification />
-                <IOSEnhancer />
-                {/* Performance Monitor for admin users only, hidden on mobile */}
-                {isAdmin && !isMobile && (
-                  <PerformanceMonitor showDetails={false} />
-                )}
-              </TooltipProvider>
-            </StatusRefreshProvider>
-          </FavoritesProvider>
+              </Routes>
+            </BrowserRouter>
+            <InstallPrompt />
+            <CacheUpdateNotification />
+            <IOSEnhancer />
+            {/* Performance Monitor for admin users only, hidden on mobile */}
+            {isAdmin && !isMobile && (
+              <PerformanceMonitor showDetails={false} />
+            )}
+          </TooltipProvider>
+        </StatusRefreshProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

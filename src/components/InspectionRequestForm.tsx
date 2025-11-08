@@ -353,7 +353,7 @@ const InspectionRequestForm = ({
 
   const handleOpenWarranty = useCallback(() => {
     impact('light');
-    window.location.href = "/garancioni";
+    window.open("/garancioni", "_blank", "noopener,noreferrer");
   }, [impact]);
 
   const formContent = (

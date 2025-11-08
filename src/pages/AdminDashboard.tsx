@@ -631,11 +631,11 @@ const AdminDashboard = () => {
               duration: 3000,
             });
 
-            // Navigate to car details page
+            // Open car details page in new tab
             setTimeout(() => {
               const foundCarId = carData.id || lot?.lot || searchTerm;
               console.log("🚗 Opening car page with ID:", foundCarId);
-              navigate(`/car/${foundCarId}`);
+              window.open(`/car/${foundCarId}`, "_blank");
             }, 1000); // Small delay to show the toast
 
             return; // Exit the function if we found the car
@@ -1271,7 +1271,7 @@ const AdminDashboard = () => {
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => navigate(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`)}
+                                    onClick={() => window.open(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`, "_blank")}
                                     className="h-7 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />
@@ -1410,7 +1410,7 @@ const AdminDashboard = () => {
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => navigate(`/car/${car.lot_number || request.car_id}`)}
+                                    onClick={() => window.open(`/car/${car.lot_number || request.car_id}`, "_blank")}
                                     className="h-6 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />

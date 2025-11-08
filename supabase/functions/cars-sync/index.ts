@@ -62,10 +62,7 @@ Deno.serve(async (req) => {
 
     console.log('🚀 Starting cars sync...');
     
-      const API_KEY = Deno.env.get('AUCTIONS_API_KEY');
-      if (!API_KEY) {
-        throw new Error('AUCTIONS_API_KEY not configured');
-      }
+    const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
     const API_BASE_URL = 'https://auctionsapi.com/api';
     
     // Parse request body for action type

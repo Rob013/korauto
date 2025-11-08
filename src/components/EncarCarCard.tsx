@@ -136,8 +136,8 @@ const EncarCarCard = ({
     // Save current page and any filter state before navigating
     setPreviousPage(window.location.pathname + window.location.search);
     
-    // Navigate to car details in same tab
-    navigate(`/car/${id}`);
+    // Open in new tab to preserve catalog state and scroll position
+    window.open(`/car/${id}`, '_blank');
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {

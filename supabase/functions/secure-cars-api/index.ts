@@ -170,17 +170,16 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Validate endpoint to prevent injection
-      const allowedEndpoints = [
-        'cars',
-        'car',
-        'search-lot',
-        'manufacturers/cars',
-        'models',
-        'generations',
-        'grades',
-        'korea-duplicates',
-        'korea-options'
-      ];
+    const allowedEndpoints = [
+      'cars',
+      'car',
+      'search-lot',
+      'manufacturers/cars',
+      'models',
+      'generations',
+      'grades',
+      'korea-duplicates'
+    ];
     
     const isValidEndpoint = allowedEndpoints.some(allowed => 
       endpoint === allowed || 
