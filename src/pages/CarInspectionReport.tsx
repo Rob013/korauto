@@ -1329,7 +1329,7 @@ const CarInspectionReport = () => {
                   <p>- Mirëmbajtja e rregullt është përgjegjësi e klientit.</p>
 
                   <div className="pt-1">
-                    <Button variant="outline" onClick={() => window.open("/garancioni", "_blank")}>
+                    <Button variant="outline" onClick={() => navigate("/garancioni")}>
                       Shiko faqen e plotë të garancionit
                     </Button>
                   </div>

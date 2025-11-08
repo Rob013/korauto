@@ -401,9 +401,9 @@ const CarCard = ({
 
     // Save current page for back navigation
     setPreviousPage(window.location.pathname + window.location.search);
-    // Open car details in new tab (fallback to id if lot is unavailable)
-    window.open(`/car/${lot ?? id}`, '_blank');
-  }, [id, lot, setPreviousPage]);
+    // Navigate to car details in same tab
+    navigate(`/car/${lot ?? id}`);
+  }, [id, lot, setPreviousPage, navigate]);
 
   const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
 

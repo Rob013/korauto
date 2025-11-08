@@ -199,7 +199,7 @@ const FloatingPerformanceWidget = ({
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => window.open('/performance', '_blank')}
+                      onClick={() => window.location.href = '/performance'}
                       className="flex-1 text-xs h-7"
                     >
                       Details

@@ -1374,8 +1374,8 @@ const CarDetails = memo(() => {
     if (!reportLot) return;
 
     const reportUrl = `/car/${encodeURIComponent(reportLot)}/report`;
-    window.open(reportUrl, "_blank", "noopener,noreferrer");
-  }, [car?.lot, lot, impact]);
+    navigate(reportUrl);
+  }, [car?.lot, lot, impact, navigate]);
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
@@ -2248,7 +2248,7 @@ const CarDetails = memo(() => {
                   <Button
                     variant="outline"
                     className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={() => window.open("/garancioni", "_blank")}
+                    onClick={() => navigate("/garancioni")}
                   >
                     <Shield className="h-4 w-4 mr-2" />
                     Mëso më shumë për garancionin

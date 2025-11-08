@@ -78,9 +78,9 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'front_right_door': { panel: 'within', x: 467, y: 267 },
     'front_door_right': { panel: 'within', x: 467, y: 267 },
 
-    'rear_right_door': { panel: 'within', x: 462, y: 356 },
-    'rear_door_right': { panel: 'within', x: 462, y: 356 },
-    'rear_door_(right)_-_replacement': { panel: 'within', x: 462, y: 356 },
+    'rear_right_door': { panel: 'within', x: 410, y: 343 },
+    'rear_door_right': { panel: 'within', x: 410, y: 343 },
+    'rear_door_(right)_-_replacement': { panel: 'within', x: 410, y: 343 },
 
     'right_quarter_panel': { panel: 'within', x: 466, y: 429 },
     'quarter_panel_right': { panel: 'within', x: 466, y: 429 },
@@ -348,7 +348,7 @@ const DiagramMarkerWithTooltip: React.FC<{
   const topPercent = (marker.y / 600) * 100;
 
   const baseClasses =
-    "absolute -translate-x-1/2 -translate-y-1/2 w-[30px] h-[30px] rounded-full flex items-center justify-center text-[14px] font-bold shadow-md border-[3px] pointer-events-auto transition-none";
+    "absolute -translate-x-1/2 -translate-y-1/2 w-[24px] h-[24px] rounded-full flex items-center justify-center text-[11px] font-bold shadow-md border-[2px] pointer-events-auto transition-none";
   const variantClasses =
     marker.type === "N"
       ? "bg-[#E53935] text-white border-white"
