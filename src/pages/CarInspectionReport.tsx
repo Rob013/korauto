@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { trackPageView, trackApiFailure } from "@/utils/analytics";
+import { trackPageView } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
+import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { InspectionDiagramPanel } from "@/components/InspectionDiagramPanel";
@@ -64,25 +64,8 @@ interface InspectionReportCar {
   sourceLabel?: string;
 }
 
-type InsuranceSummaryInfo = {
-  accident_history?: unknown;
-  repair_count?: unknown;
-  total_loss?: unknown;
-  flood_damage?: unknown;
-  [key: string]: unknown;
-};
-
-type UsageHistoryEntry = { description?: string; value?: string };
-
-type OwnerChangeEntry = {
-  date?: string;
-  change_type?: string;
-  previous_number?: string;
-  usage_type?: string;
-};
-
-type SpecialAccidentEntry = { type?: string; value?: string };
-
+const API_BASE_URL = "https://auctionsapi.com/api";
+const API_KEY = "d00985c77981fe8d26be16735f932ed1";
 
 const positiveStatusValues = new Set([
   "goodness",
@@ -190,7 +173,7 @@ const formatDisplayDate = (
     return `${mm}.${yyyy}`;
   }
 
-  const parsed = new Date(raw);
+    const parsed = new Date(raw);
   if (!Number.isNaN(parsed.getTime())) {
     if (monthYear) {
       return parsed.toLocaleDateString("sq-AL", { month: "2-digit", year: "numeric" });
@@ -213,59 +196,44 @@ const CarInspectionReport = () => {
   const [car, setCar] = useState<InspectionReportCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const isMountedRef = useRef(true);
   const [showAllStandard, setShowAllStandard] = useState(false);
   const [showAllChoice, setShowAllChoice] = useState(false);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   const fetchInspectionReport = useCallback(async () => {
     if (!lot) return;
 
-    if (isMountedRef.current) {
-      setLoading(true);
-      setError(null);
-    }
-
-    const invokeSecureApi = async (body: Record<string, any>) => {
-      const { data, error } = await supabase.functions.invoke('secure-cars-api', { body });
-      if (error) {
-        throw new Error(error.message || 'Secure API invocation failed');
-      }
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-      return data;
-    };
+    setLoading(true);
+    setError(null);
 
     try {
-      timeoutId = undefined;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const data = await (async () => {
-          try {
-            return await invokeSecureApi({
-              endpoint: 'search-lot',
-              lotNumber: lot,
-            });
-          } catch (firstAttemptError) {
-            console.log("First secure API attempt failed, trying search endpoint...", firstAttemptError);
-            return await invokeSecureApi({
-              endpoint: 'search',
-              filters: {
-                lot_number: String(lot),
-                per_page: '1',
-              },
-            });
-          }
-        })();
-        if (!isMountedRef.current) {
-          return;
-        }
+      let response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+        headers: {
+          accept: "*/*",
+          "x-api-key": API_KEY,
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
+          headers: {
+            accept: "*/*",
+            "x-api-key": API_KEY,
+          },
+          signal: controller.signal,
+        });
+      }
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       const carData = data.data;
       const lotData = carData?.lots?.[0];
 
@@ -299,21 +267,19 @@ const CarInspectionReport = () => {
       const optionsData = details?.options || {};
       const optionsExtra = details?.options_extra || [];
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("🔍 Inspection Report Data Collection:", {
-          "details.inspect": details?.inspect,
-          "inspectData.accident_summary": accidentSummary,
-          "inspectData.outer": inspectOuter,
-          "inspectData.inner": inspectInner,
-          insurance_v2: insuranceV2,
-          options: optionsData,
-          options_extra: optionsExtra,
-          hasAccidentSummary: Object.keys(accidentSummary).length > 0,
-          hasOuterData: Object.keys(inspectOuter).length > 0,
-          hasInsuranceData: Object.keys(insuranceV2).length > 0,
-          hasOptionsExtra: optionsExtra.length > 0,
-        });
-      }
+      console.log('🔍 Inspection Report Data Collection:', {
+        'details.inspect': details?.inspect,
+        'inspectData.accident_summary': accidentSummary,
+        'inspectData.outer': inspectOuter,
+        'inspectData.inner': inspectInner,
+        'insurance_v2': insuranceV2,
+        'options': optionsData,
+        'options_extra': optionsExtra,
+        'hasAccidentSummary': Object.keys(accidentSummary).length > 0,
+        'hasOuterData': Object.keys(inspectOuter).length > 0,
+        'hasInsuranceData': Object.keys(insuranceV2).length > 0,
+        'hasOptionsExtra': optionsExtra.length > 0,
+      });
 
         const transformed: InspectionReportCar = {
           id: carData.id?.toString() || lot,
@@ -380,24 +346,69 @@ const CarInspectionReport = () => {
           sourceLabel: carData.source_label || carData.domain_name,
         };
 
-        if (isMountedRef.current) {
-          setCar(transformed);
-        }
-      } catch (apiError) {
-        console.error("Failed to fetch inspection report:", apiError);
-        trackApiFailure("car_inspection_report", apiError, { lot });
+      setCar(transformed);
+      setLoading(false);
+    } catch (apiError) {
+      console.error("Failed to fetch inspection report:", apiError);
 
-        if (isMountedRef.current) {
-          setError(
-            apiError instanceof Error
-              ? apiError.message
-              : "Nuk u arrit të ngarkohej raporti i inspektimit",
-          );
-        }
-    } finally {
-      if (isMountedRef.current) {
+      const fallbackCar = fallbackCars.find(
+        (fallback) =>
+          fallback.id === lot ||
+          fallback.lot_number === lot ||
+          fallback?.lots?.[0]?.lot === lot,
+      );
+
+      if (fallbackCar && fallbackCar.lots?.[0]) {
+        const lotData = fallbackCar.lots[0];
+        const basePrice = lotData.buy_now || fallbackCar.price;
+        const priceEUR = basePrice
+          ? calculateFinalPriceEUR(basePrice, exchangeRate.rate)
+          : undefined;
+
+        const lotDataAny = lotData as any;
+        const fallbackCarAny = fallbackCar as any;
+        
+        setCar({
+          id: fallbackCar.id,
+          lot: lotData.lot,
+          make: fallbackCar.manufacturer?.name,
+          model: fallbackCar.model?.name,
+          year: fallbackCar.year,
+          title: fallbackCar.title,
+          image: lotData.images?.big?.[0] || lotData.images?.normal?.[0],
+            priceEUR,
+          mileageKm: lotData.odometer?.km,
+          odometer: lotData.odometer,
+          vin: fallbackCarAny.vin || lotDataAny.vin,
+          fuel:
+            fallbackCar.fuel?.name ||
+            lotDataAny.fuel?.name ||
+            fallbackCarAny.details?.fuel?.name,
+          firstRegistration:
+            lotDataAny.first_registration ||
+            fallbackCarAny.first_registration ||
+            fallbackCarAny.details?.first_registration,
+          postedAt: lotDataAny.listed_at || fallbackCarAny.listed_at,
+          engineDisplacement:
+            fallbackCarAny.details?.engine_volume ||
+            lotDataAny.insurance_v2?.displacement,
+          damage: lotDataAny.damage || null,
+          insurance: lotDataAny.insurance,
+          insurance_v2: lotDataAny.insurance_v2,
+          details: lotDataAny.details,
+          maintenanceHistory: lotDataAny.details?.maintenance_history || [],
+          ownerChanges: lotDataAny.details?.insurance?.owner_changes || [],
+        });
         setLoading(false);
+        return;
       }
+
+      setError(
+        apiError instanceof Error
+          ? apiError.message
+          : "Nuk u arrit të ngarkohej raporti i inspektimit",
+      );
+      setLoading(false);
     }
   }, [exchangeRate.rate, lot]);
 
@@ -411,109 +422,62 @@ const CarInspectionReport = () => {
     fetchInspectionReport();
   }, [fetchInspectionReport]);
 
-  const handleRetryFetch = useCallback(() => {
-    fetchInspectionReport();
-  }, [fetchInspectionReport]);
-
-  const inspectionOuterData = useMemo(() => {
-    // Try multiple potential locations and merge arrays if found
-    const candidates: unknown[] = [];
-    const pushIfArray = (val: unknown) => {
-      if (Array.isArray(val)) candidates.push(...val);
-    };
-    pushIfArray(car?.details?.inspect_outer);
-    pushIfArray(car?.inspect?.outer);
-    pushIfArray(car?.inspect?.inspect_outer);
-    pushIfArray((car as any)?.details?.inspect?.outer);
-    pushIfArray((car as any)?.details?.outer);
-    // Deduplicate by type.code if present
-    const keyed = new Map<string, any>();
-    for (const item of candidates) {
-      const code = (item as any)?.type?.code || (item as any)?.code || JSON.stringify(item);
-      if (!keyed.has(code)) keyed.set(code, item);
-    }
-    return Array.from(keyed.values());
-  }, [car]);
-
-  const inspectionInnerData = useMemo(() => {
-    const raw =
-      car?.details?.inspect?.inner ||
-      car?.inspect?.inner ||
-      (car as any)?.details?.inspect_inner ||
-      null;
-
-    if (!raw || typeof raw !== "object") return null;
-
-    const result: Record<string, unknown> = {};
-
-    const walk = (obj: any, prefix = "") => {
-      if (!obj || typeof obj !== "object") return;
-      for (const [k, v] of Object.entries(obj)) {
-        const key = prefix ? `${prefix} ${k}` : k;
-        if (v !== null && typeof v === "object" && !Array.isArray(v)) {
-          walk(v, key);
-        } else if (Array.isArray(v)) {
-          // Join simple arrays, or recurse elements
-          const simple = v.every((el) => typeof el !== "object");
-          if (simple) {
-            result[key] = v.join(", ");
-          } else {
-            v.forEach((el, idx) => walk(el, `${key} ${idx + 1}`));
-          }
-        } else {
-          result[key] = v as unknown;
-        }
+    const inspectionOuterData = useMemo(() => {
+      // Try multiple potential locations and merge arrays if found
+      const candidates: unknown[] = [];
+      const pushIfArray = (val: unknown) => {
+        if (Array.isArray(val)) candidates.push(...val);
+      };
+      pushIfArray(car?.details?.inspect_outer);
+      pushIfArray(car?.inspect?.outer);
+      pushIfArray(car?.inspect?.inspect_outer);
+      pushIfArray((car as any)?.details?.inspect?.outer);
+      pushIfArray((car as any)?.details?.outer);
+      // Deduplicate by type.code if present
+      const keyed = new Map<string, any>();
+      for (const item of candidates) {
+        const code = (item as any)?.type?.code || (item as any)?.code || JSON.stringify(item);
+        if (!keyed.has(code)) keyed.set(code, item);
       }
-    };
+      return Array.from(keyed.values());
+    }, [car]);
 
-    walk(raw);
-    return result;
-  }, [car]);
+    const inspectionInnerData = useMemo(() => {
+      const raw =
+        car?.details?.inspect?.inner ||
+        car?.inspect?.inner ||
+        (car as any)?.details?.inspect_inner ||
+        null;
 
-  const insuranceCarInfo = useMemo<InsuranceSummaryInfo | undefined>(() => {
-    const baseInfo =
-      (car?.details?.insurance?.car_info &&
-        typeof car.details.insurance.car_info === "object")
-        ? { ...(car.details.insurance.car_info as Record<string, unknown>) }
-        : {};
+      if (!raw || typeof raw !== "object") return null;
 
-    const insuranceV2 = car?.insurance_v2 as Record<string, unknown> | undefined;
-    if (insuranceV2) {
-      const assignIfMissing = (key: keyof InsuranceSummaryInfo, value: unknown) => {
-        if (value === undefined || value === null || value === "") return;
-        if (!(key in baseInfo)) {
-          baseInfo[key] = value;
+      const result: Record<string, unknown> = {};
+
+      const walk = (obj: any, prefix = "") => {
+        if (!obj || typeof obj !== "object") return;
+        for (const [k, v] of Object.entries(obj)) {
+          const key = prefix ? `${prefix} ${k}` : k;
+          if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+            walk(v, key);
+          } else if (Array.isArray(v)) {
+            // Join simple arrays, or recurse elements
+            const simple = v.every((el) => typeof el !== "object");
+            if (simple) {
+              result[key] = v.join(", ");
+            } else {
+              v.forEach((el, idx) => walk(el, `${key} ${idx + 1}`));
+            }
+          } else {
+            result[key] = v as unknown;
+          }
         }
       };
 
-      const accidentCount =
-        typeof insuranceV2.accidentCnt === "number"
-          ? insuranceV2.accidentCnt
-          : (insuranceV2.myAccidentCnt as number | undefined ?? 0) +
-            (insuranceV2.otherAccidentCnt as number | undefined ?? 0);
-      if (accidentCount) {
-        assignIfMissing("accident_history", accidentCount);
-      }
+      walk(raw);
+      return result;
+    }, [car]);
 
-      const repairCount =
-        typeof insuranceV2.myAccidentCnt === "number" && typeof insuranceV2.otherAccidentCnt === "number"
-          ? insuranceV2.myAccidentCnt + insuranceV2.otherAccidentCnt
-          : insuranceV2.myAccidentCnt ?? insuranceV2.otherAccidentCnt;
-      if (repairCount !== undefined) {
-        assignIfMissing("repair_count", repairCount);
-      }
-
-      if (typeof insuranceV2.totalLossCnt === "number") {
-        assignIfMissing("total_loss", insuranceV2.totalLossCnt);
-      }
-
-      if (typeof insuranceV2.floodTotalLossCnt === "number") {
-        assignIfMissing("flood_damage", insuranceV2.floodTotalLossCnt);
-      }
-    }
-
-    return Object.keys(baseInfo).length > 0 ? (baseInfo as InsuranceSummaryInfo) : undefined;
-  }, [car]);
+  const insuranceCarInfo = car?.details?.insurance?.car_info;
 
   const accidents = useMemo(() => {
     if (!car?.insurance_v2?.accidents) return [];
@@ -521,113 +485,6 @@ const CarInspectionReport = () => {
       return car.insurance_v2.accidents;
     }
     return [];
-  }, [car]);
-
-  const usageHistoryList = useMemo<UsageHistoryEntry[]>(() => {
-    const entries: UsageHistoryEntry[] = [];
-
-    const addEntry = (entry: any) => {
-      if (!entry) return;
-      const description = entry.description ?? entry.type ?? entry.label;
-      const rawValue = entry.value ?? entry.result ?? entry.details;
-      entries.push({
-        description,
-        value:
-          typeof rawValue === "string"
-            ? rawValue
-            : rawValue !== undefined && rawValue !== null
-              ? String(rawValue)
-              : undefined,
-      });
-    };
-
-    const usageHistory = car?.details?.insurance?.usage_history;
-    if (Array.isArray(usageHistory)) {
-      usageHistory.forEach(addEntry);
-    }
-
-    const carInfoChanges = (car?.insurance_v2 as any)?.carInfoChanges;
-    if (Array.isArray(carInfoChanges)) {
-      carInfoChanges.forEach((change: any) => {
-        const description =
-          change?.description ||
-          change?.type ||
-          (change?.carNo ? `Ndryshim targash (${change.carNo})` : "Ndryshim informacioni");
-        const formattedDate =
-          formatDisplayDate(change?.date, { monthYear: true }) ??
-          formatDisplayDate(change?.changed_at, { monthYear: true }) ??
-          change?.date ??
-          change?.changed_at ??
-          undefined;
-
-        entries.push({
-          description,
-          value: formattedDate,
-        });
-      });
-    }
-
-    return entries.filter((entry) => entry.description || entry.value);
-  }, [car]);
-
-  const toYesNo = useCallback((value?: string | number | boolean | null) => {
-    if (value === undefined || value === null) return null;
-    if (typeof value === "boolean") return value ? "Po" : "Jo";
-    if (typeof value === "number") return value > 0 ? "Po" : "Jo";
-
-    const normalized = value.toString().trim().toLowerCase();
-    if (!normalized) return null;
-
-    if (["po", "yes", "true"].includes(normalized)) return "Po";
-    if (["jo", "no", "false"].includes(normalized)) return "Jo";
-
-    const numValue = parseFloat(normalized);
-    if (!isNaN(numValue)) {
-      return numValue > 0 ? "Po" : "Jo";
-    }
-
-    return null;
-  }, []);
-
-  const ownerChangesList = useMemo<OwnerChangeEntry[]>(() => {
-    const entries: OwnerChangeEntry[] = [];
-    const addEntry = (entry: any) => {
-      if (!entry) return;
-      entries.push({
-        date:
-          entry?.date ||
-          entry?.change_date ||
-          entry?.changeDate ||
-          entry?.changed_at ||
-          entry?.created_at ||
-          entry?.updated_at,
-        change_type: entry?.change_type || entry?.type || entry?.description || entry?.label,
-        previous_number: entry?.previous_number || entry?.previousNumber || entry?.carNo || entry?.number,
-        usage_type: entry?.usage_type || entry?.usageType || entry?.useType,
-      });
-    };
-
-    const insuranceOwnerChanges = car?.details?.insurance?.owner_changes;
-    if (Array.isArray(insuranceOwnerChanges)) {
-      insuranceOwnerChanges.forEach(addEntry);
-    }
-
-    if (Array.isArray(car?.ownerChanges)) {
-      car.ownerChanges.forEach(addEntry);
-    }
-
-    const ownerChangesV2 = (car?.insurance_v2 as any)?.ownerChanges;
-    if (Array.isArray(ownerChangesV2)) {
-      ownerChangesV2.forEach(addEntry);
-    }
-
-    const seen = new Set<string>();
-    return entries.filter((entry) => {
-      const key = `${entry.date ?? ""}-${entry.change_type ?? ""}-${entry.previous_number ?? ""}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
   }, [car]);
 
   const accidentEntries = useMemo(() => {
@@ -680,157 +537,6 @@ const CarInspectionReport = () => {
     [accidentEntries],
   );
 
-  const ownerChangeCount =
-    typeof car?.insurance_v2?.ownerChangeCnt === "number"
-      ? car.insurance_v2.ownerChangeCnt
-      : ownerChangesList.length > 0
-        ? ownerChangesList.length
-        : car?.ownerChanges?.length;
-
-  const ownerChangesDisplay =
-    ownerChangeCount === undefined
-      ? "-"
-      : ownerChangeCount === 0
-        ? "Asnjë"
-        : ownerChangeCount === 1
-          ? "1 herë"
-          : `${ownerChangeCount} herë`;
-
-  const usageHighlights = useMemo(
-    () => {
-      const findUsageValue = (keywords: string[]) => {
-        const match = usageHistoryList.find((entry) => {
-          const description = `${entry.description ?? ""}`.toLowerCase();
-          return keywords.some((keyword) => description.includes(keyword));
-        });
-        return match?.value;
-      };
-
-      const rentalUsageValue =
-        toYesNo(findUsageValue(["rent", "qira", "rental"])) ??
-        toYesNo((car?.insurance_v2?.carInfoUse1s || []).join(" ")) ??
-        toYesNo((car?.insurance_v2?.carInfoUse2s || []).join(" ")) ??
-        toYesNo(car?.insurance_v2?.loan as any);
-
-      const commercialUsageValue =
-        toYesNo(findUsageValue(["komerc", "biznes", "commercial", "biznesi"])) ??
-        toYesNo(car?.insurance_v2?.business as any);
-
-      return [
-        { label: "Përdorur si veturë me qira", value: rentalUsageValue ?? "Nuk ka informata" },
-        { label: "Përdorur për qëllime komerciale", value: commercialUsageValue ?? "Nuk ka informata" },
-      ];
-    },
-    [car, toYesNo, usageHistoryList],
-  );
-
-  const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
-    const entries: SpecialAccidentEntry[] = [];
-
-    const rawHistory = car?.details?.insurance?.special_accident_history;
-    if (Array.isArray(rawHistory)) {
-      rawHistory.forEach((item: any) => {
-        if (!item) return;
-        entries.push({
-          type: item.type,
-          value:
-            typeof item.value === "string"
-              ? item.value
-              : item.value !== undefined && item.value !== null
-                ? String(item.value)
-                : undefined,
-        });
-      });
-    }
-
-    accidentEntries.forEach((entry) => {
-      const valueParts = [
-        entry.date && entry.date !== "-" ? `Data: ${entry.date}` : null,
-        entry.part && entry.part !== "-" ? `Pjesë: ${entry.part}` : null,
-        entry.paint && entry.paint !== "-" ? `Bojë: ${entry.paint}` : null,
-        entry.labor && entry.labor !== "-" ? `Punë: ${entry.labor}` : null,
-        entry.total && entry.total !== "-" ? `Total: ${entry.total}` : null,
-      ].filter(Boolean);
-
-      if (valueParts.length > 0) {
-        entries.push({
-          type: entry.type || "Ngjarje",
-          value: valueParts.join(" • "),
-        });
-      }
-    });
-
-    const seen = new Set<string>();
-    return entries.filter((entry) => {
-      const key = `${entry.type ?? ""}-${entry.value ?? ""}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [accidentEntries, car]);
-
-  const specialAccidentStats = useMemo(
-    () => {
-      const floodSource =
-        typeof car?.insurance_v2?.floodTotalLossCnt === "number"
-          ? car.insurance_v2.floodTotalLossCnt
-          : insuranceCarInfo?.flood_damage;
-
-      const totalLossSource =
-        typeof car?.insurance_v2?.totalLossCnt === "number"
-          ? car.insurance_v2.totalLossCnt
-          : insuranceCarInfo?.total_loss;
-
-      const accidentCountSource =
-        typeof car?.insurance_v2?.accidentCnt === "number"
-          ? car.insurance_v2.accidentCnt
-          : insuranceCarInfo?.accident_history;
-
-      const floodValue =
-        typeof floodSource === "number"
-          ? floodSource > 0
-            ? "Po"
-            : "Jo"
-          : floodSource
-            ? toYesNo(floodSource as any) ?? processFloodDamageText(String(floodSource))
-            : "Nuk ka informata";
-
-      const totalLossValue =
-        typeof totalLossSource === "number"
-          ? totalLossSource > 0
-            ? "Po"
-            : "Jo"
-          : totalLossSource !== undefined
-            ? toYesNo(totalLossSource as any) ?? `${totalLossSource}`
-            : "Nuk ka informata";
-
-      const accidentCountValue =
-        accidentCountSource !== undefined && accidentCountSource !== null && accidentCountSource !== ""
-          ? `${accidentCountSource}`
-          : "Nuk ka informata";
-
-      return [
-        {
-          label: "Vërshuar?",
-          value: floodValue,
-        },
-        {
-          label: "Humbje totale?",
-          value: totalLossValue,
-        },
-        {
-          label: "Aksidente të raportuara",
-          value: accidentCountValue,
-        },
-        {
-          label: "Pronaret e ndërruar",
-          value: ownerChangesDisplay,
-        },
-      ];
-    },
-    [car, insuranceCarInfo, ownerChangesDisplay, processFloodDamageText, toYesNo],
-  );
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -853,15 +559,10 @@ const CarInspectionReport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-center text-muted-foreground">
-            <p className="text-sm text-muted-foreground">{error}</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={handleRetryFetch} disabled={loading}>
-                {loading ? "Po rifreskohet..." : "Provo përsëri"}
-              </Button>
-              <Button variant="outline" onClick={() => navigate(-1)}>
-                Kthehu mbrapa
-              </Button>
-            </div>
+            <p>{error}</p>
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              Kthehu mbrapa
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -925,6 +626,20 @@ const CarInspectionReport = () => {
 
     const mileageDisplay = formattedMileage || "-";
 
+    const ownerChangeCount =
+      typeof car.insurance_v2?.ownerChangeCnt === "number"
+        ? car.insurance_v2.ownerChangeCnt
+        : car.ownerChanges?.length;
+
+    const ownerChangesDisplay =
+      ownerChangeCount === undefined
+        ? "-"
+        : ownerChangeCount === 0
+          ? "Asnjë"
+          : ownerChangeCount === 1
+            ? "1 herë"
+            : `${ownerChangeCount} herë`;
+
     const topVehicleInfo = [
       { label: "Vetura", value: carName || car.title || "-" },
       { label: "Regjistrimi i parë", value: firstRegistrationDisplay ?? "-" },
@@ -940,6 +655,102 @@ const CarInspectionReport = () => {
       { label: "Karburanti", value: fuelDisplay || "-" },
       { label: "Motorri", value: engineDisplay || "-" },
       { label: "Pronaret e ndërruar", value: ownerChangesDisplay },
+    ];
+
+    const usageHistoryList: Array<{ description?: string; value?: string }> = Array.isArray(
+      car.details?.insurance?.usage_history,
+    )
+      ? car.details?.insurance?.usage_history
+      : [];
+
+    const findUsageValue = (keywords: string[]) => {
+      const match = usageHistoryList.find((entry) => {
+        const description = `${entry.description ?? ""}`.toLowerCase();
+        return keywords.some((keyword) => description.includes(keyword));
+      });
+      return match?.value;
+    };
+
+    const toYesNo = (value?: string | number | boolean | null) => {
+      if (value === undefined || value === null) return null;
+      if (typeof value === "boolean") return value ? "Po" : "Jo";
+      if (typeof value === "number") return value > 0 ? "Po" : "Jo";
+      
+      const normalized = value.toString().trim().toLowerCase();
+      if (!normalized) return null;
+      
+      // Check for explicit yes/no strings
+      if (["po", "yes", "true"].includes(normalized)) return "Po";
+      if (["jo", "no", "false"].includes(normalized)) return "Jo";
+      
+      // Handle numeric strings (like "1", "2", "3", etc.)
+      const numValue = parseFloat(normalized);
+      if (!isNaN(numValue)) {
+        return numValue > 0 ? "Po" : "Jo";
+      }
+      
+      // If we can't determine, return null to show "Nuk ka informata"
+      return null;
+    };
+
+    const rentalUsageValue =
+      toYesNo(findUsageValue(["rent", "qira", "rental"])) ??
+      toYesNo(car.insurance_v2?.carInfoUse1s?.join(" ")) ??
+      toYesNo(car.insurance_v2?.carInfoUse2s?.join(" ")) ??
+      toYesNo(car.insurance_v2?.loan);
+
+    const commercialUsageValue =
+      toYesNo(findUsageValue(["komerc", "biznes", "commercial"])) ??
+      toYesNo(car.insurance_v2?.business);
+
+    const usageHighlights = [
+      { label: "Përdorur si veturë me qira", value: rentalUsageValue ?? "Nuk ka informata" },
+      { label: "Përdorur për qëllime komerciale", value: commercialUsageValue ?? "Nuk ka informata" },
+    ];
+
+    const ownerChangesList: Array<any> = Array.isArray(car.ownerChanges) ? car.ownerChanges : [];
+
+    const specialAccidentHistory: Array<any> = Array.isArray(
+      car.details?.insurance?.special_accident_history,
+    )
+      ? car.details?.insurance?.special_accident_history
+      : [];
+
+    const specialAccidentStats = [
+      {
+        label: "Vërshuar?",
+        value:
+          typeof car.insurance_v2?.floodTotalLossCnt === "number"
+            ? car.insurance_v2.floodTotalLossCnt > 0
+              ? "Po"
+              : "Jo"
+            : insuranceCarInfo?.flood_damage
+              ? toYesNo(processFloodDamageText(insuranceCarInfo.flood_damage)) ??
+                processFloodDamageText(insuranceCarInfo.flood_damage)
+              : "Nuk ka informata",
+      },
+      {
+        label: "Humbje totale?",
+        value:
+          typeof car.insurance_v2?.totalLossCnt === "number"
+            ? car.insurance_v2.totalLossCnt > 0
+              ? "Po"
+              : "Jo"
+            : insuranceCarInfo?.total_loss
+              ? toYesNo(insuranceCarInfo.total_loss) ?? insuranceCarInfo.total_loss
+              : "Nuk ka informata",
+      },
+      {
+        label: "Aksidente të raportuara",
+        value:
+          typeof car.insurance_v2?.accidentCnt === "number"
+            ? car.insurance_v2.accidentCnt
+            : insuranceCarInfo?.accident_history || "Nuk ka informata",
+      },
+      {
+        label: "Pronaret e ndërruar",
+        value: ownerChangesDisplay,
+      },
     ];
 
   return (

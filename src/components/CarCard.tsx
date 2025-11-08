@@ -27,11 +27,11 @@ import {
   XCircle,
 } from "lucide-react";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
-import { memo, useCallback, useMemo } from "react";
+import { useState, useEffect, memo, useCallback, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
-import { useFavorites } from "@/contexts/FavoritesContext";
 interface CarCardProps {
   id: string;
   make: string;
@@ -265,8 +265,9 @@ const CarCard = ({
   const navigate = useNavigate();
   const { setPreviousPage } = useNavigation();
   const { toast } = useToast();
-  const { user, isFavorite: isFavoriteFn, toggleFavorite } = useFavorites();
-  const favoriteActive = isFavoriteFn(id);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Simplified logic: trust the database filtering, only hide in clear edge cases
   const shouldHideSoldCar = () => {
@@ -297,6 +298,44 @@ const CarCard = ({
 
   const hideSoldCar = shouldHideSoldCar();
 
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      if (user) {
+        // Check if user is admin
+        const { data: userRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        setIsAdmin(userRole?.role === "admin");
+
+        // Check if this car is already favorited
+        const { data } = await supabase
+          .from("favorite_cars")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("car_id", id)
+          .maybeSingle();
+        setIsFavorite(!!data);
+      }
+    };
+    getUser();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) {
+        setIsFavorite(false);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [id]);
   const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
@@ -308,20 +347,35 @@ const CarCard = ({
       return;
     }
     try {
-      await toggleFavorite({
-        id,
-        make,
-        model,
-        year,
-        price,
-        image,
-      });
-      toast({
-        title: favoriteActive ? "Hequr nga të preferuarat" : "Shtuar në të preferuarat",
-        description: favoriteActive
-          ? "Makina u hoq nga të preferuarat tuaja"
-          : "Makina u ruajt në të preferuarat tuaja",
-      });
+      if (isFavorite) {
+        // Remove from favorites
+        await supabase
+          .from("favorite_cars")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("car_id", id);
+        setIsFavorite(false);
+        toast({
+          title: "Hequr nga të preferuarat",
+          description: "Makina u hoq nga të preferuarat tuaja",
+        });
+      } else {
+        // Add to favorites
+        await supabase.from("favorite_cars").insert({
+          user_id: user.id,
+          car_id: id,
+          car_make: make,
+          car_model: model,
+          car_year: year,
+          car_price: price,
+          car_image: image,
+        });
+        setIsFavorite(true);
+        toast({
+          title: "Shtuar në të preferuarat",
+          description: "Makina u ruajt në të preferuarat tuaja",
+        });
+      }
     } catch (error) {
       console.error("Error toggling favorite:", error);
       toast({
@@ -330,7 +384,7 @@ const CarCard = ({
         variant: "destructive",
       });
     }
-  }, [user, favoriteActive, id, make, model, year, price, image, toast, navigate, toggleFavorite]);
+  }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
   const handleCardClick = useCallback(() => {
     // Save current page and scroll position before navigating
@@ -460,11 +514,11 @@ const CarCard = ({
               className="h-8 w-8 p-0 hover:bg-muted touch-target interactive-element transition-all duration-200"
               style={{ minHeight: '44px', minWidth: '44px' }}
             >
-                <Heart
-                  className={`h-4 w-4 transition-all duration-200 ${
-                    favoriteActive ? "fill-red-500 text-red-500" : "hover:text-red-400"
-                  }`}
-                />
+              <Heart
+                className={`h-4 w-4 transition-all duration-200 ${
+                  isFavorite ? "fill-red-500 text-red-500" : "hover:text-red-400"
+                }`}
+              />
             </Button>
           </div>
           {/* Price on bottom left with text on the right */}

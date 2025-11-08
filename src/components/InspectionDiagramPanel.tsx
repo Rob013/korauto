@@ -14,7 +14,6 @@ interface DiagramMarker {
   y: number;
   type: 'N' | 'R'; // N = shift (replacement), R = Repair
   label: string;
-  size?: number;
 }
 
 interface InspectionDiagramPanelProps {
@@ -32,7 +31,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
   }
 
   // Enhanced position mapping with accurate coordinates and aliases
-  const positionMap: Record<string, { panel: 'within' | 'out', x: number, y: number, size?: number }> = {
+  const positionMap: Record<string, { panel: 'within' | 'out', x: number, y: number }> = {
     // ===== WITHIN PANEL (Top/Side View) =====
     
     // Front section
@@ -44,14 +43,14 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'cowl_panel': { panel: 'within', x: 320, y: 200 },
     
     // Left side (driver side in Korean cars) - EXACT POSITIONS FROM REFERENCE IMAGE
-    'front_left_fender': { panel: 'within', x: 186, y: 205 },
-    'front_fender_left': { panel: 'within', x: 186, y: 205 },
-    'left_fender': { panel: 'within', x: 186, y: 205 },
-    'fender_left': { panel: 'within', x: 186, y: 205 },
+    'front_left_fender': { panel: 'within', x: 161, y: 193 },
+    'front_fender_left': { panel: 'within', x: 161, y: 193 },
+    'left_fender': { panel: 'within', x: 161, y: 193 },
+    'fender_left': { panel: 'within', x: 161, y: 193 },
 
-    'front_left_door': { panel: 'within', x: 214, y: 292, size: 20 },
-    'front_door_left': { panel: 'within', x: 214, y: 292, size: 20 },
-    'door_front_left': { panel: 'within', x: 214, y: 292, size: 20 },
+    'front_left_door': { panel: 'within', x: 172, y: 267 },
+    'front_door_left': { panel: 'within', x: 172, y: 267 },
+    'door_front_left': { panel: 'within', x: 172, y: 267 },
 
     'rear_left_door': { panel: 'within', x: 178, y: 357 },
     'rear_door_left': { panel: 'within', x: 178, y: 357 },
@@ -71,13 +70,13 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     'side_panel_left': { panel: 'within', x: 176, y: 317 },
     
     // Right side (passenger side)
-    'front_right_fender': { panel: 'within', x: 454, y: 205 },
-    'front_fender_right': { panel: 'within', x: 454, y: 205 },
-    'right_fender': { panel: 'within', x: 454, y: 205 },
-    'fender_right': { panel: 'within', x: 454, y: 205 },
+    'front_right_fender': { panel: 'within', x: 477, y: 193 },
+    'front_fender_right': { panel: 'within', x: 477, y: 193 },
+    'right_fender': { panel: 'within', x: 477, y: 193 },
+    'fender_right': { panel: 'within', x: 477, y: 193 },
 
-    'front_right_door': { panel: 'within', x: 426, y: 292, size: 20 },
-    'front_door_right': { panel: 'within', x: 426, y: 292, size: 20 },
+    'front_right_door': { panel: 'within', x: 467, y: 267 },
+    'front_door_right': { panel: 'within', x: 467, y: 267 },
 
     'rear_right_door': { panel: 'within', x: 410, y: 343 },
     'rear_door_right': { panel: 'within', x: 410, y: 343 },
@@ -311,8 +310,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
         x: finalX,
         y: finalY,
         type: markerType,
-        label: item?.type?.title || '',
-        size: pos.size
+        label: item?.type?.title || ''
       };
 
       console.log(`✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? ' [offset for collision]' : ''}`);
@@ -348,10 +346,9 @@ const DiagramMarkerWithTooltip: React.FC<{
   
   const leftPercent = (marker.x / 640) * 100;
   const topPercent = (marker.y / 600) * 100;
-  const markerSize = marker.size ?? 24;
 
   const baseClasses =
-    "absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold shadow-md border-[2px] pointer-events-auto transition-none";
+    "absolute -translate-x-1/2 -translate-y-1/2 w-[24px] h-[24px] rounded-full flex items-center justify-center text-[11px] font-bold shadow-md border-[2px] pointer-events-auto transition-none";
   const variantClasses =
     marker.type === "N"
       ? "bg-[#E53935] text-white border-white"
@@ -410,13 +407,7 @@ const DiagramMarkerWithTooltip: React.FC<{
           type="button"
           aria-label={`${marker.label} - ${marker.type === "N" ? "Replacement" : "Repair"}`}
           className={`${baseClasses} ${variantClasses} ${editModeClasses}`}
-          style={{
-            left: `${leftPercent}%`,
-            top: `${topPercent}%`,
-            width: markerSize,
-            height: markerSize,
-            fontSize: markerSize <= 20 ? '10px' : '11px',
-          }}
+          style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
           onMouseDown={handleMouseDown}
         >
           {marker.type}
