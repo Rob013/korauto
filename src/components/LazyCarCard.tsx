@@ -265,9 +265,9 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    // Open in new tab
-    window.open(`/car/${lot}`, '_blank');
-  }, [setCompletePageState, lot]);
+    // Navigate to car details in same tab
+    navigate(`/car/${lot}`);
+  }, [setCompletePageState, lot, navigate]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -285,9 +285,9 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    // Open in new tab
-    window.open(`/car/${lot}`, '_blank');
-  }, [setCompletePageState, lot]);
+    // Navigate to car details in same tab
+    navigate(`/car/${lot}`);
+  }, [setCompletePageState, lot, navigate]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
