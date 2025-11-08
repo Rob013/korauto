@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
+import { trackPageView, trackCarView, trackFavorite, trackApiFailure } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +18,6 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
-import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 
@@ -910,6 +909,7 @@ const CarDetails = memo(() => {
   } = useNavigation();
   const { exchangeRate } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
+  const isMountedRef = useRef(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -919,6 +919,13 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -935,8 +942,6 @@ const CarDetails = memo(() => {
       }
     }
   }, [car, hasAutoExpanded]);
-  const API_BASE_URL = "https://auctionsapi.com/api";
-  const API_KEY = "d00985c77981fe8d26be16735f932ed1";
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
 
   const buildCarDetails = useCallback((carData: any, lotData: any): CarDetails | null => {
@@ -1246,85 +1251,72 @@ const CarDetails = memo(() => {
     };
     checkAdminStatus();
   }, []);
-  useEffect(() => {
-    let isMounted = true;
+  const fetchCarFromApi = useCallback(async () => {
+    if (!lot) {
+      return null;
+    }
 
-    const fetchFromApi = async () => {
-      if (!lot) return;
-      
-      // Check if car is already loaded (from cache restoration)
-      if (car) {
-        console.log('✅ Car already loaded from cache, skipping API fetch');
-        return;
-      }
-      
+    if (isMountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
+
+    try {
+      const invokeSecureApi = async (body: Record<string, any>) => {
+        const { data, error } = await supabase.functions.invoke('secure-cars-api', { body });
+        if (error) {
+          throw new Error(error.message || 'Secure API invocation failed');
+        }
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+        return data;
+      };
+
+      let payload;
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        payload = await invokeSecureApi({
+          endpoint: 'search-lot',
+          lotNumber: lot,
+        });
+      } catch (firstAttemptError) {
+        console.log("First secure API attempt failed, trying search endpoint...", firstAttemptError);
+        payload = await invokeSecureApi({
+          endpoint: 'search',
+          filters: {
+            lot_number: String(lot),
+            per_page: '1',
+          },
+        });
+      }
 
-        let response: Response;
-        try {
-          response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
-            signal: controller.signal
-          });
-        } catch (firstAttemptError) {
-          console.log("First API attempt failed, trying as lot number...");
-          response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
-            signal: controller.signal
-          });
-        }
+      if (!isMountedRef.current) {
+        return null;
+      }
 
-        clearTimeout(timeoutId);
+      const carData = payload?.data;
+      const lotData = carData?.lots?.[0];
+      const details = buildCarDetails(carData, lotData);
 
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}: ${response.statusText}`);
-        }
+      if (!details) {
+        console.log("Car doesn't have buy_now pricing, redirecting to catalog");
+        navigate('/catalog');
+        return null;
+      }
 
-        const data = await response.json();
-        if (!isMounted) return;
+      setCar(details);
+      try {
+        sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
+      } catch (storageError) {
+        console.warn('Failed to store in sessionStorage:', storageError);
+      }
+      trackCarView(lot, details);
+      return details;
+    } catch (apiError) {
+      console.error("Failed to fetch car data:", apiError);
+      trackApiFailure("car_details", apiError, { lot });
 
-        const carData = data.data;
-        const lotData = carData?.lots?.[0];
-        const details = buildCarDetails(carData, lotData);
-
-        if (!details) {
-          console.log("Car doesn't have buy_now pricing, redirecting to catalog");
-          navigate('/catalog');
-          return;
-        }
-
-        setCar(details);
-        setLoading(false);
-        // Store in sessionStorage
-        try {
-          sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
-        } catch (storageError) {
-          console.warn('Failed to store in sessionStorage:', storageError);
-        }
-        trackCarView(lot, details);
-      } catch (apiError) {
-        console.error("Failed to fetch car data:", apiError);
-        if (!isMounted) return;
-
-        const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
-        if (fallbackCar && fallbackCar.lots?.[0]) {
-          const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
-          if (details) {
-            console.log("Using fallback car data for:", lot);
-            setCar(details);
-            setLoading(false);
-            return;
-          }
-        }
-
+      if (isMountedRef.current) {
         const errorMessage = apiError instanceof Error
           ? apiError.message.includes("Failed to fetch")
             ? "Unable to connect to the server. Please check your internet connection and try again."
@@ -1333,24 +1325,29 @@ const CarDetails = memo(() => {
               : "Car not found"
           : "Car not found";
         setError(errorMessage);
+      }
+      return null;
+    } finally {
+      if (isMountedRef.current) {
         setLoading(false);
       }
-    };
+    }
+    }, [buildCarDetails, lot, navigate, trackCarView]);
 
-    const loadCar = async () => {
-      const cachedData = await hydrateFromCache();
-      // Only fetch from API if cache didn't provide data
-      if (!cachedData) {
-        await fetchFromApi();
-      }
-    };
+  const loadCar = useCallback(async () => {
+    const cachedData = await hydrateFromCache();
+    if (!cachedData) {
+      await fetchCarFromApi();
+    }
+  }, [hydrateFromCache, fetchCarFromApi]);
 
+  useEffect(() => {
     loadCar();
+  }, [loadCar]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [API_BASE_URL, API_KEY, buildCarDetails, fallbackCars, hydrateFromCache, lot, navigate, trackCarView, car]);
+  const handleRetryFetch = useCallback(() => {
+    fetchCarFromApi();
+  }, [fetchCarFromApi]);
   const handleContactWhatsApp = useCallback(() => {
     impact('light');
     const currentUrl = window.location.href;
@@ -1463,24 +1460,39 @@ const CarDetails = memo(() => {
       </div>;
   }
   if (error || !car) {
-    return <div className="min-h-screen bg-background animate-fade-in">
+    return (
+      <div className="min-h-screen bg-background animate-fade-in">
         <div className="container-responsive py-8">
-          <Button variant="outline" onClick={() => navigate("/")} className="mb-6 hover:scale-105 transition-transform">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kryefaqja
-          </Button>
-          <div className="text-center py-12">
-            <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">
+          <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+            <Button variant="outline" onClick={() => navigate(-1)} className="hover:scale-105 transition-transform">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kthehu mbrapa
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/")} className="hover:scale-105 transition-transform">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kryefaqja
+            </Button>
+          </div>
+          <div className="text-center py-12 space-y-4">
+            <AlertTriangle className="h-16 w-16 text-destructive mx-auto" />
+            <h1 className="text-2xl font-bold text-foreground">
               Makina Nuk u Gjet
             </h1>
-            <p className="text-muted-foreground">
-              Makina që po kërkoni nuk mund të gjindet në bazën tonë të të
-              dhënave.
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              {error ? error : "Makina që po kërkoni nuk mund të gjindet në bazën tonë të të dhënave."}
             </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              <Button onClick={handleRetryFetch} disabled={loading}>
+                {loading ? "Po rifreskohet..." : "Provo përsëri"}
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/catalog")}>
+                Shfleto katalogun
+              </Button>
+            </div>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">

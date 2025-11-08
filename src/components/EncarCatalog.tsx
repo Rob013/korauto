@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Grid3X3, List } from "lucide-react";
+import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Grid3X3, List, AlertCircle } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
+import { useSecureAuctionAPI } from "@/hooks/useSecureAuctionAPI";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
@@ -31,7 +31,6 @@ import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
-import { fallbackCars } from "@/data/fallbackData";
 interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
@@ -105,6 +104,8 @@ const EncarCatalog = ({
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
+  const initialPerPage = isMobile ? "24" : "50";
+  const extendedPerPage = isMobile ? "80" : "200";
   const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
@@ -158,10 +159,8 @@ const EncarCatalog = ({
   }, [filters]);
 
   // Memoized client-side grade and engine filtering for better performance
-  const filteredCars = useMemo(() => {
-    // Use fallback data when there's an error and no cars loaded
-    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
-    const cleanedCars = filterOutTestCars(sourceCars || []);
+    const filteredCars = useMemo(() => {
+      const cleanedCars = filterOutTestCars(cars || []);
     
     // Apply grade filter
     const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
@@ -188,7 +187,7 @@ const EncarCatalog = ({
 
   // Merge AuctionsAPI grid cars with secure cars BEFORE sorting to share the same pipeline
   const mergedCars = useMemo(() => {
-    const result = [...(filterOutTestCars(error && cars.length === 0 ? fallbackCars : cars) || [])];
+      const result = [...(filterOutTestCars(cars) || [])];
     if (Array.isArray(gridCars) && gridCars.length > 0) {
       // Include only cars with buy_now price to match existing rule
       gridCars.forEach((c: any) => {
@@ -261,13 +260,13 @@ const EncarCatalog = ({
   }, [showAllCars, allCarsData, sortedAllCarsResults, sortBy, isGlobalSortingReady, shouldUseGlobalSorting, getCarsForCurrentPage, currentPage, globalSortingState.currentSortBy, isDefaultState, hasUserSelectedSort, sortedResults]);
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [manufacturers, setManufacturers] = useState<{
-    id: number;
-    name: string;
-    car_count?: number;
-    cars_qty?: number;
-    image?: string;
-  }[]>(createFallbackManufacturers()); // Initialize with fallback data immediately
+    const [manufacturers, setManufacturers] = useState<{
+      id: number;
+      name: string;
+      car_count?: number;
+      cars_qty?: number;
+      image?: string;
+    }[]>([]);
 
   const [models, setModels] = useState<{
     id: number;
@@ -430,7 +429,7 @@ const EncarCatalog = ({
     clearGlobalSorting();
 
     // Use 200 cars per page for proper pagination - fetch from ALL sources
-    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
+    const filtersWithPagination = addPaginationToFilters(newFilters, parseInt(extendedPerPage, 10), 1);
 
     // Use current sort if user has selected one
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
@@ -473,7 +472,7 @@ const EncarCatalog = ({
     clearGlobalSorting();
 
     // Apply filters immediately - no debouncing - fetch from ALL sources
-    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
+    const filtersWithPagination = addPaginationToFilters(newFilters, parseInt(extendedPerPage, 10), 1);
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
       ...filtersWithPagination,
       sort_by: sortBy
@@ -517,7 +516,7 @@ const EncarCatalog = ({
     setCurrentPage(page);
 
     // Fetch cars for the specific page with proper API pagination - fetch from ALL sources
-    const filtersWithPagination = addPaginationToFilters(filters, 200, page);
+      const filtersWithPagination = addPaginationToFilters(filters, parseInt(extendedPerPage, 10), page);
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
       ...filtersWithPagination,
       sort_by: sortBy
@@ -532,6 +531,13 @@ const EncarCatalog = ({
     // Avoid forcing scroll on desktop; let dropdowns remain in view
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
   }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
+
+    const handleRetryFetch = useCallback(() => {
+      const baseFilters = hasUserSelectedSort && sortBy
+        ? { ...filters, per_page: filters?.per_page || "200", sort_by: sortBy }
+        : { ...filters, per_page: filters?.per_page || "200" };
+      fetchCars(1, baseFilters, true);
+    }, [fetchCars, filters, hasUserSelectedSort, sortBy]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {
@@ -656,37 +662,26 @@ const EncarCatalog = ({
     setModels([]);
     setGenerations([]);
 
-    // Only show loading for cars
-    setIsLoading(true);
-    try {
-      if (!manufacturerId) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Optimistically show fallback models instantly (replaced when API returns)
-      const selectedManufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-      if (selectedManufacturer?.name) {
-        try {
-          const optimisticModels = createFallbackModels(selectedManufacturer.name);
-          if (optimisticModels && optimisticModels.length > 0) {
-            setModels(optimisticModels);
-          }
-        } catch {}
-      }
+      // Only show loading for cars
+      setIsLoading(true);
+      try {
+        if (!manufacturerId) {
+          setIsLoading(false);
+          return;
+        }
 
       // Fetch models in parallel
       const modelPromise = fetchModels(manufacturerId);
 
       // Fetch cars with current sort preference
-      const filtersForCars = hasUserSelectedSort && sortBy ? {
-        ...newFilters,
-        per_page: "50",
-        sort_by: sortBy
-      } : {
-        ...newFilters,
-        per_page: "50"
-      };
+        const filtersForCars = hasUserSelectedSort && sortBy ? {
+          ...newFilters,
+          per_page: initialPerPage,
+          sort_by: sortBy
+        } : {
+          ...newFilters,
+          per_page: initialPerPage
+        };
       await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
         console.log(`[handleManufacturerChange] Setting models to:`, modelData);
         setModels(modelData);
@@ -730,14 +725,14 @@ const EncarCatalog = ({
     setIsLoading(true);
     try {
       // Fetch cars with current sort preference
-      const filtersForCars = hasUserSelectedSort && sortBy ? {
-        ...newFilters,
-        per_page: "50",
-        sort_by: sortBy
-      } : {
-        ...newFilters,
-        per_page: "50"
-      };
+        const filtersForCars = hasUserSelectedSort && sortBy ? {
+          ...newFilters,
+          per_page: initialPerPage,
+          sort_by: sortBy
+        } : {
+          ...newFilters,
+          per_page: initialPerPage
+        };
       await fetchCars(1, filtersForCars, true);
 
       // Fetch generations in background (non-blocking)
@@ -836,7 +831,7 @@ const EncarCatalog = ({
         // Load cars last - this is the most expensive operation
         const initialFilters = {
           ...urlFilters,
-          per_page: "200",
+          per_page: extendedPerPage,
           page: urlCurrentPage.toString(),
           ...(hasUserSelectedSort && sortBy ? {
             sort_by: sortBy
@@ -1155,10 +1150,10 @@ const EncarCatalog = ({
         
         <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
           <div className={`${isMobile ? 'p-3' : ''}`}>
-            <EncarStyleFilter 
-              filters={filters} 
-              manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
-              models={models} 
+              <EncarStyleFilter 
+                filters={filters} 
+                manufacturers={manufacturers} 
+                models={models} 
               engineVariants={engineVariants}
               filterCounts={filterCounts} 
               loadingCounts={loadingCounts} 
@@ -1175,14 +1170,14 @@ const EncarCatalog = ({
             console.log("Search button clicked, isMobile:", isMobile);
             // Apply search/filters with current sort preference - fetch from ALL sources
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
-            const searchFilters = effectiveSort ? {
-              ...filters,
-              per_page: "200",
-              sort_by: effectiveSort
-            } : {
-              ...filters,
-              per_page: "200"
-            };
+              const searchFilters = effectiveSort ? {
+                ...filters,
+                per_page: extendedPerPage,
+                sort_by: effectiveSort
+              } : {
+                ...filters,
+                per_page: extendedPerPage
+              };
             fetchCars(1, searchFilters, true);
 
             // Close filter panel on mobile only; keep open on desktop
@@ -1313,10 +1308,22 @@ const EncarCatalog = ({
             </div>
           </div>
 
-          {/* Error State */}
-          {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-              <p className="text-destructive font-medium">Error: {error}</p>
-            </div>}
+            {/* Error State */}
+            {error && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <div className="flex flex-col gap-3">
+                  <span className="text-destructive text-sm sm:text-base">
+                    Nuk arritëm të ngarkojmë katalogun nga API. Mesazhi: {error}
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" onClick={handleRetryFetch} disabled={loading}>
+                      Provo përsëri
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           {/* Loading State - Only for initial load, not for filters */}
           {loading && cars.length === 0 || isRestoringState ? <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-fade-in">

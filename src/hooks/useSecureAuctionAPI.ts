@@ -5,6 +5,7 @@ import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSo
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 import { getBrandLogo } from '@/data/brandLogos';
+import { trackApiFailure } from "@/utils/analytics";
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -667,64 +668,44 @@ export const useSecureAuctionAPI = () => {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  const makeSecureAPICall = async (
-    endpoint: string,
-    filters: any = {},
-    carId?: string
-  ): Promise<any> => {
-    // Direct external API call using provided key
-    const API_BASE_URL = 'https://auctionsapi.com/api';
-    const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
-
-    // Small delay to avoid burst
-    const now = Date.now();
-    if (now - lastFetchTime < 50) {
-      await delay(50 - (now - lastFetchTime));
-    }
-    setLastFetchTime(Date.now());
-
-    // Build URL
-    let url: string;
-    if (carId && (endpoint === 'cars' || endpoint === 'car')) {
-      url = `${API_BASE_URL}/cars/${encodeURIComponent(carId)}`;
-    } else if (endpoint.includes('/')) {
-      // e.g., models/{id}/cars or generations/{id}
-      const params = new URLSearchParams();
-      Object.entries(filters || {}).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && String(v).trim() !== '') params.append(k, String(v));
-      });
-      url = `${API_BASE_URL}/${endpoint}${params.toString() ? `?${params.toString()}` : ''}`;
-    } else {
-      const params = new URLSearchParams();
-      // default per_page
-      if (!filters?.per_page) params.append('per_page', '200');
-      Object.entries(filters || {}).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && String(v).trim() !== '') params.append(k, String(v));
-      });
-      url = `${API_BASE_URL}/${endpoint}?${params.toString()}`;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    try {
-      const res = await fetch(url, {
-        headers: {
-          accept: 'application/json',
-          'x-api-key': API_KEY,
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) {
-        throw new Error(`API ${res.status}`);
+    const makeSecureAPICall = async (
+      endpoint: string,
+      filters: any = {},
+      carId?: string
+    ): Promise<any> => {
+      // Small delay to avoid burst
+      const now = Date.now();
+      if (now - lastFetchTime < 50) {
+        await delay(50 - (now - lastFetchTime));
       }
-      const data = await res.json();
-      return data;
-    } catch (e: any) {
-      clearTimeout(timeoutId);
-      throw new Error(e?.message || 'External API request failed');
-    }
-  };
+      setLastFetchTime(Date.now());
+
+      try {
+        const { data, error } = await supabase.functions.invoke('secure-cars-api', {
+          body: {
+            endpoint,
+            filters,
+            carId,
+          },
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Secure API invocation failed');
+        }
+
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
+        return data;
+      } catch (err) {
+        trackApiFailure(endpoint, err, {
+          filters,
+          carId,
+        });
+        throw err;
+      }
+    };
 
   const filtersSignature = useMemo(() => JSON.stringify(filters || {}), [filters]);
 
@@ -925,261 +906,153 @@ export const useSecureAuctionAPI = () => {
         setCurrentPage(page);
       }
 
-      prefetchCarDetails(activeCars);
     } catch (err: any) {
       console.error("❌ API Error:", err);
-      
-      if (err.message === "RATE_LIMITED") {
-        // Retry once after rate limit
+      trackApiFailure("cars", err, {
+        page,
+        filters: newFilters
+      });
+
+      if (err?.message === "RATE_LIMITED") {
         try {
           await delay(2000);
           return fetchCars(page, newFilters, resetList);
         } catch (retryErr) {
           console.error("❌ Retry failed:", retryErr);
-          // Fall through to use fallback data
+          trackApiFailure("cars", retryErr, {
+            page,
+            filters: newFilters,
+            retry: true
+          });
         }
       }
-      
-      // Use fallback car data when API fails - but only if no specific brand filter is applied
-      if (newFilters.manufacturer_id && 
-          newFilters.manufacturer_id !== 'all' && 
-          newFilters.manufacturer_id !== '' &&
-          newFilters.manufacturer_id !== undefined &&
-          newFilters.manufacturer_id !== null) {
-        console.log("❌ API failed for brand-specific search, not showing fallback cars to avoid test car display");
-        setError("Failed to load cars for the selected brand. Please try again.");
+
+      const errorMessage = err instanceof Error ? err.message : "Failed to load cars";
+      setError(errorMessage);
+
+      if (resetList) {
         setCars([]);
         setTotalCount(0);
         setHasMorePages(false);
-        return;
-      }
-      
-      // Use fallback cars when API fails
-      console.log("❌ API failed, using fallback cars for pagination testing");
-      const fallbackCars = createFallbackCars(newFilters);
-      
-      if (fallbackCars.length === 0) {
-        console.log("❌ No fallback cars available, showing empty state");
-        setError("Failed to load cars. Please try again.");
-        setCars([]);
-        setTotalCount(0);
-        setHasMorePages(false);
-        return;
-      }
-      
-      // Simulate pagination with fallback data
-      const pageSize = parseInt(newFilters.per_page || "200");
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedCars = fallbackCars.slice(startIndex, endIndex).filter(car => !isCarSold(car));
-      
-      console.log(
-        `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
-      );
-      
-      setTotalCount(fallbackCars.length);
-      setHasMorePages(endIndex < fallbackCars.length);
-      
-      if (resetList || page === 1) {
-        setCars(paginatedCars);
-        setCurrentPage(page);
+        setCurrentPage(1);
       } else {
-        setCars((prev) => [...prev, ...paginatedCars]);
-        setCurrentPage(page);
+        setHasMorePages(false);
       }
 
-      // Clear error since we're showing fallback data
-      setError(null);
+      return;
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchManufacturers = async (): Promise<Manufacturer[]> => {
-    try {
-      console.log(`🔍 Fetching all manufacturers`);
-      
-      // Try to get manufacturers from cache or API
-      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
-        () => makeSecureAPICall("manufacturers/cars", {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
-      );
-      
-      let manufacturers = data.data || [];
-      
-      // If we got manufacturers from API, normalize them
-      if (manufacturers.length > 0) {
-        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
-        manufacturers = manufacturers.map(manufacturer => ({
+    const fetchManufacturers = async (): Promise<Manufacturer[]> => {
+      try {
+        console.log(`🔍 Fetching all manufacturers`);
+
+        const data = await getCachedApiCall(
+          "manufacturers/cars",
+          { per_page: "1000", simple_paginate: "0" },
+          () =>
+            makeSecureAPICall("manufacturers/cars", {
+              per_page: "1000",
+              simple_paginate: "0",
+            })
+        );
+
+        const manufacturersResponse = data.data || [];
+        if (!manufacturersResponse.length) {
+          throw new Error("Manufacturer API returned no results");
+        }
+
+        const manufacturers = manufacturersResponse.map((manufacturer: any) => ({
           id: manufacturer.id,
           name: manufacturer.name,
           cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
           car_count: manufacturer.car_count || manufacturer.cars_qty || 0,
-          image: manufacturer.image || getBrandLogo(manufacturer.name)
+          image: manufacturer.image || getBrandLogo(manufacturer.name),
         }));
-      } else {
-        // No manufacturers from API, use fallback data
-        console.log(`⚠️ No manufacturers from API, using fallback data`);
-        manufacturers = createFallbackManufacturers();
-      }
-      
-      console.log(`🏷️ Retrieved manufacturers:`, 
-        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
-      
-      return manufacturers;
-    } catch (err) {
-      console.error("❌ Error fetching manufacturers:", err);
-      console.log(`🔄 Using fallback manufacturer data`);
-      
-      // Return fallback data when API fails
-      return createFallbackManufacturers();
-    }
-  };
 
-  const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
-    try {
-      // Use cached API call for models
-      const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
-        () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
-      );
-      
-      let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
-
-      // Filter models by manufacturer_id (in case API returns extra)
-      fallbackModels = fallbackModels.filter((m: any) =>
-        m.manufacturer_id?.toString() === manufacturerId ||
-        m.manufacturer?.id?.toString() === manufacturerId
-      );
-
-      fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
-      return fallbackModels;
-    } catch (err) {
-      console.error("[fetchModels] Error:", err);
-      console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
-      
-      // Use fallback model data based on manufacturer name - more efficient approach
-      try {
-        const manufacturers = await fetchManufacturers();
-        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-        if (manufacturer) {
-          return createFallbackModels(manufacturer.name);
-        }
-      } catch (fallbackErr) {
-        console.error("Error creating fallback models:", fallbackErr);
-      }
-      
-      return [];
-    }
-  };
-
-  const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
-    try {
-      console.log(`🔍 Fetching generations for model ID: ${modelId}`);
-      
-      // First try to fetch generations from a dedicated endpoint
-      let generationsFromAPI: Generation[] = [];
-      try {
-        const generationResponse = await makeSecureAPICall(`generations/${modelId}`, {});
-        if (generationResponse.data && Array.isArray(generationResponse.data)) {
-          generationsFromAPI = generationResponse.data.filter(g => g && g.id && g.name);
-          console.log(`🎯 Found ${generationsFromAPI.length} generations from dedicated API endpoint`);
-        }
-      } catch (err) {
-        console.log('📍 No dedicated generations endpoint, using optimized fallback approach');
-      }
-
-      // If we have API generations with proper year data, use them
-      if (generationsFromAPI.length > 0 && generationsFromAPI.some(g => g.from_year || g.to_year)) {
-        console.log('✅ Using generations with real API year data');
-        return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
-      }
-
-      // OPTIMIZED: Use model-specific fallback approach instead of calling all manufacturer APIs
-      console.log('🚀 Using optimized model-specific fallback generation data');
-      
-      // Get model-specific generations by creating a lookup and filtering
-      const modelIdNum = parseInt(modelId);
-      let generations: Generation[] = [];
-      
-      // Create a comprehensive fallback generation list and filter by model_id
-      const allManufacturerNames = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Volkswagen', 'Mazda'];
-      
-      for (const manufacturerName of allManufacturerNames) {
-        const manufacturerGenerations = createFallbackGenerations(manufacturerName);
-        const modelSpecificGenerations = manufacturerGenerations.filter(gen => 
-          gen.model_id === modelIdNum
+        console.log(
+          `🏷️ Retrieved manufacturers:`,
+          manufacturers
+            .slice(0, 5)
+            .map((m) => `${m.name} (${m.cars_qty || 0} cars)`)
         );
-        
-        if (modelSpecificGenerations.length > 0) {
-          console.log(`✅ Found ${modelSpecificGenerations.length} generations for model ${modelId} from ${manufacturerName}`);
-          generations = modelSpecificGenerations;
-          break;
-        }
+
+        return manufacturers;
+      } catch (err) {
+        console.error("❌ Error fetching manufacturers:", err);
+        trackApiFailure("manufacturers/cars", err);
+        throw err instanceof Error
+          ? err
+          : new Error("Failed to load manufacturers");
       }
-      
-      // If no model-specific generations found, return a minimal fallback
-      if (generations.length === 0) {
-        console.log(`⚠️ No specific generations found for model ${modelId}, using generic fallback`);
-        generations = [
-          { 
-            id: parseInt(modelId) * 1000 + 1, 
-            name: '1st Generation', 
-            from_year: 2010, 
-            to_year: 2018, 
-            cars_qty: 10, 
-            manufacturer_id: undefined, 
-            model_id: modelIdNum 
-          },
-          { 
-            id: parseInt(modelId) * 1000 + 2, 
-            name: '2nd Generation', 
-            from_year: 2018, 
-            to_year: 2024, 
-            cars_qty: 15, 
-            manufacturer_id: undefined, 
-            model_id: modelIdNum 
-          }
-        ];
-      }
-      
-      const filteredGenerations = generations.filter(g => g && g.id && g.name);
-      filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
-      console.log(`📊 Returning ${filteredGenerations.length} filtered generations for model ${modelId}`);
-      return filteredGenerations;
-      
-    } catch (err) {
-      console.error('[fetchGenerations] Error:', err);
-      console.log(`🔄 Using minimal fallback generation data for model ${modelId}`);
-      
-      // Return a minimal set of fallback generations to avoid empty state
-      const modelIdNum = parseInt(modelId);
-      return [
-        { 
-          id: modelIdNum * 1000 + 1, 
-          name: '1st Generation', 
-          from_year: 2010, 
-          to_year: 2018, 
-          cars_qty: 5, 
-          manufacturer_id: undefined, 
-          model_id: modelIdNum 
-        },
-        { 
-          id: modelIdNum * 1000 + 2, 
-          name: '2nd Generation', 
-          from_year: 2018, 
-          to_year: 2024, 
-          cars_qty: 8, 
-          manufacturer_id: undefined, 
-          model_id: modelIdNum 
+    };
+
+    const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
+      try {
+        const response = await getCachedApiCall(
+          `models/${manufacturerId}/cars`,
+          { per_page: "1000", simple_paginate: "0" },
+          () =>
+            makeSecureAPICall(`models/${manufacturerId}/cars`, {
+              per_page: "1000",
+              simple_paginate: "0",
+            })
+        );
+
+        const models = (response.data || [])
+          .filter((m: any) => m && m.id && m.name)
+          .filter(
+            (m: any) =>
+              m.manufacturer_id?.toString() === manufacturerId ||
+              m.manufacturer?.id?.toString() === manufacturerId
+          )
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+        if (!models.length) {
+          throw new Error("Model API returned no results");
         }
-      ];
-    }
-  };
+
+        return models;
+      } catch (err) {
+        console.error("[fetchModels] Error:", err);
+        trackApiFailure(`models/${manufacturerId}/cars`, err);
+        throw err instanceof Error
+          ? err
+          : new Error("Failed to load models for manufacturer");
+      }
+    };
+
+    const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
+      try {
+        console.log(`🔍 Fetching generations for model ID: ${modelId}`);
+
+        const generationResponse = await makeSecureAPICall(
+          `generations/${modelId}`,
+          {}
+        );
+
+        const generations = (generationResponse?.data || [])
+          .filter((g: any) => g && g.id && g.name)
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+        if (!generations.length) {
+          throw new Error("Generation API returned no results");
+        }
+
+        console.log(
+          `📊 Returning ${generations.length} generations for model ${modelId}`
+        );
+        return generations;
+      } catch (err) {
+        console.error("[fetchGenerations] Error:", err);
+        trackApiFailure(`generations/${modelId}`, err);
+        throw err instanceof Error
+          ? err
+          : new Error("Failed to load generations");
+      }
+    };
 
   // Helper function to enhance API generations with car year data
   const enhanceGenerationsWithCarYears = (apiGenerations: Generation[], cars: Car[]): Generation[] => {
@@ -2076,21 +1949,9 @@ export const useSecureAuctionAPI = () => {
         }
       }
       
-      // Use fallback car data when API fails - but only if no specific brand filter is applied
-      if (newFilters.manufacturer_id && 
-          newFilters.manufacturer_id !== 'all' && 
-          newFilters.manufacturer_id !== '' &&
-          newFilters.manufacturer_id !== undefined &&
-          newFilters.manufacturer_id !== null) {
-        console.log("❌ API failed for brand-specific global sorting, not using fallback cars");
+        console.log("❌ API failed for global sorting, returning empty result");
+        trackApiFailure("cars_global_sorting", err, { filters: newFilters });
         return [];
-      }
-      
-      // Use fallback cars for global sorting when API fails
-      console.log("❌ API failed for global sorting, using fallback cars");
-      const fallbackCars = createFallbackCars(newFilters);
-      console.log(`✅ Fallback Success - Created ${fallbackCars.length} fallback cars for global sorting`);
-      return fallbackCars.filter(car => !isCarSold(car));
     }
   };
 
