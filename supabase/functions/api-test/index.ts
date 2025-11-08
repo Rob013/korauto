@@ -13,7 +13,10 @@ Deno.serve(async (req) => {
   try {
     console.log(`🔍 Testing API endpoint directly...`);
     
-    const apiKey = 'd00985c77981fe8d26be16735f932ed1';
+      const apiKey = Deno.env.get('AUCTIONS_API_KEY');
+      if (!apiKey) {
+        throw new Error('AUCTIONS_API_KEY not configured');
+      }
     const testUrl = `https://auctionsapi.com/api/cars?api_key=${apiKey}&limit=5`;
     
     console.log(`📡 Making request to: ${testUrl}`);

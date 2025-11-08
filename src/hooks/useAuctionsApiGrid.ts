@@ -1,5 +1,8 @@
 //@ts-nocheck
 import { useCallback, useRef, useState } from "react";
+import { trackApiFailure } from "@/utils/analytics";
+
+const AUCTIONS_API_KEY = import.meta.env.VITE_AUCTIONS_API_KEY;
 
 // Lightweight client hook to fetch grid cars from AuctionsAPI and normalize them
 // NOTE: This uses the public query param API key variant as provided.
@@ -73,13 +76,19 @@ export const useAuctionsApiGrid = () => {
     };
   };
 
-  const fetchGrid = useCallback(async (maxPages: number = 3, limit: number = 100) => {
+    const fetchGrid = useCallback(async (maxPages: number = 3, limit: number = 100) => {
+      if (!AUCTIONS_API_KEY) {
+        const msg = 'Auctions API key not configured';
+        console.error(msg);
+        setError(msg);
+        return [];
+      }
     if (scrollingRef.current) return;
     scrollingRef.current = true;
     setIsLoading(true);
     setError(null);
     try {
-      const apiKey = 'd00985c77981fe8d26be16735f932ed1';
+        const apiKey = AUCTIONS_API_KEY;
       let nextUrl = `https://api.auctionsapi.com/cars?api_key=${apiKey}&limit=${limit}&scroll_time=10`;
       const pages: any[] = [];
       for (let i = 0; i < Math.max(1, maxPages); i++) {
@@ -104,6 +113,7 @@ export const useAuctionsApiGrid = () => {
       return unique;
     } catch (e: any) {
       setError(e?.message || 'Failed to fetch AuctionsAPI grid');
+        trackApiFailure('auctionsapi-grid', e);
       return [];
     } finally {
       setIsLoading(false);
@@ -111,11 +121,16 @@ export const useAuctionsApiGrid = () => {
     }
   }, []);
 
-  const resolveStartApiUrl = async (input: string, limit: number): Promise<string | null> => {
+    const resolveStartApiUrl = async (input: string, limit: number): Promise<string | null> => {
     if (!input) return null;
     // If already an API endpoint, use it
     if (input.includes('/cars?')) {
-      return input;
+        const url = new URL(input);
+        if (AUCTIONS_API_KEY) {
+          url.searchParams.set('api_key', AUCTIONS_API_KEY);
+        }
+        url.searchParams.set('limit', String(limit));
+        return url.toString();
     }
     // Otherwise assume it's the example HTML page; parse out the target URL
     try {
@@ -123,6 +138,9 @@ export const useAuctionsApiGrid = () => {
       const match = html.match(/const\s+target\s*=\s*"([^"]+)"/);
       if (match && match[1]) {
         const url = new URL(match[1]);
+          if (AUCTIONS_API_KEY) {
+            url.searchParams.set('api_key', AUCTIONS_API_KEY);
+          }
         // Ensure limit is respected/overridden
         url.searchParams.set('limit', String(limit));
         return url.toString();
@@ -142,6 +160,12 @@ export const useAuctionsApiGrid = () => {
     setIsLoading(true);
     setError(null);
     try {
+        if (!AUCTIONS_API_KEY) {
+          const msg = 'Auctions API key not configured';
+          console.error(msg);
+          setError(msg);
+          return [];
+        }
       let nextUrl = await resolveStartApiUrl(link, limit);
       if (!nextUrl) throw new Error('Could not resolve API URL from link');
       const pages: any[] = [];
@@ -150,7 +174,12 @@ export const useAuctionsApiGrid = () => {
         const payload = await fetchWithCors(nextUrl, false);
         const rawItems = Array.isArray(payload) ? payload : (payload.data || []);
         pages.push(rawItems);
-        nextUrl = payload?.next_url || null;
+          nextUrl = payload?.next_url || null;
+          if (nextUrl && AUCTIONS_API_KEY && !nextUrl.includes('api_key=')) {
+            const parsed = new URL(nextUrl);
+            parsed.searchParams.set('api_key', AUCTIONS_API_KEY);
+            nextUrl = parsed.toString();
+          }
         if (!nextUrl) break;
       }
       const flat = pages.flat();
@@ -166,6 +195,7 @@ export const useAuctionsApiGrid = () => {
       return unique;
     } catch (e: any) {
       setError(e?.message || 'Failed to fetch AuctionsAPI grid from link');
+        trackApiFailure('auctionsapi-grid-link', e, { link });
       return [];
     } finally {
       setIsLoading(false);

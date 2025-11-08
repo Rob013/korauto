@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { trackPageView } from "@/utils/analytics";
+import { supabase } from "@/integrations/supabase/client";
+import { trackPageView, trackApiFailure } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
-import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { InspectionDiagramPanel } from "@/components/InspectionDiagramPanel";
@@ -83,8 +83,6 @@ type OwnerChangeEntry = {
 
 type SpecialAccidentEntry = { type?: string; value?: string };
 
-const API_BASE_URL = "https://auctionsapi.com/api";
-const API_KEY = "d00985c77981fe8d26be16735f932ed1";
 
 const positiveStatusValues = new Set([
   "goodness",
@@ -215,44 +213,59 @@ const CarInspectionReport = () => {
   const [car, setCar] = useState<InspectionReportCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
   const [showAllStandard, setShowAllStandard] = useState(false);
   const [showAllChoice, setShowAllChoice] = useState(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const fetchInspectionReport = useCallback(async () => {
     if (!lot) return;
 
-    setLoading(true);
-    setError(null);
+    if (isMountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
+
+    const invokeSecureApi = async (body: Record<string, any>) => {
+      const { data, error } = await supabase.functions.invoke('secure-cars-api', { body });
+      if (error) {
+        throw new Error(error.message || 'Secure API invocation failed');
+      }
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      return data;
+    };
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      timeoutId = undefined;
 
-      let response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-        headers: {
-          accept: "*/*",
-          "x-api-key": API_KEY,
-        },
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
-          headers: {
-            accept: "*/*",
-            "x-api-key": API_KEY,
-          },
-          signal: controller.signal,
-        });
-      }
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+        const data = await (async () => {
+          try {
+            return await invokeSecureApi({
+              endpoint: 'search-lot',
+              lotNumber: lot,
+            });
+          } catch (firstAttemptError) {
+            console.log("First secure API attempt failed, trying search endpoint...", firstAttemptError);
+            return await invokeSecureApi({
+              endpoint: 'search',
+              filters: {
+                lot_number: String(lot),
+                per_page: '1',
+              },
+            });
+          }
+        })();
+        if (!isMountedRef.current) {
+          return;
+        }
       const carData = data.data;
       const lotData = carData?.lots?.[0];
 
@@ -367,69 +380,24 @@ const CarInspectionReport = () => {
           sourceLabel: carData.source_label || carData.domain_name,
         };
 
-      setCar(transformed);
-      setLoading(false);
-    } catch (apiError) {
-      console.error("Failed to fetch inspection report:", apiError);
+        if (isMountedRef.current) {
+          setCar(transformed);
+        }
+      } catch (apiError) {
+        console.error("Failed to fetch inspection report:", apiError);
+        trackApiFailure("car_inspection_report", apiError, { lot });
 
-      const fallbackCar = fallbackCars.find(
-        (fallback) =>
-          fallback.id === lot ||
-          fallback.lot_number === lot ||
-          fallback?.lots?.[0]?.lot === lot,
-      );
-
-      if (fallbackCar && fallbackCar.lots?.[0]) {
-        const lotData = fallbackCar.lots[0];
-        const basePrice = lotData.buy_now || fallbackCar.price;
-        const priceEUR = basePrice
-          ? calculateFinalPriceEUR(basePrice, exchangeRate.rate)
-          : undefined;
-
-        const lotDataAny = lotData as any;
-        const fallbackCarAny = fallbackCar as any;
-        
-        setCar({
-          id: fallbackCar.id,
-          lot: lotData.lot,
-          make: fallbackCar.manufacturer?.name,
-          model: fallbackCar.model?.name,
-          year: fallbackCar.year,
-          title: fallbackCar.title,
-          image: lotData.images?.big?.[0] || lotData.images?.normal?.[0],
-            priceEUR,
-          mileageKm: lotData.odometer?.km,
-          odometer: lotData.odometer,
-          vin: fallbackCarAny.vin || lotDataAny.vin,
-          fuel:
-            fallbackCar.fuel?.name ||
-            lotDataAny.fuel?.name ||
-            fallbackCarAny.details?.fuel?.name,
-          firstRegistration:
-            lotDataAny.first_registration ||
-            fallbackCarAny.first_registration ||
-            fallbackCarAny.details?.first_registration,
-          postedAt: lotDataAny.listed_at || fallbackCarAny.listed_at,
-          engineDisplacement:
-            fallbackCarAny.details?.engine_volume ||
-            lotDataAny.insurance_v2?.displacement,
-          damage: lotDataAny.damage || null,
-          insurance: lotDataAny.insurance,
-          insurance_v2: lotDataAny.insurance_v2,
-          details: lotDataAny.details,
-          maintenanceHistory: lotDataAny.details?.maintenance_history || [],
-          ownerChanges: lotDataAny.details?.insurance?.owner_changes || [],
-        });
+        if (isMountedRef.current) {
+          setError(
+            apiError instanceof Error
+              ? apiError.message
+              : "Nuk u arrit të ngarkohej raporti i inspektimit",
+          );
+        }
+    } finally {
+      if (isMountedRef.current) {
         setLoading(false);
-        return;
       }
-
-      setError(
-        apiError instanceof Error
-          ? apiError.message
-          : "Nuk u arrit të ngarkohej raporti i inspektimit",
-      );
-      setLoading(false);
     }
   }, [exchangeRate.rate, lot]);
 
@@ -440,6 +408,10 @@ const CarInspectionReport = () => {
   }, [lot]);
 
   useEffect(() => {
+    fetchInspectionReport();
+  }, [fetchInspectionReport]);
+
+  const handleRetryFetch = useCallback(() => {
     fetchInspectionReport();
   }, [fetchInspectionReport]);
 
@@ -881,10 +853,15 @@ const CarInspectionReport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-center text-muted-foreground">
-            <p>{error}</p>
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              Kthehu mbrapa
-            </Button>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={handleRetryFetch} disabled={loading}>
+                {loading ? "Po rifreskohet..." : "Provo përsëri"}
+              </Button>
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                Kthehu mbrapa
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

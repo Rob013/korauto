@@ -66,6 +66,28 @@ export const trackEvent = async (event: AnalyticsEvent) => {
   }
 };
 
+export const trackApiFailure = (
+  endpoint: string,
+  error: unknown,
+  metadata?: Record<string, any>
+) => {
+  const errorMetadata = {
+    endpoint,
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    ...metadata,
+  };
+
+  trackEvent({
+    action_type: 'api_failure',
+    page_url:
+      typeof window !== 'undefined'
+        ? window.location.pathname + window.location.search
+        : endpoint,
+    metadata: errorMetadata,
+  });
+};
+
 // Convenience functions for common events
 export const trackPageView = (carId?: string, metadata?: Record<string, any>) => {
   trackEvent({
