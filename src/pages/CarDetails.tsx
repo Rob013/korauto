@@ -21,6 +21,7 @@ import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
+import { openCarReportInNewTab } from "@/utils/navigation";
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -1373,9 +1374,8 @@ const CarDetails = memo(() => {
     const reportLot = car?.lot || lot;
     if (!reportLot) return;
 
-    const reportUrl = `/car/${encodeURIComponent(reportLot)}/report`;
-    navigate(reportUrl);
-  }, [car?.lot, lot, impact, navigate]);
+    openCarReportInNewTab(reportLot);
+  }, [car?.lot, lot, impact]);
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
@@ -1407,6 +1407,22 @@ const CarDetails = memo(() => {
       goToIndex(selectedImageIndex);
     }
   }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
+
+  const handleImageZoomOpen = useCallback((event?: { preventDefault(): void; stopPropagation(): void }) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    if (!images.length || !isClickAllowed()) {
+      return;
+    }
+
+    impact('light');
+    setIsImageZoomOpen(true);
+  }, [images.length, impact, isClickAllowed]);
+
+  const handleImageZoomClose = useCallback(() => {
+    setIsImageZoomOpen(false);
+  }, []);
   const carImages = useMemo(() => car?.images || [], [car?.images]);
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
@@ -1541,11 +1557,18 @@ const CarDetails = memo(() => {
               {/* Main Image Card */}
               <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
                 <CardContent className="p-0">
-                  <div
+              <div
                     ref={imageContainerRef}
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
-                    onClick={(e) => handleGalleryClick(e)}
-                    data-fancybox="gallery"
+                className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
+                onClick={handleImageZoomOpen}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    handleImageZoomOpen(event);
+                  }
+                }}
+                aria-label="Hap imazhin e makinës në modal me zoom"
                   >
                   {/* Main Image with improved loading states */}
                   {images.length > 0 ? (
@@ -1636,9 +1659,14 @@ const CarDetails = memo(() => {
                   )}
                   
                   {/* Zoom icon - Improved positioning and visibility */}
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
-                    <Expand className="h-4 w-4 text-white" />
-                  </div>
+                <button
+                  type="button"
+                  onClick={handleImageZoomOpen}
+                  className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label="Zmadho imazhin"
+                >
+                  <Expand className="h-4 w-4 text-white" />
+                </button>
                   
                   {/* Loading indicator */}
                   {isPlaceholderImage && (
@@ -1695,11 +1723,18 @@ const CarDetails = memo(() => {
             {/* Mobile Main Image - Full width for mobile */}
             <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
-                <div
+                  <div
                   ref={imageContainerRef}
-                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
-                  onClick={(e) => handleGalleryClick(e)}
-                  data-fancybox="gallery"
+                    className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
+                    onClick={handleImageZoomOpen}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        handleImageZoomOpen(event);
+                      }
+                    }}
+                    aria-label="Hap imazhin e makinës në modal me zoom"
                 >
                   {/* Main Image with improved loading states */}
                   {images.length > 0 ? (
@@ -1790,9 +1825,14 @@ const CarDetails = memo(() => {
                   )}
                   
                   {/* Zoom icon - Improved positioning and visibility */}
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110">
-                    <Expand className="h-4 w-4 text-white" />
-                  </div>
+                    <button
+                      type="button"
+                      onClick={handleImageZoomOpen}
+                      className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-label="Zmadho imazhin"
+                    >
+                      <Expand className="h-4 w-4 text-white" />
+                    </button>
                   
                   {/* Loading indicator */}
                   {isPlaceholderImage && (
@@ -2307,7 +2347,17 @@ const CarDetails = memo(() => {
           </Card>
         </div>
 
-        {/* Image Zoom Modal - Removed, now using gallery page for all image viewing */}
+        {images.length > 0 && (
+          <ImageZoom
+            src={images[selectedImageIndex] ?? car?.image ?? ""}
+            alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+            isOpen={isImageZoomOpen}
+            onClose={handleImageZoomClose}
+            images={images}
+            currentIndex={selectedImageIndex}
+            onImageChange={setSelectedImageIndex}
+          />
+        )}
       </div>
     </div>
   );

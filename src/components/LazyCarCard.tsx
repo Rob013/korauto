@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { formatModelName } from "@/utils/modelNameFormatter";
+import { openCarDetailsInNewTab } from "@/utils/navigation";
 
 interface LazyCarCardProps {
   id: string;
@@ -265,9 +266,8 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    // Navigate to car details in same tab
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    openCarDetailsInNewTab(lot ?? id);
+  }, [setCompletePageState, lot, id]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -285,9 +285,8 @@ const LazyCarCard = memo(({
     // Close filter panel when navigating to car details (if it's open)
     sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
     
-    // Navigate to car details in same tab
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    openCarDetailsInNewTab(lot ?? id);
+  }, [setCompletePageState, lot, id]);
 
   // Don't render content until intersection
   if (!isIntersecting) {

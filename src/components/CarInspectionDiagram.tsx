@@ -25,6 +25,12 @@ interface CarPart {
   markerPos?: { x: number; y: number };
 }
 
+const MARKER_RADIUS = 10;
+const MARKER_OUTER_RADIUS = 14;
+const MARKER_STROKE_WIDTH = 2.5;
+const MARKER_SPACING = 16;
+const MARKER_FONT_SIZE = 11;
+
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
   inspectionData = [], 
   className = "" 
@@ -451,6 +457,30 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
     }))
   });
 
+  const preciseMarkerPositions: Record<string, { x: number; y: number }> = {
+    hood: { x: 320, y: 120 },
+    front_bumper: { x: 320, y: 45 },
+    windshield: { x: 320, y: 208 },
+    front_left_door: { x: 185, y: 262 },
+    front_right_door: { x: 455, y: 262 },
+    roof: { x: 320, y: 310 },
+    rear_left_door: { x: 185, y: 372 },
+    rear_right_door: { x: 455, y: 372 },
+    rear_glass: { x: 320, y: 405 },
+    trunk: { x: 320, y: 488 },
+    rear_bumper: { x: 320, y: 570 },
+    side_sill_left: { x: 188, y: 322 },
+    side_sill_right: { x: 452, y: 322 },
+    left_fender: { x: 160, y: 136 },
+    right_fender: { x: 480, y: 136 },
+    left_quarter: { x: 172, y: 498 },
+    right_quarter: { x: 468, y: 498 },
+    fl_wheel: { x: 70, y: 120 },
+    fr_wheel: { x: 570, y: 120 },
+    rl_wheel: { x: 70, y: 500 },
+    rr_wheel: { x: 570, y: 500 },
+  };
+
   return (
     <div className={`w-full ${className}`}>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
@@ -565,59 +595,61 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                           if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
                           if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
 
-                          const n = markers.length;
-                          const base = part.markerPos || part.labelPos;
-                          const spacing = 24; // Increased spacing for bigger markers
-                          
-                          return markers.map((m, idx) => {
-                            const offset = (idx - (n - 1) / 2) * spacing;
-                            const cx = base.x + offset;
-                            const cy = base.y;
-                            return (
-                              <g key={`${part.id}-mrk-${idx}`}>
-                                {/* Outer glow for better visibility */}
-                                <circle 
-                                  cx={cx} 
-                                  cy={cy} 
-                                  r={22} 
-                                  fill={m.color} 
-                                  fillOpacity={0.15}
-                                  filter="url(#glow)"
-                                />
-                                {/* Main marker - BIGGER AND BOLDER */}
-                                <circle 
-                                  cx={cx} 
-                                  cy={cy} 
-                                  r={16} 
-                                  fill={m.color} 
-                                  fillOpacity={0.5}
-                                  stroke={m.color} 
-                                  strokeWidth={5}
-                                  filter={isHovered || isSelected ? 'url(#glow)' : undefined}
-                                  className="transition-all duration-200"
-                                />
-                                {/* Text - BIGGER AND BOLDER */}
-                                <text 
-                                  x={cx} 
-                                  y={cy} 
-                                  textAnchor="middle" 
-                                  dominantBaseline="central" 
-                                  fontSize={14} 
-                                  fontWeight={900} 
-                                  fill="white"
-                                  className="pointer-events-none select-none"
-                                  style={{ 
-                                    textShadow: '2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)',
-                                    paintOrder: 'stroke fill'
-                                  }}
-                                  stroke={m.color}
-                                  strokeWidth="1"
-                                >
-                                  {m.char}
-                                </text>
-                              </g>
-                            );
-                          });
+                            const n = markers.length;
+                            const base = preciseMarkerPositions[part.id] ?? part.markerPos ?? part.labelPos;
+                            const spacing = MARKER_SPACING;
+
+                            return markers.map((m, idx) => {
+                              const offset = (idx - (n - 1) / 2) * spacing;
+                              const cx = base.x + offset;
+                              const cy =
+                                base.y +
+                                (n > 2 ? (idx % 2 === 0 ? -MARKER_SPACING / 2.5 : MARKER_SPACING / 2.5) : 0);
+
+                              return (
+                                <g key={`${part.id}-mrk-${idx}`}>
+                                  {/* Outer glow for better visibility */}
+                                  <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={MARKER_OUTER_RADIUS}
+                                    fill={m.color}
+                                    fillOpacity={0.2}
+                                    filter="url(#glow)"
+                                  />
+                                  {/* Main marker */}
+                                  <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={MARKER_RADIUS}
+                                    fill={m.color}
+                                    fillOpacity={0.45}
+                                    stroke={m.color}
+                                    strokeWidth={MARKER_STROKE_WIDTH}
+                                    filter={isHovered || isSelected ? 'url(#glow)' : undefined}
+                                    className="transition-all duration-200"
+                                  />
+                                  <text
+                                    x={cx}
+                                    y={cy}
+                                    textAnchor="middle"
+                                    dominantBaseline="central"
+                                    fontSize={MARKER_FONT_SIZE}
+                                    fontWeight={800}
+                                    fill="white"
+                                    className="pointer-events-none select-none"
+                                    style={{
+                                      textShadow: '1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)',
+                                      paintOrder: 'stroke fill',
+                                    }}
+                                    stroke={m.color}
+                                    strokeWidth="0.75"
+                                  >
+                                    {m.char}
+                                  </text>
+                                </g>
+                              );
+                            });
                         })()}
                       </>
                     )}

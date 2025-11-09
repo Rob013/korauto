@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
 import { useCurrencyAPI } from '@/hooks/useCurrencyAPI';
 import { hasRealPricing, calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from '@/utils/carPricing';
-import CarCard from './CarCard';
+import { openCarDetailsInNewTab } from '@/utils/navigation';
 
 interface SimilarCarsTabProps {
   carMake: string;
@@ -96,8 +96,8 @@ const SimilarCarsTab = ({ carMake, carModel, currentCarId }: SimilarCarsTabProps
               return (
                 <div 
                   key={car.id} 
-                  className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card"
-                  onClick={() => navigate(`/car/${lot?.lot || car.id}`)}
+                    className="p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors bg-card"
+                    onClick={() => openCarDetailsInNewTab(lot?.lot || car.id)}
                 >
                   <div className="font-medium text-foreground">
                     {car.year} {typeof car.manufacturer === 'object' ? car.manufacturer?.name || '' : car.manufacturer || ''} {typeof car.model === 'object' ? car.model?.name || '' : car.model || ''}

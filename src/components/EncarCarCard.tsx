@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   Award, Wrench, DollarSign, FileText, ShieldCheck
 } from "lucide-react";
 import InspectionRequestForm from "./InspectionRequestForm";
+import { openCarDetailsInNewTab } from "@/utils/navigation";
 
 interface EncarCarCardProps {
   id: string;
@@ -133,11 +133,9 @@ const EncarCarCard = ({
   }, []);
 
   const handleCardClick = () => {
-    // Save current page and any filter state before navigating
+    // Save current page and any filter state before opening the new tab
     setPreviousPage(window.location.pathname + window.location.search);
-    
-    // Navigate to car details in same tab
-    navigate(`/car/${id}`);
+    openCarDetailsInNewTab(id);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {

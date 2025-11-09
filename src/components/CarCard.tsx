@@ -32,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
+import { openCarDetailsInNewTab } from "@/utils/navigation";
 interface CarCardProps {
   id: string;
   make: string;
@@ -399,11 +400,10 @@ const CarCard = ({
       `🚗 Clicked car with ID: ${id}, lot: ${lot}, saved scroll: ${window.scrollY}px`
     );
 
-    // Save current page for back navigation
+    // Save current page for back navigation (kept for consistency even when opening new tab)
     setPreviousPage(window.location.pathname + window.location.search);
-    // Navigate to car details in same tab
-    navigate(`/car/${lot ?? id}`);
-  }, [id, lot, setPreviousPage, navigate]);
+    openCarDetailsInNewTab(lot ?? id);
+  }, [id, lot, setPreviousPage]);
 
   const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
 
