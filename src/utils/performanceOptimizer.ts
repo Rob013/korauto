@@ -3,6 +3,16 @@
  * Inspired by encar.com and premium Korean e-commerce sites
  */
 
+const transitionsStyleId = 'performance-transitions-style';
+let baseOptimizationsApplied = false;
+let scrollListenerRegistered = false;
+let scrollTicking = false;
+let scrollHandler: ((this: Window, ev: Event) => void) | null = null;
+const optimizedImages = new WeakSet<HTMLImageElement>();
+const optimizedCards = new WeakSet<HTMLElement>();
+let routeObserver: MutationObserver | null = null;
+let pageHideCleanupRegistered = false;
+
 /**
  * Anti-flickering initialization
  * Call this on app mount to prevent visual glitches
@@ -27,25 +37,41 @@ export const initializeAntiFlicker = () => {
  * Optimize all images for smooth loading without flickering
  */
 export const optimizeImages = () => {
-  const images = document.querySelectorAll('img[data-src], img[loading="lazy"]');
-  
-  images.forEach((img) => {
-    const element = img as HTMLImageElement;
-    
-    // Add smooth fade-in
-    element.style.transition = 'opacity 0.3s ease-out';
-    element.style.opacity = '0';
-    
-    // When loaded, fade in
-    const handleLoad = () => {
-      element.style.opacity = '1';
-      element.removeEventListener('load', handleLoad);
-    };
-    
-    element.addEventListener('load', handleLoad);
-    
-    // If already loaded
-    if (element.complete) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const images = document.querySelectorAll<HTMLImageElement>('img[data-src], img[loading="lazy"]');
+
+  images.forEach((element) => {
+    if (optimizedImages.has(element)) {
+      return;
+    }
+
+    optimizedImages.add(element);
+
+    if (!element.hasAttribute('loading')) {
+      element.loading = 'lazy';
+    }
+
+    if (!element.hasAttribute('decoding')) {
+      element.decoding = 'async';
+    }
+
+    if (!element.style.transition) {
+      element.style.transition = 'opacity 0.3s ease-out';
+    }
+
+    if (!element.complete) {
+      element.style.opacity = '0';
+      element.addEventListener(
+        'load',
+        () => {
+          element.style.opacity = '1';
+        },
+        { once: true }
+      );
+    } else {
       element.style.opacity = '1';
     }
   });
@@ -69,53 +95,38 @@ export const applyHardwareAcceleration = (selector: string) => {
  * Optimize transitions for smooth 120fps performance
  */
 export const optimizeTransitions = () => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  if (document.head.querySelector(`#${transitionsStyleId}`)) {
+    return;
+  }
+
   const style = document.createElement('style');
+  style.id = transitionsStyleId;
   style.textContent = `
-    /* Ultra-smooth 120fps transitions */
-    * {
+    *, *::before, *::after {
       -webkit-tap-highlight-color: transparent;
     }
-    
-    /* Optimize all transitions with GPU acceleration */
-    [class*="transition"],
-    button,
-    a,
-    input,
-    select,
-    .card {
+
+    :where(button, a, input, select, textarea, [role="button"], [role="link"]) {
       transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-      transition-duration: 200ms;
-      will-change: auto;
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
     }
-    
-    /* Instant feedback for touch interactions */
-    button:active,
-    a:active,
-    [role="button"]:active {
+
+    :where(button:active, a:active, [role="button"]:active) {
       transition-duration: 80ms;
-      transform: translate3d(0, 0, 0) scale(0.98);
     }
-    
-    /* Optimize hover states */
-    button:hover,
-    a:hover,
-    [role="button"]:hover {
+
+    :where(button:hover, a:hover, [role="button"]:hover) {
       will-change: transform;
     }
-    
-    /* Remove will-change after animation */
-    *:not(:hover):not(:active):not(:focus) {
-      will-change: auto !important;
-    }
-    
-    /* Smooth scrolling containers */
-    * {
-      scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
+
+    :where(button:not(:hover):not(:focus), a:not(:hover):not(:focus), [role="button"]:not(:hover):not(:focus)) {
+      will-change: auto;
     }
   `;
+
   document.head.appendChild(style);
 };
 
@@ -150,26 +161,35 @@ export const smoothScrollToElement = (element: HTMLElement, offset = 0) => {
  * Optimize card hover animations
  */
 export const optimizeCardAnimations = () => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
   const cards = document.querySelectorAll('[class*="card"], [class*="Card"]');
   
   cards.forEach((card) => {
     const element = card as HTMLElement;
-    
-    // GPU acceleration
-    element.style.transform = 'translate3d(0, 0, 0)';
-    element.style.backfaceVisibility = 'hidden';
-    
-    // Optimize hover
-    element.addEventListener('mouseenter', () => {
+
+    if (optimizedCards.has(element)) {
+      return;
+    }
+
+    optimizedCards.add(element);
+
+    if (!element.style.backfaceVisibility) {
+      element.style.backfaceVisibility = 'hidden';
+    }
+
+    const handleMouseEnter = () => {
       element.style.willChange = 'transform, box-shadow';
-    }, { passive: true });
-    
-    element.addEventListener('mouseleave', () => {
-      // Remove will-change after transition
-      setTimeout(() => {
-        element.style.willChange = 'auto';
-      }, 300);
-    }, { passive: true });
+    };
+
+    const handleMouseLeave = () => {
+      element.style.willChange = 'auto';
+    };
+
+    element.addEventListener('mouseenter', handleMouseEnter);
+    element.addEventListener('mouseleave', handleMouseLeave);
   });
 };
 
@@ -199,33 +219,21 @@ export const respectReducedMotion = () => {
  * Optimize scroll performance for 120fps
  */
 export const optimizeScrollPerformance = () => {
-  let ticking = false;
-  let lastScrollY = window.scrollY;
-  
-  // Passive scroll listener for better performance
-  const handleScroll = () => {
-    lastScrollY = window.scrollY;
-    
-    if (!ticking) {
-      requestAnimationFrame(() => {
-        // Apply scroll optimizations
-        ticking = false;
+  if (typeof window === 'undefined' || scrollListenerRegistered) {
+    return;
+  }
+
+  scrollHandler = () => {
+    if (!scrollTicking) {
+      scrollTicking = true;
+      window.requestAnimationFrame(() => {
+        scrollTicking = false;
       });
-      ticking = true;
     }
   };
-  
-  window.addEventListener('scroll', handleScroll, { passive: true });
-  
-  // Optimize all scrollable containers
-  const scrollContainers = document.querySelectorAll('[class*="overflow"], [class*="scroll"]');
-  scrollContainers.forEach((container) => {
-    const el = container as HTMLElement;
-    el.style.transform = 'translate3d(0, 0, 0)';
-    el.style.backfaceVisibility = 'hidden';
-    (el.style as any).webkitOverflowScrolling = 'touch';
-    el.style.overscrollBehavior = 'contain';
-  });
+
+  window.addEventListener('scroll', scrollHandler!, { passive: true });
+  scrollListenerRegistered = true;
 };
 
 /**
@@ -266,37 +274,97 @@ export const initializePerformanceOptimizations = () => {
 };
 
 const applyOptimizations = () => {
-  initializeAntiFlicker();
-  optimizeTransitions();
-  optimizeScrollPerformance();
-  enable120Hz();
-  respectReducedMotion();
-  
-  // Apply on next frame
-  requestAnimationFrame(() => {
+  if (!baseOptimizationsApplied) {
+    initializeAntiFlicker();
+    optimizeTransitions();
+    optimizeScrollPerformance();
+    enable120Hz();
+    respectReducedMotion();
+    baseOptimizationsApplied = true;
+  }
+
+  scheduleDeferredOptimizations();
+  ensureRouteObserver();
+  registerPageHideCleanup();
+};
+
+const scheduleDeferredOptimizations = () => {
+  const run = () => {
     optimizeImages();
     preventLayoutShift();
     optimizeCardAnimations();
-  });
-  
-  // Re-optimize on route change
-  let lastPath = window.location.pathname;
-  const observer = new MutationObserver(() => {
-    if (window.location.pathname !== lastPath) {
-      lastPath = window.location.pathname;
-      requestAnimationFrame(() => {
-        optimizeImages();
-        preventLayoutShift();
-        optimizeCardAnimations();
-        optimizeScrollPerformance();
-      });
+  };
+
+  if (typeof window !== 'undefined') {
+    const idleCallback = (window as typeof window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+    }).requestIdleCallback;
+
+    if (typeof idleCallback === 'function') {
+      idleCallback(run, { timeout: 300 });
+      return;
     }
+  }
+
+  setTimeout(run, 32);
+};
+
+const ensureRouteObserver = () => {
+  if (typeof document === 'undefined' || routeObserver) {
+    return;
+  }
+
+  const root = document.getElementById('root');
+
+  if (!root) {
+    return;
+  }
+
+  let scheduled = false;
+
+  routeObserver = new MutationObserver(() => {
+    if (scheduled) {
+      return;
+    }
+
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      scheduleDeferredOptimizations();
+    });
   });
-  
-  observer.observe(document.body, {
+
+  routeObserver.observe(root, {
     childList: true,
     subtree: true
   });
+};
+
+const registerPageHideCleanup = () => {
+  if (typeof window === 'undefined' || pageHideCleanupRegistered) {
+    return;
+  }
+
+  window.addEventListener(
+    'pagehide',
+    () => {
+      routeObserver?.disconnect();
+      routeObserver = null;
+
+      if (scrollHandler) {
+        window.removeEventListener('scroll', scrollHandler);
+        scrollHandler = null;
+      }
+
+      scrollListenerRegistered = false;
+      scrollTicking = false;
+      baseOptimizationsApplied = false;
+      pageHideCleanupRegistered = false;
+    },
+    { once: true }
+  );
+
+  pageHideCleanupRegistered = true;
 };
 
 /**
