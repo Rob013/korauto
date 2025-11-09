@@ -925,46 +925,215 @@ const CarDetails = memo(() => {
       return 0;
     }
 
-    const insurance = car.insurance_v2 ?? {};
+    const candidateCounts: number[] = [];
+    const seenArrays = new Set<unknown>();
 
-    if (typeof insurance.accidentCnt === "number") {
-      return insurance.accidentCnt;
-    }
-
-    const myAccidents =
-      typeof insurance.myAccidentCnt === "number" ? insurance.myAccidentCnt : 0;
-    const otherAccidents =
-      typeof insurance.otherAccidentCnt === "number" ? insurance.otherAccidentCnt : 0;
-    if (myAccidents || otherAccidents) {
-      return myAccidents + otherAccidents;
-    }
-
-    if (Array.isArray(insurance.accidents) && insurance.accidents.length > 0) {
-      return insurance.accidents.length;
-    }
-
-    const accidentSummary =
-      car.inspect?.accident_summary || car.details?.inspect?.accident_summary;
-    if (accidentSummary && typeof accidentSummary === "object") {
-      const totalFromSummary = Object.values(accidentSummary).reduce((sum, value) => {
-        if (typeof value === "number") {
-          return sum + value;
-        }
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? sum + parsed : sum;
-      }, 0);
-
-      if (totalFromSummary) {
-        return totalFromSummary;
+    const parseNumericValue = (raw: unknown): number | null => {
+      if (raw === null || raw === undefined) {
+        return null;
       }
+
+      if (typeof raw === "number") {
+        return Number.isFinite(raw) ? raw : null;
+      }
+
+      if (typeof raw === "string") {
+        const trimmed = raw.trim();
+        if (!trimmed) {
+          return null;
+        }
+
+        const normalized = trimmed.replace(/[,]/g, "");
+        const direct = Number(normalized);
+        if (Number.isFinite(direct)) {
+          return direct;
+        }
+
+        const intMatch = normalized.match(/^-?\d+/);
+        if (intMatch) {
+          const digitsOnly = intMatch[0].replace(/^-/, "");
+          if (digitsOnly.length > 0 && digitsOnly.length <= 3) {
+            return Number(intMatch[0]);
+          }
+        }
+
+        return null;
+      }
+
+      if (Array.isArray(raw)) {
+        return raw.length;
+      }
+
+      if (typeof raw === "object") {
+        const obj = raw as Record<string, unknown>;
+        const valueKeys = [
+          "count",
+          "total",
+          "totalCount",
+          "value",
+          "number",
+          "qty",
+          "quantity",
+          "cnt",
+          "accidentCnt",
+          "accidentCount",
+          "totalAccidentCnt",
+          "totalAccidentCount"
+        ];
+
+        for (const key of valueKeys) {
+          if (key in obj) {
+            const parsed = parseNumericValue(obj[key]);
+            if (parsed !== null) {
+              return parsed;
+            }
+          }
+        }
+
+        const accidentRelated = Object.entries(obj)
+          .filter(([key]) => /accident/i.test(key))
+          .map(([, value]) => parseNumericValue(value))
+          .filter((value): value is number => value !== null);
+
+        if (accidentRelated.length > 0) {
+          return accidentRelated.reduce((sum, value) => sum + value, 0);
+        }
+      }
+
+      return null;
+    };
+
+    const addCandidate = (value: unknown) => {
+      const parsed = parseNumericValue(value);
+      if (parsed !== null && Number.isFinite(parsed)) {
+        candidateCounts.push(parsed);
+      }
+    };
+
+    const extractFromObject = (source?: Record<string, unknown>) => {
+      if (!source) {
+        return;
+      }
+
+      const numericFields = [
+        "accidentCnt",
+        "accidentCount",
+        "totalAccidentCnt",
+        "totalAccidentCount",
+        "accident_history_count",
+        "accidentHistoryCount",
+        "accidentHistoryCnt",
+        "accident_history_total",
+        "accidentHistoryTotal",
+        "count",
+        "total"
+      ];
+
+      numericFields.forEach((field) => {
+        if (field in source) {
+          addCandidate(source[field]);
+        }
+      });
+
+      if ("myAccidentCnt" in source || "otherAccidentCnt" in source) {
+        const my = parseNumericValue(source["myAccidentCnt"]) ?? 0;
+        const other = parseNumericValue(source["otherAccidentCnt"]) ?? 0;
+        const combined = my + other;
+        if (combined >= 0) {
+          candidateCounts.push(combined);
+        }
+      }
+
+      const arrayFields = [
+        "accidents",
+        "accidentList",
+        "accidentHistory",
+        "accidentHistories",
+        "accident_records",
+        "accidentRecords",
+        "accidentRecord",
+        "special_accident_history",
+        "accident_history",
+        "accident_history_detail",
+        "accident_history_details",
+        "accident_history_list"
+      ];
+
+      let aggregatedArrayCount = 0;
+      arrayFields.forEach((field) => {
+        const value = source[field];
+        if (Array.isArray(value) && value.length > 0 && !seenArrays.has(value)) {
+          seenArrays.add(value);
+          candidateCounts.push(value.length);
+          aggregatedArrayCount += value.length;
+        } else if (Array.isArray(value) && !seenArrays.has(value)) {
+          seenArrays.add(value);
+        }
+      });
+      if (aggregatedArrayCount > 0) {
+        candidateCounts.push(aggregatedArrayCount);
+      }
+
+      const summaryFields = ["accident_summary", "accidentSummary"];
+      summaryFields.forEach((field) => {
+        const summary = source[field];
+        if (summary && typeof summary === "object" && !Array.isArray(summary)) {
+          const total = Object.values(summary).reduce((sum, entry) => {
+            const parsed = parseNumericValue(entry);
+            return parsed !== null ? sum + parsed : sum;
+          }, 0);
+          if (total > 0) {
+            candidateCounts.push(total);
+          }
+        }
+      });
+
+      Object.entries(source)
+        .filter(([key, value]) => /accident/i.test(key) && value && typeof value === "object" && !Array.isArray(value))
+        .forEach(([, value]) => addCandidate(value));
+    };
+
+    const potentialSources: Array<Record<string, unknown> | undefined> = [
+      car.insurance_v2 as Record<string, unknown> | undefined,
+      car.details?.insurance_v2 as Record<string, unknown> | undefined,
+      car.details?.insurance as Record<string, unknown> | undefined,
+      (car.details?.insurance as Record<string, unknown> | undefined)?.car_info as Record<string, unknown> | undefined,
+      (car.details?.insurance as Record<string, unknown> | undefined)?.summary as Record<string, unknown> | undefined,
+      car.inspect as Record<string, unknown> | undefined,
+      car.details?.inspect as Record<string, unknown> | undefined
+    ];
+
+    potentialSources.forEach((source) => {
+      if (source) {
+        extractFromObject(source);
+      }
+    });
+
+    const summarySources = [
+      car.inspect?.accident_summary,
+      car.details?.inspect?.accident_summary,
+      (car.details?.insurance as Record<string, unknown> | undefined)?.accident_summary
+    ];
+
+    summarySources.forEach((summary) => {
+      if (summary && typeof summary === "object" && !Array.isArray(summary)) {
+        const total = Object.values(summary).reduce((sum, entry) => {
+          const parsed = parseNumericValue(entry);
+          return parsed !== null ? sum + parsed : sum;
+        }, 0);
+        if (total > 0) {
+          candidateCounts.push(total);
+        }
+      }
+    });
+
+    addCandidate(car.details?.insurance?.accident_history);
+
+    if (candidateCounts.length === 0) {
+      return 0;
     }
 
-    const legacyAccidentHistory = car.details?.insurance?.accident_history;
-    if (typeof legacyAccidentHistory === "number") {
-      return legacyAccidentHistory;
-    }
-
-    return 0;
+    return Math.max(...candidateCounts);
   }, [car]);
 
   // Reset placeholder state when image selection changes
@@ -1882,25 +2051,64 @@ const CarDetails = memo(() => {
                 </div>
               </div>
               
-              {/* Action Buttons - Compact Layout */}
-              <div className="flex gap-2 mb-4 mt-3">
-                <InspectionRequestForm trigger={<Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 h-9 text-xs hover-scale shadow-md">
-                      <FileText className="h-3 w-3 mr-1.5" />
-                      <span className="hidden sm:inline">Kërko Inspektim</span>
-                      <span className="sm:hidden">Inspektim</span>
-                    </Button>} carId={car.id} carMake={car.make} carModel={car.model} carYear={car.year} />
-                {car.details && (
-                  <Button onClick={handleOpenInspectionReport} size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 h-9 text-xs hover-scale shadow-md">
-                    <FileText className="h-3 w-3 mr-1.5" />
-                    <span className="hidden sm:inline">Historia ({accidentCount})</span>
-                    <span className="sm:hidden">Historia ({accidentCount})</span>
+                {/* Action Buttons - Compact Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 mb-4">
+                  <InspectionRequestForm
+                    trigger={
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="group w-full justify-between h-11 sm:h-10 rounded-lg sm:rounded-md border-primary text-primary hover:bg-primary hover:text-primary-foreground px-4 sm:px-3 text-sm sm:text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                          <span className="hidden sm:inline">Kërko Inspektim</span>
+                          <span className="sm:hidden">Inspektim</span>
+                        </span>
+                        <ChevronRight className="h-4 w-4 opacity-70 group-hover:translate-x-1 transition-transform duration-200" />
+                      </Button>
+                    }
+                    carId={car.id}
+                    carMake={car.make}
+                    carModel={car.model}
+                    carYear={car.year}
+                  />
+                  {car.details && (
+                    <Button
+                      onClick={handleOpenInspectionReport}
+                      size="sm"
+                      variant="outline"
+                      className="group w-full justify-between h-11 sm:h-10 rounded-lg sm:rounded-md border-primary text-primary hover:bg-primary hover:text-primary-foreground px-4 sm:px-3 text-sm sm:text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                    >
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                        <span>Historia</span>
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          accidentCount > 0
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                        }`}
+                      >
+                        {accidentCount}
+                        <span className="hidden sm:inline">aksidente</span>
+                      </span>
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleContactWhatsApp}
+                    size="sm"
+                    variant="outline"
+                    className="group w-full justify-between h-11 sm:h-10 rounded-lg sm:rounded-md border-green-600 text-green-600 hover:bg-green-600 hover:text-white px-4 sm:px-3 text-sm sm:text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                      <span>WhatsApp</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 opacity-70 group-hover:translate-x-1 transition-transform duration-200" />
                   </Button>
-                )}
-                <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white flex-1 h-9 text-xs hover-scale shadow-md">
-                  <MessageCircle className="h-3 w-3 mr-1.5" />
-                  WhatsApp
-                </Button>
-              </div>
+                </div>
             </div>
 
 

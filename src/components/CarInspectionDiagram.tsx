@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
 import carDiagramTop from '@/assets/car-diagram-top.jpeg';
 import carDiagramBottom from '@/assets/car-diagram-bottom.webp';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface InspectionItem {
   type: { code: string; title: string };
@@ -25,11 +26,11 @@ interface CarPart {
   markerPos?: { x: number; y: number };
 }
 
-const MARKER_RADIUS = 7;
-const MARKER_OUTER_RADIUS = 10;
-const MARKER_STROKE_WIDTH = 1.5;
-const MARKER_SPACING = 12;
-const MARKER_FONT_SIZE = 9;
+const BASE_MARKER_RADIUS = 7;
+const BASE_MARKER_OUTER_RADIUS = 10;
+const BASE_MARKER_STROKE_WIDTH = 1.5;
+const BASE_MARKER_SPACING = 12;
+const BASE_MARKER_FONT_SIZE = 9;
 
 const PRECISE_MARKER_POSITIONS: Record<string, { x: number; y: number }> = {
   hood: { x: 320, y: 118 },
@@ -61,6 +62,52 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 }) => {
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  const [viewportWidth, setViewportWidth] = useState<number>(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1440
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, []);
+
+  const markerScale = useMemo(() => {
+    if (isMobile) {
+      return 0.52;
+    }
+    if (viewportWidth < 1024) {
+      return 0.78;
+    }
+    if (viewportWidth < 1440) {
+      return 0.9;
+    }
+    return 1;
+  }, [isMobile, viewportWidth]);
+
+  const markerSizing = useMemo(() => {
+    const spacing = BASE_MARKER_SPACING * markerScale;
+
+    return {
+      radius: Math.max(3, BASE_MARKER_RADIUS * markerScale),
+      outerRadius: Math.max(4.5, BASE_MARKER_OUTER_RADIUS * markerScale * (isMobile ? 0.9 : 1)),
+      strokeWidth: Math.max(0.85, BASE_MARKER_STROKE_WIDTH * markerScale),
+      spacing,
+      verticalOffset: spacing / 2.4,
+      fontSize: Math.max(6.5, BASE_MARKER_FONT_SIZE * (isMobile ? 0.72 : markerScale)),
+    };
+  }, [isMobile, markerScale]);
 
   // Enhanced car parts mapped to the actual diagram image positions
   const carParts = useMemo<CarPart[]>(() => [
@@ -614,61 +661,61 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
                             if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
 
-                            const n = markers.length;
-                            const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
-                            const spacing = MARKER_SPACING;
+                              const n = markers.length;
+                              const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
+                              const spacing = markerSizing.spacing;
 
-                            return markers.map((m, idx) => {
-                              const offset = (idx - (n - 1) / 2) * spacing;
-                              const cx = base.x + offset;
-                              const cy =
-                                base.y +
-                                (n > 2 ? (idx % 2 === 0 ? -MARKER_SPACING / 2.5 : MARKER_SPACING / 2.5) : 0);
+                              return markers.map((m, idx) => {
+                                const offset = (idx - (n - 1) / 2) * spacing;
+                                const cx = base.x + offset;
+                                const cy =
+                                  base.y +
+                                  (n > 2 ? (idx % 2 === 0 ? -markerSizing.verticalOffset : markerSizing.verticalOffset) : 0);
 
-                              return (
-                                <g key={`${part.id}-mrk-${idx}`}>
-                                  {/* Outer glow for better visibility */}
-                                  <circle
-                                    cx={cx}
-                                    cy={cy}
-                                    r={MARKER_OUTER_RADIUS}
-                                    fill={m.color}
-                                    fillOpacity={0.2}
-                                    filter="url(#glow)"
-                                  />
-                                  {/* Main marker */}
-                                  <circle
-                                    cx={cx}
-                                    cy={cy}
-                                    r={MARKER_RADIUS}
-                                    fill={m.color}
-                                    fillOpacity={0.45}
-                                    stroke={m.color}
-                                    strokeWidth={MARKER_STROKE_WIDTH}
-                                    filter={isHovered || isSelected ? 'url(#glow)' : undefined}
-                                    className="transition-all duration-200"
-                                  />
-                                  <text
-                                    x={cx}
-                                    y={cy}
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    fontSize={MARKER_FONT_SIZE}
-                                    fontWeight={800}
-                                    fill="white"
-                                    className="pointer-events-none select-none"
-                                    style={{
-                                      textShadow: '1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)',
-                                      paintOrder: 'stroke fill',
-                                    }}
-                                    stroke={m.color}
-                                    strokeWidth="0.75"
-                                  >
-                                    {m.char}
-                                  </text>
-                                </g>
-                              );
-                            });
+                                return (
+                                  <g key={`${part.id}-mrk-${idx}`}>
+                                    {/* Outer glow for better visibility */}
+                                    <circle
+                                      cx={cx}
+                                      cy={cy}
+                                      r={markerSizing.outerRadius}
+                                      fill={m.color}
+                                      fillOpacity={0.2}
+                                      filter="url(#glow)"
+                                    />
+                                    {/* Main marker */}
+                                    <circle
+                                      cx={cx}
+                                      cy={cy}
+                                      r={markerSizing.radius}
+                                      fill={m.color}
+                                      fillOpacity={0.45}
+                                      stroke={m.color}
+                                      strokeWidth={markerSizing.strokeWidth}
+                                      filter={isHovered || isSelected ? "url(#glow)" : undefined}
+                                      className="transition-all duration-200"
+                                    />
+                                    <text
+                                      x={cx}
+                                      y={cy}
+                                      textAnchor="middle"
+                                      dominantBaseline="central"
+                                      fontSize={markerSizing.fontSize}
+                                      fontWeight={800}
+                                      fill="white"
+                                      className="pointer-events-none select-none"
+                                      style={{
+                                        textShadow: "1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)",
+                                        paintOrder: "stroke fill",
+                                      }}
+                                      stroke={m.color}
+                                      strokeWidth="0.75"
+                                    >
+                                      {m.char}
+                                    </text>
+                                  </g>
+                                );
+                              });
                         })()}
                       </>
                     )}
