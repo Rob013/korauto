@@ -4,6 +4,7 @@ import './index.css'
 import './utils/iosOptimizations.css'
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { NavigationProvider } from './contexts/NavigationContext.tsx'
+import { FavoritesProvider } from './contexts/FavoritesContext.tsx'
 import cacheManager from '@/utils/cacheManager'
 import { inject120FPSStyles } from '@/utils/frameRateOptimizer'
 import initSmoothRuntime from '@/utils/runtimeSmoothness'
@@ -83,7 +84,9 @@ try {
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider defaultTheme="system" storageKey="korauto-ui-theme">
     <NavigationProvider>
-      <App />
+      <FavoritesProvider>
+        <App />
+      </FavoritesProvider>
     </NavigationProvider>
   </ThemeProvider>
 );

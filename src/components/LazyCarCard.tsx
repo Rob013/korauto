@@ -4,10 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { Car, Gauge, Settings, Fuel, Heart, ShieldCheck, AlertTriangle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { formatModelName } from "@/utils/modelNameFormatter";
+import { useFavorites } from "@/contexts/FavoritesContext";
 
 interface LazyCarCardProps {
   id: string;
@@ -70,8 +70,7 @@ const LazyCarCard = memo(({
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
   const { toast } = useToast();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const { isFavorite: checkIsFavorite, toggleFavorite } = useFavorites();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -124,48 +123,6 @@ const LazyCarCard = memo(({
     return () => observer.disconnect();
   }, []);
 
-  // Optimized user data fetching
-  useEffect(() => {
-    let isMounted = true;
-    
-    const getUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!isMounted) return;
-        
-        setUser(user);
-        
-        if (user) {
-          const [{ data: favorite }, { data: userRole }] = await Promise.all([
-            supabase
-              .from('favorite_cars')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('car_id', id)
-              .maybeSingle(),
-            supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', user.id)
-              .maybeSingle()
-          ]);
-          
-          if (isMounted) {
-            setIsFavorite(!!favorite);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-    
-    getUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
-
   const normalizedSource = typeof source === 'string' ? source : '';
   const sourceBadgeLabel = normalizedSource
     ? (normalizedSource || '').toLowerCase() === 'encar'
@@ -198,56 +155,31 @@ const LazyCarCard = memo(({
   const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login to save favorite cars",
-      });
-      navigate('/auth');
-      return;
-    }
-
     try {
-      if (isFavorite) {
-        await supabase
-          .from('favorite_cars')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('car_id', id);
-        
-        setIsFavorite(false);
+      await toggleFavorite(id, { make, model, year, price, image });
+      
+      toast({
+        title: checkIsFavorite(id) ? "Removed from favorites" : "Added to favorites",
+        description: checkIsFavorite(id) 
+          ? "Car removed from your favorites"
+          : "Car saved to your favorites",
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User not logged in') {
         toast({
-          title: "Removed from favorites",
-          description: "Car removed from your favorites",
+          title: "Login Required",
+          description: "Please login to save favorite cars",
         });
+        navigate('/auth');
       } else {
-        await supabase
-          .from('favorite_cars')
-          .insert({
-            user_id: user.id,
-            car_id: id,
-            car_make: make,
-            car_model: model,
-            car_year: year,
-            car_price: price,
-            car_image: image
-          });
-        
-        setIsFavorite(true);
         toast({
-          title: "Added to favorites",
-          description: "Car saved to your favorites",
+          title: "Error",
+          description: "Failed to update favorites",
+          variant: "destructive",
         });
       }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update favorites",
-        variant: "destructive",
-      });
     }
-  }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
+  }, [id, make, model, year, price, image, checkIsFavorite, toggleFavorite, toast, navigate]);
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -415,14 +347,12 @@ const LazyCarCard = memo(({
           </div>
           
           {/* Favorite Button - Positioned in list mode */}
-          {user && (
-            <button
-              onClick={handleFavoriteToggle}
-              className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 backdrop-blur-sm rounded transition-all duration-200 z-10"
-            >
-              <Heart className={`h-2.5 w-2.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
-            </button>
-          )}
+          <button
+            onClick={handleFavoriteToggle}
+            className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 backdrop-blur-sm rounded transition-all duration-200 z-10"
+          >
+            <Heart className={`h-2.5 w-2.5 ${checkIsFavorite(id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+          </button>
         </div>
       </div>
     );
@@ -499,14 +429,12 @@ const LazyCarCard = memo(({
         )}
 
         {/* Favorite Button */}
-        {user && (
-          <button
-            onClick={handleFavoriteToggle}
-            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 transition-all duration-200 z-10"
-          >
-            <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
-          </button>
-        )}
+        <button
+          onClick={handleFavoriteToggle}
+          className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 transition-all duration-200 z-10"
+        >
+          <Heart className={`h-3.5 w-3.5 ${checkIsFavorite(id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+        </button>
       </div>
       
       {/* Content Section - 30% of card height, more compact */}
