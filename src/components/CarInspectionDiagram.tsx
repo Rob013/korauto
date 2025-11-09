@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
@@ -25,11 +25,35 @@ interface CarPart {
   markerPos?: { x: number; y: number };
 }
 
-const MARKER_RADIUS = 10;
-const MARKER_OUTER_RADIUS = 14;
-const MARKER_STROKE_WIDTH = 2.5;
-const MARKER_SPACING = 16;
-const MARKER_FONT_SIZE = 11;
+const MARKER_RADIUS = 7;
+const MARKER_OUTER_RADIUS = 10;
+const MARKER_STROKE_WIDTH = 1.5;
+const MARKER_SPACING = 12;
+const MARKER_FONT_SIZE = 9;
+
+const PRECISE_MARKER_POSITIONS: Record<string, { x: number; y: number }> = {
+  hood: { x: 320, y: 118 },
+  front_bumper: { x: 320, y: 52 },
+  windshield: { x: 320, y: 208 },
+  front_left_door: { x: 188, y: 262 },
+  front_right_door: { x: 452, y: 262 },
+  roof: { x: 320, y: 312 },
+  rear_left_door: { x: 188, y: 372 },
+  rear_right_door: { x: 452, y: 372 },
+  rear_glass: { x: 320, y: 405 },
+  trunk: { x: 320, y: 488 },
+  rear_bumper: { x: 320, y: 572 },
+  side_sill_left: { x: 188, y: 320 },
+  side_sill_right: { x: 452, y: 320 },
+  left_fender: { x: 170, y: 140 },
+  right_fender: { x: 470, y: 140 },
+  left_quarter: { x: 175, y: 502 },
+  right_quarter: { x: 465, y: 502 },
+  fl_wheel: { x: 70, y: 120 },
+  fr_wheel: { x: 570, y: 120 },
+  rl_wheel: { x: 70, y: 500 },
+  rr_wheel: { x: 570, y: 500 }
+};
 
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
   inspectionData = [], 
@@ -39,7 +63,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
 
   // Enhanced car parts mapped to the actual diagram image positions
-  const carParts: CarPart[] = [
+  const carParts = useMemo<CarPart[]>(() => [
     // Hood (top center of car)
     {
       id: 'hood',
@@ -216,10 +240,10 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       path: 'M 610 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
       labelPos: { x: 610, y: 510 }
     },
-  ];
+  ], []);
 
   // Helper: evaluate if an item's title targets a given part id
-  const titleMatchesPart = (title: string, partId: string) => {
+  const titleMatchesPart = useCallback((title: string, partId: string) => {
     const t = title.toLowerCase().replace(/\s+/g, ' ').trim();
 
     // Strict regex-based mappings to avoid false positives
@@ -250,73 +274,92 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     const matched = patterns.find((m) => m.re.test(t));
     if (!matched) return false;
     return matched.id === partId;
-  };
+  }, []);
 
-  // Get part status from inspection data (aggregate across matching items)
-  const getPartStatus = (partId: string) => {
-    const statuses: Array<{ code: string; title: string }> = [];
-    for (const item of inspectionData) {
-      const typeTitle = (item?.type?.title || '').toString();
-      const typeCode = item?.type?.code || '';
-      
-      // Match by code or title
-      const matches =
-        typeCode === partId ||
-        titleMatchesPart(typeTitle, partId);
-      
-      if (!matches) continue;
+  const partStatusMap = useMemo(() => {
+    const map = new Map<string, Array<{ code: string; title: string }>>();
+    carParts.forEach((part) => map.set(part.id, []));
 
-      // Primary: Use statusTypes array from API
-      const st = Array.isArray(item.statusTypes) ? item.statusTypes : [];
-      if (st.length > 0) {
-        statuses.push(...st);
-      }
+    if (!inspectionData || inspectionData.length === 0) {
+      return map;
+    }
 
-      // Check attributes array for RANK indicators (e.g., RANK_ONE, RANK_A, RANK_B)
-      const attrs = Array.isArray((item as any).attributes) ? ((item as any).attributes as string[]) : [];
-      const hasHighRank = attrs.some(attr => 
-        typeof attr === 'string' && (
-          attr.includes('RANK_ONE') || 
-          attr.includes('RANK_TWO') || 
-          attr.includes('RANK_A') || 
-          attr.includes('RANK_B') ||
-          attr.includes('RANK_C')
-        )
+    const deriveStatuses = (item: InspectionItem): Array<{ code: string; title: string }> => {
+      const statuses: Array<{ code: string; title: string }> = Array.isArray(item?.statusTypes)
+        ? [...item.statusTypes]
+        : [];
+      const attrs = Array.isArray((item as any)?.attributes)
+        ? ((item as any).attributes as string[])
+        : [];
+
+      const hasHighRank = attrs.some(
+        (attr) =>
+          typeof attr === "string" &&
+          (attr.includes("RANK_ONE") ||
+            attr.includes("RANK_TWO") ||
+            attr.includes("RANK_A") ||
+            attr.includes("RANK_B") ||
+            attr.includes("RANK_C"))
       );
-      
-      // If no explicit statusTypes but has high rank attributes, infer from title
-      if (st.length === 0 && hasHighRank) {
-        const low = typeTitle.toLowerCase();
-        if (low.includes('exchange') || low.includes('replacement') || low.includes('교환')) {
-          statuses.push({ code: 'X', title: 'Exchange (replacement)' });
+
+      if (statuses.length === 0 && hasHighRank) {
+        const low = (item?.type?.title || "").toString().toLowerCase();
+        if (low.includes("exchange") || low.includes("replacement") || low.includes("교환")) {
+          statuses.push({ code: "X", title: "Exchange (replacement)" });
         }
-        if (low.includes('weld') || low.includes('sheet metal') || low.includes('용접')) {
-          statuses.push({ code: 'W', title: 'Welding' });
+        if (low.includes("weld") || low.includes("sheet metal") || low.includes("용접")) {
+          statuses.push({ code: "W", title: "Welding" });
         }
-        if (low.includes('repair') || low.includes('수리')) {
-          statuses.push({ code: 'A', title: 'Repair' });
+        if (low.includes("repair") || low.includes("수리")) {
+          statuses.push({ code: "A", title: "Repair" });
         }
-        if (low.includes('scratch') || low.includes('흠집')) {
-          statuses.push({ code: 'S', title: 'Scratch' });
+        if (low.includes("scratch") || low.includes("흠집")) {
+          statuses.push({ code: "S", title: "Scratch" });
         }
-        if (low.includes('corr') || low.includes('부식')) {
-          statuses.push({ code: 'U', title: 'Corrosion' });
+        if (low.includes("corr") || low.includes("부식")) {
+          statuses.push({ code: "U", title: "Corrosion" });
         }
       }
 
-      // Log for debugging
-      if (matches && (st.length > 0 || hasHighRank)) {
-        console.log(`🔍 Part ${partId} matched:`, {
-          typeCode,
-          typeTitle,
-          statusTypes: st,
-          attributes: attrs,
-          inferredStatuses: statuses
+      return statuses;
+    };
+
+    inspectionData.forEach((item) => {
+      const statuses = deriveStatuses(item);
+      if (statuses.length === 0) {
+        return;
+      }
+
+      const matchedIds = new Set<string>();
+      const typeCode = (item?.type?.code || "").toString();
+      if (typeCode && map.has(typeCode)) {
+        matchedIds.add(typeCode);
+      }
+
+      const typeTitle = (item?.type?.title || "").toString();
+      if (typeTitle) {
+        carParts.forEach((part) => {
+          if (titleMatchesPart(typeTitle, part.id)) {
+            matchedIds.add(part.id);
+          }
         });
       }
-    }
-    return statuses;
-  };
+
+      matchedIds.forEach((id) => {
+        const existing = map.get(id);
+        if (existing) {
+          existing.push(...statuses);
+        }
+      });
+    });
+
+    return map;
+  }, [carParts, inspectionData, titleMatchesPart]);
+
+  const getPartStatus = useCallback(
+    (partId: string) => partStatusMap.get(partId) ?? [],
+    [partStatusMap]
+  );
 
 const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
   if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
@@ -385,101 +428,77 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
   return 'Pjesë normale';
 };
 
-  // Count all types of issues from API data with improved detection
-  const issueCount = {
-    replacements: inspectionData.filter(item => {
-      const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
-      const attrs = Array.isArray((item as any).attributes) ? ((item as any).attributes as string[]) : [];
-      const hasRank = attrs.some(attr => typeof attr === 'string' && attr.includes('RANK'));
-      
-      return (
-        codes.includes('X') || 
-        codes.includes('N') ||
-        t.includes('exchange') || 
-        t.includes('replacement') || 
-        t.includes('replaced') ||
-        t.includes('교환') ||
-        (hasRank && t.includes('exchange'))
-      );
-    }).length,
-    welds: inspectionData.filter(item => {
-      const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
-      return (
-        codes.includes('W') ||
-        codes.includes('S') ||
-        t.includes('weld') || 
-        t.includes('sheet metal') || 
-        t.includes('용접')
-      );
-    }).length,
-    repairs: inspectionData.filter(item => {
-      const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
-      return (
-        codes.includes('A') ||
-        codes.includes('R') ||
-        t.includes('repair') || 
-        t.includes('수리')
-      );
-    }).length,
-    corrosion: inspectionData.filter(item => {
-      const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
-      return (
-        codes.includes('U') ||
-        codes.includes('K') ||
-        t.includes('corr') || 
-        t.includes('부식')
-      );
-    }).length,
-    scratches: inspectionData.filter(item => {
-      const t = (item?.type?.title || '').toString().toLowerCase();
-      const codes = item.statusTypes?.map(s => s.code) || [];
-      return (
-        codes.includes('S') ||
-        t.includes('scratch') || 
-        t.includes('흠집')
-      );
-    }).length,
-  };
+  const issueCount = useMemo(() => {
+    if (!inspectionData || inspectionData.length === 0) {
+      return { replacements: 0, welds: 0, repairs: 0, corrosion: 0, scratches: 0 };
+    }
 
-  // Log for debugging
-  console.log('📊 Inspection Statistics:', {
-    totalItems: inspectionData.length,
-    issueCount,
-    sampleData: inspectionData.slice(0, 2).map(item => ({
-      title: item?.type?.title,
-      code: item?.type?.code,
-      statusTypes: item.statusTypes,
-      attributes: (item as any).attributes
-    }))
-  });
+    return inspectionData.reduce(
+      (acc, item) => {
+        const title = (item?.type?.title || "").toString().toLowerCase();
+        const codes = Array.isArray(item?.statusTypes)
+          ? item.statusTypes.map((s) => (s?.code || "").toUpperCase())
+          : [];
+        const attrs = Array.isArray((item as any)?.attributes)
+          ? ((item as any).attributes as string[])
+          : [];
+        const hasRank = attrs.some(
+          (attr) => typeof attr === "string" && attr.includes("RANK")
+        );
 
-  const preciseMarkerPositions: Record<string, { x: number; y: number }> = {
-    hood: { x: 320, y: 120 },
-    front_bumper: { x: 320, y: 45 },
-    windshield: { x: 320, y: 208 },
-    front_left_door: { x: 185, y: 262 },
-    front_right_door: { x: 455, y: 262 },
-    roof: { x: 320, y: 310 },
-    rear_left_door: { x: 185, y: 372 },
-    rear_right_door: { x: 455, y: 372 },
-    rear_glass: { x: 320, y: 405 },
-    trunk: { x: 320, y: 488 },
-    rear_bumper: { x: 320, y: 570 },
-    side_sill_left: { x: 188, y: 322 },
-    side_sill_right: { x: 452, y: 322 },
-    left_fender: { x: 160, y: 136 },
-    right_fender: { x: 480, y: 136 },
-    left_quarter: { x: 172, y: 498 },
-    right_quarter: { x: 468, y: 498 },
-    fl_wheel: { x: 70, y: 120 },
-    fr_wheel: { x: 570, y: 120 },
-    rl_wheel: { x: 70, y: 500 },
-    rr_wheel: { x: 570, y: 500 },
-  };
+        if (
+          codes.includes("X") ||
+          codes.includes("N") ||
+          title.includes("exchange") ||
+          title.includes("replacement") ||
+          title.includes("replaced") ||
+          title.includes("교환") ||
+          (hasRank && title.includes("exchange"))
+        ) {
+          acc.replacements += 1;
+        }
+
+        if (
+          codes.includes("W") ||
+          codes.includes("S") ||
+          title.includes("weld") ||
+          title.includes("sheet metal") ||
+          title.includes("용접")
+        ) {
+          acc.welds += 1;
+        }
+
+        if (
+          codes.includes("A") ||
+          codes.includes("R") ||
+          title.includes("repair") ||
+          title.includes("수리")
+        ) {
+          acc.repairs += 1;
+        }
+
+        if (
+          codes.includes("U") ||
+          codes.includes("K") ||
+          title.includes("corr") ||
+          title.includes("부식")
+        ) {
+          acc.corrosion += 1;
+        }
+
+        if (
+          codes.includes("S") ||
+          title.includes("scratch") ||
+          title.includes("흠집")
+        ) {
+          acc.scratches += 1;
+        }
+
+        return acc;
+      },
+      { replacements: 0, welds: 0, repairs: 0, corrosion: 0, scratches: 0 }
+    );
+  }, [inspectionData]);
 
   return (
     <div className={`w-full ${className}`}>
@@ -586,17 +605,17 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             codes.includes('S') ||
                             lowTitles.some((t) => t.includes('scratch') || t.includes('흠집'));
 
-                          // Collect all markers to display
-                          const markers: Array<{ char: string; color: string }> = [];
-                          
-                          if (hasExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
-                          if (hasWeld) markers.push({ char: 'S', color: 'hsl(217 91% 60%)' });
-                          if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
-                          if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
-                          if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
+                            // Collect all markers to display
+                            const markers: Array<{ char: string; color: string }> = [];
+                            
+                            if (hasExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
+                            if (hasWeld) markers.push({ char: 'S', color: 'hsl(217 91% 60%)' });
+                            if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
+                            if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
+                            if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
 
                             const n = markers.length;
-                            const base = preciseMarkerPositions[part.id] ?? part.markerPos ?? part.labelPos;
+                            const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
                             const spacing = MARKER_SPACING;
 
                             return markers.map((m, idx) => {

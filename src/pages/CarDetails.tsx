@@ -920,6 +920,52 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+  const accidentCount = useMemo(() => {
+    if (!car) {
+      return 0;
+    }
+
+    const insurance = car.insurance_v2 ?? {};
+
+    if (typeof insurance.accidentCnt === "number") {
+      return insurance.accidentCnt;
+    }
+
+    const myAccidents =
+      typeof insurance.myAccidentCnt === "number" ? insurance.myAccidentCnt : 0;
+    const otherAccidents =
+      typeof insurance.otherAccidentCnt === "number" ? insurance.otherAccidentCnt : 0;
+    if (myAccidents || otherAccidents) {
+      return myAccidents + otherAccidents;
+    }
+
+    if (Array.isArray(insurance.accidents) && insurance.accidents.length > 0) {
+      return insurance.accidents.length;
+    }
+
+    const accidentSummary =
+      car.inspect?.accident_summary || car.details?.inspect?.accident_summary;
+    if (accidentSummary && typeof accidentSummary === "object") {
+      const totalFromSummary = Object.values(accidentSummary).reduce((sum, value) => {
+        if (typeof value === "number") {
+          return sum + value;
+        }
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? sum + parsed : sum;
+      }, 0);
+
+      if (totalFromSummary) {
+        return totalFromSummary;
+      }
+    }
+
+    const legacyAccidentHistory = car.details?.insurance?.accident_history;
+    if (typeof legacyAccidentHistory === "number") {
+      return legacyAccidentHistory;
+    }
+
+    return 0;
+  }, [car]);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -944,19 +990,6 @@ const CarDetails = memo(() => {
     if (!carData || !lotData) {
       return null;
     }
-
-    console.log('🏗️ Building car details from API data:', {
-      carData: carData,
-      lotData: lotData,
-      year_sources: {
-        'carData.year': carData?.year,
-        'lotData.year': lotData?.year,
-        'carData.model_year': carData?.model_year,
-        'lotData.model_year': lotData?.model_year,
-        'carData.production_year': carData?.production_year,
-        'lotData.production_year': lotData?.production_year
-      }
-    });
 
     const buyNow = Number(lotData?.buy_now || carData?.buy_now || carData?.price);
     if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
@@ -984,8 +1017,6 @@ const CarDetails = memo(() => {
 
     if (!year) {
       console.warn('⚠️ No year found in car data, using fallback');
-    } else {
-      console.log('✅ Found year:', year);
     }
 
     const odometer = lotData?.odometer 
@@ -1073,7 +1104,6 @@ const CarDetails = memo(() => {
   
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
-    console.log("🔧 Converting options:", options);
     if (!options) return {
       standard: [],
       choice: [],
@@ -1091,13 +1121,10 @@ const CarDetails = memo(() => {
         const optionStr = option.toString().trim();
         const mapped = FEATURE_MAPPING[optionStr];
         if (mapped) {
-          console.log(`📝 Mapping: ${optionStr} → ${mapped}`);
           return mapped;
-        } else {
-          // If no mapping found, show the raw option as-is (it might be a real name)
-          console.log(`⚠️ No mapping found for: ${optionStr}, showing raw value`);
-          return optionStr;
         }
+        // If no mapping found, show the raw option as-is (it might be a real name)
+        return optionStr;
       });
     }
 
@@ -1129,7 +1156,6 @@ const CarDetails = memo(() => {
       });
     }
     
-    console.log("✅ Converted options:", result);
     return result;
   };
 
@@ -1139,7 +1165,6 @@ const CarDetails = memo(() => {
     }
 
     try {
-      console.log('🔍 Attempting to load from cache for lot:', lot);
       const { data, error } = await supabase
         .from('cars_cache')
         .select('*')
@@ -1152,12 +1177,10 @@ const CarDetails = memo(() => {
       }
 
       if (data) {
-        console.log('✅ Found cached car data:', data);
         const cachedCar = transformCachedCarRecord(data);
         const lotData = cachedCar?.lots?.[0];
         const details = buildCarDetails(cachedCar, lotData);
         if (details) {
-          console.log('✅ Successfully built car details from cache');
           setCar(details);
           setLoading(false);
           // Store in sessionStorage for page visibility restoration
@@ -1177,7 +1200,6 @@ const CarDetails = memo(() => {
     try {
       const sessionData = sessionStorage.getItem(`car_${lot}`);
       if (sessionData) {
-        console.log('✅ Restored car from sessionStorage');
         const restoredCar = JSON.parse(sessionData);
         setCar(restoredCar);
         setLoading(false);
@@ -1255,87 +1277,83 @@ const CarDetails = memo(() => {
       
       // Check if car is already loaded (from cache restoration)
       if (car) {
-        console.log('✅ Car already loaded from cache, skipping API fetch');
         return;
       }
-      
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        let response: Response;
         try {
-          response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
-            signal: controller.signal
-          });
-        } catch (firstAttemptError) {
-          console.log("First API attempt failed, trying as lot number...");
-          response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
-            headers: {
-              accept: "*/*",
-              "x-api-key": API_KEY
-            },
-            signal: controller.signal
-          });
-        }
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        clearTimeout(timeoutId);
+          let response: Response;
+          try {
+            response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+              headers: {
+                accept: "*/*",
+                "x-api-key": API_KEY
+              },
+              signal: controller.signal
+            });
+          } catch (firstAttemptError) {
+            response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
+              headers: {
+                accept: "*/*",
+                "x-api-key": API_KEY
+              },
+              signal: controller.signal
+            });
+          }
 
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}: ${response.statusText}`);
-        }
+          clearTimeout(timeoutId);
 
-        const data = await response.json();
-        if (!isMounted) return;
+          if (!response.ok) {
+            throw new Error(`API returned ${response.status}: ${response.statusText}`);
+          }
 
-        const carData = data.data;
-        const lotData = carData?.lots?.[0];
-        const details = buildCarDetails(carData, lotData);
+          const data = await response.json();
+          if (!isMounted) return;
 
-        if (!details) {
-          console.log("Car doesn't have buy_now pricing, redirecting to catalog");
-          navigate('/catalog');
-          return;
-        }
+          const carData = data.data;
+          const lotData = carData?.lots?.[0];
+          const details = buildCarDetails(carData, lotData);
 
-        setCar(details);
-        setLoading(false);
-        // Store in sessionStorage
-        try {
-          sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
-        } catch (storageError) {
-          console.warn('Failed to store in sessionStorage:', storageError);
-        }
-        trackCarView(lot, details);
-      } catch (apiError) {
-        console.error("Failed to fetch car data:", apiError);
-        if (!isMounted) return;
-
-        const fallbackCar = fallbackCars.find(car => car.id === lot || car.lot_number === lot);
-        if (fallbackCar && fallbackCar.lots?.[0]) {
-          const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
-          if (details) {
-            console.log("Using fallback car data for:", lot);
-            setCar(details);
-            setLoading(false);
+          if (!details) {
+            navigate('/catalog');
             return;
           }
-        }
 
-        const errorMessage = apiError instanceof Error
-          ? apiError.message.includes("Failed to fetch")
-            ? "Unable to connect to the server. Please check your internet connection and try again."
-            : apiError.message.includes("404")
-              ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
-              : "Car not found"
-          : "Car not found";
-        setError(errorMessage);
-        setLoading(false);
-      }
+          setCar(details);
+          setLoading(false);
+
+          try {
+            sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
+          } catch (storageError) {
+            console.warn('Failed to store in sessionStorage:', storageError);
+          }
+
+          trackCarView(lot, details);
+        } catch (apiError) {
+          console.error("Failed to fetch car data:", apiError);
+          if (!isMounted) return;
+
+          const fallbackCar = fallbackCars.find((fallback) => fallback.id === lot || fallback.lot_number === lot);
+          if (fallbackCar && fallbackCar.lots?.[0]) {
+            const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
+            if (details) {
+              setCar(details);
+              setLoading(false);
+              return;
+            }
+          }
+
+          const errorMessage = apiError instanceof Error
+            ? apiError.message.includes("Failed to fetch")
+              ? "Unable to connect to the server. Please check your internet connection and try again."
+              : apiError.message.includes("404")
+                ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
+                : "Car not found"
+            : "Car not found";
+          setError(errorMessage);
+          setLoading(false);
+        }
     };
 
     const loadCar = async () => {
@@ -1510,23 +1528,18 @@ const CarDetails = memo(() => {
               animationDelay: '0.1s',
               opacity: 0
             }}
-          >
-            <Button variant="outline" onClick={() => {
-            console.log("🔙 Attempting to go back...");
-            console.log("Page state from context:", pageState);
-
-            // Use the enhanced navigation context which handles state restoration
-            if (pageState && pageState.url) {
-              console.log("🔙 Using saved page state:", pageState.url);
-              // Navigate to the saved URL and restore state
-              navigate(pageState.url);
-              // Let the target page handle state restoration through restorePageState
-            } else {
-              // Fallback to the original goBack logic
-              console.log("🔙 Using goBack fallback");
-              goBack();
-            }
-          }} className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+            >
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (pageState && pageState.url) {
+                    navigate(pageState.url);
+                  } else {
+                    goBack();
+                  }
+                }}
+                className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+              >
               <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
               <span className="hidden sm:inline font-medium">Kthehu te Makinat</span>
               <span className="sm:hidden font-medium">Kthehu</span>
@@ -1879,8 +1892,8 @@ const CarDetails = memo(() => {
                 {car.details && (
                   <Button onClick={handleOpenInspectionReport} size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 h-9 text-xs hover-scale shadow-md">
                     <FileText className="h-3 w-3 mr-1.5" />
-                    <span className="hidden sm:inline">Raporti</span>
-                    <span className="sm:hidden">Raporti</span>
+                    <span className="hidden sm:inline">Historia ({accidentCount})</span>
+                    <span className="sm:hidden">Historia ({accidentCount})</span>
                   </Button>
                 )}
                 <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white flex-1 h-9 text-xs hover-scale shadow-md">
@@ -1929,15 +1942,6 @@ const CarDetails = memo(() => {
                         // Build full model specification with all available variant/trim info from API
                         let fullModel = car.model || '';
                         const parts: string[] = [];
-                        
-                        console.log('🔍 Building full model from car data:', {
-                          model: car.model,
-                          details: car.details,
-                          grade_iaai: car.grade_iaai,
-                          engine: car.engine,
-                          drive_wheel: car.drive_wheel
-                        });
-                        
                         // Try to get grade from various sources
                         const grade = car.grade_iaai || car.details?.grade?.name || car.details?.grade;
                         if (grade && typeof grade === 'string' && !fullModel.toLowerCase().includes(grade.toLowerCase())) {
@@ -1965,21 +1969,24 @@ const CarDetails = memo(() => {
                           }
                         }
                         
-                        // Add drive type (Quattro, xDrive, 4WD, etc.)
-                        const driveType = car.drive_wheel?.name || car.drive_wheel;
-                        const driveStr = typeof driveType === 'string' ? driveType : '';
-                        if (driveStr && !fullModel.toLowerCase().includes(driveStr.toLowerCase()) && !parts.join(' ').toLowerCase().includes(driveStr.toLowerCase())) {
-                          const driveInfo = driveStr.trim();
-                          if (driveInfo && driveInfo.length > 0) {
-                            parts.push(driveInfo);
+                          // Add drive type (Quattro, xDrive, 4WD, etc.)
+                          const driveType = car.drive_wheel?.name || car.drive_wheel;
+                          const driveStr = typeof driveType === 'string' ? driveType : '';
+                          if (
+                            driveStr &&
+                            !fullModel.toLowerCase().includes(driveStr.toLowerCase()) &&
+                            !parts.join(' ').toLowerCase().includes(driveStr.toLowerCase())
+                          ) {
+                            const driveInfo = driveStr.trim();
+                            if (driveInfo && driveInfo.length > 0) {
+                              parts.push(driveInfo);
+                            }
                           }
-                        }
-                        
-                        // Combine model with all parts
-                        const result = parts.length > 0 ? `${fullModel} ${parts.join(' ')}` : fullModel;
-                        console.log('✅ Full model result:', result);
-                        return result;
-                      })()}
+
+                          // Combine model with all parts
+                          const result = parts.length > 0 ? `${fullModel} ${parts.join(' ')}` : fullModel;
+                          return result;
+                        })()}
                     </span>
                   </div>
 
