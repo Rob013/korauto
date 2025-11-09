@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Car, ExternalLink, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { openCarDetailsInNewTab } from '@/utils/navigation';
 
 interface CarSearchResult {
   id: string;
@@ -364,7 +365,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
 
   // Open car details
   const openCarDetails = useCallback((carId: string) => {
-    window.location.href = `/car/${carId}`;
+    openCarDetailsInNewTab(carId);
   }, []);
 
   // Cleanup timeout on unmount

@@ -469,18 +469,17 @@ const InspectionRequestForm = ({
     return (
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerTrigger asChild>{enhancedTrigger}</DrawerTrigger>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="text-left pb-4">
+        <DrawerContent className="max-h-[90vh] overflow-hidden rounded-t-2xl border-t border-border bg-background pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+          <DrawerHeader className="text-left pb-3 pt-3 px-4">
             <DrawerTitle className="flex items-center gap-2 text-lg">
               <MessageCircle className="h-5 w-5 text-primary" />
               Kërkesë për Inspektim
             </DrawerTitle>
             <p className="text-sm text-muted-foreground">
-              Plotësoni formularin për të kërkuar shërbimin e inspektimit të
-              makinës.
+              Plotësoni formularin për të kërkuar shërbimin e inspektimit të makinës.
             </p>
           </DrawerHeader>
-          <div className="px-4 pb-4 overflow-y-auto">
+          <div className="px-4 pb-2 overflow-y-auto max-h-[calc(90vh-120px)]">
             {formContent}
           </div>
         </DrawerContent>

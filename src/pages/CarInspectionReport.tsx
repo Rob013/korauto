@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { openCarDetailsInNewTab } from "@/utils/navigation";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -973,7 +974,7 @@ const CarInspectionReport = () => {
             <Button
               variant="outline"
               className="flex items-center gap-2"
-              onClick={() => navigate(`/car/${car.lot || lot}`)}
+              onClick={() => openCarDetailsInNewTab(car.lot || lot)}
             >
               <ArrowLeft className="h-4 w-4" />
               Kthehu te makina
@@ -1791,7 +1792,7 @@ const CarInspectionReport = () => {
             <Button
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => navigate(`/car/${car.lot || lot}`)}
+              onClick={() => openCarDetailsInNewTab(car.lot || lot)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kthehu te faqja e makinës

@@ -39,6 +39,7 @@ import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import ApiInfoDashboard from "@/components/ApiInfoDashboard";
+import { openCarDetailsInNewTab } from "@/utils/navigation";
 
 // Lazy load heavy admin components
 const AdminSyncDashboard = lazy(() => 
@@ -635,7 +636,7 @@ const AdminDashboard = () => {
             setTimeout(() => {
               const foundCarId = carData.id || lot?.lot || searchTerm;
               console.log("🚗 Opening car page with ID:", foundCarId);
-              navigate(`/car/${foundCarId}`);
+              openCarDetailsInNewTab(foundCarId);
             }, 1000); // Small delay to show the toast
 
             return; // Exit the function if we found the car
@@ -1271,7 +1272,7 @@ const AdminDashboard = () => {
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => navigate(`/car/${carDetails[request.car_id]?.lot_number || request.car_id}`)}
+                                    onClick={() => openCarDetailsInNewTab(carDetails[request.car_id]?.lot_number || request.car_id)}
                                     className="h-7 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />
@@ -1410,7 +1411,7 @@ const AdminDashboard = () => {
                                   <Button
                                     size="sm"
                                     variant="default"
-                                    onClick={() => navigate(`/car/${car.lot_number || request.car_id}`)}
+                                    onClick={() => openCarDetailsInNewTab(car.lot_number || request.car_id)}
                                     className="h-6 px-2 text-xs"
                                   >
                                     <Car className="h-3 w-3 mr-1" />
