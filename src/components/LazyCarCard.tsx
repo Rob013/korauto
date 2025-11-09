@@ -253,41 +253,17 @@ const LazyCarCard = memo(({
     e.preventDefault();
     e.stopPropagation();
     
-    // Save complete page state including scroll position and filter panel state
-    const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
-    setCompletePageState({
-      url: window.location.pathname + window.location.search,
-      scrollPosition: window.scrollY,
-      filterPanelState: currentFilterPanelState ? JSON.parse(currentFilterPanelState) : false,
-      timestamp: Date.now()
-    });
-    
-    // Close filter panel when navigating to car details (if it's open)
-    sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
-    // Navigate to car details in same tab
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    // Open car details in new tab
+    window.open(`/car/${lot}`, '_blank');
+  }, [lot]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Save complete page state including scroll position and filter panel state
-    const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
-    setCompletePageState({
-      url: window.location.pathname + window.location.search,
-      scrollPosition: window.scrollY,
-      filterPanelState: currentFilterPanelState ? JSON.parse(currentFilterPanelState) : false,
-      timestamp: Date.now()
-    });
-    
-    // Close filter panel when navigating to car details (if it's open)
-    sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
-    // Navigate to car details in same tab
-    navigate(`/car/${lot}`);
-  }, [setCompletePageState, lot, navigate]);
+    // Open car details in new tab
+    window.open(`/car/${lot}`, '_blank');
+  }, [lot]);
 
   // Don't render content until intersection
   if (!isIntersecting) {

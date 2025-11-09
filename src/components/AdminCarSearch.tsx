@@ -362,9 +362,9 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
     inputRef.current?.focus();
   }, []);
 
-  // Open car details
+  // Open car details in new tab
   const openCarDetails = useCallback((carId: string) => {
-    window.location.href = `/car/${carId}`;
+    window.open(`/car/${carId}`, '_blank');
   }, []);
 
   // Cleanup timeout on unmount

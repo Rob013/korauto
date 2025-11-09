@@ -386,24 +386,12 @@ const CarCard = ({
     }
   }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
-  const handleCardClick = useCallback(() => {
-    // Save current page and scroll position before navigating
-    const scrollData = {
-      scrollTop: window.scrollY,
-      timestamp: Date.now(),
-      url: window.location.pathname + window.location.search,
-    };
-    sessionStorage.setItem("encar-catalog-scroll", JSON.stringify(scrollData));
-
-    console.log(
-      `🚗 Clicked car with ID: ${id}, lot: ${lot}, saved scroll: ${window.scrollY}px`
-    );
-
-    // Save current page for back navigation
-    setPreviousPage(window.location.pathname + window.location.search);
-    // Navigate to car details in same tab
-    navigate(`/car/${lot ?? id}`);
-  }, [id, lot, setPreviousPage, navigate]);
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Open car details in new tab
+    window.open(`/car/${lot ?? id}`, '_blank');
+  }, [id, lot]);
 
   const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
 

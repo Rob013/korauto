@@ -1374,8 +1374,8 @@ const CarDetails = memo(() => {
     if (!reportLot) return;
 
     const reportUrl = `/car/${encodeURIComponent(reportLot)}/report`;
-    navigate(reportUrl);
-  }, [car?.lot, lot, impact, navigate]);
+    window.open(reportUrl, '_blank');
+  }, [car?.lot, lot, impact]);
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
@@ -1839,8 +1839,12 @@ const CarDetails = memo(() => {
                 {car.details && (
                   <Button onClick={handleOpenInspectionReport} size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 h-9 text-xs hover-scale shadow-md">
                     <FileText className="h-3 w-3 mr-1.5" />
-                    <span className="hidden sm:inline">Raporti</span>
-                    <span className="sm:hidden">Raporti</span>
+                    <span className="hidden sm:inline">
+                      Shiko aksidentet {typeof car.insurance_v2?.accidentCnt === 'number' ? `(${car.insurance_v2.accidentCnt})` : ''}
+                    </span>
+                    <span className="sm:hidden">
+                      Aksidentet {typeof car.insurance_v2?.accidentCnt === 'number' ? `(${car.insurance_v2.accidentCnt})` : ''}
+                    </span>
                   </Button>
                 )}
                 <Button onClick={handleContactWhatsApp} size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white flex-1 h-9 text-xs hover-scale shadow-md">
