@@ -22,10 +22,13 @@ import {
   Clock,
   Cog,
   FileText,
+  Gauge,
   Loader2,
   MapPin,
   Shield,
+  Users,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 
 interface InspectionReportCar {
@@ -966,6 +969,47 @@ const CarInspectionReport = () => {
       { label: "Pronaret e ndërruar", value: ownerChangesDisplay },
     ];
 
+    const accidentBadgeCount =
+      typeof car.insurance_v2?.accidentCnt === "number"
+        ? car.insurance_v2.accidentCnt
+        : accidentEntries.length;
+
+    const heroImageSrc = car.image || "/placeholder.svg";
+
+    const quickStats: Array<{
+      label: string;
+      value: string;
+      icon: LucideIcon;
+      highlight?: boolean;
+    }> = [
+      {
+        label: "Kilometrazhi",
+        value: mileageDisplay,
+        icon: Gauge,
+      },
+      {
+        label: "Aksidente",
+        value: `${accidentBadgeCount}`,
+        icon: AlertTriangle,
+        highlight: accidentBadgeCount > 0,
+      },
+      {
+        label: "Ndërrime pronari",
+        value: ownerChangesDisplay,
+        icon: Users,
+      },
+      {
+        label: "Regjistrimi i parë",
+        value: firstRegistrationDisplay ?? "-",
+        icon: Clock,
+      },
+    ];
+
+    const vehicleSubtitle =
+      car.title && carName && car.title.trim().toLowerCase() !== carName.toLowerCase()
+        ? car.title
+        : undefined;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="bg-muted/30 border-b border-border">
@@ -985,76 +1029,157 @@ const CarInspectionReport = () => {
             </Badge>
           </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
                 {carName || car.title || "Raporti i Automjetit"}
               </h1>
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              {car.lot && (
-                <span className="font-medium text-foreground">
-                  Kodi: <span className="font-semibold">{car.lot}</span>
-                </span>
-              )}
-              {formattedPrice && (
-                <Badge variant="outline" className="text-sm">
-                  {formattedPrice}
-                </Badge>
-              )}
-              {formattedMileage && (
-                <span>
-                  Kilometrazhi: <span className="font-semibold">{formattedMileage}</span>
-                </span>
-              )}
-              {car.grade && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  Grade IAAI: {car.grade}
-                </Badge>
-              )}
-            </div>
-            {car.location?.name && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                {car.location.name}
+                <span>Raport i detajuar i inspektimit dhe historisë së automjetit</span>
+                {car.location?.name && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {car.location.name}
+                    </span>
+                  </>
+                )}
               </div>
-            )}
-          </div>
+            </div>
         </div>
-      </div>
 
-        <div className="container-responsive py-2 md:py-4 space-y-3 md:space-y-4">
-          <Tabs defaultValue="diagram" className="space-y-2 md:space-y-3">
-            <TabsList className="w-full flex flex-wrap items-stretch gap-1.5 md:gap-2 bg-muted/60 p-0.5 md:p-1 rounded-lg h-auto">
-              <TabsTrigger
-                value="diagram"
-                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
-              >
-                Diagrami i Inspektimit të Automjetit
-              </TabsTrigger>
-              <TabsTrigger
-                value="exterior"
-                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
-              >
-                Gjendja e Jashtme
-              </TabsTrigger>
-              <TabsTrigger
-                value="insurance"
-                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
-              >
-                Historia e Sigurimit & Mekanika
-              </TabsTrigger>
-              <TabsTrigger
-                value="options"
-                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
-              >
-                Pajisjet & Opsionet
-              </TabsTrigger>
-              <TabsTrigger
-                value="warranty"
-                className="flex-1 min-w-[7rem] md:min-w-[10rem] text-xs md:text-base whitespace-normal leading-tight text-center px-2 py-1.5 md:px-3 md:py-2"
-              >
-                Garancioni
-              </TabsTrigger>
-            </TabsList>
+        <div className="container-responsive py-3 md:py-5">
+          <Card className="overflow-hidden border border-border/70 bg-background/95 shadow-lg">
+            <div className="grid gap-0 md:grid-cols-[minmax(0,320px),1fr]">
+              <div className="relative h-full bg-muted">
+                <img
+                  src={heroImageSrc}
+                  alt={`Foto e ${carName || car.title || "automjetit"}`}
+                  className="h-full w-full object-cover max-h-[260px] md:max-h-none"
+                  onError={(event) => {
+                    event.currentTarget.src = "/placeholder.svg";
+                  }}
+                />
+                {car.sourceLabel && (
+                  <Badge variant="secondary" className="absolute top-3 left-3 bg-background/80 text-foreground shadow">
+                    {car.sourceLabel}
+                  </Badge>
+                )}
+                {accidentBadgeCount > 0 && (
+                  <Badge variant="destructive" className="absolute bottom-3 left-3 shadow">
+                    {accidentBadgeCount} aksidente
+                  </Badge>
+                )}
+              </div>
+              <div className="flex flex-col gap-4 p-4 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                      {carName || car.title || "Raporti i Automjetit"}
+                    </h2>
+                    {vehicleSubtitle && (
+                      <p className="text-sm text-muted-foreground">{vehicleSubtitle}</p>
+                    )}
+                    {car.grade && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                        <Shield className="h-3.5 w-3.5" />
+                        Grade IAAI: {car.grade}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    {formattedPrice && (
+                      <Badge variant="outline" className="text-base font-semibold px-3 py-1">
+                        {formattedPrice}
+                      </Badge>
+                    )}
+                    {car.lot && (
+                      <Badge variant="secondary" className="text-xs uppercase tracking-wide">
+                        Kodi: {car.lot}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+                  {quickStats.map(({ label, value, icon: Icon, highlight }) => (
+                    <div
+                      key={label}
+                      className={`flex items-center gap-3 rounded-lg border p-3 ${
+                        highlight ? "border-destructive/40 bg-destructive/5" : "border-border/60 bg-muted/40"
+                      }`}
+                    >
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                          highlight ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
+                        <span
+                          className={`text-sm font-semibold ${
+                            highlight ? "text-destructive" : "text-foreground"
+                          }`}
+                        >
+                          {value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                  {car.vin && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1 font-mono text-xs">
+                      <FileText className="h-3.5 w-3.5 opacity-70" />
+                      {car.vin}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+          <div className="container-responsive py-2 md:py-4 space-y-3 md:space-y-4">
+            <Tabs defaultValue="diagram" className="space-y-2 md:space-y-3">
+              <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1.5 md:gap-2 bg-muted/60 p-0.5 md:p-1 rounded-xl h-auto">
+                <TabsTrigger
+                  value="diagram"
+                  className="flex w-full items-center justify-center sm:justify-start gap-2 rounded-lg text-xs md:text-sm font-medium px-3 py-2 md:px-4 md:py-3 whitespace-normal leading-tight transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span>Diagrami i Inspektimit</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="exterior"
+                  className="flex w-full items-center justify-center sm:justify-start gap-2 rounded-lg text-xs md:text-sm font-medium px-3 py-2 md:px-4 md:py-3 whitespace-normal leading-tight transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span>Gjendja e Jashtme</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="insurance"
+                  className="flex w-full items-center justify-center sm:justify-start gap-2 rounded-lg text-xs md:text-sm font-medium px-3 py-2 md:px-4 md:py-3 whitespace-normal leading-tight transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <AlertTriangle className="h-4 w-4 text-primary" />
+                  <span>Historia e Sigurimit</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="options"
+                  className="flex w-full items-center justify-center sm:justify-start gap-2 rounded-lg text-xs md:text-sm font-medium px-3 py-2 md:px-4 md:py-3 whitespace-normal leading-tight transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <Cog className="h-4 w-4 text-primary" />
+                  <span>Pajisjet & Opsionet</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="warranty"
+                  className="flex w-full items-center justify-center sm:justify-start gap-2 rounded-lg text-xs md:text-sm font-medium px-3 py-2 md:px-4 md:py-3 whitespace-normal leading-tight transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span>Garancioni</span>
+                </TabsTrigger>
+              </TabsList>
 
             <TabsContent value="diagram" className="space-y-3 md:space-y-4">
               {/* Redesigned Inspection Diagram matching Korean format */}
