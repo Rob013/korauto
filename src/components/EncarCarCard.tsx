@@ -133,8 +133,11 @@ const EncarCarCard = ({
   }, []);
 
   const handleCardClick = () => {
-    // Open car details in new tab
-    window.open(`/car/${id}`, '_blank');
+    // Save current page and any filter state before navigating
+    setPreviousPage(window.location.pathname + window.location.search);
+    
+    // Navigate to car details in same tab
+    navigate(`/car/${id}`);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
