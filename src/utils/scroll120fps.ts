@@ -3,94 +3,63 @@
  * Optimized for high refresh rate displays and mobile devices
  */
 
-let rafId: number | null = null;
-let ticking = false;
+let ultraSmoothCleanup: (() => void) | null = null;
+let touchScrollCleanup: (() => void) | null = null;
+let scrollingInitialized = false;
+let pageHideCleanupRegistered = false;
+const activeCleanups: Array<() => void> = [];
 
 /**
  * Passive scroll listener for 120fps performance
  */
 export const initializeUltraSmoothScroll = () => {
-  // Detect if high refresh rate is available
-  const isHighRefreshRate = window.screen && (window.screen as any).availRefreshRate >= 120;
-  
-  // Apply GPU acceleration to main scroll container
-  const applyScrollOptimizations = () => {
-    document.body.style.transform = 'translate3d(0, 0, 0)';
-    document.body.style.backfaceVisibility = 'hidden';
-    document.body.style.perspective = '1000px';
-    
-    // Optimize all scroll containers
-    const scrollContainers = document.querySelectorAll(
-      '[class*="overflow"], [class*="scroll"], main, [role="main"]'
-    );
-    
-    scrollContainers.forEach((container) => {
-      const el = container as HTMLElement;
-      el.style.transform = 'translate3d(0, 0, 0)';
-      el.style.backfaceVisibility = 'hidden';
-      (el.style as any).webkitOverflowScrolling = 'touch';
-      el.style.overscrollBehavior = 'contain';
-      el.style.willChange = 'scroll-position';
-    });
-  };
-  
-  // Apply optimizations
-  applyScrollOptimizations();
-  
-  // Passive scroll event for maximum performance
-  let lastScrollY = window.scrollY;
-  let scrollDirection: 'up' | 'down' | null = null;
-  
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  if (ultraSmoothCleanup) {
+    return ultraSmoothCleanup;
+  }
+
+  let rafId: number | null = null;
+  let ticking = false;
+
   const handleScroll = () => {
-    const currentScrollY = window.scrollY;
-    
     if (!ticking) {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-      }
-      
-      rafId = requestAnimationFrame(() => {
-        // Determine scroll direction
-        if (currentScrollY > lastScrollY) {
-          scrollDirection = 'down';
-        } else if (currentScrollY < lastScrollY) {
-          scrollDirection = 'up';
-        }
-        
-        lastScrollY = currentScrollY;
+      ticking = true;
+      rafId = window.requestAnimationFrame(() => {
         ticking = false;
       });
-      
-      ticking = true;
     }
   };
-  
-  // Add passive scroll listener for best performance
+
   window.addEventListener('scroll', handleScroll, { passive: true });
-  
-  // Optimize on route changes
-  const observer = new MutationObserver(() => {
-    requestAnimationFrame(applyScrollOptimizations);
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  
-  return () => {
+
+  ultraSmoothCleanup = () => {
     window.removeEventListener('scroll', handleScroll);
-    observer.disconnect();
-    if (rafId) {
+    if (rafId !== null) {
       cancelAnimationFrame(rafId);
+      rafId = null;
     }
+    ticking = false;
+    ultraSmoothCleanup = null;
   };
+
+  return ultraSmoothCleanup;
 };
 
 /**
  * Optimize touch scrolling for mobile devices
  */
 export const optimizeTouchScroll = () => {
+  if (typeof document === 'undefined') {
+    return () => {};
+  }
+
+  if (touchScrollCleanup) {
+    return touchScrollCleanup;
+  }
+
   let touchStartY = 0;
   let touchStartX = 0;
   
@@ -114,28 +83,31 @@ export const optimizeTouchScroll = () => {
   
   document.addEventListener('touchstart', handleTouchStart, { passive: true });
   document.addEventListener('touchmove', handleTouchMove, { passive: true });
-  
-  return () => {
+
+  touchScrollCleanup = () => {
     document.removeEventListener('touchstart', handleTouchStart);
     document.removeEventListener('touchmove', handleTouchMove);
+    touchScrollCleanup = null;
   };
+
+  return touchScrollCleanup;
 };
 
 /**
  * Apply momentum-based scroll physics
  */
 export const applyMomentumScroll = (element: HTMLElement) => {
-  element.style.transform = 'translate3d(0, 0, 0)';
-  element.style.backfaceVisibility = 'hidden';
-  (element.style as any).webkitOverflowScrolling = 'touch';
-  element.style.overscrollBehavior = 'contain';
-  element.style.scrollBehavior = 'smooth';
+  element.dataset.momentumScroll = 'true';
 };
 
 /**
  * Optimize scroll containers for 120fps
  */
 export const optimize120fpsScroll = () => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
   // Get all scrollable elements
   const scrollables = document.querySelectorAll(
     '[class*="overflow"], [class*="scroll"], .scroll-area'
@@ -143,7 +115,9 @@ export const optimize120fpsScroll = () => {
   
   scrollables.forEach((element) => {
     const el = element as HTMLElement;
-    applyMomentumScroll(el);
+    if (el.dataset.momentumScroll !== 'true') {
+      applyMomentumScroll(el);
+    }
   });
 };
 
@@ -151,23 +125,75 @@ export const optimize120fpsScroll = () => {
  * Initialize all 120fps scroll optimizations
  */
 export const initialize120fpsScrolling = () => {
-  // Wait for DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initializeUltraSmoothScroll();
-      optimizeTouchScroll();
-      optimize120fpsScroll();
-    });
-  } else {
-    initializeUltraSmoothScroll();
-    optimizeTouchScroll();
-    optimize120fpsScroll();
+  if (typeof document === 'undefined') {
+    return;
   }
-  
-  // Re-optimize after images load
-  window.addEventListener('load', () => {
-    requestAnimationFrame(() => {
-      optimize120fpsScroll();
-    });
-  });
+
+  const run = () => {
+    if (!scrollingInitialized) {
+      const cleanupFns: Array<() => void> = [];
+
+      const smoothCleanup = initializeUltraSmoothScroll();
+      if (typeof smoothCleanup === 'function') {
+        cleanupFns.push(smoothCleanup);
+      }
+
+      const touchCleanup = optimizeTouchScroll();
+      if (typeof touchCleanup === 'function') {
+        cleanupFns.push(touchCleanup);
+      }
+
+      activeCleanups.splice(0, activeCleanups.length, ...cleanupFns);
+      scrollingInitialized = true;
+      registerPageHideCleanup();
+    }
+
+    optimize120fpsScroll();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+
+  if (typeof window !== 'undefined' && !loadHandlerRegistered) {
+    window.addEventListener(
+      'load',
+      () => {
+        requestAnimationFrame(() => {
+          optimize120fpsScroll();
+        });
+      },
+      { once: true }
+    );
+    loadHandlerRegistered = true;
+  }
+};
+
+let loadHandlerRegistered = false;
+
+const registerPageHideCleanup = () => {
+  if (typeof window === 'undefined' || pageHideCleanupRegistered) {
+    return;
+  }
+
+  window.addEventListener(
+    'pagehide',
+    () => {
+      activeCleanups.forEach((cleanup) => {
+        try {
+          cleanup();
+        } catch {
+          // no-op
+        }
+      });
+      activeCleanups.length = 0;
+      scrollingInitialized = false;
+      pageHideCleanupRegistered = false;
+    },
+    { once: true }
+  );
+
+  pageHideCleanupRegistered = true;
 };

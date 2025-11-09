@@ -4,6 +4,8 @@
  */
 
 let initialized = false;
+let imageObserver: MutationObserver | null = null;
+let pageHideCleanupRegistered = false;
 
 /**
  * Initialize anti-flicker optimizations
@@ -38,28 +40,54 @@ export function initAntiFlicker() {
 
   // Add smooth transitions after content is stable
   stabilizeContent();
+
+  registerPageHideCleanup();
 }
 
 /**
  * Optimize image loading to prevent layout shifts
  */
 function optimizeImageLoading() {
-  // Add loading="lazy" and decoding="async" to images
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node instanceof HTMLImageElement) {
-          if (!node.loading) node.loading = 'lazy';
-          if (!node.decoding) node.decoding = 'async';
-        }
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const { body } = document;
+
+  if (!body) {
+    return;
+  }
+
+  if (!imageObserver) {
+    document.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
+      if (!img.loading) {
+        img.loading = 'lazy';
+      }
+      if (!img.decoding) {
+        img.decoding = 'async';
+      }
+    });
+
+    imageObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLImageElement) {
+            if (!node.loading) {
+              node.loading = 'lazy';
+            }
+            if (!node.decoding) {
+              node.decoding = 'async';
+            }
+          }
+        });
       });
     });
-  });
 
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+    imageObserver.observe(body, {
+      childList: true,
+      subtree: true
+    });
+  }
 }
 
 /**
@@ -88,6 +116,24 @@ function stabilizeContent() {
       revealObserver.observe(el);
     });
   }
+}
+
+function registerPageHideCleanup() {
+  if (typeof window === 'undefined' || pageHideCleanupRegistered) {
+    return;
+  }
+
+  window.addEventListener(
+    'pagehide',
+    () => {
+      imageObserver?.disconnect();
+      imageObserver = null;
+      pageHideCleanupRegistered = false;
+    },
+    { once: true }
+  );
+
+  pageHideCleanupRegistered = true;
 }
 
 /**
