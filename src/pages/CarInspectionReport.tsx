@@ -1157,111 +1157,132 @@ const CarInspectionReport = () => {
           ? "1 herë"
           : `${ownerChangeCount} herë`;
 
-  const usageHighlights = useMemo(() => {
-    const resolveUsageStatus = (
-      _keywords: string[],
-      sources: Array<
-        | string
-        | number
-        | boolean
-        | null
-        | undefined
-        | string[]
-      >,
-    ) => {
-      let hasPositive = false;
-      let hasNegative = false;
+    const usageHighlights = useMemo(() => {
+      const apiHighlights: { label: string; value: string }[] = [];
+      const seenLabels = new Set<string>();
 
-      const consider = (input: unknown) => {
-        const status = toYesNo(input as any);
-        if (status === "Po") {
-          hasPositive = true;
-        } else if (status === "Jo") {
-          hasNegative = true;
-        }
-      };
+      usageHistoryList.forEach((entry) => {
+        const label = entry.description?.trim();
+        if (!label) return;
 
-      for (const source of sources) {
-        if (!source) continue;
+        const normalizedValue = toYesNo(entry.value ?? null);
+        if (!normalizedValue) return;
 
-        if (Array.isArray(source)) {
-          source.forEach(consider);
-        } else {
-          consider(source);
-        }
+        const key = label.toLowerCase();
+        if (seenLabels.has(key)) return;
+        seenLabels.add(key);
+
+        apiHighlights.push({ label, value: normalizedValue });
+      });
+
+      if (apiHighlights.length > 0) {
+        return apiHighlights;
       }
 
-      if (hasPositive) return "Po";
-      if (hasNegative) return "Jo";
-      return "Jo";
-    };
+      const resolveUsageStatus = (
+        _keywords: string[],
+        sources: Array<
+          | string
+          | number
+          | boolean
+          | null
+          | undefined
+          | string[]
+        >,
+      ) => {
+        let hasPositive = false;
+        let hasNegative = false;
 
-    const rentalUsageValue = resolveUsageStatus(
-      [
-        "rent",
-        "rental",
-        "qira",
-        "lease",
-        "leasing",
-        "임대",
-        "렌트",
-        "렌터카",
-        "임차",
-        "대여",
-      ],
-      [
-        car?.details?.insurance?.general_info?.usage_type,
-        (car?.insurance_v2 as any)?.usageType,
-        (car?.insurance_v2 as any)?.useType,
-        (car?.insurance_v2 as any)?.rent,
-        (car?.insurance_v2 as any)?.rentCnt,
-        (car?.insurance_v2 as any)?.rentHistory,
-        (car?.insurance_v2 as any)?.rental,
-        car?.insurance_v2?.carInfoUse1s,
-        car?.insurance_v2?.carInfoUse2s,
-        (car?.details as any)?.usage_type,
-      ],
-    );
+        const consider = (input: unknown) => {
+          const status = toYesNo(input as any);
+          if (status === "Po") {
+            hasPositive = true;
+          } else if (status === "Jo") {
+            hasNegative = true;
+          }
+        };
 
-    const commercialUsageValue = resolveUsageStatus(
-      [
-        "komerc",
-        "komercial",
-        "commercial",
-        "biznes",
-        "business",
-        "fleet",
-        "taxi",
-        "영업",
-        "영업용",
-        "사업",
-        "사업용",
-        "업무",
-        "법인",
-      ],
-      [
-        car?.details?.insurance?.general_info?.usage_type,
-        (car?.insurance_v2 as any)?.business,
-        (car?.insurance_v2 as any)?.businessCnt,
-        (car?.insurance_v2 as any)?.companyUse,
-        (car?.insurance_v2 as any)?.government,
-        car?.insurance_v2?.carInfoUse1s,
-        car?.insurance_v2?.carInfoUse2s,
-        (car?.details as any)?.usage_type,
-      ],
-    );
+        for (const source of sources) {
+          if (!source) continue;
 
-    return [
-      {
-        label: "Përdorur si veturë me qira",
-        value: rentalUsageValue,
-      },
-      {
-        label: "Përdorur për qëllime komerciale",
-        value: commercialUsageValue,
-      },
-    ];
-  }, [car, toYesNo]);
+          if (Array.isArray(source)) {
+            source.forEach(consider);
+          } else {
+            consider(source);
+          }
+        }
+
+        if (hasPositive) return "Po";
+        if (hasNegative) return "Jo";
+        return "Jo";
+      };
+
+      const rentalUsageValue = resolveUsageStatus(
+        [
+          "rent",
+          "rental",
+          "qira",
+          "lease",
+          "leasing",
+          "임대",
+          "렌트",
+          "렌터카",
+          "임차",
+          "대여",
+        ],
+        [
+          car?.details?.insurance?.general_info?.usage_type,
+          (car?.insurance_v2 as any)?.usageType,
+          (car?.insurance_v2 as any)?.useType,
+          (car?.insurance_v2 as any)?.rent,
+          (car?.insurance_v2 as any)?.rentCnt,
+          (car?.insurance_v2 as any)?.rentHistory,
+          (car?.insurance_v2 as any)?.rental,
+          car?.insurance_v2?.carInfoUse1s,
+          car?.insurance_v2?.carInfoUse2s,
+          (car?.details as any)?.usage_type,
+        ],
+      );
+
+      const commercialUsageValue = resolveUsageStatus(
+        [
+          "komerc",
+          "komercial",
+          "commercial",
+          "biznes",
+          "business",
+          "fleet",
+          "taxi",
+          "영업",
+          "영업용",
+          "사업",
+          "사업용",
+          "업무",
+          "법인",
+        ],
+        [
+          car?.details?.insurance?.general_info?.usage_type,
+          (car?.insurance_v2 as any)?.business,
+          (car?.insurance_v2 as any)?.businessCnt,
+          (car?.insurance_v2 as any)?.companyUse,
+          (car?.insurance_v2 as any)?.government,
+          car?.insurance_v2?.carInfoUse1s,
+          car?.insurance_v2?.carInfoUse2s,
+          (car?.details as any)?.usage_type,
+        ],
+      );
+
+      return [
+        {
+          label: "Përdorur si veturë me qira",
+          value: rentalUsageValue,
+        },
+        {
+          label: "Përdorur për qëllime komerciale",
+          value: commercialUsageValue,
+        },
+      ];
+    }, [car, toYesNo, usageHistoryList]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
     const entries: SpecialAccidentEntry[] = [];
