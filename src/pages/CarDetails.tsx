@@ -1486,6 +1486,179 @@ const CarDetails = memo(() => {
     return Math.max(...candidateCounts);
   }, [car]);
 
+  const hasStructuralDamage = useMemo(() => {
+    if (!car) {
+      return false;
+    }
+
+    const structuralSummaryKeys = [
+      "main_framework",
+      "main frame",
+      "frame",
+      "chassis",
+      "pillar",
+      "side member",
+      "side_member",
+      "struct",
+      "structural",
+      "firewall",
+      "floor",
+      "cross",
+      "crossmember",
+      "cross_member",
+      "apron",
+      "rail",
+      "rocker",
+      "core_support",
+      "core support",
+    ];
+
+    const structuralKeywords = [
+      "frame",
+      "chassis",
+      "pillar",
+      "rail",
+      "rocker",
+      "side member",
+      "crossmember",
+      "cross member",
+      "floor",
+      "firewall",
+      "apron",
+      "core support",
+      "support",
+      "bulkhead",
+      "roof",
+      "trunk floor",
+      "main frame",
+      "front panel",
+      "rear panel",
+      "inner panel",
+    ];
+
+    const indicatesIssue = (value: unknown) => {
+      if (value === null || value === undefined) return false;
+      if (typeof value === "boolean") return value;
+      if (typeof value === "number") return value > 0;
+      const normalized = `${value}`.toLowerCase().trim();
+      if (!normalized) return false;
+      if (["no", "none", "n/a", "none detected", "없음", "0"].includes(normalized)) {
+        return false;
+      }
+      return (
+        normalized.includes("yes") ||
+        normalized.includes("exist") ||
+        normalized.includes("exists") ||
+        normalized.includes("damage") ||
+        normalized.includes("damaged") ||
+        normalized.includes("replace") ||
+        normalized.includes("replacement") ||
+        normalized.includes("exchange") ||
+        normalized.includes("weld") ||
+        normalized.includes("repair") ||
+        normalized.includes("struct") ||
+        normalized.includes("r") ||
+        normalized.includes("n") ||
+        normalized.includes("1") ||
+        normalized.includes("교환") ||
+        normalized.includes("용접")
+      );
+    };
+
+    const summarySources: Array<Record<string, unknown> | undefined> = [
+      car.inspect?.accident_summary as Record<string, unknown> | undefined,
+      car.details?.inspect?.accident_summary as Record<string, unknown> | undefined,
+      (car.details?.insurance as Record<string, unknown> | undefined)?.accident_summary as
+        | Record<string, unknown>
+        | undefined,
+      ((car.details?.insurance as Record<string, unknown> | undefined)?.car_info as
+        | Record<string, unknown>
+        | undefined)?.accident_summary as Record<string, unknown> | undefined,
+      (car.insurance_v2 as Record<string, unknown> | undefined)
+        ?.accidentSummary as Record<string, unknown> | undefined,
+    ];
+
+    for (const summary of summarySources) {
+      if (summary && typeof summary === "object" && !Array.isArray(summary)) {
+        for (const [key, value] of Object.entries(summary)) {
+          const normalizedKey = key.toLowerCase();
+          if (
+            structuralSummaryKeys.some((keyword) => normalizedKey.includes(keyword)) &&
+            indicatesIssue(value)
+          ) {
+            return true;
+          }
+        }
+      }
+    }
+
+    const accidents = Array.isArray(car.insurance_v2?.accidents)
+      ? (car.insurance_v2?.accidents as any[])
+      : [];
+
+    if (
+      accidents.some((accident) => {
+        const fields = [
+          accident?.part,
+          accident?.component,
+          accident?.position,
+          accident?.description,
+          accident?.note,
+          accident?.type,
+        ];
+        return fields.some((field) => {
+          if (!field) return false;
+          const normalized = `${field}`.toLowerCase();
+          return structuralKeywords.some((keyword) => normalized.includes(keyword));
+        });
+      })
+    ) {
+      return true;
+    }
+
+    return false;
+  }, [car]);
+
+  const accidentSeverity = useMemo<"none" | "minor" | "severe">(() => {
+    if (accidentCount === 0) {
+      return "none";
+    }
+    return hasStructuralDamage ? "severe" : "minor";
+  }, [accidentCount, hasStructuralDamage]);
+
+  const accidentStyle = useMemo(
+    () => {
+      switch (accidentSeverity) {
+        case "severe":
+          return {
+            button:
+              "border-destructive/40 text-destructive hover:border-destructive hover:shadow-2xl hover:shadow-destructive/20",
+            overlay: "from-destructive/0 to-destructive/10",
+            badge: "bg-destructive/20 text-destructive ring-2 ring-destructive/20",
+            icon: "",
+          };
+        case "none":
+          return {
+            button:
+              "border-emerald-500/40 text-emerald-600 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white hover:shadow-2xl hover:shadow-emerald-500/20",
+            overlay: "from-emerald-500/0 to-emerald-500/10",
+            badge:
+              "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400",
+            icon: "",
+          };
+        default:
+          return {
+            button:
+              "border-primary/30 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20",
+            overlay: "from-primary/0 to-primary/5",
+            badge: "bg-muted/60 text-muted-foreground ring-2 ring-border/40 dark:bg-muted/40",
+            icon: "",
+          };
+      }
+    },
+    [accidentSeverity],
+  );
+
   // Reset placeholder state when image selection changes
   useEffect(() => {
     setIsPlaceholderImage(false);
@@ -1901,12 +2074,17 @@ const CarDetails = memo(() => {
   useEffect(() => {
     let isMounted = true;
 
-    const fetchFromApi = async () => {
+    const fetchFromApi = async ({ background = false }: { background?: boolean } = {}) => {
       if (!lot) return;
 
       // Check if car is already loaded (from cache restoration)
-      if (car) {
+      if (car && !background) {
         return;
+      }
+
+      if (!background) {
+        setLoading(true);
+        setError(null);
       }
       try {
         const controller = new AbortController();
@@ -1947,12 +2125,16 @@ const CarDetails = memo(() => {
         const details = buildCarDetails(carData, lotData);
 
         if (!details) {
-          navigate("/catalog");
+          if (!background) {
+            navigate("/catalog");
+          }
           return;
         }
 
         setCar(details);
-        setLoading(false);
+        if (!background) {
+          setLoading(false);
+        }
 
         try {
           sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
@@ -1972,7 +2154,9 @@ const CarDetails = memo(() => {
           const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
           if (details) {
             setCar(details);
-            setLoading(false);
+            if (!background) {
+              setLoading(false);
+            }
             return;
           }
         }
@@ -1985,8 +2169,12 @@ const CarDetails = memo(() => {
                 ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
                 : "Car not found"
             : "Car not found";
-        setError(errorMessage);
-        setLoading(false);
+        if (!background) {
+          setError(errorMessage);
+          setLoading(false);
+        } else {
+          console.warn("Background refresh failed:", apiError);
+        }
       }
     };
 
@@ -1995,6 +2183,10 @@ const CarDetails = memo(() => {
       // Only fetch from API if cache didn't provide data
       if (!cachedData) {
         await fetchFromApi();
+      } else {
+        fetchFromApi({ background: true }).catch((error) => {
+          console.warn("Background refresh failed", error);
+        });
       }
     };
 
@@ -2003,6 +2195,7 @@ const CarDetails = memo(() => {
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     API_BASE_URL,
     API_KEY,
@@ -2012,7 +2205,6 @@ const CarDetails = memo(() => {
     lot,
     navigate,
     trackCarView,
-    car,
   ]);
   const handleContactWhatsApp = useCallback(() => {
     impact("light");
@@ -2604,90 +2796,96 @@ const CarDetails = memo(() => {
                 </div>
               </div>
 
-              {/* Action Buttons - Modernized Layout */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 mb-5">
-                <Suspense
-                  fallback={
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="group relative w-full h-14 rounded-xl border-2 border-primary/20 bg-muted/40 text-primary opacity-70 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                      disabled
-                    >
-                      <span className="relative flex items-center justify-between w-full">
-                        <span className="flex items-center gap-2.5">
-                          <FileText className="h-5 w-5" />
-                          <span className="text-sm">Duke u ngarkuar...</span>
-                        </span>
-                        <ChevronRight className="h-5 w-5 opacity-50" />
-                      </span>
-                    </Button>
-                  }
-                >
-                  <InspectionRequestForm
-                    trigger={
+                {/* Action Buttons - Modernized Layout */}
+                <div className="flex flex-wrap gap-3 mt-4 mb-5">
+                  <Suspense
+                    fallback={
+                      <div className="flex-1 min-w-[200px]">
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="group relative w-full h-14 rounded-xl border-2 border-primary/20 bg-muted/40 text-primary opacity-70 px-5 font-semibold transition-all duration-300 overflow-hidden"
+                          disabled
+                        >
+                          <span className="relative flex items-center justify-between w-full">
+                            <span className="flex items-center gap-2.5">
+                              <FileText className="h-5 w-5" />
+                              <span className="text-sm">Duke u ngarkuar...</span>
+                            </span>
+                            <ChevronRight className="h-5 w-5 opacity-50" />
+                          </span>
+                        </Button>
+                      </div>
+                    }
+                  >
+                    <div className="flex-1 min-w-[200px]">
+                      <InspectionRequestForm
+                        trigger={
+                          <Button
+                            size="lg"
+                            variant="outline"
+                            className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
+                          >
+                            <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                            <span className="relative flex items-center justify-between w-full">
+                              <span className="flex items-center gap-2.5">
+                                <FileText className="h-5 w-5" />
+                                <span className="text-sm">Kërko Inspektim</span>
+                              </span>
+                              <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
+                            </span>
+                          </Button>
+                        }
+                        carId={car.id}
+                        carMake={car.make}
+                        carModel={car.model}
+                        carYear={car.year}
+                      />
+                    </div>
+                  </Suspense>
+                  {car.details && (
+                    <div className="flex-1 min-w-[200px]">
                       <Button
+                        onClick={handleOpenInspectionReport}
                         size="lg"
                         variant="outline"
-                        className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
+                        className={`group relative w-full h-14 rounded-xl border-2 px-5 font-semibold transition-all duration-300 overflow-hidden hover:-translate-y-0.5 ${accidentStyle.button}`}
                       >
-                        <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                        <span
+                          className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${accidentStyle.overlay}`}
+                        ></span>
                         <span className="relative flex items-center justify-between w-full">
                           <span className="flex items-center gap-2.5">
-                            <FileText className="h-5 w-5" />
-                            <span className="text-sm">Kërko Inspektim</span>
+                            <Shield className={`h-5 w-5 ${accidentStyle.icon}`} />
+                            <span className="text-sm">Historia</span>
                           </span>
-                          <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-200 ${accidentStyle.badge}`}
+                          >
+                            {accidentCount}
+                          </span>
                         </span>
                       </Button>
-                    }
-                    carId={car.id}
-                    carMake={car.make}
-                    carModel={car.model}
-                    carYear={car.year}
-                  />
-                </Suspense>
-                {car.details && (
-                  <Button
-                    onClick={handleOpenInspectionReport}
-                    size="lg"
-                    variant="outline"
-                    className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                    <span className="relative flex items-center justify-between w-full">
-                      <span className="flex items-center gap-2.5">
-                        <Shield className="h-5 w-5" />
-                        <span className="text-sm">Historia</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-[200px]">
+                    <Button
+                      onClick={handleContactWhatsApp}
+                      size="lg"
+                      variant="outline"
+                      className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                      <span className="relative flex items-center justify-between w-full">
+                        <span className="flex items-center gap-2.5">
+                          <MessageCircle className="h-5 w-5" />
+                          <span className="text-sm">WhatsApp</span>
+                        </span>
+                        <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
                       </span>
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
-                          accidentCount > 0
-                            ? "bg-destructive/20 text-destructive ring-2 ring-destructive/20"
-                            : "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400"
-                        }`}
-                      >
-                        {accidentCount}
-                      </span>
-                    </span>
-                  </Button>
-                )}
-                <Button
-                  onClick={handleContactWhatsApp}
-                  size="lg"
-                  variant="outline"
-                  className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                >
-                  <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                  <span className="relative flex items-center justify-between w-full">
-                    <span className="flex items-center gap-2.5">
-                      <MessageCircle className="h-5 w-5" />
-                      <span className="text-sm">WhatsApp</span>
-                    </span>
-                    <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
-                  </span>
-                </Button>
-              </div>
+                    </Button>
+                  </div>
+                </div>
             </div>
 
             {/* Vehicle Specifications - Compact Mobile Card */}
