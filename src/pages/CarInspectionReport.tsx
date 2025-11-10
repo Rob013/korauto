@@ -725,22 +725,211 @@ const CarInspectionReport = () => {
   }, [car]);
 
   const toYesNo = useCallback((value?: string | number | boolean | null) => {
-    if (value === undefined || value === null) return null;
-    if (typeof value === "boolean") return value ? "Po" : "Jo";
-    if (typeof value === "number") return value > 0 ? "Po" : "Jo";
+    const evaluate = (input: unknown): "Po" | "Jo" | null => {
+      if (input === undefined || input === null) return null;
 
-    const normalized = value.toString().trim().toLowerCase();
-    if (!normalized) return null;
+      if (Array.isArray(input)) {
+        for (const item of input) {
+          const result = evaluate(item);
+          if (result) return result;
+        }
+        return null;
+      }
 
-    if (["po", "yes", "true"].includes(normalized)) return "Po";
-    if (["jo", "no", "false"].includes(normalized)) return "Jo";
+      if (typeof input === "boolean") return input ? "Po" : "Jo";
+      if (typeof input === "number") return input > 0 ? "Po" : "Jo";
 
-    const numValue = parseFloat(normalized);
-    if (!isNaN(numValue)) {
-      return numValue > 0 ? "Po" : "Jo";
-    }
+      const rawString = input.toString().trim();
+      if (!rawString) return null;
 
-    return null;
+      const normalized = rawString.toLowerCase();
+      const compact = normalized.replace(/\s+/g, "");
+      const asciiOnly = normalized.replace(/[^a-z0-9]/g, "");
+      const tokens = normalized
+        .replace(/[\u3000]/g, " ")
+        .split(/[\s,.;:!?()<>|/\\\-]+/)
+        .filter(Boolean);
+      const tokenSet = new Set(tokens);
+
+      const containsIndicator = (text: string, indicators: string[]) =>
+        indicators.some((indicator) => text.includes(indicator));
+
+      const unknownIndicators = [
+        "unknown",
+        "n/a",
+        "n\\a",
+        "not available",
+        "no data",
+        "not provided",
+        "unavailable",
+        "undefined",
+        "정보없",
+        "미확인",
+        "확인불가",
+        "미제공",
+        "알수없",
+        "확인 안됨",
+        "정보 없음",
+      ];
+      if (
+        containsIndicator(normalized, unknownIndicators) ||
+        containsIndicator(compact, unknownIndicators)
+      ) {
+        return null;
+      }
+
+      const directYesTokens = [
+        "po",
+        "yes",
+        "true",
+        "y",
+        "present",
+        "exists",
+        "available",
+        "positive",
+      ];
+      const directYesAscii = ["1"];
+      if (
+        directYesTokens.some((token) => tokenSet.has(token)) ||
+        directYesAscii.includes(asciiOnly)
+      ) {
+        return "Po";
+      }
+
+      const directNoTokens = [
+        "jo",
+        "no",
+        "false",
+        "n",
+        "never",
+        "none",
+        "without",
+        "absent",
+        "missing",
+        "lack",
+        "zero",
+        "negative",
+      ];
+      const directNoAscii = ["0"];
+      if (
+        directNoTokens.some((token) => tokenSet.has(token)) ||
+        directNoAscii.includes(asciiOnly)
+      ) {
+        return "Jo";
+      }
+
+      const negativeIndicators = [
+        "없음",
+        "없다",
+        "無",
+        "무사",
+        "무이력",
+        "미사용",
+        "미이용",
+        "미보유",
+        "미등록",
+        "미발견",
+        "미이력",
+        "미취급",
+        "미진행",
+        "미해당",
+        "해당없",
+        "해당 없음",
+        "해당사항없",
+        "해당 사항 없음",
+        "아님",
+        "아니",
+        "불가",
+        "비영업",
+        "비사업",
+        "자가용",
+        "private",
+        "non-commercial",
+        "non commercial",
+        "noncommercial",
+        "no history",
+        "no histories",
+        "no record",
+        "no records",
+        "no rental",
+        "no rent",
+        "no commercial",
+        "not found",
+        "norent",
+        "norental",
+        "norecord",
+        "미렌트",
+        "렌트이력없음",
+        "영업이력없음",
+      ];
+      if (
+        containsIndicator(normalized, negativeIndicators) ||
+        containsIndicator(compact, negativeIndicators)
+      ) {
+        return "Jo";
+      }
+
+      if (
+        (tokenSet.has("non") &&
+          (tokenSet.has("commercial") ||
+            tokenSet.has("business") ||
+            tokenSet.has("rental") ||
+            tokenSet.has("rent"))) ||
+        (tokenSet.has("no") &&
+          (tokenSet.has("commercial") ||
+            tokenSet.has("business") ||
+            tokenSet.has("rental") ||
+            tokenSet.has("rent")))
+      ) {
+        return "Jo";
+      }
+
+      const positiveIndicators = [
+        "있음",
+        "있다",
+        "유",
+        "보유",
+        "사용",
+        "사용중",
+        "임대",
+        "렌트",
+        "렌터카",
+        "임차",
+        "대여",
+        "영업",
+        "영업용",
+        "사업",
+        "사업용",
+        "업무용",
+        "상업",
+        "komerc",
+        "komercial",
+        "commercial",
+        "corporate",
+        "taxi",
+        "fleet",
+        "lease",
+        "leasing",
+        "법인",
+        "biz",
+        "biznes",
+      ];
+      if (
+        containsIndicator(normalized, positiveIndicators) ||
+        containsIndicator(compact, positiveIndicators)
+      ) {
+        return "Po";
+      }
+
+      const numeric = parseFloat(asciiOnly || normalized);
+      if (!isNaN(numeric)) {
+        return numeric > 0 ? "Po" : "Jo";
+      }
+
+      return null;
+    };
+
+    return evaluate(value);
   }, []);
 
   const ownerChangesList = useMemo<OwnerChangeEntry[]>(() => {
@@ -879,23 +1068,110 @@ const CarInspectionReport = () => {
           : `${ownerChangeCount} herë`;
 
   const usageHighlights = useMemo(() => {
-    const findUsageValue = (keywords: string[]) => {
-      const match = usageHistoryList.find((entry) => {
-        const description = `${entry.description ?? ""}`.toLowerCase();
-        return keywords.some((keyword) => description.includes(keyword));
-      });
-      return match?.value;
+    const resolveUsageStatus = (
+      keywords: string[],
+      sources: Array<
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+      >,
+    ) => {
+      const normalizedKeywords = keywords.map((keyword) =>
+        keyword.toLowerCase(),
+      );
+
+      const matchesKeyword = (text?: string | null) => {
+        if (!text) return false;
+        const normalizedText = text.toLowerCase();
+        return normalizedKeywords.some((keyword) =>
+          normalizedText.includes(keyword),
+        );
+      };
+
+      for (const entry of usageHistoryList) {
+        if (matchesKeyword(entry.description) || matchesKeyword(entry.value)) {
+          const statusFromValue = toYesNo(entry.value);
+          if (statusFromValue) return statusFromValue;
+          const statusFromDescription = toYesNo(entry.description);
+          if (statusFromDescription) return statusFromDescription;
+        }
+      }
+
+      for (const source of sources) {
+        if (!source) continue;
+
+        if (Array.isArray(source)) {
+          for (const item of source) {
+            const status = toYesNo(item);
+            if (status) return status;
+          }
+          continue;
+        }
+
+        const status = toYesNo(source as any);
+        if (status) return status;
+      }
+
+      return null;
     };
 
-    const rentalUsageValue =
-      toYesNo(findUsageValue(["rent", "qira", "rental"])) ??
-      toYesNo((car?.insurance_v2?.carInfoUse1s || []).join(" ")) ??
-      toYesNo((car?.insurance_v2?.carInfoUse2s || []).join(" ")) ??
-      toYesNo(car?.insurance_v2?.loan as any);
+    const rentalUsageValue = resolveUsageStatus(
+      [
+        "rent",
+        "rental",
+        "qira",
+        "lease",
+        "leasing",
+        "임대",
+        "렌트",
+        "렌터카",
+        "임차",
+        "대여",
+      ],
+      [
+        car?.details?.insurance?.general_info?.usage_type,
+        (car?.insurance_v2 as any)?.usageType,
+        (car?.insurance_v2 as any)?.useType,
+        (car?.insurance_v2 as any)?.rent,
+        (car?.insurance_v2 as any)?.rentCnt,
+        (car?.insurance_v2 as any)?.rentHistory,
+        (car?.insurance_v2 as any)?.rental,
+        car?.insurance_v2?.carInfoUse1s,
+        car?.insurance_v2?.carInfoUse2s,
+        (car?.details as any)?.usage_type,
+      ],
+    );
 
-    const commercialUsageValue =
-      toYesNo(findUsageValue(["komerc", "biznes", "commercial", "biznesi"])) ??
-      toYesNo(car?.insurance_v2?.business as any);
+    const commercialUsageValue = resolveUsageStatus(
+      [
+        "komerc",
+        "komercial",
+        "commercial",
+        "biznes",
+        "business",
+        "fleet",
+        "taxi",
+        "영업",
+        "영업용",
+        "사업",
+        "사업용",
+        "업무",
+        "법인",
+      ],
+      [
+        car?.details?.insurance?.general_info?.usage_type,
+        (car?.insurance_v2 as any)?.business,
+        (car?.insurance_v2 as any)?.businessCnt,
+        (car?.insurance_v2 as any)?.companyUse,
+        (car?.insurance_v2 as any)?.government,
+        car?.insurance_v2?.carInfoUse1s,
+        car?.insurance_v2?.carInfoUse2s,
+        (car?.details as any)?.usage_type,
+      ],
+    );
 
     return [
       {

@@ -462,33 +462,32 @@ const EncarCatalog = ({
 
   // Apply filters instantly without debouncing
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
-    // Update UI immediately for instant response
-    setFilters(newFilters);
+      // Reset sorting to neutral whenever filters change
+      setHasUserSelectedSort(false);
+      setSortBy("");
 
-    // Reset "Show All" mode when filters change
-    setShowAllCars(false);
-    setAllCarsData([]);
+      // Update UI immediately for instant response
+      setFilters(newFilters);
 
-    // Clear global sorting when filters change
-    clearGlobalSorting();
+      // Reset "Show All" mode when filters change
+      setShowAllCars(false);
+      setAllCarsData([]);
 
-    // Apply filters immediately - no debouncing - fetch from ALL sources
-    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
-    const filtersWithSort = hasUserSelectedSort && sortBy ? {
-      ...filtersWithPagination,
-      sort_by: sortBy
-    } : filtersWithPagination;
-    
-    fetchCars(1, filtersWithSort, true);
-    setCurrentPage(1);
+      // Clear global sorting when filters change
+      clearGlobalSorting();
 
-    // Update URL
-    const searchParams = filtersToURLParams(newFilters);
-    searchParams.set('page', '1');
-    setSearchParams(searchParams);
-    
-    setIsFilterLoading(false);
-  }, [fetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
+      // Apply filters immediately - no debouncing - fetch from ALL sources
+      const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
+      fetchCars(1, filtersWithPagination, true);
+      setCurrentPage(1);
+
+      // Update URL
+      const searchParams = filtersToURLParams(newFilters);
+      searchParams.set('page', '1');
+      setSearchParams(searchParams);
+      
+      setIsFilterLoading(false);
+    }, [fetchCars, setSearchParams, clearGlobalSorting]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -628,10 +627,12 @@ const EncarCatalog = ({
   // Remove filteredCars from dependencies as it's computed and can cause infinite loops
   // filteredCars,
   totalPages || 0, currentPage, setSearchParams]);
-  const handleManufacturerChange = async (manufacturerId: string) => {
-    console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
-
-    // Don't reset sorting - keep user's preference
+    const handleManufacturerChange = async (manufacturerId: string) => {
+      console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
+  
+      // Reset sorting to neutral when manufacturer changes
+      setHasUserSelectedSort(false);
+      setSortBy("");
 
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
@@ -678,15 +679,11 @@ const EncarCatalog = ({
       // Fetch models in parallel
       const modelPromise = fetchModels(manufacturerId);
 
-      // Fetch cars with current sort preference
-      const filtersForCars = hasUserSelectedSort && sortBy ? {
-        ...newFilters,
-        per_page: "50",
-        sort_by: sortBy
-      } : {
-        ...newFilters,
-        per_page: "50"
-      };
+        // Fetch cars with neutral sorting (user can re-apply a sort after filters)
+        const filtersForCars = {
+          ...newFilters,
+          per_page: "50"
+        };
       await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
         console.log(`[handleManufacturerChange] Setting models to:`, modelData);
         setModels(modelData);
@@ -712,8 +709,10 @@ const EncarCatalog = ({
   useEffect(() => {
     console.log(`[EncarCatalog] Models state updated:`, models);
   }, [models]);
-  const handleModelChange = async (modelId: string) => {
-    // Keep current sort preference when model changes
+    const handleModelChange = async (modelId: string) => {
+      // Reset sorting to neutral when model changes
+      setHasUserSelectedSort(false);
+      setSortBy("");
 
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
@@ -729,15 +728,11 @@ const EncarCatalog = ({
     // Only show loading for cars
     setIsLoading(true);
     try {
-      // Fetch cars with current sort preference
-      const filtersForCars = hasUserSelectedSort && sortBy ? {
-        ...newFilters,
-        per_page: "50",
-        sort_by: sortBy
-      } : {
-        ...newFilters,
-        per_page: "50"
-      };
+        // Fetch cars with neutral sorting (user can re-apply a sort after filters)
+        const filtersForCars = {
+          ...newFilters,
+          per_page: "50"
+        };
       await fetchCars(1, filtersForCars, true);
 
       // Fetch generations in background (non-blocking)
@@ -768,13 +763,17 @@ const EncarCatalog = ({
     return entries.some(([key, value]) => !!value && value !== 'all');
   }, [filters]);
 
-  // Adjust sort depending on filter presence
-  useEffect(() => {
-    // Always default to recently_added unless user explicitly picked a sort
-    if (!hasUserSelectedSort) {
-      setSortBy('recently_added');
-    }
-  }, [anyFilterApplied, hasUserSelectedSort]);
+    // Adjust sort depending on filter presence
+    useEffect(() => {
+      if (hasUserSelectedSort) {
+        return;
+      }
+
+      setSortBy((currentSort) => {
+        const desiredSort: SortOption = anyFilterApplied ? "" : "recently_added";
+        return currentSort === desiredSort ? currentSort : desiredSort;
+      });
+    }, [anyFilterApplied, hasUserSelectedSort]);
 
   // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
