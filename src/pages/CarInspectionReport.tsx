@@ -1047,6 +1047,7 @@ const CarInspectionReport = () => {
               </div>
             </div>
         </div>
+      </div>
 
         <div className="container-responsive py-3 md:py-5">
           <Card className="overflow-hidden border border-border/70 bg-background/95 shadow-lg">
@@ -1797,7 +1798,7 @@ const CarInspectionReport = () => {
                           {
                             label: "Dëmtime nga uji",
                             value: insuranceCarInfo.flood_damage
-                              ? processFloodDamageText(insuranceCarInfo.flood_damage)
+                              ? processFloodDamageText(String(insuranceCarInfo.flood_damage))
                               : undefined,
                           },
                         ]
@@ -1808,7 +1809,7 @@ const CarInspectionReport = () => {
                               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
                             >
                               <span className="font-medium text-foreground">{item.label}</span>
-                              <span className="text-muted-foreground">{item.value}</span>
+                              <span className="text-muted-foreground">{String(item.value)}</span>
                             </div>
                           ))}
                       </div>

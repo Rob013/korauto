@@ -1117,7 +1117,7 @@ const CarDetails = memo(() => {
 
     summarySources.forEach((summary) => {
       if (summary && typeof summary === "object" && !Array.isArray(summary)) {
-        const total = Object.values(summary).reduce((sum, entry) => {
+        const total: number = (Object.values(summary) as any[]).reduce((sum: number, entry) => {
           const parsed = parseNumericValue(entry);
           return parsed !== null ? sum + parsed : sum;
         }, 0);

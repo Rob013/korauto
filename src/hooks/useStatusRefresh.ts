@@ -59,6 +59,7 @@ export const useStatusRefresh = (options: StatusRefreshOptions = {}) => {
         })
         .or('sale_status.eq.sold,car_data->>status.eq.3')
         .lt('updated_at', cutoffDate)
+        .order('updated_at', { ascending: true })
         .limit(batchSize);
 
       if (error) {

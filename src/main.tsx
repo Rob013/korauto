@@ -10,6 +10,7 @@ import initSmoothRuntime from '@/utils/runtimeSmoothness'
 import initAntiFlicker from '@/utils/antiFlicker'
 import { initializePerformanceOptimizations } from '@/utils/performanceOptimizer'
 import { initialize120fpsScrolling } from '@/utils/scroll120fps'
+import '@/utils/performanceOptimizations'
 
 // Initialize performance optimizations immediately
 initializePerformanceOptimizations();

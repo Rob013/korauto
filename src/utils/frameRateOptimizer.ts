@@ -46,55 +46,72 @@ export class FrameRateOptimizer {
     let supportsHighRefreshRate = false;
     let isVariableRefreshRate = false;
 
-    // Try to detect actual refresh rate using various methods
-    if ('screen' in window) {
-      // Method 1: Screen API (experimental)
-      const screen = window.screen as any;
-      if (screen.getDisplayMedia || screen.orientation?.angle !== undefined) {
-        // Estimate based on typical high-refresh displays
-        if (window.devicePixelRatio >= 2) {
-          refreshRate = 120; // Assume high-refresh on high-DPI displays
-          supportedRefreshRates = [60, 90, 120];
-          supportsHighRefreshRate = true;
-        }
-      }
-    }
-
-    // Method 2: User agent detection for known high-refresh devices
+    // Method 1: User agent detection for known high-refresh devices
     const userAgent = navigator.userAgent.toLowerCase();
+    
+    // iOS devices with ProMotion
     if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
-      // iPhone 13 Pro and later, iPad Pro with ProMotion
-      if (userAgent.includes('iphone') && parseInt(userAgent.match(/os (\d+)/)?.[1] || '0') >= 15) {
+      const iosVersion = parseInt(userAgent.match(/os (\d+)/)?.[1] || '0');
+      // iPhone 13 Pro and later, iPad Pro (2017+) support 120Hz
+      if (iosVersion >= 15 || userAgent.includes('ipad pro')) {
         refreshRate = 120;
         supportedRefreshRates = [60, 120];
         supportsHighRefreshRate = true;
         isVariableRefreshRate = true; // ProMotion is adaptive
       }
-    } else if (userAgent.includes('android')) {
+    } 
+    // Android devices
+    else if (userAgent.includes('android')) {
       // Many modern Android devices support 90/120Hz
       refreshRate = 90; // Conservative estimate
       supportedRefreshRates = [60, 90, 120];
       supportsHighRefreshRate = true;
     }
+    // Desktop browsers
+    else if (window.devicePixelRatio >= 2) {
+      // High-DPI displays often support higher refresh rates
+      refreshRate = 120;
+      supportedRefreshRates = [60, 90, 120];
+      supportsHighRefreshRate = true;
+    }
 
-    // Method 3: Performance-based estimation
+    // Method 2: Measure actual frame rate more accurately
+    let measuredRefreshRate = 60;
     const startTime = performance.now();
     let frameCounter = 0;
+    let lastFrameTime = startTime;
+    const frameTimes: number[] = [];
     
-    const measureFrameRate = () => {
+    const measureFrameRate = (currentTime: number) => {
       frameCounter++;
-      const currentTime = performance.now();
       
-      if (currentTime - startTime >= 100) { // 100ms sample
-        const measuredFPS = Math.round((frameCounter * 1000) / (currentTime - startTime));
-        if (measuredFPS > 60) {
-          refreshRate = Math.min(measuredFPS, 120);
-          supportsHighRefreshRate = true;
+      // Calculate time between frames
+      const deltaTime = currentTime - lastFrameTime;
+      if (deltaTime > 0) {
+        frameTimes.push(deltaTime);
+      }
+      lastFrameTime = currentTime;
+      
+      // Sample for 200ms for better accuracy
+      if (currentTime - startTime >= 200 && frameTimes.length > 10) {
+        // Calculate average frame time
+        const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+        measuredRefreshRate = Math.round(1000 / avgFrameTime);
+        
+        // Update refresh rate if measured is higher
+        if (measuredRefreshRate > refreshRate && measuredRefreshRate <= 144) {
+          refreshRate = measuredRefreshRate;
+          supportsHighRefreshRate = measuredRefreshRate > 60;
+          if (!supportedRefreshRates.includes(measuredRefreshRate)) {
+            supportedRefreshRates.push(measuredRefreshRate);
+            supportedRefreshRates.sort((a, b) => a - b);
+          }
         }
         return;
       }
       
-      if (frameCounter < 20) { // Limit measurement
+      // Limit measurement iterations
+      if (frameCounter < 30) {
         requestAnimationFrame(measureFrameRate);
       }
     };
