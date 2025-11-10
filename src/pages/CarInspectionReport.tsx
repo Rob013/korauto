@@ -116,43 +116,486 @@ const positiveStatusValues = new Set([
   "perfect",
   "fine",
   "good condition",
+  "none",
+  "no leak",
+  "no issue",
+  "no issues",
+  "no problem",
+  "pass",
 ]);
 
-const translateStatusValue = (value: unknown) => {
-  if (typeof value !== "string") return String(value ?? "") || "-";
-  const normalized = value.toLowerCase();
-  switch (normalized) {
-    case "goodness":
-    case "good":
-    case "ok":
-    case "okay":
-    case "fine":
-      return "Mirë";
-    case "proper":
-      return "Saktë";
-    case "doesn't exist":
-      return "Nuk ekziston";
-    case "normal":
-      return "Normal";
-    case "excellent":
-      return "Shkëlqyeshëm";
-    case "perfect":
-      return "Perfekt";
-    default:
-      return value;
+const negativeStatusValues = new Set([
+  "bad",
+  "poor",
+  "replace",
+  "replacement",
+  "repair",
+  "warning",
+  "caution",
+  "leak",
+  "minor leak",
+  "abnormal",
+  "fail",
+  "failure",
+  "defect",
+  "damaged",
+  "damage",
+  "broken",
+  "worn",
+  "noise",
+  "crack",
+  "contamination",
+]);
+
+const negativeStatusKeywords = [
+  "leak",
+  "replacement",
+  "replace",
+  "repair",
+  "abnormal",
+  "warning",
+  "caution",
+  "fail",
+  "failure",
+  "defect",
+  "damage",
+  "damaged",
+  "broken",
+  "crack",
+  "worn",
+  "wear",
+  "noise",
+  "contamination",
+  "contaminated",
+  "stain",
+  "issue",
+  "problem",
+  "loose",
+  "vibration",
+  "rough",
+  "irregular",
+  "not good",
+  "not ok",
+  "not normal",
+];
+
+const mechanicalKeyPhraseTranslations: Record<string, string> = {
+  "engine oil": "Vaji i Motorit",
+  "engine oil leak": "Rrjedhja e Vajit të Motorit",
+  "transmission oil": "Vaji i Transmisionit",
+  "power steering": "Drejtimi Hidraulik",
+  "coolant leak": "Rrjedhja e Ftohësit",
+  "fuel leak": "Rrjedhja e Karburantit",
+  "brake fluid": "Lëngu i Frenave",
+  "air conditioner": "Kondicioneri",
+  "air conditioning": "Kondicioneri",
+  "spark plug": "Qirinj të Ndezjes",
+  "timing belt": "Rripi i Kohës",
+  "timing chain": "Zinxhiri i Kohës",
+  "drive belt": "Rripi i Aksesorëve",
+  "drive shaft": "Boshti Lëvizës",
+  "stabilizer bar": "Shtylla Stabilizuese",
+  "upper arm": "Krahu i Sipërm",
+  "lower arm": "Krahu i Poshtëm",
+  "tie rod": "Shtylla Drejtuese",
+  "wheel bearing": "Kushineta e Rrotës",
+  "shock absorber": "Amortizatori",
+  "fuel pump": "Pompa e Karburantit",
+  "water pump": "Pompa e Ujit",
+  "starter motor": "Motorri i Ndezjes",
+  alternator: "Alternatori",
+  "brake pad": "Jastëkët e Frenave",
+  "brake disc": "Disqet e Frenave",
+  "brake caliper": "Kaliperi i Frenave",
+  "engine mount": "Mbajtësi i Motorit",
+  "engine noise": "Zhurma e Motorit",
+  "gear shift": "Leva e Marsheve",
+  "gear box": "Kutia e Marsheve",
+  "clutch pedal": "Pedali i Kllaxhës",
+  "coolant reservoir": "Depoja e Ftohësit",
+};
+
+const mechanicalKeyWordTranslations: Record<string, string> = {
+  engine: "Motori",
+  motor: "Motori",
+  system: "Sistemi",
+  mechanical: "Mekanik",
+  oil: "Vaji",
+  coolant: "Ftohësi",
+  leak: "Rrjedhja",
+  leakage: "Rrjedhja",
+  condition: "Gjendja",
+  level: "Niveli",
+  status: "Statusi",
+  pump: "Pompa",
+  fuel: "Karburanti",
+  filter: "Filtri",
+  belt: "Rripi",
+  chain: "Zinxhiri",
+  clutch: "Kllaxha",
+  transmission: "Transmisioni",
+  gear: "Marshet",
+  gearbox: "Kutia e Marsheve",
+  brake: "Frenat",
+  pad: "Jastëkët",
+  disc: "Disqet",
+  rotor: "Rotori",
+  front: "Përpara",
+  rear: "Prapa",
+  left: "Majtas",
+  right: "Djathtas",
+  upper: "Sipër",
+  lower: "Poshtë",
+  arm: "Krahu",
+  steering: "Drejtimi",
+  rack: "Sistemi i drejtimit",
+  power: "Fuqia",
+  battery: "Bateria",
+  alternator: "Alternatori",
+  starter: "Starteri",
+  spark: "Qiriu",
+  plug: "Shkëndija",
+  compressor: "Kompresori",
+  fan: "Ventilatori",
+  hose: "Zorra",
+  radiator: "Radiatori",
+  reservoir: "Depoja",
+  wheel: "Rrota",
+  bearing: "Kushineta",
+  suspension: "Pezullimi",
+  shock: "Amortizatori",
+  absorber: "Amortizatori",
+  joint: "Nyja",
+  boot: "Mbrojtësja",
+  differential: "Diferenciali",
+  exhaust: "Shkarkimi",
+  pipe: "Tubi",
+  catalytic: "Katalizatori",
+  converter: "Katalizatori",
+  turbo: "Turbina",
+  injector: "Injektori",
+  air: "Ajri",
+  pressure: "Presioni",
+  temperature: "Temperatura",
+  vacuum: "Vakumi",
+  sensor: "Sensori",
+  mount: "Mbajtësi",
+  bushing: "Bushi",
+  fluid: "Lëngu",
+  cover: "Kapaku",
+  gasket: "Guarnicioni",
+  valve: "Valvula",
+  indicator: "Treguesi",
+  warning: "Paralajmërimi",
+  noise: "Zhurma",
+  smoke: "Tymi",
+  emission: "Emisioni",
+  throttle: "Gazpedali",
+  body: "Trupi",
+  idle: "Xhiro boshe",
+  timing: "Kohëzimi",
+  support: "Mbështetja",
+  stabilizer: "Stabilizatori",
+  link: "Lidhja",
+  hub: "Qendra",
+  lamp: "Drita",
+  light: "Drita",
+  wiring: "Instalimi",
+  connector: "Lidhësi",
+  window: "Dritarja",
+  mirror: "Pasqyra",
+  seat: "Sedilja",
+  heater: "Ngrohësi",
+  ac: "Kondicioneri",
+  line: "Linja",
+  switch: "Ndërprerësi",
+  relay: "Relè",
+  fuse: "Siguresa",
+  horn: "Boria",
+  washer: "Larësi",
+  blade: "Fleta",
+};
+
+const statusValueExactTranslations: Record<string, string> = {
+  goodness: "Në gjendje shumë të mirë",
+  good: "Mirë",
+  fine: "Mirë",
+  ok: "Në rregull",
+  okay: "Në rregull",
+  proper: "Saktë",
+  "doesn't exist": "Nuk ekziston",
+  normal: "Normal",
+  excellent: "Shkëlqyeshëm",
+  perfect: "Perfekt",
+  none: "Asgjë",
+  "no leak": "Pa rrjedhje",
+  "good condition": "Në gjendje të mirë",
+  pass: "Në rregull",
+  fail: "Dështoi",
+  caution: "Kujdes",
+  warning: "Paralajmërim",
+};
+
+const statusValueRegexTranslations: Array<{
+  pattern: RegExp;
+  translation: string;
+}> = [
+  { pattern: /minor leak/i, translation: "Rrjedhje e vogël" },
+  { pattern: /leak/i, translation: "Rrjedhje" },
+  { pattern: /replace|replacement/i, translation: "Kërkon zëvendësim" },
+  { pattern: /repair/i, translation: "Kërkon riparim" },
+  { pattern: /abnormal/i, translation: "Jo normale" },
+  { pattern: /noise/i, translation: "Zhurmë" },
+  { pattern: /stain/i, translation: "Njollë" },
+  { pattern: /contamin/i, translation: "Kontaminim" },
+  { pattern: /damage|damaged/i, translation: "Dëmtuar" },
+  { pattern: /broken/i, translation: "Thyer" },
+  { pattern: /crack/i, translation: "Çarje" },
+  { pattern: /worn/i, translation: "I konsumuar" },
+  { pattern: /vibration/i, translation: "Vibrim" },
+  { pattern: /no\s+(issue|issues|problem|problems)/i, translation: "Pa probleme" },
+];
+
+const meaninglessStatusStrings = new Set([
+  "",
+  "-",
+  "--",
+  "unknown",
+  "undefined",
+  "n/a",
+  "na",
+  "null",
+  "not available",
+]);
+
+const accidentSummaryKeyTranslations: Record<string, string> = {
+  accident: "Aksidente",
+  accidents: "Aksidente",
+  "simple repair": "Riparime të thjeshta",
+  simple_repair: "Riparime të thjeshta",
+  "main framework": "Struktura kryesore",
+  main_framework: "Struktura kryesore",
+  exterior1rank: "Vlerësimi i jashtëm 1",
+  exterior2rank: "Vlerësimi i jashtëm 2",
+  accident_history: "Historia e aksidenteve",
+  repair_count: "Numri i riparimeve",
+  total_loss: "Humbje totale",
+  flood_damage: "Dëmtime nga përmbytja",
+  fire_damage: "Dëmtime nga zjarri",
+  theft_history: "Historia e vjedhjes",
+  airbag_deploy: "Shpërthimi i airbag",
+  airbag: "Airbag",
+  special_accident: "Aksident i veçantë",
+  specialaccident: "Aksident i veçantë",
+  my_accident_cnt: "Aksidentet personale",
+  other_accident_cnt: "Aksidentet e tjera",
+  my_accident_cost: "Kostoja e aksidenteve personale",
+  other_accident_cost: "Kostoja e aksidenteve të tjera",
+  accident_count: "Numri i aksidenteve",
+  accidentcnt: "Numri i aksidenteve",
+  ownerchange_cnt: "Ndërrimet e pronarëve",
+  exterior_grade: "Vlerësimi i jashtëm",
+  frame: "Korniza",
+};
+
+const accidentKeyWordTranslations: Record<string, string> = {
+  accident: "Aksident",
+  accidents: "Aksidente",
+  history: "Historia",
+  simple: "Të thjeshta",
+  repair: "Riparime",
+  repairs: "Riparime",
+  main: "Kryesore",
+  framework: "Struktura",
+  exterior: "I jashtëm",
+  rank: "Vlerësimi",
+  count: "Numri",
+  cost: "Kostoja",
+  total: "Totale",
+  loss: "Humbje",
+  flood: "Përmbytje",
+  fire: "Zjarr",
+  theft: "Vjedhje",
+  airbag: "Airbag",
+  deploy: "Shpërthim",
+  my: "Personale",
+  other: "Të tjera",
+  owner: "Pronar",
+  change: "Ndryshim",
+  changes: "Ndryshime",
+  number: "Numri",
+  frame: "Korniza",
+  special: "I veçantë",
+  summary: "Përmbledhje",
+  status: "Statusi",
+};
+
+const accidentValueExactTranslations: Record<string, string> = {
+  yes: "Po",
+  y: "Po",
+  true: "Po",
+  no: "Jo",
+  n: "Jo",
+  false: "Jo",
+  none: "Asnjë",
+  exist: "Ekziston",
+  exists: "Ekziston",
+  "doesn't exist": "Nuk ekziston",
+  "does not exist": "Nuk ekziston",
+  "not applicable": "Jo e aplikueshme",
+  pending: "Në pritje",
+};
+
+const accidentValueRegexTranslations: Array<{
+  pattern: RegExp;
+  translation: string;
+}> = [
+  { pattern: /exist/i, translation: "Ekziston" },
+  { pattern: /not exist/i, translation: "Nuk ekziston" },
+  { pattern: /available/i, translation: "E disponueshme" },
+  { pattern: /unavailable/i, translation: "E padisponueshme" },
+];
+
+const meaninglessAccidentStrings = new Set([
+  "",
+  "-",
+  "--",
+  "unknown",
+  "undefined",
+  "n/a",
+  "na",
+  "null",
+  "not available",
+]);
+
+const translateMechanicalKey = (rawKey: string) => {
+  const normalized = rawKey.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  if (!normalized) return "-";
+  const lower = normalized.toLowerCase();
+  if (mechanicalKeyPhraseTranslations[lower]) {
+    return mechanicalKeyPhraseTranslations[lower];
   }
+  const words = normalized.split(/\s+/).map((word) => {
+    const cleaned = word.toLowerCase();
+    const translation = mechanicalKeyWordTranslations[cleaned];
+    if (translation) return translation;
+    if (/^\d+$/.test(cleaned)) return word;
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  });
+  return words.join(" ");
+};
+
+const translateAccidentSummaryKey = (rawKey: string) => {
+  const normalized = rawKey.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  if (!normalized) return "-";
+  const lower = normalized.toLowerCase();
+  if (accidentSummaryKeyTranslations[lower]) {
+    return accidentSummaryKeyTranslations[lower];
+  }
+  const words = normalized.split(/\s+/).map((word) => {
+    const cleaned = word.toLowerCase();
+    const translation = accidentKeyWordTranslations[cleaned];
+    if (translation) return translation;
+    if (/^\d+$/.test(cleaned)) return word;
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  });
+  return words.join(" ");
+};
+
+const translateStatusValue = (value: unknown) => {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "Po" : "Jo";
+  if (typeof value === "number") return value.toString();
+  if (typeof value !== "string") return String(value ?? "") || "-";
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return "-";
+  if (statusValueExactTranslations[normalized]) {
+    return statusValueExactTranslations[normalized];
+  }
+  for (const { pattern, translation } of statusValueRegexTranslations) {
+    if (pattern.test(normalized)) return translation;
+  }
+  return value;
+};
+
+const translateAccidentSummaryValue = (value: unknown) => {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "Po" : "Jo";
+  if (typeof value === "number") return value.toString();
+  if (typeof value !== "string") return String(value ?? "") || "-";
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return "-";
+  if (accidentValueExactTranslations[normalized]) {
+    return accidentValueExactTranslations[normalized];
+  }
+  for (const { pattern, translation } of accidentValueRegexTranslations) {
+    if (pattern.test(normalized)) return translation;
+  }
+  return value;
+};
+
+const hasMeaningfulStatusValue = (value: unknown) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return false;
+    if (meaninglessStatusStrings.has(normalized)) return false;
+  }
+  return true;
+};
+
+const hasMeaningfulAccidentValue = (value: unknown) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return false;
+    if (meaninglessAccidentStrings.has(normalized)) return false;
+  }
+  return true;
 };
 
 const isPositiveStatus = (value: unknown) => {
+  if (value === undefined || value === null) return true;
   if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value <= 0;
   if (typeof value === "string") {
-    return positiveStatusValues.has(value.toLowerCase());
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return true;
+    if (positiveStatusValues.has(normalized)) return true;
+    if (negativeStatusValues.has(normalized)) return false;
+    if (negativeStatusKeywords.some((keyword) => normalized.includes(keyword))) {
+      return false;
+    }
+    return true;
+  }
+  return true;
+};
+
+const isAccidentNegative = (value: unknown) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value > 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return false;
+    if (["yes", "y", "po", "present"].includes(normalized)) return true;
+    if (["no", "n", "jo"].includes(normalized)) return false;
+    if (/^\d+$/.test(normalized)) return Number.parseInt(normalized, 10) > 0;
+    if (
+      normalized.includes("exist") ||
+      normalized.includes("damage") ||
+      normalized.includes("replace") ||
+      normalized.includes("repair")
+    ) {
+      return true;
+    }
+    if (normalized.includes("none") || normalized.includes("nuk")) {
+      return false;
+    }
   }
   return false;
 };
 
-const formatKeyLabel = (key: string) =>
-  key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+const formatKeyLabel = (key: string) => translateMechanicalKey(key);
 
 const formatDisplayDate = (
   value?: unknown,
@@ -758,6 +1201,28 @@ const CarInspectionReport = () => {
     walk(raw);
     return result;
   }, [car]);
+
+const mechanicalStatusEntries = useMemo(
+  () =>
+    inspectionInnerData
+      ? Object.entries(inspectionInnerData).filter(([, value]) =>
+          hasMeaningfulStatusValue(value),
+        )
+      : [],
+  [inspectionInnerData],
+);
+
+const accidentSummaryData = car?.inspect?.accident_summary;
+
+const accidentSummaryEntries = useMemo(
+  () =>
+    accidentSummaryData && typeof accidentSummaryData === "object"
+      ? Object.entries(accidentSummaryData).filter(([, value]) =>
+          hasMeaningfulAccidentValue(value),
+        )
+      : [],
+  [accidentSummaryData],
+);
 
   const inspectionIssueSummary = useMemo(() => {
     if (!inspectionOuterData || inspectionOuterData.length === 0) {
@@ -2017,14 +2482,13 @@ const CarInspectionReport = () => {
                 </CardContent>
               </Card>
 
-              {/* Two-panel diagram with "within" and "out" views */}
-              <InspectionDiagramPanel
-                outerInspectionData={inspectionOuterData}
-              />
+                {/* Two-panel diagram with "within" and "out" views */}
+                <InspectionDiagramPanel
+                  outerInspectionData={inspectionOuterData}
+                />
 
-              {/* Mechanical System Section */}
-              {inspectionInnerData &&
-                Object.keys(inspectionInnerData).length > 0 && (
+                {/* Mechanical System Section */}
+                {mechanicalStatusEntries.length > 0 && (
                   <Card className="shadow-md border-border/80">
                     <CardHeader className="pb-3 md:pb-4">
                       <div className="flex items-center gap-2 md:gap-3">
@@ -2039,7 +2503,7 @@ const CarInspectionReport = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
-                        {Object.entries(inspectionInnerData).map(([key, value]) => {
+                        {mechanicalStatusEntries.map(([key, value]) => {
                           const positive = isPositiveStatus(value);
                           return (
                             <div
@@ -2066,9 +2530,8 @@ const CarInspectionReport = () => {
                   </Card>
                 )}
 
-              {/* Accident Summary Section */}
-              {car.inspect?.accident_summary &&
-                Object.keys(car.inspect.accident_summary).length > 0 && (
+                {/* Accident Summary Section */}
+                {accidentSummaryEntries.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">
@@ -2077,77 +2540,36 @@ const CarInspectionReport = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-3">
-                        {Object.entries(car.inspect.accident_summary).map(
-                          ([key, value]) => {
-                            const isNegative =
-                              value === "yes" || value === true;
+                        {accidentSummaryEntries.map(([key, value]) => {
+                          const isNegative = isAccidentNegative(value);
 
-                            const translateKey = (k: string) => {
-                              const translations: Record<string, string> = {
-                                accident: "Aksidentet",
-                                simple_repair: "Riparime të Thjeshta",
-                                "simple repair": "Riparime të Thjeshta",
-                                main_framework: "Korniza Kryesore",
-                                "main framework": "Korniza Kryesore",
-                                exterior1rank: "Vlerësimi i Jashtëm 1",
-                                exterior2rank: "Vlerësimi i Jashtëm 2",
-                              };
-                              const normalized = k
-                                .toLowerCase()
-                                .replace(/_/g, " ");
-                              return (
-                                translations[normalized] ||
-                                k
-                                  .replace(/_/g, " ")
-                                  .replace(/\b\w/g, (char) =>
-                                    char.toUpperCase(),
-                                  )
-                              );
-                            };
-
-                            const translateValue = (v: unknown) => {
-                              if (v === "yes" || v === true) return "Po";
-                              if (v === "no" || v === false) return "Jo";
-                              if (typeof v === "string") {
-                                const normalized = v.toLowerCase().trim();
-                                if (
-                                  normalized === "doesn't exist" ||
-                                  normalized === "does not exist"
-                                )
-                                  return "Nuk ekziston";
-                                if (normalized === "exists") return "Ekziston";
-                              }
-                              return String(v);
-                            };
-
-                            return (
-                              <div
-                                key={key}
-                                className={`flex flex-col gap-1.5 md:gap-2 rounded-lg border p-2.5 md:p-4 ${
-                                  isNegative
-                                    ? "border-destructive/50 bg-destructive/5"
-                                    : "border-border bg-muted/40"
-                                }`}
-                              >
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                  {isNegative ? (
-                                    <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive flex-shrink-0" />
-                                  ) : (
-                                    <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
-                                  )}
-                                  <span className="text-[10px] md:text-xs font-medium uppercase tracking-wide text-muted-foreground leading-tight">
-                                    {translateKey(key)}
-                                  </span>
-                                </div>
-                                <span
-                                  className={`text-base md:text-lg font-bold ${isNegative ? "text-destructive" : "text-green-600"}`}
-                                >
-                                  {translateValue(value)}
+                          return (
+                            <div
+                              key={key}
+                              className={`flex flex-col gap-1.5 md:gap-2 rounded-lg border p-2.5 md:p-4 ${
+                                isNegative
+                                  ? "border-destructive/50 bg-destructive/5"
+                                  : "border-border bg-muted/40"
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 md:gap-2">
+                                {isNegative ? (
+                                  <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive flex-shrink-0" />
+                                ) : (
+                                  <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
+                                )}
+                                <span className="text-[10px] md:text-xs font-medium uppercase tracking-wide text-muted-foreground leading-tight">
+                                  {translateAccidentSummaryKey(key)}
                                 </span>
                               </div>
-                            );
-                          },
-                        )}
+                              <span
+                                className={`text-base md:text-lg font-bold ${isNegative ? "text-destructive" : "text-green-600"}`}
+                              >
+                                {translateAccidentSummaryValue(value)}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
