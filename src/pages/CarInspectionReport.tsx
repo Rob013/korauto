@@ -868,9 +868,27 @@ const CarInspectionReport = () => {
         "nuk ka perdorim",
         "nuk ka përdorim",
         "not found",
+        "not commercial",
+        "not rental",
+        "not rent",
+        "not business",
+        "not for rental",
+        "not for commercial",
+        "not used for rental",
+        "not used for rent",
+        "not used for commercial",
+        "not used commercially",
+        "not business use",
+        "not business history",
+        "not commercial history",
+        "not rental history",
         "norent",
         "norental",
         "norecord",
+        "notrent",
+        "notrental",
+        "notcommercial",
+        "notbusiness",
         "미렌트",
         "렌트이력없음",
         "영업이력없음",
@@ -883,47 +901,47 @@ const CarInspectionReport = () => {
       }
 
       const historyContextTerms = [
-        "history",
-        "record",
-        "histori",
-        "perdorim",
-        "përdorim",
-        "이력",
-        "기록",
+      "history",
+      "record",
+      "histori",
+      "perdorim",
+      "përdorim",
+      "이력",
+      "기록",
       ];
       const usageContextTerms = [
-        "use",
-        "usage",
-        "perdorim",
-        "perdorimi",
-        "përdorim",
-        "përdorimi",
-        "rental",
-        "rent",
-        "lease",
-        "leasing",
-        "business",
-        "commercial",
-        "fleet",
-        "operation",
-        "biznes",
-        "taxi",
+      "use",
+      "usage",
+      "perdorim",
+      "perdorimi",
+      "përdorim",
+      "përdorimi",
+      "rental",
+      "rent",
+      "lease",
+      "leasing",
+      "business",
+      "commercial",
+      "fleet",
+      "operation",
+      "biznes",
+      "taxi",
       ];
       const positiveHistoryPresenceTerms = [
-        "has",
-        "have",
-        "having",
-        "with",
-        "exists",
-        "exist",
-        "present",
-        "available",
-        "recorded",
-        "ka ",
-        "ka-",
-        "ka histori",
-        "ka perdorim",
-        "ka përdorim",
+      "has",
+      "have",
+      "having",
+      "with",
+      "exists",
+      "exist",
+      "present",
+      "available",
+      "recorded",
+      "ka ",
+      "ka-",
+      "ka histori",
+      "ka perdorim",
+      "ka përdorim",
       ];
       const negativeHistoryPresenceTerms = [
         "no",
@@ -935,41 +953,53 @@ const CarInspectionReport = () => {
         "nuk",
         "pa ",
         "pa-",
+        "not",
       ];
 
       const hasHistoryContext =
-        containsIndicator(normalized, historyContextTerms) ||
-        containsIndicator(compact, historyContextTerms);
+      containsIndicator(normalized, historyContextTerms) ||
+      containsIndicator(compact, historyContextTerms);
       const hasUsageContext =
-        containsIndicator(normalized, usageContextTerms) ||
-        containsIndicator(compact, usageContextTerms);
+      containsIndicator(normalized, usageContextTerms) ||
+      containsIndicator(compact, usageContextTerms);
       const hasPositiveHistoryPresence =
-        containsIndicator(normalized, positiveHistoryPresenceTerms) ||
-        /있다|있음|보유|유|존재/.test(normalized);
+      containsIndicator(normalized, positiveHistoryPresenceTerms) ||
+      /있다|있음|보유|유|존재/.test(normalized);
       const hasNegativeHistoryPresence =
-        containsIndicator(normalized, negativeHistoryPresenceTerms) ||
-        /없|無|미사용|비사용|무이력/.test(normalized);
+      containsIndicator(normalized, negativeHistoryPresenceTerms) ||
+      /없|無|미사용|비사용|무이력/.test(normalized);
 
       if (
-        hasHistoryContext &&
-        hasUsageContext &&
-        hasPositiveHistoryPresence &&
-        !hasNegativeHistoryPresence
+      hasHistoryContext &&
+      hasUsageContext &&
+      hasPositiveHistoryPresence &&
+      !hasNegativeHistoryPresence
       ) {
-        return "Po";
+      return "Po";
       }
 
+      const negativeUsageDeterminers = [
+        "non",
+        "no",
+        "not",
+        "without",
+        "never",
+        "none",
+      ];
+      const usageTerms = [
+        "commercial",
+        "business",
+        "rental",
+        "rent",
+        "lease",
+        "leasing",
+        "fleet",
+        "taxi",
+      ];
+
       if (
-        (tokenSet.has("non") &&
-          (tokenSet.has("commercial") ||
-            tokenSet.has("business") ||
-            tokenSet.has("rental") ||
-            tokenSet.has("rent"))) ||
-        (tokenSet.has("no") &&
-          (tokenSet.has("commercial") ||
-            tokenSet.has("business") ||
-            tokenSet.has("rental") ||
-            tokenSet.has("rent")))
+        negativeUsageDeterminers.some((term) => tokenSet.has(term)) &&
+        usageTerms.some((term) => tokenSet.has(term))
       ) {
         return "Jo";
       }
