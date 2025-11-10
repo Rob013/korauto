@@ -138,9 +138,6 @@ const isPositiveStatus = (value: unknown) => {
   return false;
 };
 
-const escapeRegExp = (value: string) =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 const formatKeyLabel = (key: string) =>
   key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 
@@ -1161,403 +1158,95 @@ const CarInspectionReport = () => {
           : `${ownerChangeCount} herë`;
 
   const usageHighlights = useMemo(() => {
-    type UsageStatusConfig = {
-      keywords: string[];
-      negativeTerms?: string[];
-      positiveTerms?: string[];
+    const resolveUsageStatus = (
+      _keywords: string[],
+      sources: Array<
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+      >,
+    ) => {
+      let hasPositive = false;
+      let hasNegative = false;
+
+      const consider = (input: unknown) => {
+        const status = toYesNo(input as any);
+        if (status === "Po") {
+          hasPositive = true;
+        } else if (status === "Jo") {
+          hasNegative = true;
+        }
+      };
+
+      for (const source of sources) {
+        if (!source) continue;
+
+        if (Array.isArray(source)) {
+          source.forEach(consider);
+        } else {
+          consider(source);
+        }
+      }
+
+      if (hasPositive) return "Po";
+      if (hasNegative) return "Jo";
+      return "Jo";
     };
 
-    const determineUsageStatus = (
-      {
-        keywords,
-        negativeTerms = [],
-        positiveTerms = [],
-      }: UsageStatusConfig,
-      sources: unknown[],
-    ): string => {
-      if (!keywords || keywords.length === 0) return "-";
-
-      const keywordVariants = keywords
-        .map((keyword) => keyword.toLowerCase())
-        .filter(Boolean);
-      const condensedKeywords = keywordVariants.map((keyword) =>
-        keyword.replace(/\s+/g, ""),
-      );
-
-      const negativeTermVariants = negativeTerms
-        .map((term) => term.toLowerCase())
-        .filter(Boolean);
-      const condensedNegativeTerms = negativeTermVariants.map((term) =>
-        term.replace(/\s+/g, ""),
-      );
-
-      const positiveTermVariants = positiveTerms
-        .map((term) => term.toLowerCase())
-        .filter(Boolean);
-      const condensedPositiveTerms = positiveTermVariants.map((term) =>
-        term.replace(/\s+/g, ""),
-      );
-
-      const directPositiveTokens = new Set([
-        "po",
-        "yes",
-        "true",
-        "1",
-        "present",
-        "exists",
-        "exist",
-        "available",
-        "with",
-        "has",
-        "have",
-        "ka",
-        "ka-",
-        "ka ",
-        "있음",
-        "있다",
-        "보유",
-        "유",
-      ]);
-
-      const directNegativeTokens = new Set([
-        "jo",
-        "no",
-        "false",
-        "0",
-        "none",
-        "n/a",
-        "n\\a",
-        "unknown",
-        "not available",
-        "unavailable",
-        "without",
-        "없음",
-        "없다",
-        "무",
-        "無",
-      ]);
-
-      const negativeIndicators = [
-        "no",
-        "none",
-        "never",
-        "without",
-        "zero",
-        "nuk",
-        "pa ",
-        "pa-",
-        "non",
-        "not",
-        "norent",
-        "norental",
-        "미렌트",
-        "렌트없",
-        "렌트이력없",
-        "없음",
-        "없다",
-        "無",
-        "무",
-        "미영업",
-        "비영업",
-        "비사업",
-        "비상업",
-        "비임대",
-        "무렌트",
-      ];
-
-      const positiveIndicators = [
-        "po",
-        "yes",
-        "true",
-        "present",
-        "exists",
-        "exist",
-        "with",
-        "has",
-        "have",
-        "available",
-        "recorded",
-        "있음",
-        "있다",
-        "보유",
-        "유",
-        "영업",
-        "임대",
+    const rentalUsageValue = resolveUsageStatus(
+      [
         "rent",
         "rental",
-      ];
-
-      const hasKeyword = (normalized: string, condensed: string) =>
-        keywordVariants.some(
-          (keyword, index) =>
-            normalized.includes(keyword) ||
-            condensed.includes(condensedKeywords[index] ?? keyword),
-        );
-
-      const hasTerm = (
-        normalized: string,
-        condensed: string,
-        terms: string[],
-        condensedTerms: string[],
-      ) =>
-        terms.some(
-          (term, index) =>
-            normalized.includes(term) ||
-            condensed.includes(condensedTerms[index] ?? term),
-        );
-
-      const analyzeString = (raw: string): "positive" | "negative" | null => {
-        const normalized = raw.toLowerCase();
-        const condensed = normalized.replace(/\s+/g, "");
-
-        if (directPositiveTokens.has(normalized)) return "positive";
-        if (directNegativeTokens.has(normalized)) return "negative";
-
-        const keywordMatch = hasKeyword(normalized, condensed);
-        const positiveMatch = hasTerm(
-          normalized,
-          condensed,
-          positiveTermVariants,
-          condensedPositiveTerms,
-        );
-        const negativeMatch = hasTerm(
-          normalized,
-          condensed,
-          negativeTermVariants,
-          condensedNegativeTerms,
-        );
-
-        if (negativeMatch) {
-          return "negative";
-        }
-
-        if (keywordMatch) {
-          for (const keyword of keywords) {
-            if (!keyword) continue;
-            const numericRegex = new RegExp(
-              `${escapeRegExp(keyword)}[^0-9-]*(-?\\d+(?:\\.\\d+)?)`,
-              "i",
-            );
-            const numericMatch = raw.match(numericRegex);
-            if (numericMatch) {
-              const numericValue = Number.parseFloat(numericMatch[1]);
-              if (!Number.isNaN(numericValue)) {
-                if (numericValue > 0) return "positive";
-                if (numericValue === 0) return "negative";
-              }
-            }
-            const negativePattern = new RegExp(
-              `(no|non|not|without|none|zero|0|없음|없다|無|무|미)([\\s-_/]*)${escapeRegExp(
-                keyword,
-              )}`,
-              "i",
-            );
-            if (negativePattern.test(raw)) {
-              return "negative";
-            }
-          }
-
-          const hasNegativeIndicator = negativeIndicators.some((indicator) =>
-            normalized.includes(indicator),
-          );
-          if (hasNegativeIndicator) {
-            return "negative";
-          }
-
-          const hasPositiveIndicator = positiveIndicators.some((indicator) =>
-            normalized.includes(indicator),
-          );
-          if (hasPositiveIndicator || positiveMatch) {
-            return "positive";
-          }
-        } else if (positiveMatch) {
-          return "positive";
-        }
-
-        return null;
-      };
-
-      let detectedPositive = false;
-      let detectedNegative = false;
-
-      const inspect = (value: unknown) => {
-        if (value === null || value === undefined) return;
-
-        if (typeof value === "boolean") {
-          value ? (detectedPositive = true) : (detectedNegative = true);
-          return;
-        }
-
-        if (typeof value === "number") {
-          if (!Number.isFinite(value)) return;
-          if (value > 0) {
-            detectedPositive = true;
-          } else if (value === 0) {
-            detectedNegative = true;
-          }
-          return;
-        }
-
-        if (typeof value === "string") {
-          const result = analyzeString(value);
-          if (result === "positive") {
-            detectedPositive = true;
-            return;
-          }
-          if (result === "negative") {
-            detectedNegative = true;
-            return;
-          }
-          return;
-        }
-
-        if (Array.isArray(value)) {
-          value.forEach(inspect);
-          return;
-        }
-
-        if (typeof value === "object") {
-          Object.values(value as Record<string, unknown>).forEach(inspect);
-        }
-      };
-
-      sources.forEach(inspect);
-
-      if (detectedPositive) return "Po";
-      if (detectedNegative) return "Jo";
-      return "-";
-    };
-
-    const rentalUsageValue = determineUsageStatus(
-      {
-        keywords: [
-          "rent",
-          "rental",
-          "rent history",
-          "rentcnt",
-          "rent count",
-          "lease",
-          "leasing",
-          "qira",
-          "임대",
-          "렌트",
-          "렌터카",
-          "임차",
-          "대여",
-        ],
-        positiveTerms: [
-          "rent",
-          "rental",
-          "rented",
-          "lease",
-          "leasing",
-          "qira",
-          "임대",
-          "렌트",
-          "렌터카",
-          "임차",
-          "대여",
-        ],
-        negativeTerms: [
-          "no rent",
-          "no rental",
-          "non rental",
-          "norental",
-          "norent",
-          "not rental",
-          "without rent",
-          "without rental",
-          "rent none",
-          "zero rent",
-          "미렌트",
-          "렌트없음",
-          "렌트이력없음",
-          "nuk ka qira",
-          "pa qira",
-          "private",
-          "personal",
-        ],
-      },
+        "qira",
+        "lease",
+        "leasing",
+        "임대",
+        "렌트",
+        "렌터카",
+        "임차",
+        "대여",
+      ],
       [
-        car?.insurance_v2?.rent,
-        car?.insurance_v2?.rentCnt,
-        car?.insurance_v2?.rentHistory,
+        car?.details?.insurance?.general_info?.usage_type,
+        (car?.insurance_v2 as any)?.usageType,
+        (car?.insurance_v2 as any)?.useType,
+        (car?.insurance_v2 as any)?.rent,
+        (car?.insurance_v2 as any)?.rentCnt,
+        (car?.insurance_v2 as any)?.rentHistory,
         (car?.insurance_v2 as any)?.rental,
-        (car?.insurance_v2 as any)?.rentUse,
         car?.insurance_v2?.carInfoUse1s,
         car?.insurance_v2?.carInfoUse2s,
-        car?.details?.insurance?.general_info?.usage_type,
         (car?.details as any)?.usage_type,
       ],
     );
 
-    const commercialUsageValue = determineUsageStatus(
-      {
-        keywords: [
-          "commercial",
-          "komerc",
-          "komercial",
-          "business",
-          "biznes",
-          "company",
-          "corporate",
-          "fleet",
-          "taxi",
-          "government",
-          "영업",
-          "영업용",
-          "사업",
-          "사업용",
-          "업무",
-          "법인",
-        ],
-        positiveTerms: [
-          "commercial",
-          "komerc",
-          "komercial",
-          "business",
-          "biznes",
-          "company",
-          "corporate",
-          "fleet",
-          "taxi",
-          "government",
-          "영업",
-          "영업용",
-          "사업",
-          "사업용",
-          "업무",
-          "법인",
-        ],
-        negativeTerms: [
-          "non-commercial",
-          "non commercial",
-          "noncommercial",
-          "no commercial",
-          "no business",
-          "not commercial",
-          "without commercial",
-          "without business",
-          "private",
-          "personal",
-          "individual",
-          "비영업",
-          "비사업",
-          "비상업",
-          "자가용",
-          "미영업",
-          "미사업",
-        ],
-      },
+    const commercialUsageValue = resolveUsageStatus(
       [
-        car?.insurance_v2?.business,
-        car?.insurance_v2?.businessCnt,
+        "komerc",
+        "komercial",
+        "commercial",
+        "biznes",
+        "business",
+        "fleet",
+        "taxi",
+        "영업",
+        "영업용",
+        "사업",
+        "사업용",
+        "업무",
+        "법인",
+      ],
+      [
+        car?.details?.insurance?.general_info?.usage_type,
+        (car?.insurance_v2 as any)?.business,
+        (car?.insurance_v2 as any)?.businessCnt,
         (car?.insurance_v2 as any)?.companyUse,
         (car?.insurance_v2 as any)?.government,
-        (car?.insurance_v2 as any)?.businessHistory,
         car?.insurance_v2?.carInfoUse1s,
         car?.insurance_v2?.carInfoUse2s,
-        car?.details?.insurance?.general_info?.usage_type,
         (car?.details as any)?.usage_type,
       ],
     );
@@ -1572,7 +1261,7 @@ const CarInspectionReport = () => {
         value: commercialUsageValue,
       },
     ];
-  }, [car]);
+  }, [car, toYesNo]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
     const entries: SpecialAccidentEntry[] = [];
