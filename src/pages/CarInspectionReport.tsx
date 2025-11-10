@@ -122,6 +122,10 @@ const positiveStatusValues = new Set([
   "no issues",
   "no problem",
   "pass",
+  "양호",
+  "정상",
+  "없음",
+  "적정",
 ]);
 
 const negativeStatusValues = new Set([
@@ -214,6 +218,38 @@ const mechanicalKeyPhraseTranslations: Record<string, string> = {
   "gear box": "Kutia e Marsheve",
   "clutch pedal": "Pedali i Kllaxhës",
   "coolant reservoir": "Depoja e Ftohësit",
+};
+
+const mechanicalKeyExactTranslations: Record<string, string> = {
+  "자기진단 - 원동기": "Vetë-diagnostikim - Motor",
+  "자기진단 - 변속기": "Vetë-diagnostikim - Transmision",
+  "원동기 - 작동상태(공회전)": "Motor - Gjendja e funksionimit (ralant)",
+  "원동기 - 오일누유 - 실린더 커버(로커암 커버)": "Motor - Rrjedhje vaji - Kapaku i cilindrit (kapaku i rocker arm-it)",
+  "원동기 - 오일누유 - 실린더 헤드 / 개스킷": "Motor - Rrjedhje vaji - Koka e cilindrit / garnitura",
+  "원동기 - 오일누유 - 실린더 블록 / 오일팬": "Motor - Rrjedhje vaji - Blloku i cilindrit / kartteri i vajit",
+  "원동기 - 오일 유량": "Motor - Sasia e vajit",
+  "원동기 - 냉각수누수 - 실린더 헤드 / 개스킷": "Motor - Rrjedhje ftohësi - Koka e cilindrit / garnitura",
+  "원동기 - 냉각수누수 - 워터펌프": "Motor - Rrjedhje ftohësi - Pompa e ujit",
+  "원동기 - 냉각수누수 - 라디에이터": "Motor - Rrjedhje ftohësi - Radiatori",
+  "원동기 - 냉각수누수 - 냉각수 수량": "Motor - Sasia e lëngut ftohës",
+  "변속기 - 자동변속기(a/t) - 오일누유": "Transmision - Transmision automatik (A/T) - Rrjedhje vaji",
+  "변속기 - 자동변속기(a/t) - 작동상태(공회전)": "Transmision - Transmision automatik (A/T) - Gjendja e funksionimit (ralant)",
+  "동력전달 - 등속조인트": "Transmetimi i fuqisë - Nyja me shpejtësi konstante",
+  "동력전달 - 디피렌셜 기어": "Transmetimi i fuqisë - Diferenciali",
+  "조향 - 동력조향 작동 오일 누유": "Drejtimi - Rrjedhje e vajit të servo-drejtimit",
+  "조향 - 작동상태 - 스티어링 기어(mdps포함)": "Drejtimi - Gjendja e funksionimit - Kutia e drejtimit (përfshirë MDPS)",
+  "조향 - 작동상태 - 스티어링 조인트": "Drejtimi - Gjendja e funksionimit - Nyja e drejtimit",
+  "조향 - 작동상태 - 타이로드엔드 및 볼 조인트": "Drejtimi - Gjendja e funksionimit - Fundi i shufrës së drejtimit dhe nyjat sferike",
+  "제동 - 브레이크 마스터 실린더오일 누유": "Frenimi - Rrjedhje nga cilindri kryesor i frenave",
+  "제동 - 브레이크 오일 누유": "Frenimi - Rrjedhje e vajit të frenave",
+  "제동 - 배력장치 상태": "Frenimi - Gjendja e servofrenit",
+  "전기 - 발전기 출력": "Elektrika - Dalja e alternatorit",
+  "전기 - 시동 모터": "Elektrika - Motori i ndezjes",
+  "전기 - 와이퍼 모터 기능": "Elektrika - Funksioni i motorit të pastruesit të xhamit",
+  "전기 - 실내송풍 모터": "Elektrika - Motori i ventilimit të brendshëm",
+  "전기 - 라디에이터 팬 모터": "Elektrika - Motori i ventilatorit të radiatorit",
+  "전기 - 윈도우 모터": "Elektrika - Motorët e dritareve",
+  "연료 - 연료누출(lp가스포함)": "Karburanti - Rrjedhje karburanti (përfshirë LPG)",
 };
 
 const mechanicalKeyWordTranslations: Record<string, string> = {
@@ -335,6 +371,10 @@ const statusValueExactTranslations: Record<string, string> = {
   fail: "Dështoi",
   caution: "Kujdes",
   warning: "Paralajmërim",
+  "양호": "Në gjendje të mirë",
+  "정상": "Normal",
+  "없음": "Nuk ka",
+  "적정": "Në nivel të duhur",
 };
 
 const statusValueRegexTranslations: Array<{
@@ -481,11 +521,16 @@ const meaninglessAccidentStrings = new Set([
 const translateMechanicalKey = (rawKey: string) => {
   const normalized = rawKey.replace(/_/g, " ").replace(/\s+/g, " ").trim();
   if (!normalized) return "-";
-  const lower = normalized.toLowerCase();
+  const canonical = normalized.replace(/\s*-\s*/g, " - ");
+  const exactTranslation = mechanicalKeyExactTranslations[canonical];
+  if (exactTranslation) {
+    return exactTranslation;
+  }
+  const lower = canonical.toLowerCase();
   if (mechanicalKeyPhraseTranslations[lower]) {
     return mechanicalKeyPhraseTranslations[lower];
   }
-  const words = normalized.split(/\s+/).map((word) => {
+  const words = canonical.split(/\s+/).map((word) => {
     const cleaned = word.toLowerCase();
     const translation = mechanicalKeyWordTranslations[cleaned];
     if (translation) return translation;
