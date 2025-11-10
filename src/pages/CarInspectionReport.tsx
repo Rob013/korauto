@@ -182,6 +182,7 @@ const negativeStatusKeywords = [
 const mechanicalKeyPhraseTranslations: Record<string, string> = {
   "engine oil": "Vaji i Motorit",
   "engine oil leak": "Rrjedhja e Vajit të Motorit",
+  "engine check": "Kontrolli i Motorit",
   "transmission oil": "Vaji i Transmisionit",
   "power steering": "Drejtimi Hidraulik",
   "coolant leak": "Rrjedhja e Ftohësit",
@@ -373,6 +374,9 @@ const accidentSummaryKeyTranslations: Record<string, string> = {
   accidents: "Aksidente",
   "simple repair": "Riparime të thjeshta",
   simple_repair: "Riparime të thjeshta",
+  engine_check: "Kontrolli i motorit",
+  "engine check": "Kontrolli i motorit",
+  enginecheck: "Kontrolli i motorit",
   "main framework": "Struktura kryesore",
   main_framework: "Struktura kryesore",
   exterior1rank: "Vlerësimi i jashtëm 1",
@@ -396,6 +400,10 @@ const accidentSummaryKeyTranslations: Record<string, string> = {
   ownerchange_cnt: "Ndërrimet e pronarëve",
   exterior_grade: "Vlerësimi i jashtëm",
   frame: "Korniza",
+  waterlog: "Dëmtime nga përmbytja",
+  water_log: "Dëmtime nga përmbytja",
+  "water log": "Dëmtime nga përmbytja",
+  recall: "Rikthim i prodhuesit",
 };
 
 const accidentKeyWordTranslations: Record<string, string> = {
@@ -429,6 +437,8 @@ const accidentKeyWordTranslations: Record<string, string> = {
   summary: "Përmbledhje",
   status: "Statusi",
 };
+
+const ACCIDENT_SUMMARY_HIDDEN_KEYS = new Set(["transmissioncheck", "comments"]);
 
 const accidentValueExactTranslations: Record<string, string> = {
   yes: "Po",
@@ -836,19 +846,15 @@ const buildAccidentSummaryFromEncars = (
   const detail = master.detail as Record<string, unknown> | undefined;
   if (detail) {
     const engineCheck = detail.engineCheck as string | undefined;
-    const trnsCheck = detail.trnsCheck as string | undefined;
     const waterlog = detail.waterlog as boolean | undefined;
     const recall = detail.recall as boolean | undefined;
-    const comments = detail.comments as string | undefined;
     const seriousTypes = detail.seriousTypes as unknown;
     const tuningStateTypes = detail.tuningStateTypes as unknown;
 
     if (engineCheck) summary.engine_check = engineCheck;
-    if (trnsCheck) summary.transmission_check = trnsCheck;
     if (typeof waterlog === "boolean")
       summary.waterlog = waterlog ? "yes" : "no";
     if (typeof recall === "boolean") summary.recall = recall ? "yes" : "no";
-    if (comments) summary.comments = comments;
     if (seriousTypes) summary.serious_types = seriousTypes;
     if (tuningStateTypes) summary.tuning = tuningStateTypes;
   }
@@ -1217,9 +1223,16 @@ const accidentSummaryData = car?.inspect?.accident_summary;
 const accidentSummaryEntries = useMemo(
   () =>
     accidentSummaryData && typeof accidentSummaryData === "object"
-      ? Object.entries(accidentSummaryData).filter(([, value]) =>
-          hasMeaningfulAccidentValue(value),
-        )
+      ? Object.entries(accidentSummaryData).filter(([key, value]) => {
+          const normalizedKey =
+            typeof key === "string"
+              ? key.replace(/[\s_]/g, "").toLowerCase()
+              : "";
+          if (ACCIDENT_SUMMARY_HIDDEN_KEYS.has(normalizedKey)) {
+            return false;
+          }
+          return hasMeaningfulAccidentValue(value);
+        })
       : [],
   [accidentSummaryData],
 );
