@@ -1159,7 +1159,7 @@ const CarInspectionReport = () => {
 
   const usageHighlights = useMemo(() => {
     const resolveUsageStatus = (
-      keywords: string[],
+      _keywords: string[],
       sources: Array<
         | string
         | number
@@ -1169,43 +1169,31 @@ const CarInspectionReport = () => {
         | string[]
       >,
     ) => {
-      const normalizedKeywords = keywords.map((keyword) =>
-        keyword.toLowerCase(),
-      );
+      let hasPositive = false;
+      let hasNegative = false;
 
-      const matchesKeyword = (text?: string | null) => {
-        if (!text) return false;
-        const normalizedText = text.toLowerCase();
-        return normalizedKeywords.some((keyword) =>
-          normalizedText.includes(keyword),
-        );
-      };
-
-      for (const entry of usageHistoryList) {
-        if (matchesKeyword(entry.description) || matchesKeyword(entry.value)) {
-          const statusFromValue = toYesNo(entry.value);
-          if (statusFromValue) return statusFromValue;
-          const statusFromDescription = toYesNo(entry.description);
-          if (statusFromDescription) return statusFromDescription;
+      const consider = (input: unknown) => {
+        const status = toYesNo(input as any);
+        if (status === "Po") {
+          hasPositive = true;
+        } else if (status === "Jo") {
+          hasNegative = true;
         }
-      }
+      };
 
       for (const source of sources) {
         if (!source) continue;
 
         if (Array.isArray(source)) {
-          for (const item of source) {
-            const status = toYesNo(item);
-            if (status) return status;
-          }
-          continue;
+          source.forEach(consider);
+        } else {
+          consider(source);
         }
-
-        const status = toYesNo(source as any);
-        if (status) return status;
       }
 
-      return null;
+      if (hasPositive) return "Po";
+      if (hasNegative) return "Jo";
+      return "Jo";
     };
 
     const rentalUsageValue = resolveUsageStatus(
@@ -1266,14 +1254,14 @@ const CarInspectionReport = () => {
     return [
       {
         label: "Përdorur si veturë me qira",
-        value: rentalUsageValue ?? "Nuk ka informata",
+        value: rentalUsageValue,
       },
       {
         label: "Përdorur për qëllime komerciale",
-        value: commercialUsageValue ?? "Nuk ka informata",
+        value: commercialUsageValue,
       },
     ];
-  }, [car, toYesNo, usageHistoryList]);
+  }, [car, toYesNo]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
     const entries: SpecialAccidentEntry[] = [];
@@ -2723,8 +2711,7 @@ const CarInspectionReport = () => {
                   </CardTitle>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Detaje të plota të aksidenteve të raportuara për automjetin
-                  nga API
+                  Detaje të plota të aksidenteve të raportuara për automjetin.
                 </p>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
