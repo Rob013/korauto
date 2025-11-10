@@ -604,11 +604,29 @@ const CarInspectionReport = () => {
         setLoading(false);
       } catch (error) {
         console.error("Nuk u arrit të ngarkohej raporti i inspektimit:", error);
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Nuk u arrit të ngarkohet raporti i inspektimit",
-        );
+        
+        let errorMessage = "Nuk u arrit të ngarkohet raporti i inspektimit";
+        
+        if (error instanceof Error) {
+          const errorMsg = error.message;
+          
+          // Check for specific error types
+          if (errorMsg.includes("VEHICLE_NOT_FOUND")) {
+            errorMessage = errorMsg.replace("VEHICLE_NOT_FOUND: ", "");
+          } else if (errorMsg.includes("AUTH_ERROR")) {
+            errorMessage = errorMsg.replace("AUTH_ERROR: ", "");
+          } else if (errorMsg.includes("SERVER_ERROR")) {
+            errorMessage = errorMsg.replace("SERVER_ERROR: ", "");
+          } else if (errorMsg.includes("404")) {
+            errorMessage = "Makina nuk u gjet në sistemin e Encars. Mund të jetë larguar nga shitja ose ID-ja është e pasaktë.";
+          } else if (errorMsg.includes("aborted") || errorMsg.includes("timeout")) {
+            errorMessage = "Kërkesa zgjati shumë kohë. Ju lutem kontrolloni lidhjen tuaj të internetit dhe provoni përsëri.";
+          } else {
+            errorMessage = errorMsg;
+          }
+        }
+        
+        setError(errorMessage);
         setCar(null);
         setLoading(false);
       } finally {

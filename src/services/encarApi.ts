@@ -204,6 +204,22 @@ async function encarFetch<T>(
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
+    
+    // Provide more specific error messages for common status codes
+    if (response.status === 404) {
+      throw new Error(
+        "VEHICLE_NOT_FOUND: Makina nuk u gjet në sistemin e Encars. Mund të jetë larguar nga shitja ose ID-ja është e pasaktë.",
+      );
+    } else if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        "AUTH_ERROR: Probleme me autorizimin e API. Ju lutem kontaktoni mbështetjen teknike.",
+      );
+    } else if (response.status >= 500) {
+      throw new Error(
+        "SERVER_ERROR: Serveri i Encars nuk është i disponueshëm momentalisht. Ju lutem provoni më vonë.",
+      );
+    }
+    
     throw new Error(
       `Encars API request failed (${response.status} ${response.statusText})${message ? `: ${message}` : ""}`,
     );
