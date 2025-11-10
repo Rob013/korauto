@@ -38,6 +38,252 @@ const MARKER_VW_SCALE = 1.25;
 const COLLISION_SPACING_MULTIPLIER = 1.25;
 const DIAGRAM_EDGE_PADDING = 20;
 
+const replacementStatusCodes = new Set(["X", "N", "E", "T", "P", "Z", "B"]);
+const repairStatusCodes = new Set([
+  "A",
+  "R",
+  "W",
+  "C",
+  "D",
+  "S",
+  "U",
+  "M",
+  "L",
+  "F",
+  "P",
+]);
+const neutralStatusCodes = new Set(["", "0", "G", "GOOD"]);
+
+const replacementKeywords = [
+  "exchange",
+  "replacement",
+  "replaced",
+  "swap",
+  "교환",
+  "교체",
+  "대체",
+];
+
+const repairKeywords = [
+  "repair",
+  "repaired",
+  "weld",
+  "welding",
+  "수리",
+  "판금",
+  "도색",
+  "스크래치",
+  "찌그러짐",
+  "dent",
+  "scratch",
+  "paint",
+  "refinish",
+  "부식",
+  "corrosion",
+  "damage",
+  "용접",
+];
+
+const neutralKeywords = [
+  "normal",
+  "good",
+  "ok",
+  "okay",
+  "fine",
+  "양호",
+  "정상",
+  "무사고",
+  "goodness",
+  "양호함",
+  "정상임",
+];
+
+const aliasMatchers: Array<{ pattern: RegExp; key: string }> = [
+  { pattern: /(front\s*)?door.*(left|\blh\b)/i, key: "front_left_door" },
+  { pattern: /(front\s*)?door.*(right|\brh\b)/i, key: "front_right_door" },
+  { pattern: /rear\s*door.*(left|\blh\b)/i, key: "rear_left_door" },
+  { pattern: /rear\s*door.*(right|\brh\b)/i, key: "rear_right_door" },
+  { pattern: /(quarter\s*panel|quarter).*\b(left|lh)\b/i, key: "left_quarter_panel" },
+  { pattern: /(quarter\s*panel|quarter).*\b(right|rh)\b/i, key: "right_quarter_panel" },
+  { pattern: /(front\s*)?fender.*(left|\blh\b)/i, key: "front_left_fender" },
+  { pattern: /(front\s*)?fender.*(right|\brh\b)/i, key: "front_right_fender" },
+  { pattern: /(좌|왼).*(앞|전).*(도어)/, key: "front_left_door" },
+  { pattern: /(우|오).*(앞|전).*(도어)/, key: "front_right_door" },
+  { pattern: /(좌|왼).*(뒤|후).*(도어)/, key: "rear_left_door" },
+  { pattern: /(우|오).*(뒤|후).*(도어)/, key: "rear_right_door" },
+  { pattern: /(좌|왼).*(쿼터|휀다|펜더)/, key: "left_quarter_panel" },
+  { pattern: /(우|오).*(쿼터|휀다|펜더)/, key: "right_quarter_panel" },
+  { pattern: /(앞|전).*(범퍼)/, key: "front_bumper" },
+  { pattern: /(뒤|후).*(범퍼)/, key: "rear_bumper" },
+  { pattern: /(루프|지붕)/, key: "roof" },
+  { pattern: /(트렁크)/, key: "trunk" },
+  { pattern: /(사이드\s*실|사이드실).*(좌|왼)/, key: "side_sill_panel_left" },
+  { pattern: /(사이드\s*실|사이드실).*(우|오)/, key: "side_sill_panel_right" },
+  { pattern: /(휠하우스).*(뒤|후).*(좌|왼)/, key: "rear_wheel_house_left" },
+  { pattern: /(휠하우스).*(뒤|후).*(우|오)/, key: "rear_wheel_house_right" },
+  { pattern: /(휠하우스).*(앞|전).*(좌|왼)/, key: "front_wheel_house_left" },
+  { pattern: /(휠하우스).*(앞|전).*(우|오)/, key: "front_wheel_house_right" },
+  { pattern: /(앞|전).*(보닛|본넷|후드)/, key: "hood" },
+  { pattern: /(radiator|support)/i, key: "radiator_support" },
+  { pattern: /(cowl|카울)/i, key: "cowl_panel" },
+];
+
+const normalizeForMatching = (input: string) => {
+  if (!input) return "";
+  let normalized = input.toString().toLowerCase();
+
+  const replacements = [
+    { pattern: /좌|왼/g, value: " left " },
+    { pattern: /우|오/g, value: " right " },
+    { pattern: /앞|전/g, value: " front " },
+    { pattern: /뒤|후/g, value: " rear " },
+    { pattern: /도어/g, value: " door " },
+    { pattern: /휀다|펜더/g, value: " fender " },
+    { pattern: /쿼터/g, value: " quarter " },
+    { pattern: /범퍼/g, value: " bumper " },
+    { pattern: /트렁크/g, value: " trunk " },
+    { pattern: /보닛|본넷|후드/g, value: " hood " },
+    { pattern: /루프|지붕/g, value: " roof " },
+    { pattern: /휠하우스/g, value: " wheel house " },
+    { pattern: /사이드\s*실|사이드실/g, value: " side sill " },
+    { pattern: /라디에이터/g, value: " radiator " },
+    { pattern: /서포트/g, value: " support " },
+  ];
+
+  replacements.forEach(({ pattern, value }) => {
+    normalized = normalized.replace(pattern, value);
+  });
+
+  normalized = normalized
+    .replace(/[_-]/g, " ")
+    .replace(/\(.*?\)/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return normalized;
+};
+
+const computeTokenScore = (a: string, b: string) => {
+  if (!a || !b) return 0;
+  if (a === b) return 1000;
+  const tokensA = Array.from(new Set(a.split(" ").filter(Boolean)));
+  const tokensB = Array.from(new Set(b.split(" ").filter(Boolean)));
+  if (tokensA.length === 0 || tokensB.length === 0) return 0;
+
+  let score = 0;
+  tokensA.forEach((token) => {
+    if (tokensB.includes(token)) {
+      score += token.length * 20;
+    }
+  });
+
+  if (
+    tokensA.every((token) => tokensB.includes(token)) ||
+    tokensB.every((token) => tokensA.includes(token))
+  ) {
+    score += 150;
+  }
+
+  return score;
+};
+
+const findAliasMatch = (value: string | undefined | null) => {
+  if (!value) return null;
+  for (const { pattern, key } of aliasMatchers) {
+    if (pattern.test(value)) {
+      return key;
+    }
+  }
+  return null;
+};
+
+const containsKeyword = (value: string, keywords: string[]) =>
+  keywords.some((keyword) => value.includes(keyword));
+
+const collectStatusEntries = (item: any) => {
+  const statuses: Array<{ code?: string; title?: string }> = [];
+
+  const pushStatus = (status: any) => {
+    if (!status) return;
+    if (typeof status === "string" || typeof status === "number") {
+      statuses.push({ title: String(status) });
+      return;
+    }
+    if (typeof status === "object") {
+      const code =
+        status.code ??
+        status.status ??
+        status.value ??
+        status.type ??
+        status.result;
+      const title =
+        status.title ??
+        status.name ??
+        status.label ??
+        status.description ??
+        status.desc ??
+        status.statusTitle;
+      if (code !== undefined || title !== undefined) {
+        statuses.push({
+          code: code !== undefined ? String(code) : undefined,
+          title: title !== undefined ? String(title) : undefined,
+        });
+      }
+    }
+  };
+
+  const candidates = [
+    item?.statusTypes,
+    item?.statusType,
+    (item as any)?.status_types,
+    (item as any)?.status_type,
+    item?.status,
+    (item as any)?.status_detail,
+    (item as any)?.statusDetails,
+  ];
+
+  candidates.forEach((candidate) => {
+    if (!candidate) return;
+    if (Array.isArray(candidate)) {
+      candidate.forEach(pushStatus);
+    } else {
+      pushStatus(candidate);
+    }
+  });
+
+  return statuses;
+};
+
+const extractAttributeStrings = (attributes: any[]): string[] => {
+  if (!Array.isArray(attributes)) return [];
+  const collected: string[] = [];
+  attributes.forEach((attr) => {
+    if (!attr) return;
+    if (typeof attr === "string") {
+      collected.push(attr);
+    } else if (typeof attr === "object") {
+      const candidates = [
+        attr.title,
+        attr.name,
+        attr.label,
+        attr.code,
+        attr.value,
+        attr.description,
+        (attr as any)?.desc,
+      ];
+      candidates.forEach((candidate) => {
+        if (candidate !== undefined && candidate !== null && candidate !== "") {
+          collected.push(String(candidate));
+        }
+      });
+    } else {
+      collected.push(String(attr));
+    }
+  });
+  return collected;
+};
+
 // Map inspection items to diagram positions
 const mapInspectionToMarkers = (
   inspectionData: any[],
@@ -158,7 +404,7 @@ const mapInspectionToMarkers = (
     rear_rail: { panel: "out", x: 320, y: 410 },
   };
 
-  console.log("🔍 Processing inspection data for diagram:", {
+  console.log("🔍 Po përpunohen të dhënat e inspektimit për diagramin:", {
     totalItems: inspectionData.length,
     items: inspectionData.map((item) => ({
       title: item?.type?.title,
@@ -168,154 +414,183 @@ const mapInspectionToMarkers = (
     })),
   });
 
-  inspectionData.forEach((item, idx) => {
-    const typeTitle = (item?.type?.title || "").toString().toLowerCase();
-    const typeCode = (item?.type?.code || "").toString().toLowerCase();
-    const rawStatusTypes = (item as any)?.statusTypes;
-    const statusTypes = Array.isArray(rawStatusTypes)
-      ? rawStatusTypes
-      : rawStatusTypes
-        ? [rawStatusTypes]
-        : [];
-    const rawAttributes = (item as any)?.attributes;
-    const attributes = Array.isArray(rawAttributes)
-      ? rawAttributes
-      : rawAttributes !== undefined && rawAttributes !== null
-        ? [rawAttributes]
-        : [];
+    inspectionData.forEach((item, idx) => {
+      const typeTitleRaw = (item?.type?.title || "").toString();
+      const typeCodeRaw = (item?.type?.code || "").toString();
+      const statuses = collectStatusEntries(item);
+      const rawAttributes = (item as any)?.attributes;
+      const attributes = Array.isArray(rawAttributes)
+        ? rawAttributes
+        : rawAttributes !== undefined && rawAttributes !== null
+          ? [rawAttributes]
+          : [];
+      const attributeStrings = extractAttributeStrings(attributes);
+      const normalizedAttributesForMatch = attributeStrings
+        .map((attr) => normalizeForMatching(attr))
+        .filter(Boolean);
+      const normalizedTitle = normalizeForMatching(typeTitleRaw);
+      const normalizedCode = normalizeForMatching(typeCodeRaw);
 
-    console.log(`📋 Processing item ${idx + 1}:`, {
-      typeTitle,
-      typeCode,
-      statusTypes,
-      attributes,
-    });
+      console.log(`📋 Po përpunohet elementi ${idx + 1}:`, {
+        title: typeTitleRaw,
+        code: typeCodeRaw,
+        statuses,
+        attributes,
+      });
 
-    // Determine marker type based on statusTypes and attributes
-    let markerType: "N" | "R" = "R";
-    let hasIssue = false;
+      let markerType: "N" | "R" = "R";
+      let hasIssue = false;
+      let hasNonNeutralStatus = false;
 
-    // Check statusTypes for exchange/replacement (N) or repair (R)
-    statusTypes.forEach((status: any) => {
-      const statusTitle = (status?.title || "").toString().toLowerCase();
-      const statusCode = (status?.code || "").toString().toUpperCase();
+      statuses.forEach((status) => {
+        const statusCode = (status.code || "").toString().trim().toUpperCase();
+        const normalizedStatusTitle = normalizeForMatching(
+          status.title || status.code || "",
+        );
 
-      if (
-        statusCode === "X" ||
-        statusCode === "N" ||
-        statusTitle.includes("exchange") ||
-        statusTitle.includes("replacement") ||
-        statusTitle.includes("교환")
-      ) {
-        markerType = "N";
-        hasIssue = true;
-      } else if (
-        statusCode === "A" ||
-        statusCode === "R" ||
-        statusCode === "W" ||
-        statusTitle.includes("repair") ||
-        statusTitle.includes("수리") ||
-        statusTitle.includes("weld") ||
-        statusTitle.includes("용접")
-      ) {
+        if (
+          replacementStatusCodes.has(statusCode) ||
+          containsKeyword(normalizedStatusTitle, replacementKeywords)
+        ) {
+          markerType = "N";
+          hasIssue = true;
+        } else if (
+          repairStatusCodes.has(statusCode) ||
+          containsKeyword(normalizedStatusTitle, repairKeywords)
+        ) {
+          if (markerType !== "N") markerType = "R";
+          hasIssue = true;
+        } else if (
+          (statusCode && !neutralStatusCodes.has(statusCode)) ||
+          (normalizedStatusTitle &&
+            !containsKeyword(normalizedStatusTitle, neutralKeywords))
+        ) {
+          hasNonNeutralStatus = true;
+        }
+      });
+
+      if (!hasIssue && hasNonNeutralStatus) {
         markerType = "R";
         hasIssue = true;
       }
-    });
 
-    // Check attributes for RANK indicators - if present, assume there's an issue
-    const hasHighRank = attributes.some(
-      (attr: any) =>
-        typeof attr === "string" &&
-        (attr.includes("RANK_ONE") ||
-          attr.includes("RANK_TWO") ||
-          attr.includes("RANK_A") ||
-          attr.includes("RANK_B")),
-    );
-
-    if (hasHighRank) {
-      hasIssue = true;
-      // Keep the markerType from statusTypes, or default to 'N' if no statusTypes found
-      if (statusTypes.length === 0) {
-        markerType = "N";
-      }
-    }
-
-    if (!hasIssue) {
-      console.log(`⚠️ Skipping item ${idx + 1}: no issue detected`);
-      return;
-    }
-
-    // Try to find position using improved matching algorithm
-    const normalize = (s: string) =>
-      (s || "")
-        .toString()
-        .toLowerCase()
-        .replace(/_/g, " ")
-        .replace(/\(.*?\)/g, "") // remove anything in parentheses
-        .replace(/[^a-z0-9\s]/g, "") // drop punctuation
-        .replace(/\s+/g, " ")
-        .trim();
-
-    let bestMatch: string | null = null;
-    let bestScore = 0;
-
-    const normalizedTitle = normalize(typeTitle);
-    const normalizedCode = normalize(typeCode);
-
-    // Try exact match first (highest priority)
-    for (const partKey of Object.keys(positionMap)) {
-      const normalizedPartKey = normalize(partKey);
-
-      // Exact match gets highest score
-      if (
-        normalizedPartKey === normalizedTitle ||
-        normalizedPartKey === normalizedCode
-      ) {
-        bestMatch = partKey;
-        bestScore = 1000;
-        break;
-      }
-    }
-
-    // If no exact match, try fuzzy matching
-    if (!bestMatch) {
-      for (const partKey of Object.keys(positionMap)) {
-        const normalizedPartKey = normalize(partKey);
-
-        // Check if one contains the other (prefer longer matches)
-        if (normalizedTitle && normalizedPartKey) {
-          if (normalizedTitle.includes(normalizedPartKey)) {
-            const score = normalizedPartKey.length * 10;
-            if (score > bestScore) {
-              bestScore = score;
-              bestMatch = partKey;
-            }
-          } else if (normalizedPartKey.includes(normalizedTitle)) {
-            const score = normalizedTitle.length * 10;
-            if (score > bestScore) {
-              bestScore = score;
-              bestMatch = partKey;
-            }
-          }
-        }
-
-        // Also check code matching
-        if (normalizedCode && normalizedPartKey) {
-          if (
-            normalizedCode.includes(normalizedPartKey) ||
-            normalizedPartKey.includes(normalizedCode)
-          ) {
-            const score =
-              Math.min(normalizedCode.length, normalizedPartKey.length) * 8;
-            if (score > bestScore) {
-              bestScore = score;
-              bestMatch = partKey;
-            }
-          }
+      if (!hasIssue && attributeStrings.length > 0) {
+        if (
+          normalizedAttributesForMatch.some((value) =>
+            containsKeyword(value, replacementKeywords),
+          )
+        ) {
+          markerType = "N";
+          hasIssue = true;
+        } else if (
+          normalizedAttributesForMatch.some((value) =>
+            containsKeyword(value, repairKeywords),
+          )
+        ) {
+          if (markerType !== "N") markerType = "R";
+          hasIssue = true;
         }
       }
-    }
+
+      const textualCandidates = [
+        typeTitleRaw,
+        typeCodeRaw,
+        (item as any)?.title,
+        (item as any)?.name,
+        (item as any)?.description,
+        (item as any)?.result,
+        (item as any)?.status,
+      ];
+
+      for (const candidate of textualCandidates) {
+        if (!candidate || typeof candidate !== "string") continue;
+        const normalizedCandidate = normalizeForMatching(candidate);
+        if (!normalizedCandidate) continue;
+
+        if (containsKeyword(normalizedCandidate, replacementKeywords)) {
+          markerType = "N";
+          hasIssue = true;
+          break;
+        }
+
+        if (containsKeyword(normalizedCandidate, repairKeywords)) {
+          if (markerType !== "N") markerType = "R";
+          hasIssue = true;
+        }
+      }
+
+      const hasHighRank = attributes.some(
+        (attr: any) =>
+          typeof attr === "string" &&
+          (attr.includes("RANK_ONE") ||
+            attr.includes("RANK_TWO") ||
+            attr.includes("RANK_A") ||
+            attr.includes("RANK_B")),
+      );
+
+      if (hasHighRank) {
+        hasIssue = true;
+        if (statuses.length === 0) {
+          markerType = "N";
+        }
+      }
+
+      if (!hasIssue) {
+        console.log(
+          `⚠️ Skipping item ${idx + 1}: nuk u identifikua problem i raportuar`,
+        );
+        return;
+      }
+
+      let bestMatch: string | null = null;
+      let bestScore = 0;
+
+      const aliasMatch =
+        findAliasMatch(typeTitleRaw) ||
+        findAliasMatch(typeCodeRaw) ||
+        findAliasMatch(normalizedTitle) ||
+        findAliasMatch(normalizedCode);
+
+      if (aliasMatch && positionMap[aliasMatch]) {
+        bestMatch = aliasMatch;
+        bestScore = 950;
+      }
+
+      if (!bestMatch) {
+        for (const partKey of Object.keys(positionMap)) {
+          const normalizedPartKey = normalizeForMatching(partKey);
+          const scoreFromTitle = computeTokenScore(
+            normalizedTitle,
+            normalizedPartKey,
+          );
+          if (scoreFromTitle > bestScore) {
+            bestScore = scoreFromTitle;
+            bestMatch = partKey;
+          }
+
+          const scoreFromCode = computeTokenScore(
+            normalizedCode,
+            normalizedPartKey,
+          );
+          if (scoreFromCode > bestScore) {
+            bestScore = scoreFromCode;
+            bestMatch = partKey;
+          }
+
+          if (normalizedAttributesForMatch.length > 0) {
+            normalizedAttributesForMatch.forEach((attribute) => {
+              const scoreFromAttr = computeTokenScore(
+                attribute,
+                normalizedPartKey,
+              );
+              if (scoreFromAttr > bestScore) {
+                bestScore = scoreFromAttr;
+                bestMatch = partKey;
+              }
+            });
+          }
+        }
+      }
 
       if (bestMatch) {
         const pos = positionMap[bestMatch];
@@ -368,7 +643,7 @@ const mapInspectionToMarkers = (
         };
 
         console.log(
-          `✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [offset for collision]" : ""}`,
+          `✅ U vendos "${item?.type?.title}" → ${bestMatch} (${pos.panel}), tip: ${markerType}, pozicioni: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [ripozicionuar për të shmangur mbivendosjen]" : ""}`,
         );
 
         if (pos.panel === "within") {
@@ -378,12 +653,12 @@ const mapInspectionToMarkers = (
         }
       } else {
         console.warn(
-          `❌ No position mapping found for: "${item?.type?.title}" (searched: ${normalizedTitle}, ${normalizedCode})`,
+          `❌ Nuk u gjet pozicion i hartuar për: "${item?.type?.title}" (u kërkua sipas: ${normalizedTitle}, ${normalizedCode})`,
         );
       }
   });
 
-  console.log(`\n🎯 Final diagram markers:`, {
+  console.log(`\n🎯 Shënimet përfundimtare të diagramit:`, {
     within: withinMarkers.length,
     out: outMarkers.length,
     withinItems: withinMarkers.map((m) => m.label),
@@ -483,9 +758,9 @@ const DiagramMarkerWithTooltip: React.FC<{
   return (
     <Tooltip delayDuration={editMode ? 999999 : 0}>
       <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${marker.label} - ${marker.type === "N" ? "Replacement" : "Repair"}`}
+          <button
+            type="button"
+            aria-label={`${marker.label} - ${marker.type === "N" ? "Zëvendësim" : "Riparim"}`}
           ref={buttonRef}
           className={`${baseClasses} ${variantClasses} ${editModeClasses}`}
           style={{
@@ -507,8 +782,8 @@ const DiagramMarkerWithTooltip: React.FC<{
         className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs z-50"
       >
         <div className="font-semibold text-sm">{marker.label}</div>
-        <div className="text-xs text-muted-foreground mt-1">
-          {marker.type === "N" ? "Shift (Replacement)" : "Repair"}
+          <div className="text-xs text-muted-foreground mt-1">
+            {marker.type === "N" ? "Ndërrim / zëvendësim" : "Riparim"}
         </div>
       </TooltipContent>
     </Tooltip>
@@ -538,8 +813,11 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         .from("inspection_marker_positions")
         .select("*");
 
-      if (error) {
-        console.error("Error loading custom positions:", error);
+        if (error) {
+          console.error(
+            "Gabim gjatë ngarkimit të pozicioneve të personalizuara:",
+            error,
+          );
         return;
       }
 
@@ -620,10 +898,10 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         if (error) throw error;
       }
 
-      toast({
-        title: "Positions saved",
-        description: `Updated ${updates.length} marker position(s)`,
-      });
+        toast({
+          title: "Pozicionet u ruajtën",
+          description: `U përditësuan ${updates.length} pozicione shenjash`,
+        });
 
       setEditedMarkers({});
       setEditMode(false);
@@ -647,13 +925,13 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         });
         setCustomPositions(positions);
       }
-    } catch (error) {
-      console.error("Error saving positions:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save marker positions",
-        variant: "destructive",
-      });
+      } catch (error) {
+        console.error("Gabim gjatë ruajtjes së pozicioneve:", error);
+        toast({
+          title: "Gabim",
+          description: "Pozicionet e shenjave nuk u ruajtën",
+          variant: "destructive",
+        });
     }
   };
 
@@ -674,10 +952,10 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           <div className="text-sm font-medium">
             {editMode ? (
               <span className="text-yellow-600 dark:text-yellow-500">
-                🖱️ Edit Mode: Drag markers to reposition
+                🖱️ Mënyra e redaktimit: zhvendosni shenjat për t’i ripozicionuar
               </span>
             ) : (
-              <span>Diagram Editor</span>
+              <span>Redaktori i diagramit</span>
             )}
           </div>
           <div className="flex gap-2">
@@ -688,13 +966,13 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
                 onClick={() => setEditMode(true)}
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                Edit Positions
+                Modifiko pozicionet
               </Button>
             ) : (
               <>
                 <Button size="sm" variant="outline" onClick={handleCancelEdit}>
                   <X className="w-4 h-4 mr-2" />
-                  Cancel
+                  Anulo
                 </Button>
                 <Button
                   size="sm"
@@ -702,7 +980,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
                   disabled={Object.keys(editedMarkers).length === 0}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save{" "}
+                  Ruaj{" "}
                   {Object.keys(editedMarkers).length > 0 &&
                     `(${Object.keys(editedMarkers).length})`}
                 </Button>
@@ -716,15 +994,15 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
       {hasData && !hasAnyMarkers && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
           <p className="text-yellow-800 dark:text-yellow-200">
-            ℹ️ Data received ({outerInspectionData.length} items) but no markers
-            mapped. Check console for details.
+            ℹ️ U morën {outerInspectionData.length} elemente, por nuk u gjet asnjë
+            shenjë për t’u vizualizuar. Kontrolloni konzolën për detaje.
           </p>
         </div>
       )}
       {!hasData && (
         <div className="bg-muted/50 border-b border-border px-4 py-2 text-sm">
           <p className="text-muted-foreground">
-            No inspection data available for this vehicle.
+            Nuk ka të dhëna inspektimi për këtë automjet.
           </p>
         </div>
       )}
@@ -741,11 +1019,11 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         {/* Within panel - interior/side view */}
         <div className="relative p-4 lg:border-r border-border bg-white dark:bg-muted/5">
           <div className="relative mx-auto max-w-[640px]">
-            <img
-              src={carDiagramFront}
-              alt="Car side/interior view"
-              className="w-full h-auto"
-            />
+              <img
+                src={carDiagramFront}
+                alt="Pamje anësore dhe e brendshme e makinës"
+                className="w-full h-auto"
+              />
             <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
                 {withinWithCustomPos.map((marker, idx) => (
@@ -765,11 +1043,11 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         {/* Out panel - exterior/bottom view */}
         <div className="relative p-4 bg-white dark:bg-muted/5">
           <div className="relative mx-auto max-w-[640px]">
-            <img
-              src={carDiagramBack}
-              alt="Car exterior/bottom view"
-              className="w-full h-auto"
-            />
+              <img
+                src={carDiagramBack}
+                alt="Pamje e jashtme dhe e poshtme e makinës"
+                className="w-full h-auto"
+              />
             <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
                 {outWithCustomPos.map((marker, idx) => (
@@ -789,18 +1067,18 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
 
       {/* Legend */}
       <div className="px-4 py-3 border-t border-border bg-muted/10 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <div className="w-6 h-6 rounded-full bg-[#E53935] flex items-center justify-center text-white text-xs font-bold shadow-sm">
-            N
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <div className="w-6 h-6 rounded-full bg-[#E53935] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+              N
+            </div>
+            Ndërrim (zëvendësim)
           </div>
-          Ndërrim (Replacement)
-        </div>
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <div className="w-6 h-6 rounded-full bg-[#D84315] flex items-center justify-center text-white text-xs font-bold shadow-sm">
-            R
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <div className="w-6 h-6 rounded-full bg-[#D84315] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+              R
+            </div>
+            Riparim
           </div>
-          Riparim (Repair)
-        </div>
       </div>
     </Card>
   );
