@@ -26,6 +26,7 @@ import {
   Gauge,
   Loader2,
   MapPin,
+  Image,
   Shield,
   Users,
   Wrench,
@@ -54,6 +55,8 @@ interface InspectionReportCar {
   firstRegistration?: string;
   postedAt?: string;
   engineDisplacement?: number | string;
+  engineCode?: string;
+  transmissionName?: string;
   damage?: {
     main?: string | null;
     second?: string | null;
@@ -140,6 +143,65 @@ const isPositiveStatus = (value: unknown) => {
 
 const formatKeyLabel = (key: string) =>
   key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+
+const translateOdometerStatus = (value?: string | null) => {
+  if (!value) return undefined;
+  const normalized = value.toString().toLowerCase();
+  if (normalized.includes("actual")) return "I verifikuar";
+  if (normalized.includes("not") && normalized.includes("actual"))
+    return "I pasaktë";
+  if (normalized.includes("not") && normalized.includes("exempt"))
+    return "I përjashtuar";
+  if (normalized.includes("exempt")) return "I përjashtuar";
+  if (normalized.includes("unknown")) return "E panjohur";
+  if (normalized.includes("tampered")) return "Dyshohet për manipulim";
+  return value;
+};
+
+const translateTransmissionName = (value?: string | null) => {
+  if (!value) return undefined;
+  const normalized = value.toString().toLowerCase();
+  if (normalized.includes("automatic") || normalized === "auto")
+    return "Automatike";
+  if (normalized.includes("manual")) return "Manuale";
+  if (normalized.includes("dual") || normalized.includes("dct"))
+    return "DCT (Dual Clutch)";
+  if (normalized.includes("cvt")) return "CVT";
+  if (normalized.includes("amt")) return "Transmision i automatizuar";
+  if (normalized.includes("semi")) return "Polo-automatike";
+  return value;
+};
+
+const translateFuelName = (value?: string | null) => {
+  if (!value) return undefined;
+  const normalized = value.toString().toLowerCase();
+  if (normalized.includes("diesel")) return "Naftë";
+  if (normalized.includes("gasoline") || normalized.includes("petrol"))
+    return "Benzinë";
+  if (normalized.includes("hybrid")) return "Hibride";
+  if (normalized.includes("electric")) return "Elektrike";
+  if (normalized.includes("lpg")) return "LPG";
+  if (normalized.includes("cng")) return "CNG";
+  return value;
+};
+
+const formatEngineDisplacementValue = (value?: number | string | null) => {
+  if (value === undefined || value === null || value === "") return undefined;
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return `${Math.round(value).toLocaleString("sq-AL")} cc`;
+  }
+
+  const numeric = Number(
+    typeof value === "string" ? value.replace(/[^\d.]/g, "") : value,
+  );
+
+  if (!Number.isNaN(numeric) && isFinite(numeric) && numeric > 20) {
+    return `${Math.round(numeric).toLocaleString("sq-AL")} cc`;
+  }
+
+  return typeof value === "string" ? value : undefined;
+};
 
 const formatDisplayDate = (
   value?: unknown,
@@ -362,11 +424,19 @@ const CarInspectionReport = () => {
           carData.listed_at ||
           carData.posted_at ||
           carData.created_at,
-        engineDisplacement:
-          lotData.insurance_v2?.displacement ||
-          carData.insurance_v2?.displacement ||
-          details?.engine_volume ||
-          details?.engine?.displacement,
+          engineDisplacement:
+            lotData.insurance_v2?.displacement ||
+            carData.insurance_v2?.displacement ||
+            details?.engine_volume ||
+            details?.engine?.displacement,
+          engineCode:
+            carData.engine?.name ||
+            (details?.engine as any)?.name ||
+            lotData.engine?.name,
+          transmissionName:
+            carData.transmission?.name ||
+            lotData.transmission?.name ||
+            (details?.transmission as any)?.name,
         damage: lotData.damage || details?.damage || null,
         insurance: lotData.insurance || details?.insurance || carData.insurance,
         insurance_v2: insuranceV2,
@@ -439,6 +509,14 @@ const CarInspectionReport = () => {
           engineDisplacement:
             fallbackCarAny.details?.engine_volume ||
             lotDataAny.insurance_v2?.displacement,
+          engineCode:
+            fallbackCarAny.engine?.name ||
+            fallbackCarAny.details?.engine?.name ||
+            lotDataAny.engine?.name,
+          transmissionName:
+            fallbackCarAny.transmission?.name ||
+            lotDataAny.transmission?.name ||
+            fallbackCarAny.details?.transmission?.name,
           damage: lotDataAny.damage || null,
           insurance: lotDataAny.insurance,
           insurance_v2: lotDataAny.insurance_v2,
@@ -1157,6 +1235,84 @@ const CarInspectionReport = () => {
           ? "1 herë"
           : `${ownerChangeCount} herë`;
 
+  const plateNumber = useMemo(() => {
+    const infoChanges = (car?.insurance_v2 as any)?.carInfoChanges;
+    if (Array.isArray(infoChanges) && infoChanges.length > 0) {
+      const latest = [...infoChanges]
+        .reverse()
+        .find(
+          (change) =>
+            change &&
+            typeof change.carNo === "string" &&
+            change.carNo.trim().length > 0,
+        );
+      if (latest) {
+        return latest.carNo.trim();
+      }
+    }
+
+    const insuranceCarInfo =
+      (car?.details?.insurance as any)?.car_info ||
+      (car?.insurance as any)?.car_info;
+
+    if (insuranceCarInfo && typeof insuranceCarInfo === "object") {
+      const possible =
+        (insuranceCarInfo as any).car_no ??
+        (insuranceCarInfo as any).carNo ??
+        (insuranceCarInfo as any).license ??
+        (insuranceCarInfo as any).plate_no ??
+        (insuranceCarInfo as any).plateNo;
+      if (typeof possible === "string" && possible.trim().length > 0) {
+        return possible.trim();
+      }
+    }
+
+    return undefined;
+  }, [car]);
+
+  const lotDisplay = car?.lot ?? lot ?? "-";
+
+  const engineSpecification = useMemo(() => {
+    const displacement = formatEngineDisplacementValue(
+      car?.engineDisplacement ?? null,
+    );
+    if (car?.engineCode && displacement) {
+      return `${car.engineCode} • ${displacement}`;
+    }
+    if (car?.engineCode) return car.engineCode;
+    return displacement;
+  }, [car?.engineCode, car?.engineDisplacement]);
+
+  const transmissionDisplay = useMemo(() => {
+    const translated = translateTransmissionName(car?.transmissionName);
+    if (translated) return translated;
+    if (
+      typeof car?.transmissionName === "string" &&
+      car.transmissionName.trim()
+    ) {
+      return car.transmissionName;
+    }
+    return undefined;
+  }, [car?.transmissionName]);
+
+  const fuelDisplay = useMemo(() => {
+    const translated = translateFuelName(car?.fuel);
+    if (translated) return translated;
+    if (typeof car?.fuel === "string" && car.fuel.trim()) {
+      return car.fuel;
+    }
+    return undefined;
+  }, [car?.fuel]);
+
+  const insuranceRegDateDisplay = useMemo(() => {
+    const rawDate =
+      (car?.insurance_v2 as any)?.regDate ??
+      (car?.insurance_v2 as any)?.firstDate ??
+      car?.firstRegistration ??
+      car?.postedAt;
+    return formatDisplayDate(rawDate);
+  }, [car?.firstRegistration, car?.insurance_v2, car?.postedAt]);
+
   const usageHighlights = useMemo(() => {
     const resolveUsageStatus = (
       _keywords: string[],
@@ -1456,17 +1612,11 @@ const CarInspectionReport = () => {
     car.details?.engine_capacity ||
     car.insurance_v2?.displacement;
 
-  let engineDisplay: string | null = null;
-  if (typeof engineSource === "number") {
-    engineDisplay = `${engineSource.toLocaleString("de-DE")} cc`;
-  } else if (typeof engineSource === "string") {
-    const trimmedEngine = engineSource.trim();
-    if (trimmedEngine) {
-      engineDisplay = trimmedEngine.toLowerCase().includes("cc")
-        ? trimmedEngine
-        : `${trimmedEngine} cc`;
-    }
-  }
+  const displacementDisplay = formatEngineDisplacementValue(engineSource);
+  const engineDisplay =
+    (car.engineCode && displacementDisplay
+      ? `${car.engineCode} • ${displacementDisplay}`
+      : car.engineCode ?? displacementDisplay) ?? null;
 
   const fuelSource =
     car.fuel ||
@@ -1475,12 +1625,379 @@ const CarInspectionReport = () => {
     car.insurance_v2?.fuel ||
     car.details?.specs?.fuel;
 
-  const fuelDisplay =
+  const rawFuelDisplay =
     typeof fuelSource === "string" && fuelSource.trim()
-      ? fuelSource.charAt(0).toUpperCase() + fuelSource.slice(1)
-      : (fuelSource ?? null);
+      ? fuelSource.trim()
+      : fuelSource ?? null;
+  const fuelDisplay =
+    translateFuelName(rawFuelDisplay) ??
+    (typeof rawFuelDisplay === "string" && rawFuelDisplay
+      ? rawFuelDisplay.charAt(0).toUpperCase() + rawFuelDisplay.slice(1)
+      : null);
+
+  const transmissionDisplay =
+    translateTransmissionName(car.transmissionName) ??
+    (typeof car.transmissionName === "string" &&
+    car.transmissionName.trim()
+      ? car.transmissionName.trim()
+      : null);
 
   const mileageDisplay = formattedMileage || "-";
+
+  const generalStatusItems = useMemo(() => {
+    const items: { label: string; value: string }[] = [];
+
+    const odometerStatus = translateOdometerStatus(
+      car?.odometer?.status?.name,
+    );
+    if (odometerStatus) {
+      items.push({
+        label: "Gjendja e odometrit",
+        value: odometerStatus,
+      });
+    }
+
+    if (mileageDisplay && mileageDisplay !== "-") {
+      items.push({
+        label: "Kilometrazhi aktual",
+        value: mileageDisplay,
+      });
+    }
+
+    if (plateNumber) {
+      items.push({
+        label: "Targa e regjistruar",
+        value: plateNumber,
+      });
+    }
+
+    if (car?.vin) {
+      items.push({
+        label: "VIN",
+        value: car.vin,
+      });
+    }
+
+    if (transmissionDisplay) {
+      items.push({
+        label: "Transmisioni",
+        value: transmissionDisplay,
+      });
+    }
+
+    if (engineDisplay) {
+      items.push({
+        label: "Motori",
+        value: engineDisplay,
+      });
+    }
+
+    if (fuelDisplay) {
+      items.push({
+        label: "Karburanti",
+        value: fuelDisplay,
+      });
+    }
+
+    if (ownerChangesDisplay && ownerChangesDisplay !== "-") {
+      items.push({
+        label: "Ndërrime pronari",
+        value: ownerChangesDisplay,
+      });
+    }
+
+    if (insuranceRegDateDisplay) {
+      items.push({
+        label: "Data e raportit të sigurimit",
+        value: insuranceRegDateDisplay,
+      });
+    }
+
+    const loanStatus = toYesNo((car?.insurance_v2 as any)?.loan);
+    if (loanStatus) {
+      items.push({
+        label: "Pengesë financiare",
+        value: loanStatus === "Po" ? "Po" : "Jo",
+      });
+    }
+
+    const historyHasRecall = Array.isArray(car?.details?.history)
+      ? (car?.details?.history as any[]).some((entry) =>
+          Array.isArray(entry?.content) &&
+          entry.content.some(
+            (item: any) =>
+              typeof item?.flag === "string" &&
+              item.flag.toLowerCase().includes("recall"),
+          ),
+        )
+      : false;
+
+    if (historyHasRecall) {
+      items.push({
+        label: "Thirrje për rikujtesë",
+        value: "Po (raportuar)",
+      });
+    }
+
+    usageHighlights.forEach((highlight) => {
+      if (highlight.value) {
+        items.push({
+          label: highlight.label,
+          value: highlight.value,
+        });
+      }
+    });
+
+    return items;
+  }, [
+    car,
+    engineDisplay,
+    fuelDisplay,
+    insuranceRegDateDisplay,
+    mileageDisplay,
+    ownerChangesDisplay,
+    plateNumber,
+    toYesNo,
+    transmissionDisplay,
+    usageHighlights,
+  ]);
+
+  const accidentOverviewItems = useMemo(() => {
+    const summarySource =
+      car?.inspect?.accident_summary ??
+      (car?.details?.inspect as any)?.accident_summary ??
+      (car?.details?.inspect as any)?.accidentSummary;
+
+    const entries: Array<{ label: string; value: string; negative?: boolean }> =
+      [];
+
+    const resolveValue = (value: unknown) => {
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return "-";
+        const normalized = trimmed.toLowerCase();
+        if (normalized === "yes") return "Po";
+        if (normalized === "no") return "Jo";
+        return translateStatusValue(trimmed);
+      }
+      const yesNo = toYesNo(value as any);
+      if (yesNo) return yesNo;
+      if (typeof value === "number") return value.toString();
+      return value ? String(value) : "-";
+    };
+
+    const pushEntry = (label: string, rawValue: unknown) => {
+      const value = resolveValue(rawValue);
+      entries.push({
+        label,
+        value,
+        negative:
+          value === "Po" ||
+          value === "Po (raportuar)" ||
+          (typeof rawValue === "number" && rawValue > 0),
+      });
+    };
+
+    if (summarySource && typeof summarySource === "object") {
+      const labelMap: Record<string, string> = {
+        accident: "Aksidentet",
+        "simple repair": "Riparime të thjeshta",
+        simple_repair: "Riparime të thjeshta",
+        main_framework: "Korniza kryesore",
+        "main framework": "Korniza kryesore",
+        exterior1rank: "Vlerësimi i jashtëm 1",
+        exterior2rank: "Vlerësimi i jashtëm 2",
+      };
+
+      Object.entries(summarySource as Record<string, unknown>).forEach(
+        ([key, value]) => {
+          const normalizedKey = key.toLowerCase();
+          const label =
+            labelMap[normalizedKey] ||
+            key
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (char) => char.toUpperCase());
+          pushEntry(label, value);
+        },
+      );
+      return entries;
+    }
+
+    if (typeof car?.insurance_v2?.accidentCnt === "number") {
+      pushEntry(
+        "Aksidente të raportuara",
+        car.insurance_v2.accidentCnt,
+      );
+    }
+
+    if (typeof car?.insurance_v2?.totalLossCnt === "number") {
+      pushEntry("Humbje totale", car.insurance_v2.totalLossCnt);
+    }
+
+    if (typeof car?.insurance_v2?.floodTotalLossCnt === "number") {
+      pushEntry("Dëmtime nga përmbytjet", car.insurance_v2.floodTotalLossCnt);
+    }
+
+    if (entries.length === 0) {
+      entries.push({
+        label: "Informacioni mbi aksidentet",
+        value: "Nuk raportohet",
+      });
+    }
+
+    return entries;
+  }, [car, toYesNo]);
+
+  const mechanicalSections = useMemo(() => {
+    if (!inspectionInnerData) return [];
+
+    const categories: Record<
+      string,
+      {
+        title: string;
+        items: Array<{ label: string; value: string; positive: boolean }>;
+      }
+    > = {
+      engine: {
+        title: "Motori dhe furnizimi me karburant",
+        items: [],
+      },
+      transmission: {
+        title: "Transmisioni",
+        items: [],
+      },
+      drivetrain: {
+        title: "Treni lëvizës",
+        items: [],
+      },
+      steering: {
+        title: "Sistemi i drejtimit",
+        items: [],
+      },
+      brakes: {
+        title: "Sistemi i frenimit",
+        items: [],
+      },
+      electrical: {
+        title: "Sistemi elektrik",
+        items: [],
+      },
+      diagnostics: {
+        title: "Diagnoza dhe vetëkontrolli",
+        items: [],
+      },
+      other: {
+        title: "Komponentë të tjerë",
+        items: [],
+      },
+    };
+
+    const categorize = (key: string) => {
+      const normalized = key.toLowerCase();
+      if (
+        normalized.includes("motor") ||
+        normalized.includes("engine") ||
+        normalized.includes("fuel") ||
+        normalized.includes("oil") ||
+        normalized.includes("cool")
+      ) {
+        return "engine";
+      }
+      if (normalized.includes("trans")) {
+        return "transmission";
+      }
+      if (
+        normalized.includes("differential") ||
+        normalized.includes("velocity") ||
+        normalized.includes("joint")
+      ) {
+        return "drivetrain";
+      }
+      if (normalized.includes("steering")) {
+        return "steering";
+      }
+      if (normalized.includes("brake")) {
+        return "brakes";
+      }
+      if (
+        normalized.includes("electric") ||
+        normalized.includes("generator") ||
+        normalized.includes("wiper") ||
+        normalized.includes("window")
+      ) {
+        return "electrical";
+      }
+      if (normalized.includes("self_check")) {
+        return "diagnostics";
+      }
+      return "other";
+    };
+
+    Object.entries(inspectionInnerData).forEach(([key, value]) => {
+      const categoryKey = categorize(key);
+      const label = formatKeyLabel(key);
+      const translatedValue = translateStatusValue(value);
+      const positive = isPositiveStatus(value);
+      categories[categoryKey].items.push({
+        label,
+        value: translatedValue,
+        positive,
+      });
+    });
+
+    return Object.values(categories).filter(
+      (category) => category.items.length > 0,
+    );
+  }, [inspectionInnerData]);
+
+  const inspectionPhotos = useMemo(() => {
+    if (!lotDisplay || lotDisplay === "-") return [];
+    const sanitizedLot = lotDisplay.trim();
+    return [
+      {
+        label: "Pamja e përparme",
+        url: `https://ci.encar.com/carsdata/cars/inspection/${sanitizedLot}_photoFront.jpg`,
+        alt: "Foto e përparme e inspektimit",
+      },
+      {
+        label: "Pamja e pasme",
+        url: `https://ci.encar.com/carsdata/cars/inspection/${sanitizedLot}_photoBack.jpg`,
+        alt: "Foto e pasme e inspektimit",
+      },
+    ];
+  }, [lotDisplay]);
+
+  const inspectionDateDisplay =
+    formatDisplayDate(
+      (car?.details as any)?.inspect_date ??
+        (car?.details as any)?.inspect?.date ??
+        (car?.details as any)?.inspect?.created_at ??
+        (car?.insurance_v2 as any)?.regDate ??
+        car?.firstRegistration,
+    ) ?? insuranceRegDateDisplay;
+
+  const performanceRecordItems = useMemo(
+    () =>
+      [
+        {
+          label: "Transmisioni",
+          value: transmissionDisplay ?? "-",
+        },
+        {
+          label: "Karburanti",
+          value: fuelDisplay ?? "-",
+        },
+        {
+          label: "Specifikimi i motorit",
+          value: engineDisplay ?? "-",
+        },
+        {
+          label: "Data e raportit të performancës",
+          value: inspectionDateDisplay ?? "-",
+        },
+      ].filter((item) => item.value && item.value !== "-"),
+    [engineDisplay, fuelDisplay, inspectionDateDisplay, transmissionDisplay],
+  );
 
   const topVehicleInfo = [
     { label: "Vetura", value: carName || car.title || "-" },
@@ -1559,27 +2076,43 @@ const CarInspectionReport = () => {
                 <FileText className="h-3.5 w-3.5 mr-1" />
                 Raporti i Inspektimit
               </Badge>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                {carName || car.title || "Raporti i Automjetit"}
-              </h1>
-              <div className="flex flex-wrap items-center justify-start gap-2 text-sm text-muted-foreground text-left">
-                <span>
-                  Raport i detajuar i inspektimit dhe historisë së automjetit
-                </span>
-                {car.location?.name && (
-                  <>
-                    <span className="hidden sm:inline">•</span>
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {car.location.name}
-                    </span>
-                  </>
-                )}
               </div>
-            </div>
+              <div className="flex flex-col gap-1">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  {carName || car.title || "Raporti i Automjetit"}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  {(car.year || plateNumber) && (
+                    <span className="font-semibold">
+                      {car.year ? `Viti ${car.year}` : ""}
+                      {car.year && plateNumber ? ", " : ""}
+                      {plateNumber ? `Targa ${plateNumber}` : ""}
+                    </span>
+                  )}
+                  {lotDisplay && lotDisplay !== "-" && (
+                    <>
+                      {(car.year || plateNumber) && (
+                        <span className="hidden sm:inline">•</span>
+                      )}
+                      <span>Numri i lotit {lotDisplay}</span>
+                    </>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center justify-start gap-2 text-sm text-muted-foreground text-left">
+                  <span>
+                    Raport i detajuar i inspektimit dhe historisë së automjetit
+                  </span>
+                  {car.location?.name && (
+                    <>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {car.location.name}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
           </div>
         </div>
 
@@ -1736,25 +2269,24 @@ const CarInspectionReport = () => {
               </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="diagram" className="space-y-3 md:space-y-4">
-            {/* Redesigned Inspection Diagram matching Korean format */}
-            <div className="space-y-4">
-              <Card className="border border-primary/20 bg-primary/5 backdrop-blur-sm">
-                <CardContent className="px-4 py-4 sm:px-6">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="space-y-1">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                        <Wrench className="h-3.5 w-3.5" />
-                        Përmbledhja e kontrollit
-                      </div>
-                      <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-                        {inspectionIssueSummary.total > 0
-                          ? `${inspectionIssueSummary.total} zona të kontrolluara në raportin zyrtar korean të inspektimit.`
-                          : "Të dhënat e jashtme të inspektimit nuk janë të disponueshme për këtë automjet."}
-                      </p>
+          <TabsContent value="diagram" className="space-y-4 md:space-y-5">
+            <Card className="border border-primary/20 bg-primary/5 backdrop-blur-sm shadow-sm">
+              <CardContent className="px-4 py-4 sm:px-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                      <Wrench className="h-3.5 w-3.5" />
+                      Përmbledhja e kontrollit
                     </div>
-                    {inspectionIssueSummary.total > 0 && (
-                      <div className="grid w-full grid-cols-3 gap-2 sm:gap-3 lg:w-auto lg:auto-cols-max lg:grid-flow-col">
+                    <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                      {inspectionIssueSummary.total > 0
+                        ? `${inspectionIssueSummary.total} zona të kontrolluara në raportin zyrtar korean të inspektimit.`
+                        : "Të dhënat e jashtme të inspektimit nuk janë të disponueshme për këtë automjet."}
+                    </p>
+                  </div>
+                  {inspectionIssueSummary.total > 0 && (
+                    <div className="flex flex-col gap-3 lg:items-end lg:text-right">
+                      <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         <div className="rounded-xl border border-primary/30 bg-background/80 px-3 py-2 sm:px-4">
                           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                             Ndërrime (N)
@@ -1780,147 +2312,279 @@ const CarInspectionReport = () => {
                           </p>
                         </div>
                       </div>
+                      <div className="flex flex-wrap items-center justify-end gap-3 text-[11px] md:text-xs text-muted-foreground">
+                        <div className="inline-flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E53935] text-xs font-bold text-white shadow-sm">
+                            N
+                          </span>
+                          <span>Ndërrim i panelit</span>
+                        </div>
+                        <div className="inline-flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D84315] text-xs font-bold text-white shadow-sm">
+                            R
+                          </span>
+                          <span>Riparim / saldim</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-border/80">
+              <CardHeader className="pb-3 md:pb-4">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <CardTitle className="text-base md:text-xl">
+                    Regjistri i inspektimit
+                  </CardTitle>
+                </div>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                  Informacioni përbërës nga raporti koreano-zyrtar i performancës
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Regjistri i performancës
+                    </h4>
+                    {performanceRecordItems.length > 0 ? (
+                      <ul className="space-y-1.5 text-sm">
+                        {performanceRecordItems.map((item) => (
+                          <li
+                            key={`${item.label}-${item.value}`}
+                            className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2"
+                          >
+                            <span className="text-muted-foreground">
+                              {item.label}
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {item.value}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nuk ka të dhëna të regjistrit të performancës.
+                      </p>
                     )}
+                  </div>
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Gjendja e automjetit
+                    </h4>
+                    {generalStatusItems.length > 0 ? (
+                      <ul className="space-y-1.5 text-sm">
+                        {generalStatusItems.map((item) => (
+                          <li
+                            key={`${item.label}-${item.value}`}
+                            className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2"
+                          >
+                            <span className="text-muted-foreground">
+                              {item.label}
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {item.value}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nuk ka informacion shtesë mbi gjendjen.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-border/80 overflow-hidden">
+              <CardHeader className="pb-3 md:pb-4">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <CardTitle className="text-base md:text-xl">
+                    Diagrami i inspektimit
+                  </CardTitle>
+                </div>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                  Vizualizim i zonave me ndërhyrje të raportuara gjatë kontrollit
+                </p>
+              </CardHeader>
+              <CardContent className="p-2 md:p-4">
+                <InspectionDiagramPanel
+                  outerInspectionData={inspectionOuterData}
+                />
+              </CardContent>
+            </Card>
+
+            {mechanicalSections.length > 0 && (
+              <Card className="shadow-sm border-border/80">
+                <CardHeader className="pb-3 md:pb-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                    <CardTitle className="text-base md:text-xl">
+                      Raporti i sistemit mekanik
+                    </CardTitle>
+                  </div>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                    Gjendja e detajuar e komponentëve kryesorë të automjetit
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {mechanicalSections.map((section) => (
+                    <div key={section.title} className="space-y-2">
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-primary/80">
+                        {section.title}
+                      </h4>
+                      <ul className="space-y-1.5">
+                        {section.items.map((item) => (
+                          <li
+                            key={`${section.title}-${item.label}`}
+                            className="flex items-center gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm"
+                          >
+                            <span
+                              className={`mt-0.5 h-2.5 w-2.5 rounded-full ${
+                                item.positive ? "bg-emerald-500" : "bg-destructive"
+                              }`}
+                            />
+                            <span className="flex-1 text-muted-foreground">
+                              {item.label}
+                            </span>
+                            <span
+                              className={`font-semibold ${
+                                item.positive ? "text-emerald-600" : "text-destructive"
+                              }`}
+                            >
+                              {item.value}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="shadow-sm border-border/80">
+              <CardHeader className="pb-3 md:pb-4">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <CardTitle className="text-base md:text-xl">
+                    Përmbledhje e aksidenteve
+                  </CardTitle>
+                </div>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                  Statistika të raportuara në sigurim dhe në kontrollin fizik
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-1.5 text-sm">
+                  {accidentOverviewItems.map((item) => (
+                    <li
+                      key={`${item.label}-${item.value}`}
+                      className="flex items-start gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-2"
+                    >
+                      <span
+                        className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                          item.negative ? "bg-destructive" : "bg-emerald-500"
+                        }`}
+                      />
+                      <div className="flex w-full items-center justify-between gap-3">
+                        <span className="text-muted-foreground">
+                          {item.label}
+                        </span>
+                        <span
+                          className={`font-semibold ${
+                            item.negative ? "text-destructive" : "text-foreground"
+                          }`}
+                        >
+                          {item.value}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {specialAccidentStats.length > 0 && (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {specialAccidentStats.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm"
+                      >
+                        <span className="block text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {item.label}
+                        </span>
+                        <span className="text-base font-semibold text-foreground">
+                          {item.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {inspectionPhotos.length > 0 && (
+              <Card className="shadow-sm border-border/80">
+                <CardHeader className="pb-3 md:pb-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <Image className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                    <CardTitle className="text-base md:text-xl">
+                      Fotografitë nga inspektimi
+                    </CardTitle>
+                  </div>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                    Momente kyçe gjatë procesit të kontrollit teknik
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {inspectionPhotos.map((photo) => (
+                      <figure
+                        key={photo.url}
+                        className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-2"
+                      >
+                        <img
+                          src={photo.url}
+                          alt={photo.alt}
+                          className="h-full w-full rounded-md object-cover"
+                          loading="lazy"
+                        />
+                        <figcaption className="text-xs text-muted-foreground">
+                          {photo.label}
+                        </figcaption>
+                      </figure>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              {/* Two-panel diagram with "within" and "out" views */}
-              <InspectionDiagramPanel
-                outerInspectionData={inspectionOuterData}
-              />
-
-              {/* Mechanical System Section */}
-              {inspectionInnerData &&
-                Object.keys(inspectionInnerData).length > 0 && (
-                  <Card className="shadow-md border-border/80">
-                    <CardHeader className="pb-3 md:pb-4">
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                        <CardTitle className="text-base md:text-xl">
-                          Motori dhe Sistemi Mekanik
-                        </CardTitle>
-                      </div>
-                      <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                        Kontrolli teknik i komponentëve kryesorë të automjetit
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
-                        {Object.entries(inspectionInnerData).map(([key, value]) => {
-                          const positive = isPositiveStatus(value);
-                          return (
-                            <div
-                              key={key}
-                              className={`p-1.5 md:p-2.5 rounded-lg border text-[11px] md:text-sm ${
-                                positive
-                                  ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
-                                  : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
-                              }`}
-                            >
-                              <span className="font-semibold text-foreground block mb-0.5 truncate leading-tight">
-                                {formatKeyLabel(key)}
-                              </span>
-                              <p
-                                className={`font-medium leading-tight ${positive ? "text-emerald-700" : "text-red-700"}`}
-                              >
-                                {translateStatusValue(value)}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-              {/* Accident Summary Section */}
-              {car.inspect?.accident_summary &&
-                Object.keys(car.inspect.accident_summary).length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        Përmbledhje e Aksidenteve
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-3">
-                        {Object.entries(car.inspect.accident_summary).map(
-                          ([key, value]) => {
-                            const isNegative =
-                              value === "yes" || value === true;
-
-                            const translateKey = (k: string) => {
-                              const translations: Record<string, string> = {
-                                accident: "Aksidentet",
-                                simple_repair: "Riparime të Thjeshta",
-                                "simple repair": "Riparime të Thjeshta",
-                                main_framework: "Korniza Kryesore",
-                                "main framework": "Korniza Kryesore",
-                                exterior1rank: "Vlerësimi i Jashtëm 1",
-                                exterior2rank: "Vlerësimi i Jashtëm 2",
-                              };
-                              const normalized = k
-                                .toLowerCase()
-                                .replace(/_/g, " ");
-                              return (
-                                translations[normalized] ||
-                                k
-                                  .replace(/_/g, " ")
-                                  .replace(/\b\w/g, (char) =>
-                                    char.toUpperCase(),
-                                  )
-                              );
-                            };
-
-                            const translateValue = (v: unknown) => {
-                              if (v === "yes" || v === true) return "Po";
-                              if (v === "no" || v === false) return "Jo";
-                              if (typeof v === "string") {
-                                const normalized = v.toLowerCase().trim();
-                                if (
-                                  normalized === "doesn't exist" ||
-                                  normalized === "does not exist"
-                                )
-                                  return "Nuk ekziston";
-                                if (normalized === "exists") return "Ekziston";
-                              }
-                              return String(v);
-                            };
-
-                            return (
-                              <div
-                                key={key}
-                                className={`flex flex-col gap-1.5 md:gap-2 rounded-lg border p-2.5 md:p-4 ${
-                                  isNegative
-                                    ? "border-destructive/50 bg-destructive/5"
-                                    : "border-border bg-muted/40"
-                                }`}
-                              >
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                  {isNegative ? (
-                                    <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive flex-shrink-0" />
-                                  ) : (
-                                    <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
-                                  )}
-                                  <span className="text-[10px] md:text-xs font-medium uppercase tracking-wide text-muted-foreground leading-tight">
-                                    {translateKey(key)}
-                                  </span>
-                                </div>
-                                <span
-                                  className={`text-base md:text-lg font-bold ${isNegative ? "text-destructive" : "text-green-600"}`}
-                                >
-                                  {translateValue(value)}
-                                </span>
-                              </div>
-                            );
-                          },
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-            </div>
+            <Card className="border border-dashed border-border/70 bg-muted/10 shadow-sm">
+              <CardContent className="space-y-2 p-4 md:p-6 text-sm text-muted-foreground leading-relaxed">
+                <p>
+                  Ky raport bazohet në të dhënat zyrtare të kontrollit koreano të
+                  siguruara nga partneri ynë. Informacioni përditësohet automatikisht
+                  sapo publikohet nga sigurimet ose qendrat e inspektimit.
+                </p>
+                <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
+                  <span>Data e raportit: {inspectionDateDisplay ?? "-"}</span>
+                  <span>Burimi: Encar / sigurimet lokale</span>
+                  {lotDisplay && lotDisplay !== "-" && (
+                    <span>Lot: {lotDisplay}</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Vlerat e paraqitura shërbejnë për informim. Korauto nuk mban përgjegjësi
+                  për ndryshimet pas datës së raportimit ose për pasaktësi të deklaruara nga palë të treta.
+                </p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Insurance History & Mechanical System Tab */}
