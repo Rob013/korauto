@@ -148,22 +148,32 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
   });
 
   inspectionData.forEach((item, idx) => {
-    const typeTitle = (item?.type?.title || '').toString().toLowerCase();
-    const typeCode = (item?.type?.code || '').toString().toLowerCase();
-    const statusTypes = item?.statusTypes || [];
-    const attributes = item?.attributes || [];
-    
+    const typeTitle = (item?.type?.title || "").toString().toLowerCase();
+    const typeCode = (item?.type?.code || "").toString().toLowerCase();
+    const rawStatusTypes = (item as any)?.statusTypes;
+    const statusTypes = Array.isArray(rawStatusTypes)
+      ? rawStatusTypes
+      : rawStatusTypes
+        ? [rawStatusTypes]
+        : [];
+    const rawAttributes = (item as any)?.attributes;
+    const attributes = Array.isArray(rawAttributes)
+      ? rawAttributes
+      : rawAttributes !== undefined && rawAttributes !== null
+        ? [rawAttributes]
+        : [];
+
     console.log(`📋 Processing item ${idx + 1}:`, {
       typeTitle,
       typeCode,
       statusTypes,
-      attributes
+      attributes,
     });
-    
+
     // Determine marker type based on statusTypes and attributes
-    let markerType: 'N' | 'R' = 'R';
+    let markerType: "N" | "R" = "R";
     let hasIssue = false;
-    
+
     // Check statusTypes for exchange/replacement (N) or repair (R)
     statusTypes.forEach((status: any) => {
       const statusTitle = (status?.title || '').toString().toLowerCase();
@@ -186,7 +196,7 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
     });
 
     // Check attributes for RANK indicators - if present, assume there's an issue
-    const hasHighRank = attributes.some((attr: string) => 
+    const hasHighRank = attributes.some((attr: any) =>
       typeof attr === 'string' && (
         attr.includes('RANK_ONE') || 
         attr.includes('RANK_TWO') || 
