@@ -108,144 +108,35 @@ const fetchCars = async (
   } catch (error) {
     console.error('Error fetching cars with keyset pagination:', error);
     
-    // Fallback to mock data if API fails
+      // Fallback to empty result if API fails
     return fetchCarsFallback(params, signal);
   }
 };
 
-// Fallback function using existing mock data logic
 const fetchCarsFallback = async (
   params: ReturnType<typeof buildQueryParams>,
   signal?: AbortSignal
 ): Promise<CarsResponse> => {
-  // When no brand filter is applied, use the same secure auction API data as homepage
-  if (!params.brand || params.brand === '' || params.brand === 'all') {
-    const { createFallbackCars } = await import('@/hooks/useSecureAuctionAPI');
-    
-    // Get cars from secure auction API (same as homepage)
-    const allCars = createFallbackCars({});
-    
-    // Apply daily rotation logic (same as homepage)
-    const hasFilters = Object.entries(params).some(([key, value]) => 
-      value && value !== '' && key !== 'page' && key !== 'pageSize' && key !== 'sort'
-    );
-    
-    const dailyRotatingCars = (() => {
-      if (hasFilters || allCars.length === 0) {
-        return allCars;
-      }
-
-      // Get day of month as seed for daily rotation (same logic as homepage)
-      const today = new Date();
-      const dayOfMonth = today.getDate();
-      const month = today.getMonth() + 1;
-      const dailySeed = dayOfMonth * 100 + month;
-
-      // Filter available cars
-      const availableCars = allCars.filter(
-        (car) =>
-          car.manufacturer?.name && 
-          car.lots?.[0]?.images?.normal?.[0]
-      );
-
-      // Seeded random function
-      const seededRandom = (seed: number) => {
-        const x = Math.sin(seed) * 10000;
-        return x - Math.floor(x);
-      };
-
-      // Shuffle with seed
-      const shuffleWithSeed = (array: any[], seed: number) => {
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(seededRandom(seed + i) * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
-      };
-
-      return shuffleWithSeed(availableCars, dailySeed).slice(0, 50);
-    })();
-    
-    // Convert to the expected format
-    const convertedCars = dailyRotatingCars.map(car => ({
-      id: car.id?.toString() || '',
-      make: car.manufacturer?.name || '',
-      model: car.model?.name || '',
-      year: car.year || 2020,
-      price: Math.round(car.lots?.[0]?.buy_now || 25000), // Base price without markup - NOTE: This is USD for sorting/filtering only
-      mileage: car.lots?.[0]?.odometer?.km,
-      fuel: car.fuel?.name,
-      transmission: car.transmission?.name,
-      bodyType: car.body_type || 'Sedan',
-      color: car.color?.name,
-      location: car.location || 'Seoul',
-      images: car.lots?.[0]?.images?.normal || []
-    }));
-    
-    const pageSize = parseInt(params.pageSize || '20');
-    const page = parseInt(params.page || '1');
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedCars = convertedCars.slice(startIndex, endIndex);
-    
-    return {
-      cars: paginatedCars,
-      total: convertedCars.length,
-      page: page,
-      totalPages: Math.ceil(convertedCars.length / pageSize),
-      hasMore: endIndex < convertedCars.length
-    };
+  if (signal?.aborted) {
+    throw new Error("Request aborted");
   }
-  
-  // For brand-specific filters, use mock data
-  const { mockFetchCars } = await import('@/utils/mockCarsData');
-  const mockResponse = await mockFetchCars(params, signal);
-  
+
   return {
-    cars: mockResponse.cars,
-    total: mockResponse.total,
-    page: mockResponse.page,
-    totalPages: mockResponse.totalPages,
-    hasMore: mockResponse.hasMore
+    cars: [],
+    total: 0,
+    page: parseInt(params.page || "1"),
+    totalPages: 0,
+    hasMore: false
   };
 };
 
-// Mock API function for models
+// Fallback stub for models when backend data is unavailable
 const fetchModels = async (brandId: string, signal?: AbortSignal): Promise<Model[]> => {
-  // Use mock data for development/testing
-  const { carModels } = await import('@/utils/mockCarsData');
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
   if (signal?.aborted) {
     throw new Error('Request aborted');
   }
-  
-  const brandName = brandId.charAt(0).toUpperCase() + brandId.slice(1);
-  const models = (carModels as any)[brandName] || [];
-  
-  return models.map((model: string, index: number) => ({
-    id: model.toLowerCase().replace(/\s+/g, '-'),
-    name: model,
-    brandId: brandId
-  }));
-  
-  /* Original API call - uncomment when API is available
-  const response = await fetch(`/api/models?brand=${brandId}`, {
-    signal,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch models: ${response.statusText}`);
-  }
-
-  return response.json();
-  */
+  return [];
 };
 
 export const useCarsQuery = (filters: FilterState) => {

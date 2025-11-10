@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Footer = lazy(() => import("@/components/Footer"));
 
@@ -49,6 +50,7 @@ const FavoritesPage = () => {
   const [favorites, setFavorites] = useState<FavoriteCar[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const getUser = async () => {
@@ -80,39 +82,61 @@ const FavoritesPage = () => {
 
   const fetchFavorites = async (userId: string) => {
     try {
-      // Since the database structure is uncertain, use mock data for now
-      const mockFavorites: FavoriteCar[] = [
-        {
-          id: '1',
-          car_id: '1',
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          cars: {
-            make: 'BMW',
-            model: 'M3',
-            year: 2022,
-            price: 67300,
-            image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'
-          }
-        },
-        {
-          id: '2',
-          car_id: '2',
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          cars: {
-            make: 'Mercedes-Benz',
-            model: 'C-Class',
-            year: 2021,
-            price: 47300,
-            image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800'
-          }
+      const { data, error } = await supabase
+        .from("favorite_cars")
+        .select("id, car_id, user_id, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        setFavorites([]);
+        return;
+      }
+
+      const carIds = Array.from(new Set(data.map((favorite) => favorite.car_id).filter(Boolean)));
+
+      let carsById: Record<string, FavoriteCar["cars"]> = {};
+
+      if (carIds.length > 0) {
+        const { data: carsData, error: carsError } = await supabase
+          .from("cars")
+          .select("id, make, model, year, price, image_url")
+          .in("id", carIds);
+
+        if (carsError) {
+          throw carsError;
         }
-      ];
-      
-      setFavorites(mockFavorites);
+
+        carsById = (carsData || []).reduce<Record<string, FavoriteCar["cars"]>>((acc, car) => {
+          acc[car.id] = {
+            make: car.make || "Unknown",
+            model: car.model || "Unknown",
+            year: car.year || 0,
+            price: car.price || 0,
+            image_url: car.image_url || undefined
+          };
+          return acc;
+        }, {});
+      }
+
+      const favoritesWithCars: FavoriteCar[] = data.map((favorite) => ({
+        ...favorite,
+        cars: carsById[favorite.car_id] || undefined
+      }));
+
+      setFavorites(favoritesWithCars);
     } catch (error) {
       console.error('Error fetching favorites:', error);
+      toast({
+        title: "Nuk mund të ngarkohen të preferuarat",
+        description: "Diçka shkoi keq gjatë marrjes së të dhënave. Ju lutemi provoni përsëri.",
+        variant: "destructive"
+      });
+      setFavorites([]);
     } finally {
       setLoading(false);
     }

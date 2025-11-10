@@ -82,7 +82,6 @@ const ShipmentTracking = () => {
 
     try {
       // Note: Direct fetching from cigshipping.com is blocked by CORS policy
-      // We'll use our mock data to demonstrate the expected format
       console.log('Simulating CIG Shipping lookup for:', trimmedQuery);
       
       let data;
