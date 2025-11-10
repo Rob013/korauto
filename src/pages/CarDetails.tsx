@@ -1488,83 +1488,71 @@ const CarDetails = memo(() => {
     return Math.max(...candidateCounts);
   }, [car]);
 
-  const hasStructuralDamage = useMemo(() => {
+  const hasMainFrameworkAccident = useMemo(() => {
     if (!car) {
       return false;
     }
 
-    const structuralSummaryKeys = [
-      "main_framework",
-      "main frame",
-      "frame",
-      "chassis",
-      "pillar",
-      "side member",
-      "side_member",
-      "struct",
-      "structural",
-      "firewall",
-      "floor",
-      "cross",
-      "crossmember",
-      "cross_member",
-      "apron",
-      "rail",
-      "rocker",
-      "core_support",
-      "core support",
-    ];
-
-    const structuralKeywords = [
-      "frame",
-      "chassis",
-      "pillar",
-      "rail",
-      "rocker",
-      "side member",
-      "crossmember",
-      "cross member",
-      "floor",
-      "firewall",
-      "apron",
-      "core support",
-      "support",
-      "bulkhead",
-      "roof",
-      "trunk floor",
-      "main frame",
-      "front panel",
-      "rear panel",
-      "inner panel",
-    ];
-
-    const indicatesIssue = (value: unknown) => {
+    const interpretAsPositive = (value: unknown) => {
       if (value === null || value === undefined) return false;
       if (typeof value === "boolean") return value;
       if (typeof value === "number") return value > 0;
-      const normalized = `${value}`.toLowerCase().trim();
+
+      const normalized = `${value}`.trim().toLowerCase();
       if (!normalized) return false;
-      if (["no", "none", "n/a", "none detected", "없음", "0"].includes(normalized)) {
+
+      const negativeIndicators = [
+        "no",
+        "jo",
+        "none",
+        "nuk",
+        "n/a",
+        "not available",
+        "doesn't exist",
+        "does not exist",
+        "없음",
+        "무",
+        "0",
+      ];
+      if (negativeIndicators.some((indicator) => normalized.includes(indicator))) {
         return false;
       }
-      return (
-        normalized.includes("yes") ||
-        normalized.includes("exist") ||
-        normalized.includes("exists") ||
-        normalized.includes("damage") ||
-        normalized.includes("damaged") ||
-        normalized.includes("replace") ||
-        normalized.includes("replacement") ||
-        normalized.includes("exchange") ||
-        normalized.includes("weld") ||
-        normalized.includes("repair") ||
-        normalized.includes("struct") ||
-        normalized.includes("r") ||
-        normalized.includes("n") ||
-        normalized.includes("1") ||
-        normalized.includes("교환") ||
-        normalized.includes("용접")
-      );
+
+      const positiveIndicators = [
+        "yes",
+        "po",
+        "exist",
+        "exists",
+        "damage",
+        "damaged",
+        "replacement",
+        "replaced",
+        "exchange",
+        "repair",
+        "repaired",
+        "weld",
+        "welded",
+        "교환",
+        "용접",
+        "수리",
+        "있음",
+        "사고",
+      ];
+      if (positiveIndicators.some((indicator) => normalized.includes(indicator))) {
+        return true;
+      }
+
+      const exactPositiveValues = ["r", "1"];
+      if (exactPositiveValues.includes(normalized)) {
+        return true;
+      }
+
+      const exactNegativeValues = ["n"];
+      if (exactNegativeValues.includes(normalized)) {
+        return false;
+      }
+
+      return false;
     };
 
     const summarySources: Array<Record<string, unknown> | undefined> = [
@@ -1576,46 +1564,26 @@ const CarDetails = memo(() => {
       ((car.details?.insurance as Record<string, unknown> | undefined)?.car_info as
         | Record<string, unknown>
         | undefined)?.accident_summary as Record<string, unknown> | undefined,
-      (car.insurance_v2 as Record<string, unknown> | undefined)
-        ?.accidentSummary as Record<string, unknown> | undefined,
+      (car.insurance_v2 as Record<string, unknown> | undefined)?.accidentSummary as
+        | Record<string, unknown>
+        | undefined,
     ];
 
+    const isMainFrameworkKey = (key: string) => {
+      const normalizedKey = key.toLowerCase().replace(/[\s-]+/g, "_");
+      return normalizedKey.includes("main") && normalizedKey.includes("frame");
+    };
+
     for (const summary of summarySources) {
-      if (summary && typeof summary === "object" && !Array.isArray(summary)) {
-        for (const [key, value] of Object.entries(summary)) {
-          const normalizedKey = key.toLowerCase();
-          if (
-            structuralSummaryKeys.some((keyword) => normalizedKey.includes(keyword)) &&
-            indicatesIssue(value)
-          ) {
-            return true;
-          }
+      if (!summary || typeof summary !== "object" || Array.isArray(summary)) {
+        continue;
+      }
+
+      for (const [key, value] of Object.entries(summary)) {
+        if (isMainFrameworkKey(key) && interpretAsPositive(value)) {
+          return true;
         }
       }
-    }
-
-    const accidents = Array.isArray(car.insurance_v2?.accidents)
-      ? (car.insurance_v2?.accidents as any[])
-      : [];
-
-    if (
-      accidents.some((accident) => {
-        const fields = [
-          accident?.part,
-          accident?.component,
-          accident?.position,
-          accident?.description,
-          accident?.note,
-          accident?.type,
-        ];
-        return fields.some((field) => {
-          if (!field) return false;
-          const normalized = `${field}`.toLowerCase();
-          return structuralKeywords.some((keyword) => normalized.includes(keyword));
-        });
-      })
-    ) {
-      return true;
     }
 
     return false;
@@ -1625,8 +1593,8 @@ const CarDetails = memo(() => {
     if (accidentCount === 0) {
       return "none";
     }
-    return hasStructuralDamage ? "severe" : "minor";
-  }, [accidentCount, hasStructuralDamage]);
+    return hasMainFrameworkAccident ? "severe" : "minor";
+  }, [accidentCount, hasMainFrameworkAccident]);
 
   const accidentStyle = useMemo(() => {
     if (accidentSeverity === "severe") {
@@ -1635,6 +1603,16 @@ const CarDetails = memo(() => {
           "border-destructive/40 text-destructive hover:border-destructive hover:shadow-2xl hover:shadow-destructive/20",
         overlay: "from-destructive/0 to-destructive/10",
         badge: "bg-destructive/20 text-destructive ring-2 ring-destructive/20",
+        icon: "",
+      };
+    }
+
+    if (accidentSeverity === "minor") {
+      return {
+        button:
+          "border-border/70 text-foreground hover:border-primary hover:text-primary hover:shadow-xl hover:shadow-primary/10",
+        overlay: "from-primary/0 to-primary/5",
+        badge: "bg-muted text-foreground ring-1 ring-border/60",
         icon: "",
       };
     }
