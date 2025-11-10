@@ -83,6 +83,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
+import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
@@ -1242,6 +1243,7 @@ const CarDetails = memo(() => {
   const { impact, notification } = useHaptics();
   const { goBack, restorePageState, pageState } = useNavigation();
   const { exchangeRate } = useCurrencyAPI();
+  const { getOptionName } = useKoreaOptions();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1627,34 +1629,24 @@ const CarDetails = memo(() => {
   }, [accidentCount, hasStructuralDamage]);
 
   const accidentStyle = useMemo(() => {
-    switch (accidentSeverity) {
-      case "severe":
-        return {
-          button:
-            "border-destructive/40 text-destructive hover:border-destructive hover:shadow-2xl hover:shadow-destructive/20",
-          overlay: "from-destructive/0 to-destructive/10",
-          badge: "bg-destructive/20 text-destructive ring-2 ring-destructive/20",
-          icon: "",
-        };
-      case "none":
-        return {
-          button:
-            "border-emerald-500/40 text-emerald-600 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white hover:shadow-2xl hover:shadow-emerald-500/20",
-          overlay: "from-emerald-500/0 to-emerald-500/10",
-          badge:
-            "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400",
-          icon: "",
-        };
-      default:
-        return {
-          button:
-            "border-border/60 text-foreground hover:border-border hover:bg-muted/40 hover:text-foreground hover:shadow-lg",
-          overlay: "from-border/0 to-border/5",
-          badge:
-            "bg-muted/70 text-foreground ring-2 ring-border/40 dark:bg-muted/40",
-          icon: "",
-        };
+    if (accidentSeverity === "severe") {
+      return {
+        button:
+          "border-destructive/40 text-destructive hover:border-destructive hover:shadow-2xl hover:shadow-destructive/20",
+        overlay: "from-destructive/0 to-destructive/10",
+        badge: "bg-destructive/20 text-destructive ring-2 ring-destructive/20",
+        icon: "",
+      };
     }
+
+    return {
+      button:
+        "border-emerald-500/40 text-emerald-600 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white hover:shadow-2xl hover:shadow-emerald-500/20",
+      overlay: "from-emerald-500/0 to-emerald-500/10",
+      badge:
+        "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400",
+      icon: "",
+    };
   }, [accidentSeverity]);
 
   // Reset placeholder state when image selection changes
@@ -1894,63 +1886,75 @@ const CarDetails = memo(() => {
     [KBC_DOMAINS, exchangeRate.rate],
   );
 
-  // Convert option numbers to feature names
-  const convertOptionsToNames = (options: any): any => {
-    if (!options)
-      return {
-        standard: [],
-        choice: [],
-        tuning: [],
-      };
-    const result: any = {
-      standard: [],
-      choice: [],
-      tuning: [],
-    };
+  // Convert option numbers to human-friendly names using the Korea options API
+  const convertOptionsToNames = useCallback(
+    (options: any): { standard: string[]; choice: string[]; tuning: string[] } => {
+      if (!options) {
+        return {
+          standard: [],
+          choice: [],
+          tuning: [],
+        };
+      }
 
-    // Process standard equipment
-    if (options.standard && Array.isArray(options.standard)) {
-      result.standard = options.standard.map((option: any) => {
+      const resolveOptionName = (option: any): string => {
+        if (option === null || option === undefined) {
+          return "";
+        }
+
+        if (typeof option === "object") {
+          const nameCandidate =
+            (typeof option.name === "string" && option.name.trim()) ||
+            (typeof option.name_original === "string" &&
+              option.name_original.trim());
+
+          if (nameCandidate) {
+            return nameCandidate;
+          }
+
+          if (option.code) {
+            option = option.code;
+          } else if (option.id) {
+            option = option.id;
+          } else if (option.value) {
+            option = option.value;
+          }
+        }
+
         const optionStr = option.toString().trim();
+        if (!optionStr) {
+          return "";
+        }
+
+        const apiName = getOptionName(optionStr);
+        if (apiName && apiName.trim() && apiName.trim() !== optionStr) {
+          return apiName.trim();
+        }
+
         const mapped = FEATURE_MAPPING[optionStr];
         if (mapped) {
           return mapped;
         }
-        // If no mapping found, show the raw option as-is (it might be a real name)
+
         return optionStr;
-      });
-    }
+      };
 
-    // Process optional equipment
-    if (options.choice && Array.isArray(options.choice)) {
-      result.choice = options.choice.map((option: any) => {
-        const optionStr = option.toString().trim();
-        const mapped = FEATURE_MAPPING[optionStr];
-        if (mapped) {
-          return mapped;
-        } else {
-          // If no mapping found, show the raw option as-is
-          return optionStr;
-        }
-      });
-    }
+      const normalizeList = (list?: any[]): string[] =>
+        Array.isArray(list)
+          ? list
+              .map(resolveOptionName)
+              .map((name) => (typeof name === "string" ? name.trim() : ""))
+              .filter((name): name is string => Boolean(name))
+          : [];
 
-    // Process tuning/modifications
-    if (options.tuning && Array.isArray(options.tuning)) {
-      result.tuning = options.tuning.map((option: any) => {
-        const optionStr = option.toString().trim();
-        const mapped = FEATURE_MAPPING[optionStr];
-        if (mapped) {
-          return mapped;
-        } else {
-          // If no mapping found, show the raw option as-is
-          return optionStr;
-        }
-      });
-    }
-
-    return result;
-  };
+      return {
+        standard: normalizeList(options.standard),
+        choice: normalizeList(options.choice),
+        tuning: normalizeList(options.tuning),
+      };
+    },
+    [getOptionName],
+  );
 
   const hydrateFromCache = useCallback(async () => {
     if (!lot) {

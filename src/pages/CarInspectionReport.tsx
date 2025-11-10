@@ -7,7 +7,6 @@ import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { InspectionDiagramPanel } from "@/components/InspectionDiagramPanel";
-import { InspectionConditionTable } from "@/components/InspectionConditionTable";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1437,12 +1436,48 @@ const CarInspectionReport = () => {
                 outerInspectionData={inspectionOuterData}
               />
 
-              {/* Grouped Condition Table for Internal Systems */}
+              {/* Mechanical System Section */}
               {inspectionInnerData &&
                 Object.keys(inspectionInnerData).length > 0 && (
-                  <InspectionConditionTable
-                    innerInspectionData={inspectionInnerData}
-                  />
+                  <Card className="shadow-md border-border/80">
+                    <CardHeader className="pb-3 md:pb-4">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                        <CardTitle className="text-base md:text-xl">
+                          Motori dhe Sistemi Mekanik
+                        </CardTitle>
+                      </div>
+                      <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                        Kontrolli teknik i komponentëve kryesorë të automjetit
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
+                        {Object.entries(inspectionInnerData).map(([key, value]) => {
+                          const positive = isPositiveStatus(value);
+                          return (
+                            <div
+                              key={key}
+                              className={`p-1.5 md:p-2.5 rounded-lg border text-[11px] md:text-sm ${
+                                positive
+                                  ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
+                                  : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
+                              }`}
+                            >
+                              <span className="font-semibold text-foreground block mb-0.5 truncate leading-tight">
+                                {formatKeyLabel(key)}
+                              </span>
+                              <p
+                                className={`font-medium leading-tight ${positive ? "text-emerald-700" : "text-red-700"}`}
+                              >
+                                {translateStatusValue(value)}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
 
               {/* Accident Summary Section */}
@@ -1719,49 +1754,6 @@ const CarInspectionReport = () => {
                 )}
               </CardContent>
             </Card>
-
-            {/* Mechanical System Section */}
-            {inspectionInnerData ? (
-              <Card className="shadow-md border-border/80">
-                <CardHeader className="pb-3 md:pb-4">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                    <CardTitle className="text-base md:text-xl">
-                      Motori dhe Sistemi Mekanik
-                    </CardTitle>
-                  </div>
-                  <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                    Kontrolli teknik i komponentëve kryesorë të automjetit
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
-                    {Object.entries(inspectionInnerData).map(([key, value]) => {
-                      const positive = isPositiveStatus(value);
-                      return (
-                        <div
-                          key={key}
-                          className={`p-1.5 md:p-2.5 rounded-lg border text-[11px] md:text-sm ${
-                            positive
-                              ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
-                              : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
-                          }`}
-                        >
-                          <span className="font-semibold text-foreground block mb-0.5 truncate leading-tight">
-                            {formatKeyLabel(key)}
-                          </span>
-                          <p
-                            className={`font-medium leading-tight ${positive ? "text-emerald-700" : "text-red-700"}`}
-                          >
-                            {translateStatusValue(value)}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
 
             {/* Maintenance History */}
             {car.maintenanceHistory && car.maintenanceHistory.length > 0 && (

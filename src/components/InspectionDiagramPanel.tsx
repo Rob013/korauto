@@ -27,6 +27,17 @@ interface InspectionDiagramPanelProps {
   className?: string;
 }
 
+const BASE_CANVAS_WIDTH = 640;
+const BASE_CANVAS_HEIGHT = 600;
+const DEFAULT_MARKER_SIZE = 16;
+const MIN_MARKER_DIAMETER = 7;
+const MAX_MARKER_DIAMETER = 18;
+const MARKER_FONT_MIN = 5.5;
+const MARKER_FONT_MAX = 8.5;
+const MARKER_VW_SCALE = 1.25;
+const COLLISION_SPACING_MULTIPLIER = 1.25;
+const DIAGRAM_EDGE_PADDING = 20;
+
 // Map inspection items to diagram positions
 const mapInspectionToMarkers = (
   inspectionData: any[],
@@ -306,64 +317,70 @@ const mapInspectionToMarkers = (
       }
     }
 
-    if (bestMatch) {
-      const pos = positionMap[bestMatch];
+      if (bestMatch) {
+        const pos = positionMap[bestMatch];
+        const rawSize =
+          typeof pos.size === "number" ? pos.size : DEFAULT_MARKER_SIZE;
+        const nominalSize = Math.min(
+          Math.max(rawSize, MIN_MARKER_DIAMETER),
+          MAX_MARKER_DIAMETER,
+        );
 
-      // Check for collision with existing markers and offset if needed
-      let finalX = pos.x;
-      let finalY = pos.y;
-      const collisionRadius = 28; // Minimum distance between markers
+        // Check for collision with existing markers and offset if needed
+        let finalX = pos.x;
+        let finalY = pos.y;
+        const collisionRadius = nominalSize * COLLISION_SPACING_MULTIPLIER;
 
-      const markersToCheck =
-        pos.panel === "within" ? withinMarkers : outMarkers;
-      let hasCollision = true;
-      let attempts = 0;
-      const maxAttempts = 8; // Try 8 positions around the original
+        const markersToCheck =
+          pos.panel === "within" ? withinMarkers : outMarkers;
+        let hasCollision = true;
+        let attempts = 0;
+        const maxAttempts = 10; // Try additional positions around the original
 
-      while (hasCollision && attempts < maxAttempts) {
-        hasCollision = false;
+        while (hasCollision && attempts < maxAttempts) {
+          hasCollision = false;
 
-        for (const existingMarker of markersToCheck) {
-          const distance = Math.sqrt(
-            Math.pow(existingMarker.x - finalX, 2) +
-              Math.pow(existingMarker.y - finalY, 2),
-          );
+          for (const existingMarker of markersToCheck) {
+            const distance = Math.sqrt(
+              Math.pow(existingMarker.x - finalX, 2) +
+                Math.pow(existingMarker.y - finalY, 2),
+            );
 
-          if (distance < collisionRadius) {
-            hasCollision = true;
-            // Offset in a circular pattern
-            const angle = (attempts * Math.PI * 2) / maxAttempts;
-            finalX = pos.x + Math.cos(angle) * collisionRadius;
-            finalY = pos.y + Math.sin(angle) * collisionRadius;
-            break;
+            if (distance < collisionRadius) {
+              hasCollision = true;
+              // Offset in a circular pattern
+              const angle = (attempts * Math.PI * 2) / maxAttempts;
+              finalX = pos.x + Math.cos(angle) * collisionRadius;
+              finalY = pos.y + Math.sin(angle) * collisionRadius;
+              break;
+            }
           }
+
+          attempts++;
         }
 
-        attempts++;
-      }
+        const marker: DiagramMarker = {
+          x: finalX,
+          y: finalY,
+          type: markerType,
+          label: item?.type?.title || "",
+          size: nominalSize,
+        };
 
-      const marker: DiagramMarker = {
-        x: finalX,
-        y: finalY,
-        type: markerType,
-        label: item?.type?.title || "",
-        size: pos.size,
-      };
+        console.log(
+          `✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [offset for collision]" : ""}`,
+        );
 
-      console.log(
-        `✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [offset for collision]" : ""}`,
-      );
-
-      if (pos.panel === "within") {
-        withinMarkers.push(marker);
+        if (pos.panel === "within") {
+          withinMarkers.push(marker);
+        } else {
+          outMarkers.push(marker);
+        }
       } else {
-        outMarkers.push(marker);
+        console.warn(
+          `❌ No position mapping found for: "${item?.type?.title}" (searched: ${normalizedTitle}, ${normalizedCode})`,
+        );
       }
-    } else {
-      console.warn(
-        `❌ No position mapping found for: "${item?.type?.title}" (searched: ${normalizedTitle}, ${normalizedCode})`,
-      );
-    }
   });
 
   console.log(`\n🎯 Final diagram markers:`, {
@@ -386,11 +403,15 @@ const DiagramMarkerWithTooltip: React.FC<{
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-  const leftPercent = (marker.x / 640) * 100;
-  const topPercent = (marker.y / 600) * 100;
-  const markerBaseSize = marker.size ?? 20;
-  const markerSize = `clamp(10px, 2.4vw, ${markerBaseSize}px)`;
-  const markerFontSize = "clamp(6.5px, 1.2vw, 10px)";
+    const leftPercent = (marker.x / BASE_CANVAS_WIDTH) * 100;
+    const topPercent = (marker.y / BASE_CANVAS_HEIGHT) * 100;
+    const markerBaseSize = marker.size ?? DEFAULT_MARKER_SIZE;
+    const normalizedMarkerSize = Math.min(
+      Math.max(markerBaseSize, MIN_MARKER_DIAMETER),
+      MAX_MARKER_DIAMETER,
+    );
+    const markerSize = `clamp(${MIN_MARKER_DIAMETER}px, ${MARKER_VW_SCALE}vw, ${normalizedMarkerSize}px)`;
+    const markerFontSize = `clamp(${MARKER_FONT_MIN}px, 0.95vw, ${MARKER_FONT_MAX}px)`;
 
   const baseClasses =
     "absolute rounded-full flex items-center justify-center font-bold shadow-sm border pointer-events-auto transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
@@ -418,22 +439,31 @@ const DiagramMarkerWithTooltip: React.FC<{
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !editMode || !onDrag) return;
-    const parentElement =
-      buttonRef.current?.closest<HTMLDivElement>(".diagram-container");
-    if (!parentElement) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !editMode || !onDrag) return;
+      const parentElement =
+        buttonRef.current?.closest<HTMLDivElement>(".diagram-container");
+      if (!parentElement) return;
 
-    const rect = parentElement.getBoundingClientRect();
-    const x = ((e.clientX - rect.left - dragOffset.x) / rect.width) * 640;
-    const y = ((e.clientY - rect.top - dragOffset.y) / rect.height) * 600;
+      const rect = parentElement.getBoundingClientRect();
+      const x =
+        ((e.clientX - rect.left - dragOffset.x) / rect.width) *
+        BASE_CANVAS_WIDTH;
+      const y =
+        ((e.clientY - rect.top - dragOffset.y) / rect.height) *
+        BASE_CANVAS_HEIGHT;
 
-    // Clamp values to valid range
-    const clampedX = Math.max(20, Math.min(620, x));
-    const clampedY = Math.max(20, Math.min(580, y));
+      const clampedX = Math.max(
+        DIAGRAM_EDGE_PADDING,
+        Math.min(BASE_CANVAS_WIDTH - DIAGRAM_EDGE_PADDING, x),
+      );
+      const clampedY = Math.max(
+        DIAGRAM_EDGE_PADDING,
+        Math.min(BASE_CANVAS_HEIGHT - DIAGRAM_EDGE_PADDING, y),
+      );
 
-    onDrag(clampedX, clampedY);
-  };
+      onDrag(clampedX, clampedY);
+    };
 
   const handleMouseUp = () => {
     setIsDragging(false);
