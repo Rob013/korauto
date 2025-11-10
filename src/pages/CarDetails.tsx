@@ -32,7 +32,6 @@ import {
   Hash,
   Calendar,
   Shield,
-  FileText,
   Search,
   Info,
   Eye,
@@ -92,9 +91,6 @@ import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 import { openCarReportInNewTab } from "@/utils/navigation";
 
-const InspectionRequestForm = lazy(
-  () => import("@/components/InspectionRequestForm"),
-);
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
     default: module.ImageZoom,
@@ -2193,6 +2189,10 @@ const CarDetails = memo(() => {
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   }, [car, lot, impact]);
+  const handlePhoneCall = useCallback(() => {
+    impact("light");
+    window.open("tel:+38348181116", "_self");
+  }, [impact]);
   const handleShare = useCallback(() => {
     impact("light");
     navigator.clipboard.writeText(window.location.href);
@@ -2380,7 +2380,7 @@ const CarDetails = memo(() => {
     );
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0">
       <div className="container-responsive py-6 max-w-[1600px]">
         {/* Header with Actions - Modern Layout with animations */}
         <div className="flex flex-col gap-3 mb-6">
@@ -2773,99 +2773,49 @@ const CarDetails = memo(() => {
                   <div className="text-xs text-muted-foreground font-medium">
                     +350€ deri në Prishtinë
                   </div>
+                    {(car.insurance_v2 ||
+                      car.details?.insurance ||
+                      car.details?.insurance_v2 ||
+                      car.inspect) && (
+                      <button
+                        type="button"
+                        onClick={handleOpenInspectionReport}
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-primary hover:text-primary/80 hover:underline focus:outline-none"
+                      >
+                        <Shield className="h-3 w-3 md:h-4 md:w-4" />
+                        <span>Historia e Sigurimit</span>
+                        <Badge
+                          variant="secondary"
+                          className={`ml-0.5 text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
+                        >
+                          {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                        </Badge>
+                        <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+                      </button>
+                    )}
                 </div>
               </div>
 
-                {/* Action Buttons - Modernized Layout */}
-                <div className="flex flex-wrap gap-3 mt-4 mb-5">
-                  <Suspense
-                    fallback={
-                      <div className="flex-1 min-w-[200px]">
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          className="group relative w-full h-14 rounded-xl border-2 border-primary/20 bg-muted/40 text-primary opacity-70 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                          disabled
-                        >
-                          <span className="relative flex items-center justify-between w-full">
-                            <span className="flex items-center gap-2.5">
-                              <FileText className="h-5 w-5" />
-                              <span className="text-sm">Duke u ngarkuar...</span>
-                            </span>
-                            <ChevronRight className="h-5 w-5 opacity-50" />
-                          </span>
-                        </Button>
-                      </div>
-                    }
+              {/* Action Buttons - Modernized Layout */}
+              <div className="flex flex-wrap gap-3 mt-4 mb-5">
+                <div className="flex-1 min-w-[200px]">
+                  <Button
+                    onClick={handleContactWhatsApp}
+                    size="lg"
+                    variant="outline"
+                    className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
                   >
-                    <div className="flex-1 min-w-[200px]">
-                      <InspectionRequestForm
-                        trigger={
-                          <Button
-                            size="lg"
-                            variant="outline"
-                            className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                          >
-                            <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                            <span className="relative flex items-center justify-between w-full">
-                              <span className="flex items-center gap-2.5">
-                                <FileText className="h-5 w-5" />
-                                <span className="text-sm">Kërko Inspektim</span>
-                              </span>
-                              <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
-                            </span>
-                          </Button>
-                        }
-                        carId={car.id}
-                        carMake={car.make}
-                        carModel={car.model}
-                        carYear={car.year}
-                      />
-                    </div>
-                  </Suspense>
-                  {car.details && (
-                    <div className="flex-1 min-w-[200px]">
-                      <Button
-                        onClick={handleOpenInspectionReport}
-                        size="lg"
-                        variant="outline"
-                        className={`group relative w-full h-14 rounded-xl border-2 px-5 font-semibold transition-all duration-300 overflow-hidden hover:-translate-y-0.5 ${accidentStyle.button}`}
-                      >
-                        <span
-                          className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${accidentStyle.overlay}`}
-                        ></span>
-                        <span className="relative flex items-center justify-between w-full">
-                          <span className="flex items-center gap-2.5">
-                            <Shield className={`h-5 w-5 ${accidentStyle.icon}`} />
-                            <span className="text-sm">Historia</span>
-                          </span>
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition-colors duration-200 ${accidentStyle.badge}`}
-                          >
-                            {accidentCount}
-                          </span>
-                        </span>
-                      </Button>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-[200px]">
-                    <Button
-                      onClick={handleContactWhatsApp}
-                      size="lg"
-                      variant="outline"
-                      className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                    >
-                      <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                      <span className="relative flex items-center justify-between w-full">
-                        <span className="flex items-center gap-2.5">
-                          <MessageCircle className="h-5 w-5" />
-                          <span className="text-sm">WhatsApp</span>
-                        </span>
-                        <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
+                    <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                    <span className="relative flex items-center justify-between w-full">
+                      <span className="flex items-center gap-2.5">
+                        <MessageCircle className="h-5 w-5" />
+                        <span className="text-sm">WhatsApp</span>
                       </span>
-                    </Button>
-                  </div>
+                      <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
+                    </span>
+                  </Button>
                 </div>
+              </div>
             </div>
 
             {/* Vehicle Specifications - Compact Mobile Card */}
@@ -3275,90 +3225,65 @@ const CarDetails = memo(() => {
                 </h3>
 
                 {/* Enhanced Contact Buttons */}
-                <div className="space-y-3 mb-4">
-                  <Button
-                    onClick={handleContactWhatsApp}
-                    className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    WhatsApp
-                  </Button>
+                  <div className="space-y-3 mb-4">
+                    <Button
+                      onClick={handleContactWhatsApp}
+                      className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      WhatsApp
+                    </Button>
 
-                  <Suspense
-                    fallback={
-                      <Button
-                        className="w-full h-10 text-sm font-medium bg-muted text-muted-foreground"
-                        disabled
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Duke u ngarkuar...
-                      </Button>
-                    }
-                  >
-                    <InspectionRequestForm
-                      trigger={
-                        <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
-                          <FileText className="h-4 w-4 mr-2" />
-                          Kërko Inspektim
-                        </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={handlePhoneCall}
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      +383 48 181 116
+                    </Button>
+
+                    {/* Instagram */}
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
+                      onClick={() =>
+                        window.open(
+                          "https://www.instagram.com/korauto.ks/",
+                          "_blank",
+                        )
                       }
-                      carId={car.id}
-                      carMake={car.make}
-                      carModel={car.model}
-                      carYear={car.year}
-                    />
-                  </Suspense>
+                    >
+                      <Instagram className="h-4 w-4 mr-2" />
+                      Instagram
+                    </Button>
 
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={() => window.open("tel:+38348181116", "_self")}
-                  >
-                    <Phone className="h-4 w-4 mr-2" />
-                    +383 48 181 116
-                  </Button>
+                    {/* Facebook */}
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
+                      onClick={() =>
+                        window.open(
+                          "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
+                          "_blank",
+                        )
+                      }
+                    >
+                      <Facebook className="h-4 w-4 mr-2" />
+                      Facebook
+                    </Button>
 
-                  {/* Instagram */}
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
-                    onClick={() =>
-                      window.open(
-                        "https://www.instagram.com/korauto.ks/",
-                        "_blank",
-                      )
-                    }
-                  >
-                    <Instagram className="h-4 w-4 mr-2" />
-                    Instagram
-                  </Button>
-
-                  {/* Facebook */}
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
-                    onClick={() =>
-                      window.open(
-                        "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
-                        "_blank",
-                      )
-                    }
-                  >
-                    <Facebook className="h-4 w-4 mr-2" />
-                    Facebook
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={() =>
-                      window.open("mailto:info@korauto.com", "_self")
-                    }
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    info@korauto.com
-                  </Button>
-                </div>
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() =>
+                        window.open("mailto:info@korauto.com", "_self")
+                      }
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      info@korauto.com
+                    </Button>
+                  </div>
 
                 {/* Enhanced Additional Buttons */}
                 <div className="border-t border-border pt-4 space-y-3">
@@ -3461,6 +3386,36 @@ const CarDetails = memo(() => {
           </Suspense>
         )}
       </div>
+      {car && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-muted-foreground line-clamp-1">
+                {car.year} {car.make} {car.model}
+              </div>
+              <div className="text-lg font-bold text-foreground">
+                €{car.price.toLocaleString()}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-12 flex-shrink-0 rounded-xl border-primary/40 text-primary"
+              onClick={handlePhoneCall}
+            >
+              <Phone className="h-5 w-5" />
+            </Button>
+            <Button
+              size="lg"
+              className="h-12 flex-shrink-0 rounded-xl bg-green-600 px-4 text-sm font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
+              onClick={handleContactWhatsApp}
+            >
+              <MessageCircle className="mr-2 h-5 w-5" />
+              WhatsApp
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
