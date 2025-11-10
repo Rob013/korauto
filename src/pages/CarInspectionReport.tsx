@@ -401,8 +401,11 @@ const CarInspectionReport = () => {
             { signal: controller.signal },
           );
         }
-      } catch (recordError) {
-        console.warn("Failed to fetch Encars record open data:", recordError);
+        } catch (recordError) {
+          console.warn(
+            "Nuk u arrit të merren të dhënat Encars record open:",
+            recordError,
+          );
       }
 
       const priceKRW =
@@ -597,20 +600,20 @@ const CarInspectionReport = () => {
         encarRecordSummary: encarRecordSummary ?? undefined,
       };
 
-      setCar(transformed);
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to load inspection report:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Nuk u arrit të ngarkohet raporti i inspektimit",
-      );
-      setCar(null);
-      setLoading(false);
-    } finally {
-      clearTimeout(timeoutId);
-    }
+        setCar(transformed);
+        setLoading(false);
+      } catch (error) {
+        console.error("Nuk u arrit të ngarkohej raporti i inspektimit:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Nuk u arrit të ngarkohet raporti i inspektimit",
+        );
+        setCar(null);
+        setLoading(false);
+      } finally {
+        clearTimeout(timeoutId);
+      }
   }, [convertKRWtoEUR, lot]);
 
   useEffect(() => {
@@ -1778,12 +1781,12 @@ const CarInspectionReport = () => {
                       {vehicleSubtitle}
                     </p>
                   )}
-                  {car.grade && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                      <Shield className="h-3.5 w-3.5" />
-                      Grade IAAI: {car.grade}
-                    </span>
-                  )}
+                    {car.grade && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                        <Shield className="h-3.5 w-3.5" />
+                        Gradë IAAI: {car.grade}
+                      </span>
+                    )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   {formattedPrice && (
@@ -2155,23 +2158,23 @@ const CarInspectionReport = () => {
                                       {accident.date || "Data e panjohur"}
                                     </span>
                                   </div>
-                                  <Badge
-                                    variant="outline"
-                                    className="w-fit text-xs"
-                                  >
-                                    Tipi:{" "}
-                                    {accident.type === "2"
-                                      ? "Dëmtimi i vet"
-                                      : accident.type === "3"
-                                        ? "Dëmtim nga tjeri"
-                                        : `Tipi ${accident.type}`}
-                                  </Badge>
+                                    <Badge
+                                      variant="outline"
+                                      className="w-fit text-xs"
+                                    >
+                                      Lloji:{" "}
+                                      {accident.type === "2"
+                                        ? "Dëmtimi i vet"
+                                        : accident.type === "3"
+                                          ? "Dëmtim nga tjeri"
+                                          : `Lloji ${accident.type}`}
+                                    </Badge>
                                 </div>
                                 <div className="grid gap-1.5 md:gap-2 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
                                   <div className="flex flex-col gap-0.5 md:gap-1">
-                                    <span className="text-[10px] md:text-xs text-muted-foreground">
-                                      Shpenzimi Total
-                                    </span>
+                                      <span className="text-[10px] md:text-xs text-muted-foreground">
+                                        Shpenzimet totale
+                                      </span>
                                     <span className="text-sm md:text-base font-bold text-destructive">
                                       {Math.round(
                                         convertKRWtoEUR(
@@ -2241,9 +2244,9 @@ const CarInspectionReport = () => {
                               key={idx}
                               className="flex items-center justify-between p-2 md:p-3 rounded-lg border border-border/60 bg-muted/30"
                             >
-                              <span className="text-sm md:text-base font-mono font-semibold">
-                                {change.carNo || "N/A"}
-                              </span>
+                                <span className="text-sm md:text-base font-mono font-semibold">
+                                  {change.carNo || "Pa të dhëna"}
+                                </span>
                               <span className="text-xs md:text-sm text-muted-foreground">
                                 {change.date || "Data e panjohur"}
                               </span>
@@ -2646,8 +2649,8 @@ const CarInspectionReport = () => {
                 </p>
                 <p>- Motori (blloku, koka e cilindrit, pistonët, boshtet)</p>
                 <p>
-                  - Transmisioni (manual ose automatik, përjashtuar clutch &
-                  flywheel)
+                  - Transmisioni (manual ose automatik, përjashtuar kuplungu dhe
+                  volanti)
                 </p>
                 <p>- Diferenciali dhe boshtet e fuqisë</p>
                 <p>- ECU, alternatori, starteri</p>
@@ -2663,12 +2666,12 @@ const CarInspectionReport = () => {
                   përjashtohen nga garancia:
                 </p>
 
-                <p>• Debrisi dhe pjesët përreth:</p>
-                <p> - Disku i debrisit</p>
+                <p>• Kuplungu dhe pjesët përreth:</p>
+                <p> - Disku i kuplungut</p>
                 <p> - Pllaka e presionit</p>
-                <p> - Rulllja e lirimit (release bearing)</p>
-                <p> - Flywheel (rrota e masës, DMF)</p>
-                <p> - Damper pulley / torsional dampers</p>
+                <p> - Rulja e lirimit (lageri i lirimit)</p>
+                <p> - Volanti (rrota e masës, DMF)</p>
+                <p> - Rrotulla amortizuese / amortizues torsional</p>
 
                 <p>• Sistemi i Frenimit:</p>
                 <p> - Diskat e frenave, blloqet (pads), këpucët e frenimit</p>
@@ -2684,16 +2687,12 @@ const CarInspectionReport = () => {
                 <p> - Bushingët, nyjet e topit, lidhëset stabilizuese</p>
 
                 <p>• Rrotat & Energjia:</p>
-                <p>
-                  {" "}
-                  - Velgjat (Fellnet) Gomat, balancimi, rregullimi i
-                  drejtimit{" "}
-                </p>
+                <p> - Velgjat (fellnet), gomat, balancimi, rregullimi i drejtimit</p>
                 <p> - Bateria 12V, llambat, siguresat</p>
 
                 <p>• Të tjera Konsumueshme:</p>
                 <p> - Fshirëset e xhamave, spërkatësit</p>
-                <p> - Spark plugs, glow plugs</p>
+                <p> - Buzhitë e ndezjes dhe buzhitë inkandeshente</p>
                 <p>
                   {" "}
                   - Rripat (serpentine, timing sipas intervalit të prodhuesit)
