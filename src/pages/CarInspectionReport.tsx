@@ -18,6 +18,7 @@ import { openCarDetailsInNewTab } from "@/utils/navigation";
 import {
   AlertTriangle,
   ArrowLeft,
+  Car,
   CheckCircle,
   Clock,
   Cog,
@@ -1467,6 +1468,82 @@ const CarInspectionReport = () => {
                   </CardContent>
                 </Card>
               )}
+              
+              {/* Special Accident History - Moved from Exterior Tab */}
+              {(specialAccidentStats.length > 0 || insuranceCarInfo) && (
+                <Card className="shadow-md border-border/80">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Detajet e Aksidenteve dhe Dëmtimeve</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Informacion i detajuar për aksidentet dhe dëmtimet e regjistruara
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {specialAccidentStats.length > 0 && (
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        {specialAccidentStats.map((item) => (
+                          <div
+                            key={item.label}
+                            className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/50 to-muted/30 p-3"
+                          >
+                            <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                              {item.label}
+                            </span>
+                            <span className="text-base font-bold text-foreground">{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {specialAccidentHistory.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Kronologjia e Aksidenteve</h4>
+                        {specialAccidentHistory.map((entry, index) => (
+                          <div
+                            key={`${entry?.type || "event"}-${index}`}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
+                          >
+                            <span className="font-medium text-foreground">
+                              {entry?.type || "Ngjarje"}
+                            </span>
+                            <span className="text-muted-foreground font-medium">{entry?.value || "-"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {insuranceCarInfo && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Përmbledhje Sigurimi</h4>
+                        {[
+                          { label: "Historia e aksidenteve", value: insuranceCarInfo.accident_history },
+                          { label: "Riparime të regjistruara", value: insuranceCarInfo.repair_count },
+                          { label: "Humbje totale", value: insuranceCarInfo.total_loss },
+                          {
+                            label: "Dëmtime nga uji",
+                            value: insuranceCarInfo.flood_damage
+                              ? processFloodDamageText(String(insuranceCarInfo.flood_damage))
+                              : undefined,
+                          },
+                        ]
+                          .filter((item) => item.value)
+                          .map((item) => (
+                            <div
+                              key={item.label}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 text-sm"
+                            >
+                              <span className="font-semibold text-foreground">{item.label}</span>
+                              <span className="text-muted-foreground font-medium">{String(item.value)}</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Options & Equipment Tab */}
@@ -1680,11 +1757,11 @@ const CarInspectionReport = () => {
               <Card className="shadow-md border-border/80">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">Gjendja e Jashtme dhe Karrocerisë</CardTitle>
+                    <Car className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl">Gjendja e Jashtme dhe Përdorimi</CardTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Përmbledhje e informacionit të jashtëm dhe historisë së automjetit
+                    Informacion për historinë e përdorimit dhe pronësisë së automjetit
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1694,26 +1771,26 @@ const CarInspectionReport = () => {
                       {usageHighlights.map((item) => (
                         <div
                           key={item.label}
-                          className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
+                          className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-3"
                         >
                           <span className="text-xs uppercase tracking-wide text-muted-foreground">
                             {item.label}
                           </span>
-                          <span className="text-sm font-semibold text-foreground">{item.value}</span>
+                          <span className="text-base font-semibold text-foreground">{item.value}</span>
                         </div>
                       ))}
                     </div>
                     {usageHistoryList.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-2 mt-4">
                         {usageHistoryList.map((entry, index) => (
                           <div
                             key={`${entry.description || "usage"}-${index}`}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-4 py-3 text-sm"
                           >
                             <span className="font-medium text-foreground">
                               {entry.description || "Përdorim"}
                             </span>
-                            <span className="text-muted-foreground">{entry.value || "-"}</span>
+                            <span className="text-muted-foreground font-medium">{entry.value || "-"}</span>
                           </div>
                         ))}
                       </div>
@@ -1727,7 +1804,7 @@ const CarInspectionReport = () => {
                         {ownerChangesList.map((change, index) => (
                           <div
                             key={`${change?.change_type || "owner"}-${index}`}
-                            className="rounded-lg border border-border/60 bg-muted/40 p-2.5 text-sm space-y-2"
+                            className="rounded-lg border border-border/60 bg-muted/40 p-4 text-sm space-y-2"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="font-semibold text-foreground">
@@ -1753,66 +1830,9 @@ const CarInspectionReport = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground bg-muted/20 p-3 rounded-lg">
                         Nuk ka informata për ndërrimin e pronarëve.
                       </p>
-                    )}
-                  </section>
-
-                  <section className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground">Historia e aksidenteve të veçanta</h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      {specialAccidentStats.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-2.5"
-                        >
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                            {item.label}
-                          </span>
-                          <span className="text-sm font-semibold text-foreground">{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {specialAccidentHistory.length > 0 && (
-                      <div className="space-y-2">
-                        {specialAccidentHistory.map((entry, index) => (
-                          <div
-                            key={`${entry?.type || "event"}-${index}`}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-2.5 py-1.5 text-sm"
-                          >
-                            <span className="font-medium text-foreground">
-                              {entry?.type || "Ngjarje"}
-                            </span>
-                            <span className="text-muted-foreground">{entry?.value || "-"}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {insuranceCarInfo && (
-                      <div className="space-y-2">
-                        {[
-                          { label: "Historia e aksidenteve", value: insuranceCarInfo.accident_history },
-                          { label: "Riparime të regjistruara", value: insuranceCarInfo.repair_count },
-                          { label: "Humbje totale", value: insuranceCarInfo.total_loss },
-                          {
-                            label: "Dëmtime nga uji",
-                            value: insuranceCarInfo.flood_damage
-                              ? processFloodDamageText(String(insuranceCarInfo.flood_damage))
-                              : undefined,
-                          },
-                        ]
-                          .filter((item) => item.value)
-                          .map((item) => (
-                            <div
-                              key={item.label}
-                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-sm"
-                            >
-                              <span className="font-medium text-foreground">{item.label}</span>
-                              <span className="text-muted-foreground">{String(item.value)}</span>
-                            </div>
-                          ))}
-                      </div>
                     )}
                   </section>
                 </CardContent>

@@ -2051,21 +2051,23 @@ const CarDetails = memo(() => {
                 </div>
               </div>
               
-                {/* Action Buttons - Compact Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 mb-4">
+                {/* Action Buttons - Modernized Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 mb-5">
                   <InspectionRequestForm
                     trigger={
                       <Button
-                        size="sm"
+                        size="lg"
                         variant="outline"
-                        className="group w-full justify-between h-11 sm:h-10 rounded-lg sm:rounded-md border-primary text-primary hover:bg-primary hover:text-primary-foreground px-4 sm:px-3 text-sm sm:text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                        className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
                       >
-                        <span className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                          <span className="hidden sm:inline">Kërko Inspektim</span>
-                          <span className="sm:hidden">Inspektim</span>
+                        <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                        <span className="relative flex items-center justify-between w-full">
+                          <span className="flex items-center gap-2.5">
+                            <FileText className="h-5 w-5" />
+                            <span className="text-sm">Kërko Inspektim</span>
+                          </span>
+                          <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
                         </span>
-                        <ChevronRight className="h-4 w-4 opacity-70 group-hover:translate-x-1 transition-transform duration-200" />
                       </Button>
                     }
                     carId={car.id}
@@ -2076,37 +2078,42 @@ const CarDetails = memo(() => {
                   {car.details && (
                     <Button
                       onClick={handleOpenInspectionReport}
-                      size="sm"
+                      size="lg"
                       variant="outline"
-                      className="group w-full justify-between h-11 sm:h-10 rounded-lg sm:rounded-md border-primary text-primary hover:bg-primary hover:text-primary-foreground px-4 sm:px-3 text-sm sm:text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                      className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
                     >
-                      <span className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                        <span>Historia</span>
-                      </span>
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          accidentCount > 0
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                        }`}
-                      >
-                        {accidentCount}
-                        <span className="hidden sm:inline">aksidente</span>
+                      <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                      <span className="relative flex items-center justify-between w-full">
+                        <span className="flex items-center gap-2.5">
+                          <Shield className="h-5 w-5" />
+                          <span className="text-sm">Shiko aksidentet</span>
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+                            accidentCount > 0
+                              ? "bg-destructive/20 text-destructive ring-2 ring-destructive/20"
+                              : "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400"
+                          }`}
+                        >
+                          {accidentCount}
+                        </span>
                       </span>
                     </Button>
                   )}
                   <Button
                     onClick={handleContactWhatsApp}
-                    size="sm"
+                    size="lg"
                     variant="outline"
-                    className="group w-full justify-between h-11 sm:h-10 rounded-lg sm:rounded-md border-green-600 text-green-600 hover:bg-green-600 hover:text-white px-4 sm:px-3 text-sm sm:text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                    className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
                   >
-                    <span className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                      <span>WhatsApp</span>
+                    <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                    <span className="relative flex items-center justify-between w-full">
+                      <span className="flex items-center gap-2.5">
+                        <MessageCircle className="h-5 w-5" />
+                        <span className="text-sm">WhatsApp</span>
+                      </span>
+                      <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
                     </span>
-                    <ChevronRight className="h-4 w-4 opacity-70 group-hover:translate-x-1 transition-transform duration-200" />
                   </Button>
                 </div>
             </div>
