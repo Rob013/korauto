@@ -90,6 +90,7 @@ import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 import { openCarReportInNewTab } from "@/utils/navigation";
+import { createPortal } from "react-dom";
 
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
@@ -1252,6 +1253,12 @@ const CarDetails = memo(() => {
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
+  const [isPortalReady, setIsPortalReady] = useState(false);
+  useEffect(() => {
+    setIsPortalReady(true);
+    return () => setIsPortalReady(false);
+  }, []);
+
   const accidentCount = useMemo(() => {
     if (!car) {
       return 0;
@@ -2837,25 +2844,25 @@ const CarDetails = memo(() => {
                 {/* Specifications Grid - Reorganized in specific order */}
                 <div className="grid grid-cols-2 gap-1.5 md:gap-3 text-xs md:text-sm items-stretch auto-rows-fr isolate relative z-0">
                   {/* 1. Brand - e.g., Volkswagen */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {car.make}
                     </span>
                   </div>
 
                   {/* 2. Model - e.g., A6 35 TDI Quattro (full variant info) */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Tag className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {(() => {
                         // Build full model specification with all available variant/trim info from API
                         let fullModel = car.model || "";
@@ -2951,38 +2958,38 @@ const CarDetails = memo(() => {
                   </div>
 
                   {/* 3. Year - e.g., 2022 */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Calendar className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {car.year}
                     </span>
                   </div>
 
                   {/* 4. Mileage */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Gauge className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {formatMileage(car.mileage)}
                     </span>
                   </div>
 
                   {/* Cylinders */}
                   {car.cylinders && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Cylinder className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.cylinders}
                       </span>
                     </div>
@@ -2990,39 +2997,39 @@ const CarDetails = memo(() => {
 
                   {/* Doors */}
                   {car.details?.doors_count && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <DoorClosed className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.details.doors_count}
                       </span>
                     </div>
                   )}
 
                   {/* Fuel Type */}
-                  <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                     <div className="flex items-center">
                       <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                         <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
-                    <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {translateFuel(car.fuel || "Diesel")}
                     </span>
                   </div>
 
                   {/* 5. Engine - e.g., 998cc */}
                   {car.details?.engine_volume && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Cog className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.details.engine_volume}cc
                       </span>
                     </div>
@@ -3030,13 +3037,13 @@ const CarDetails = memo(() => {
 
                   {/* Transmission */}
                   {car.transmission && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Settings className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium capitalize text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {translateTransmission(car.transmission)}
                       </span>
                     </div>
@@ -3044,13 +3051,13 @@ const CarDetails = memo(() => {
 
                   {/* Drivetrain */}
                   {car.drive_wheel?.name && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <CircleDot className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium uppercase text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium uppercase text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.drive_wheel.name}
                       </span>
                     </div>
@@ -3058,13 +3065,13 @@ const CarDetails = memo(() => {
 
                   {/* Seats */}
                   {car.details?.seats_count && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {car.details.seats_count}
                       </span>
                     </div>
@@ -3072,13 +3079,13 @@ const CarDetails = memo(() => {
 
                   {/* Exterior Color */}
                   {car.color && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <PaintBucket className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium capitalize text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {translateColor(car.color)}
                       </span>
                     </div>
@@ -3086,13 +3093,13 @@ const CarDetails = memo(() => {
 
                   {/* Interior Color */}
                   {car.details?.interior_color && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
-                      <span className="text-muted-foreground font-medium capitalize text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                      <span className="text-muted-foreground font-medium capitalize text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                         {translateColor(car.details.interior_color)}
                       </span>
                     </div>
@@ -3100,14 +3107,14 @@ const CarDetails = memo(() => {
 
                   {/* VIN Number */}
                   {car.vin && (
-                    <div className="group grid grid-cols-[auto,1fr] items-center gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
                       <div className="flex items-center">
                         <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
                           <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                         </div>
                       </div>
                       <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
-                        <span className="text-muted-foreground font-medium font-mono text-xs md:text-sm text-right leading-tight whitespace-normal break-words min-w-0">
+                        <span className="text-muted-foreground font-medium font-mono text-xs md:text-sm text-left leading-tight whitespace-normal break-words min-w-0">
                           {car.vin}
                         </span>
                       </div>
@@ -3386,36 +3393,39 @@ const CarDetails = memo(() => {
           </Suspense>
         )}
       </div>
-      {car && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
-          <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-muted-foreground line-clamp-1">
-                {car.year} {car.make} {car.model}
+      {car &&
+        isPortalReady &&
+        createPortal(
+          <div className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
+            <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-muted-foreground line-clamp-1">
+                  {car.year} {car.make} {car.model}
+                </div>
+                <div className="text-lg font-bold text-foreground">
+                  €{car.price.toLocaleString()}
+                </div>
               </div>
-              <div className="text-lg font-bold text-foreground">
-                €{car.price.toLocaleString()}
-              </div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-12 w-12 flex-shrink-0 rounded-xl border-primary/40 text-primary"
+                onClick={handlePhoneCall}
+              >
+                <Phone className="h-5 w-5" />
+              </Button>
+              <Button
+                size="lg"
+                className="h-12 flex-shrink-0 rounded-xl bg-green-600 px-4 text-sm font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
+                onClick={handleContactWhatsApp}
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                WhatsApp
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="lg"
-              className="h-12 w-12 flex-shrink-0 rounded-xl border-primary/40 text-primary"
-              onClick={handlePhoneCall}
-            >
-              <Phone className="h-5 w-5" />
-            </Button>
-            <Button
-              size="lg"
-              className="h-12 flex-shrink-0 rounded-xl bg-green-600 px-4 text-sm font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
-              onClick={handleContactWhatsApp}
-            >
-              <MessageCircle className="mr-2 h-5 w-5" />
-              WhatsApp
-            </Button>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 });
