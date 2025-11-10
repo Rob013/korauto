@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
-import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
-import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { InspectionDiagramPanel } from "@/components/InspectionDiagramPanel";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
@@ -14,6 +12,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
+import {
+  ENCAR_IMAGE_BASE_URL,
+  fetchEncarsInspection,
+  fetchEncarsRecordOpen,
+  fetchEncarsRecordSummary,
+  fetchEncarsVehicle,
+} from "@/services/encarApi";
+import type {
+  EncarsInspectionResponse,
+  EncarsRecordOpenResponse,
+  EncarsRecordSummaryResponse,
+  EncarsVehicleResponse,
+} from "@/services/encarApi";
 import {
   AlertTriangle,
   MessageCircle,
@@ -67,6 +78,11 @@ interface InspectionReportCar {
   location?: any;
   grade?: string;
   sourceLabel?: string;
+  images?: string[];
+  encarVehicle?: EncarsVehicleResponse;
+  encarInspection?: EncarsInspectionResponse;
+  encarRecord?: EncarsRecordOpenResponse;
+  encarRecordSummary?: EncarsRecordSummaryResponse;
 }
 
 type InsuranceSummaryInfo = {
@@ -87,9 +103,6 @@ type OwnerChangeEntry = {
 };
 
 type SpecialAccidentEntry = { type?: string; value?: string };
-
-const API_BASE_URL = "https://auctionsapi.com/api";
-const API_KEY = "d00985c77981fe8d26be16735f932ed1";
 
 const positiveStatusValues = new Set([
   "goodness",
@@ -217,11 +230,140 @@ const formatDisplayDate = (
   return raw.replace(/-/g, ".").replace(/T.*/, "");
 };
 
+const ENCARS_PRICE_UNIT_KRW = 10000;
+
+const primaryUsageMap: Record<string, string> = {
+  "0": "Pa të dhëna",
+  "1": "Përdorim privat",
+  "2": "Përdorim komercial",
+  "3": "Përdorim qeveritar",
+  "4": "Përdorim të përbashkët",
+};
+
+const secondaryUsageMap: Record<string, string> = {
+  "0": "Pa të dhëna",
+  "1": "Përdorim i përgjithshëm",
+  "2": "Taksi",
+  "3": "Auto-shkollë",
+  "4": "Qira afatshkurtër",
+  "5": "Qira afatgjatë",
+  "6": "Transport publik",
+  "7": "Transport i mallrave",
+  "8": "Përdorim special",
+};
+
+const decodePrimaryUsage = (code?: string | null) => {
+  if (!code) return "Informacion i padisponueshëm";
+  const normalized = code.trim();
+  const label = primaryUsageMap[normalized];
+  return label ? `${label} (${normalized})` : `Kodi i përdorimit ${normalized}`;
+};
+
+const decodeSecondaryUsage = (code?: string | null) => {
+  if (!code) return "Informacion i padisponueshëm";
+  const normalized = code.trim();
+  const label = secondaryUsageMap[normalized];
+  return label
+    ? `${label} (${normalized})`
+    : `Kodi i përdorimit sekondar ${normalized}`;
+};
+
+const buildEncarsImageUrl = (path?: string | null) => {
+  if (!path) return undefined;
+  return `${ENCAR_IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
+const flattenEncarsInners = (
+  inners?: EncarsInspectionResponse["inners"],
+): Record<string, string> => {
+  const result: Record<string, string> = {};
+
+  const walk = (items: EncarsInspectionResponse["inners"], prefix = "") => {
+    if (!items) return;
+    items.forEach((item) => {
+      if (!item) return;
+      const title = item.type?.title?.trim();
+      const label = title
+        ? prefix
+          ? `${prefix} - ${title}`
+          : title
+        : prefix;
+
+      const candidates: string[] = [];
+      if (item.statusType?.title) {
+        candidates.push(item.statusType.title);
+      }
+      if (item.statusTypes && item.statusTypes.length > 0) {
+        const joined = item.statusTypes
+          .map((status) => status?.title)
+          .filter(Boolean)
+          .join(", ");
+        if (joined) candidates.push(joined);
+      }
+      if (item.description) {
+        candidates.push(String(item.description));
+      }
+
+      const value = candidates.find(
+        (candidate) => candidate && candidate.trim().length > 0,
+      );
+
+      if (value && label) {
+        result[label] = value;
+      }
+
+      if (item.children && item.children.length > 0) {
+        walk(item.children, label || prefix);
+      }
+    });
+  };
+
+  walk(inners);
+  return result;
+};
+
+const buildAccidentSummaryFromEncars = (
+  master: EncarsInspectionResponse["master"],
+) => {
+  if (!master) return undefined;
+
+  const summary: Record<string, unknown> = {};
+
+  if (typeof master.accdient === "boolean") {
+    summary.accident = master.accdient ? "yes" : "no";
+  }
+
+  if (typeof master.simpleRepair === "boolean") {
+    summary.simple_repair = master.simpleRepair ? "yes" : "no";
+  }
+
+  const detail = master.detail as Record<string, unknown> | undefined;
+  if (detail) {
+    const engineCheck = detail.engineCheck as string | undefined;
+    const trnsCheck = detail.trnsCheck as string | undefined;
+    const waterlog = detail.waterlog as boolean | undefined;
+    const recall = detail.recall as boolean | undefined;
+    const comments = detail.comments as string | undefined;
+    const seriousTypes = detail.seriousTypes as unknown;
+    const tuningStateTypes = detail.tuningStateTypes as unknown;
+
+    if (engineCheck) summary.engine_check = engineCheck;
+    if (trnsCheck) summary.transmission_check = trnsCheck;
+    if (typeof waterlog === "boolean")
+      summary.waterlog = waterlog ? "yes" : "no";
+    if (typeof recall === "boolean") summary.recall = recall ? "yes" : "no";
+    if (comments) summary.comments = comments;
+    if (seriousTypes) summary.serious_types = seriousTypes;
+    if (tuningStateTypes) summary.tuning = tuningStateTypes;
+  }
+
+  return summary;
+};
+
 const CarInspectionReport = () => {
   const { id: lot } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { exchangeRate, processFloodDamageText, convertKRWtoEUR } =
-    useCurrencyAPI();
+  const { processFloodDamageText, convertKRWtoEUR } = useCurrencyAPI();
   const {
     getOptionName,
     getOptionDescription,
@@ -239,225 +381,237 @@ const CarInspectionReport = () => {
     setLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const [encarVehicle, encarInspection, encarRecordSummary] =
+        await Promise.all([
+          fetchEncarsVehicle(lot, undefined, { signal: controller.signal }),
+          fetchEncarsInspection(lot, { signal: controller.signal }),
+          fetchEncarsRecordSummary(lot, { signal: controller.signal }),
+        ]);
 
-      let response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-        headers: {
-          accept: "*/*",
-          "x-api-key": API_KEY,
-        },
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
-          headers: {
-            accept: "*/*",
-            "x-api-key": API_KEY,
-          },
-          signal: controller.signal,
-        });
+      let encarRecord: EncarsRecordOpenResponse | undefined;
+      try {
+        if (encarVehicle?.vehicleNo) {
+          encarRecord = await fetchEncarsRecordOpen(
+            lot,
+            encarVehicle.vehicleNo,
+            { signal: controller.signal },
+          );
+        }
+      } catch (recordError) {
+        console.warn("Failed to fetch Encars record open data:", recordError);
       }
 
-      clearTimeout(timeoutId);
+      const priceKRW =
+        encarVehicle?.advertisement?.price !== undefined
+          ? encarVehicle.advertisement.price * ENCARS_PRICE_UNIT_KRW
+          : undefined;
+      const priceEUR =
+        priceKRW && priceKRW > 0 ? convertKRWtoEUR(priceKRW) : undefined;
 
-      if (!response.ok) {
-        throw new Error(
-          `API returned ${response.status}: ${response.statusText}`,
+      const mainPhoto =
+        encarVehicle?.photos?.find((photo) => photo.type === "OUTER") ??
+        encarVehicle?.photos?.[0];
+      const image = buildEncarsImageUrl(mainPhoto?.path);
+      const images =
+        encarVehicle?.photos
+          ?.map((photo) => buildEncarsImageUrl(photo.path))
+          .filter((url): url is string => Boolean(url)) ?? [];
+
+      const ownerChanges: OwnerChangeEntry[] =
+        encarRecord?.ownerChanges?.map((date, idx) => ({
+          date,
+          change_type: `Ndryshimi #${idx + 1}`,
+        })) ?? [];
+
+      const usageHistoryEntries: UsageHistoryEntry[] = [];
+      if (encarRecordSummary?.use) {
+        usageHistoryEntries.push({
+          description: "Përdorimi aktual",
+          value: decodePrimaryUsage(encarRecordSummary.use),
+        });
+      }
+      if (encarRecord?.carInfoUse1s?.length) {
+        encarRecord.carInfoUse1s.forEach((code, idx) =>
+          usageHistoryEntries.push({
+            description: `Përdorimi kryesor ${idx + 1}`,
+            value: decodePrimaryUsage(code),
+          }),
         );
       }
-
-      const data = await response.json();
-      const carData = data.data;
-      const lotData = carData?.lots?.[0];
-
-      if (!lotData) {
-        throw new Error("Informacioni i lotit mungon në përgjigjen e API-së");
+      if (encarRecord?.carInfoUse2s?.length) {
+        encarRecord.carInfoUse2s.forEach((code, idx) =>
+          usageHistoryEntries.push({
+            description: `Përdorimi i detajuar ${idx + 1}`,
+            value: decodeSecondaryUsage(code),
+          }),
+        );
       }
-
-      const basePrice = lotData.buy_now || lotData.final_bid || lotData.price;
-      const priceEUR = basePrice
-        ? calculateFinalPriceEUR(basePrice, exchangeRate.rate)
-        : undefined;
-
-      const details = lotData.details || {};
-
-      // Extract inspect data from details.inspect and carData.details
-      const inspectData =
-        details?.inspect ||
-        lotData.inspect ||
-        (carData as any)?.details?.inspect ||
-        {};
-      // Prefer array-based sources for outer inspection details
-      const inspectOuterCandidates: any[] = [];
-      if (Array.isArray(details?.inspect_outer))
-        inspectOuterCandidates.push(...(details as any).inspect_outer);
-      if (Array.isArray((carData as any)?.details?.inspect_outer))
-        inspectOuterCandidates.push(...(carData as any).details.inspect_outer);
-      if (Array.isArray((inspectData as any)?.inspect_outer))
-        inspectOuterCandidates.push(...(inspectData as any).inspect_outer);
-      if (Array.isArray((inspectData as any)?.outer))
-        inspectOuterCandidates.push(...(inspectData as any).outer);
-      const inspectOuter = inspectOuterCandidates;
-      const inspectInner = (inspectData as any).inner || {};
-      const accidentSummary = (inspectData as any).accident_summary || {};
-
-      // Extract insurance_v2 data
-      const insuranceV2 = lotData.insurance_v2 || details?.insurance_v2 || {};
-
-      // Extract options data
-      const optionsData = details?.options || {};
-      const optionsExtra = details?.options_extra || [];
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("🔍 Inspection Report Data Collection:", {
-          "details.inspect": details?.inspect,
-          "inspectData.accident_summary": accidentSummary,
-          "inspectData.outer": inspectOuter,
-          "inspectData.inner": inspectInner,
-          insurance_v2: insuranceV2,
-          options: optionsData,
-          options_extra: optionsExtra,
-          hasAccidentSummary: Object.keys(accidentSummary).length > 0,
-          hasOuterData: Object.keys(inspectOuter).length > 0,
-          hasInsuranceData: Object.keys(insuranceV2).length > 0,
-          hasOptionsExtra: optionsExtra.length > 0,
+      if (encarRecord?.carInfoChanges?.length) {
+        encarRecord.carInfoChanges.forEach((change, idx) =>
+          usageHistoryEntries.push({
+            description: `Ndryshim targash ${idx + 1}`,
+            value: `${change.carNo ?? "-"}${
+              change.date
+                ? ` (${formatDisplayDate(change.date) ?? change.date})`
+                : ""
+            }`,
+          }),
+        );
+      }
+      if (encarRecordSummary?.carNoChangeCnt !== undefined) {
+        usageHistoryEntries.push({
+          description: "Numri i ndërrimeve të targës",
+          value: `${encarRecordSummary.carNoChangeCnt}`,
+        });
+      }
+      const notJoinDates = [
+        encarRecord?.notJoinDate1,
+        encarRecord?.notJoinDate2,
+        encarRecord?.notJoinDate3,
+        encarRecord?.notJoinDate4,
+        encarRecord?.notJoinDate5,
+      ].filter(Boolean);
+      if (notJoinDates.length > 0) {
+        usageHistoryEntries.push({
+          description: "Periudhat pa sigurim",
+          value: notJoinDates.join(", "),
         });
       }
 
+      const insuranceDetails = {
+        usage_history: usageHistoryEntries,
+        owner_changes: ownerChanges,
+        car_info: {
+          car_no: encarRecordSummary?.carNo ?? encarRecord?.carNo,
+          first_registration:
+            encarRecordSummary?.firstDate ?? encarRecord?.firstDate,
+          fuel: encarRecordSummary?.fuel ?? encarRecord?.fuel,
+          displacement:
+            encarRecordSummary?.displacement ?? encarRecord?.displacement,
+          use: encarRecordSummary?.use,
+        },
+      };
+
+      const insuranceV2 = {
+        accidentCnt: encarRecordSummary?.accidentCnt,
+        myAccidentCnt: encarRecordSummary?.myAccidentCnt,
+        otherAccidentCnt: encarRecordSummary?.otherAccidentCnt,
+        ownerChangeCnt: encarRecordSummary?.ownerChangeCnt,
+        totalLossCnt: encarRecordSummary?.totalLossCnt,
+        floodTotalLossCnt: encarRecordSummary?.floodTotalLossCnt,
+        accidents: encarRecord?.accidents,
+        carInfoChanges: encarRecord?.carInfoChanges,
+        carInfoUse1s: encarRecord?.carInfoUse1s,
+        carInfoUse2s: encarRecord?.carInfoUse2s,
+      };
+
+      const inspectInner = flattenEncarsInners(encarInspection?.inners);
+      const accidentSummary = buildAccidentSummaryFromEncars(
+        encarInspection?.master,
+      );
+
       const transformed: InspectionReportCar = {
-        id: carData.id?.toString() || lot,
-        lot: lotData.lot || lot,
-        make: carData.manufacturer?.name,
-        model: carData.model?.name,
-        year: carData.year,
-        title: carData.title || lotData.title,
-        image: lotData.images?.big?.[0] || lotData.images?.normal?.[0],
+        id: (encarVehicle?.vehicleId ?? lot).toString(),
+        lot,
+        make: encarVehicle?.category?.manufacturerName,
+        model:
+          encarVehicle?.category?.modelName ??
+          encarVehicle?.category?.modelGroupName,
+        year: encarVehicle?.category?.formYear
+          ? Number.parseInt(encarVehicle.category.formYear, 10)
+          : undefined,
+        title:
+          encarVehicle?.category?.gradeName ??
+          `${encarVehicle?.category?.manufacturerName ?? ""} ${
+            encarVehicle?.category?.modelName ?? ""
+          }`.trim(),
+        image,
+        images,
         priceEUR,
-        mileageKm: lotData.odometer?.km,
-        odometer: lotData.odometer,
-        vin:
-          lotData.vin ||
-          carData.vin ||
-          details?.vin ||
-          details?.insurance?.car_info?.vin,
-        fuel:
-          carData.fuel?.name ||
-          lotData.fuel?.name ||
-          details?.fuel?.name ||
-          details?.specs?.fuel,
+        mileageKm: encarVehicle?.spec?.mileage,
+        odometer: encarVehicle?.spec?.mileage
+          ? { km: encarVehicle.spec.mileage }
+          : undefined,
+        vin: encarVehicle?.vin,
+        fuel: encarVehicle?.spec?.fuelName,
         firstRegistration:
-          lotData.first_registration ||
-          (typeof lotData.firstRegistration === "string" &&
-            lotData.firstRegistration) ||
-          details?.first_registration ||
-          lotData.insurance_v2?.firstDate ||
-          carData.insurance_v2?.firstDate,
+          encarRecordSummary?.firstDate ??
+          (typeof (encarInspection?.master?.detail as any)
+            ?.firstRegistrationDate === "string"
+            ? (encarInspection?.master?.detail as any).firstRegistrationDate
+            : encarVehicle?.category?.yearMonth),
         postedAt:
-          lotData.listed_at ||
-          lotData.posted_at ||
-          lotData.created_at ||
-          carData.listed_at ||
-          carData.posted_at ||
-          carData.created_at,
-        engineDisplacement:
-          lotData.insurance_v2?.displacement ||
-          carData.insurance_v2?.displacement ||
-          details?.engine_volume ||
-          details?.engine?.displacement,
-        damage: lotData.damage || details?.damage || null,
-        insurance: lotData.insurance || details?.insurance || carData.insurance,
+          encarVehicle?.manage?.registDateTime ??
+          encarVehicle?.manage?.firstAdvertisedDateTime,
+        engineDisplacement: encarVehicle?.spec?.displacement,
+        damage:
+          encarInspection?.outers && encarInspection.outers.length > 0
+            ? {
+                main: encarInspection.outers
+                  .filter((outer) =>
+                    outer.statusTypes?.some(
+                      (status) => status.code?.toUpperCase() === "X",
+                    ),
+                  )
+                  .map((outer) => outer.type?.title)
+                  .filter(Boolean)
+                  .join(", "),
+              }
+            : null,
+        insurance: insuranceDetails,
         insurance_v2: insuranceV2,
         details: {
-          ...details,
-          inspect_outer: inspectOuter,
+          inspect_outer: encarInspection?.outers ?? [],
           inspect: {
-            accident_summary: accidentSummary,
-            outer: inspectOuter,
+            outer: encarInspection?.outers ?? [],
             inner: inspectInner,
+            accident_summary: accidentSummary ?? {},
           },
-          options: optionsData,
-          options_extra: optionsExtra,
+          options: {
+            standard: encarVehicle?.options?.standard ?? [],
+            choice: encarVehicle?.options?.choice ?? [],
+          },
+          options_extra: encarVehicle?.options?.etc ?? [],
+          insurance: insuranceDetails,
         },
         inspect: {
-          accident_summary: accidentSummary,
-          outer: inspectOuter,
+          outer: encarInspection?.outers ?? [],
           inner: inspectInner,
+          accident_summary: accidentSummary ?? {},
         },
-        ownerChanges: details?.insurance?.owner_changes || [],
-        maintenanceHistory: details?.maintenance_history || [],
-        location: lotData.location,
-        grade: lotData.grade_iaai,
-        sourceLabel: carData.source_label || carData.domain_name,
+        ownerChanges,
+        maintenanceHistory: [],
+        location: encarVehicle?.contact?.address,
+        grade: encarVehicle?.category?.gradeName,
+        sourceLabel: encarVehicle?.category?.manufacturerName
+          ? `Encars • ${encarVehicle.category.manufacturerName}`
+          : "Encars",
+        images,
+        encarVehicle: encarVehicle ?? undefined,
+        encarInspection: encarInspection ?? undefined,
+        encarRecord: encarRecord ?? undefined,
+        encarRecordSummary: encarRecordSummary ?? undefined,
       };
 
       setCar(transformed);
       setLoading(false);
-    } catch (apiError) {
-      console.error("Failed to fetch inspection report:", apiError);
-
-      const fallbackCar = fallbackCars.find(
-        (fallback) =>
-          fallback.id === lot ||
-          fallback.lot_number === lot ||
-          fallback?.lots?.[0]?.lot === lot,
-      );
-
-      if (fallbackCar && fallbackCar.lots?.[0]) {
-        const lotData = fallbackCar.lots[0];
-        const basePrice = lotData.buy_now || fallbackCar.price;
-        const priceEUR = basePrice
-          ? calculateFinalPriceEUR(basePrice, exchangeRate.rate)
-          : undefined;
-
-        const lotDataAny = lotData as any;
-        const fallbackCarAny = fallbackCar as any;
-
-        setCar({
-          id: fallbackCar.id,
-          lot: lotData.lot,
-          make: fallbackCar.manufacturer?.name,
-          model: fallbackCar.model?.name,
-          year: fallbackCar.year,
-          title: fallbackCar.title,
-          image: lotData.images?.big?.[0] || lotData.images?.normal?.[0],
-          priceEUR,
-          mileageKm: lotData.odometer?.km,
-          odometer: lotData.odometer,
-          vin: fallbackCarAny.vin || lotDataAny.vin,
-          fuel:
-            fallbackCar.fuel?.name ||
-            lotDataAny.fuel?.name ||
-            fallbackCarAny.details?.fuel?.name,
-          firstRegistration:
-            lotDataAny.first_registration ||
-            fallbackCarAny.first_registration ||
-            fallbackCarAny.details?.first_registration,
-          postedAt: lotDataAny.listed_at || fallbackCarAny.listed_at,
-          engineDisplacement:
-            fallbackCarAny.details?.engine_volume ||
-            lotDataAny.insurance_v2?.displacement,
-          damage: lotDataAny.damage || null,
-          insurance: lotDataAny.insurance,
-          insurance_v2: lotDataAny.insurance_v2,
-          details: lotDataAny.details,
-          maintenanceHistory: lotDataAny.details?.maintenance_history || [],
-          ownerChanges: lotDataAny.details?.insurance?.owner_changes || [],
-        });
-        setLoading(false);
-        return;
-      }
-
+    } catch (error) {
+      console.error("Failed to load inspection report:", error);
       setError(
-        apiError instanceof Error
-          ? apiError.message
-          : "Nuk u arrit të ngarkohej raporti i inspektimit",
+        error instanceof Error
+          ? error.message
+          : "Nuk u arrit të ngarkohet raporti i inspektimit",
       );
+      setCar(null);
       setLoading(false);
+    } finally {
+      clearTimeout(timeoutId);
     }
-  }, [exchangeRate.rate, lot]);
+  }, [convertKRWtoEUR, lot]);
 
   useEffect(() => {
     trackPageView(`/car/${lot}/report`, {
@@ -480,6 +634,7 @@ const CarInspectionReport = () => {
     pushIfArray(car?.inspect?.inspect_outer);
     pushIfArray((car as any)?.details?.inspect?.outer);
     pushIfArray((car as any)?.details?.outer);
+    pushIfArray(car?.encarInspection?.outers);
     // Deduplicate by type.code if present
     const keyed = new Map<string, any>();
     for (const item of candidates) {
