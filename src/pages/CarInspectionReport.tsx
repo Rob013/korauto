@@ -322,6 +322,59 @@ const flattenEncarsInners = (
   return result;
 };
 
+const ENCARS_REPORT_UNAVAILABLE_MESSAGE =
+  "Raporti Encars nuk është i disponueshëm për këtë makinë.";
+const ENCARS_GENERIC_FAILURE_MESSAGE =
+  "Nuk u arrit të ngarkohej raporti i inspektimit.";
+
+const ENCARS_NOT_FOUND_REGEX = /\(404\b/;
+
+const isEncarsNotFoundError = (error: unknown): boolean => {
+  if (error instanceof Error) {
+    if (error.name === "AbortError") {
+      return false;
+    }
+    return ENCARS_NOT_FOUND_REGEX.test(error.message);
+  }
+  if (typeof error === "string") {
+    return ENCARS_NOT_FOUND_REGEX.test(error);
+  }
+  return false;
+};
+
+const mapEncarsRequiredError = (reason: unknown): Error => {
+  if (isEncarsNotFoundError(reason)) {
+    return new Error(ENCARS_REPORT_UNAVAILABLE_MESSAGE);
+  }
+  if (reason instanceof Error) {
+    return reason;
+  }
+  return new Error(ENCARS_GENERIC_FAILURE_MESSAGE);
+};
+
+const getEncarsDisplayErrorMessage = (error: unknown): string => {
+  if (isEncarsNotFoundError(error)) {
+    return ENCARS_REPORT_UNAVAILABLE_MESSAGE;
+  }
+  if (error instanceof Error) {
+    if (error.name === "AbortError") {
+      return "Kërkesa u ndërpre. Ju lutem provoni përsëri.";
+    }
+    return error.message;
+  }
+  return ENCARS_GENERIC_FAILURE_MESSAGE;
+};
+
+const logEncarsOptionalFailure = (label: string, reason: unknown) => {
+  if (isEncarsNotFoundError(reason)) {
+    console.warn(`Encars ${label} nuk u gjet (404).`, reason);
+  } else if (reason instanceof Error && reason.name === "AbortError") {
+    console.warn(`Kërkesa Encars për ${label} u anulua.`, reason);
+  } else {
+    console.error(`Dështoi marrja e të dhënave Encars për ${label}:`, reason);
+  }
+};
+
 const buildAccidentSummaryFromEncars = (
   master: EncarsInspectionResponse["master"],
 ) => {
@@ -385,12 +438,40 @@ const CarInspectionReport = () => {
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-      const [encarVehicle, encarInspection, encarRecordSummary] =
-        await Promise.all([
-          fetchEncarsVehicle(lot, undefined, { signal: controller.signal }),
-          fetchEncarsInspection(lot, { signal: controller.signal }),
-          fetchEncarsRecordSummary(lot, { signal: controller.signal }),
-        ]);
+      const [
+        vehicleResult,
+        inspectionResult,
+        recordSummaryResult,
+      ] = await Promise.allSettled([
+        fetchEncarsVehicle(lot, undefined, { signal: controller.signal }),
+        fetchEncarsInspection(lot, { signal: controller.signal }),
+        fetchEncarsRecordSummary(lot, { signal: controller.signal }),
+      ]);
+
+      if (vehicleResult.status !== "fulfilled") {
+        throw mapEncarsRequiredError(vehicleResult.reason);
+      }
+
+      const encarVehicle = vehicleResult.value;
+
+      const encarInspection =
+        inspectionResult.status === "fulfilled"
+          ? inspectionResult.value
+          : undefined;
+      if (inspectionResult.status === "rejected") {
+        logEncarsOptionalFailure("inspection", inspectionResult.reason);
+      }
+
+      const encarRecordSummary =
+        recordSummaryResult.status === "fulfilled"
+          ? recordSummaryResult.value
+          : undefined;
+      if (recordSummaryResult.status === "rejected") {
+        logEncarsOptionalFailure(
+          "record summary",
+          recordSummaryResult.reason,
+        );
+      }
 
       let encarRecord: EncarsRecordOpenResponse | undefined;
       try {
@@ -401,11 +482,8 @@ const CarInspectionReport = () => {
             { signal: controller.signal },
           );
         }
-        } catch (recordError) {
-          console.warn(
-            "Nuk u arrit të merren të dhënat Encars record open:",
-            recordError,
-          );
+      } catch (recordError) {
+        logEncarsOptionalFailure("record open", recordError);
       }
 
       const priceKRW =
@@ -604,11 +682,7 @@ const CarInspectionReport = () => {
         setLoading(false);
       } catch (error) {
         console.error("Nuk u arrit të ngarkohej raporti i inspektimit:", error);
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Nuk u arrit të ngarkohet raporti i inspektimit",
-        );
+        setError(getEncarsDisplayErrorMessage(error));
         setCar(null);
         setLoading(false);
       } finally {
