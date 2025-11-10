@@ -1626,38 +1626,36 @@ const CarDetails = memo(() => {
     return hasStructuralDamage ? "severe" : "minor";
   }, [accidentCount, hasStructuralDamage]);
 
-  const accidentStyle = useMemo(
-    () => {
-      switch (accidentSeverity) {
-        case "severe":
-          return {
-            button:
-              "border-destructive/40 text-destructive hover:border-destructive hover:shadow-2xl hover:shadow-destructive/20",
-            overlay: "from-destructive/0 to-destructive/10",
-            badge: "bg-destructive/20 text-destructive ring-2 ring-destructive/20",
-            icon: "",
-          };
-        case "none":
-          return {
-            button:
-              "border-emerald-500/40 text-emerald-600 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white hover:shadow-2xl hover:shadow-emerald-500/20",
-            overlay: "from-emerald-500/0 to-emerald-500/10",
-            badge:
-              "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400",
-            icon: "",
-          };
-        default:
-          return {
-            button:
-              "border-primary/30 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20",
-            overlay: "from-primary/0 to-primary/5",
-            badge: "bg-muted/60 text-muted-foreground ring-2 ring-border/40 dark:bg-muted/40",
-            icon: "",
-          };
-      }
-    },
-    [accidentSeverity],
-  );
+  const accidentStyle = useMemo(() => {
+    switch (accidentSeverity) {
+      case "severe":
+        return {
+          button:
+            "border-destructive/40 text-destructive hover:border-destructive hover:shadow-2xl hover:shadow-destructive/20",
+          overlay: "from-destructive/0 to-destructive/10",
+          badge: "bg-destructive/20 text-destructive ring-2 ring-destructive/20",
+          icon: "",
+        };
+      case "none":
+        return {
+          button:
+            "border-emerald-500/40 text-emerald-600 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white hover:shadow-2xl hover:shadow-emerald-500/20",
+          overlay: "from-emerald-500/0 to-emerald-500/10",
+          badge:
+            "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400",
+          icon: "",
+        };
+      default:
+        return {
+          button:
+            "border-border/60 text-foreground hover:border-border hover:bg-muted/40 hover:text-foreground hover:shadow-lg",
+          overlay: "from-border/0 to-border/5",
+          badge:
+            "bg-muted/70 text-foreground ring-2 ring-border/40 dark:bg-muted/40",
+          icon: "",
+        };
+    }
+  }, [accidentSeverity]);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {

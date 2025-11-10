@@ -93,43 +93,51 @@ export const InspectionConditionTable: React.FC<InspectionConditionTableProps> =
     );
   }
 
-  return (
-    <Card className={className}>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-32 bg-muted/50 font-semibold">GROUP</TableHead>
-            <TableHead className="bg-muted/50 font-semibold">parT</TableHead>
-            <TableHead className="w-48 bg-muted/50 font-semibold">Condition</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {groups.map((group, groupIdx) => (
-            <React.Fragment key={groupIdx}>
-              {group.items.map((item, itemIdx) => (
-                <TableRow key={`${groupIdx}-${itemIdx}`}>
-                  {itemIdx === 0 && (
-                    <TableCell 
-                      rowSpan={group.items.length}
-                      className="align-top font-medium bg-muted/20"
-                    >
-                      {group.group}
+    return (
+      <Card className={className}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-32 bg-muted/50 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Group
+              </TableHead>
+              <TableHead className="bg-muted/50 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Part
+              </TableHead>
+              <TableHead className="w-48 bg-muted/50 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Condition
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {groups.map((group, groupIdx) => (
+              <React.Fragment key={groupIdx}>
+                {group.items.map((item, itemIdx) => (
+                  <TableRow key={`${groupIdx}-${itemIdx}`}>
+                    {itemIdx === 0 && (
+                      <TableCell
+                        rowSpan={group.items.length}
+                        className="align-top bg-muted/20 text-left text-sm font-medium"
+                      >
+                        {group.group}
+                      </TableCell>
+                    )}
+                    <TableCell className="py-2 text-left text-sm">
+                      {item.part}
                     </TableCell>
-                  )}
-                  <TableCell className="py-2">{item.part}</TableCell>
-                  <TableCell 
-                    className={`py-2 font-medium ${
-                      item.isPositive ? 'text-green-600' : 'text-orange-600'
-                    }`}
-                  >
-                    {item.condition}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </React.Fragment>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
-  );
+                    <TableCell
+                      className={`py-2 text-left font-medium ${
+                        item.isPositive ? "text-green-600" : "text-orange-600"
+                      }`}
+                    >
+                      {item.condition}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </React.Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+    );
 };

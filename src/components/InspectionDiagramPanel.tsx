@@ -312,7 +312,7 @@ const mapInspectionToMarkers = (
       // Check for collision with existing markers and offset if needed
       let finalX = pos.x;
       let finalY = pos.y;
-      const collisionRadius = 35; // Minimum distance between markers
+      const collisionRadius = 28; // Minimum distance between markers
 
       const markersToCheck =
         pos.panel === "within" ? withinMarkers : outMarkers;
@@ -388,12 +388,12 @@ const DiagramMarkerWithTooltip: React.FC<{
 
   const leftPercent = (marker.x / 640) * 100;
   const topPercent = (marker.y / 600) * 100;
-  const markerBaseSize = marker.size ?? 24;
-  const markerSize = `clamp(14px, 3.2vw, ${markerBaseSize}px)`;
-  const markerFontSize = "clamp(8px, 1.6vw, 11px)";
+  const markerBaseSize = marker.size ?? 20;
+  const markerSize = `clamp(10px, 2.4vw, ${markerBaseSize}px)`;
+  const markerFontSize = "clamp(6.5px, 1.2vw, 10px)";
 
   const baseClasses =
-    "absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold shadow-sm border pointer-events-auto transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
+    "absolute rounded-full flex items-center justify-center font-bold shadow-sm border pointer-events-auto transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
   const variantClasses =
     marker.type === "N"
       ? "bg-[#E53935] text-white border-white/80"
@@ -464,6 +464,7 @@ const DiagramMarkerWithTooltip: React.FC<{
             width: markerSize,
             height: markerSize,
             fontSize: markerFontSize,
+            transform: "translate(-50%, -55%)",
           }}
           onMouseDown={handleMouseDown}
         >
