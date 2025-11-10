@@ -12,6 +12,115 @@ const BACKOFF_MULTIPLIER = 3 // More aggressive backoff
 const PAGE_SIZE = 250 // Optimal page size per API docs
 const REQUEST_TIMEOUT = 45000 // Longer timeout for large pages
 const MAX_PAGES = 500 // Safety limit for full syncs
+const UPSERT_BATCH_SIZE = 50 // Number of cars to upsert per batch
+const ARCHIVE_BATCH_SIZE = 50 // Number of archived cars to process per batch
+
+type SupabaseClient = ReturnType<typeof createClient>
+
+const chunkArray = <T>(items: T[], size: number): T[][] => {
+  if (size <= 0) return [items]
+  const chunks: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size))
+  }
+  return chunks
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function upsertCarsBatch(
+  supabase: SupabaseClient,
+  records: Record<string, unknown>[],
+  errors: string[],
+): Promise<number> {
+  let processed = 0
+
+  for (const chunk of chunkArray(records, UPSERT_BATCH_SIZE)) {
+    if (chunk.length === 0) continue
+
+    const { error: upsertError } = await supabase
+      .from('cars')
+      .upsert(chunk, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
+        returning: 'minimal',
+      })
+
+    if (upsertError) {
+      console.error(`❌ Batch upsert failed for ${chunk.length} cars:`, upsertError)
+      errors.push(`Cars batch upsert: ${upsertError.message}`)
+
+      for (const record of chunk) {
+        const carId = (record as { id?: string | number }).id
+        const { error: singleError } = await supabase
+          .from('cars')
+          .upsert(record, {
+            onConflict: 'id',
+            ignoreDuplicates: false,
+            returning: 'minimal',
+          })
+
+        if (singleError) {
+          console.error(`❌ Failed to upsert car ${carId}:`, singleError)
+          errors.push(`Car ${carId}: ${singleError.message}`)
+        } else {
+          processed += 1
+        }
+      }
+    } else {
+      processed += chunk.length
+    }
+  }
+
+  return processed
+}
+
+async function applyArchivedUpdates(
+  supabase: SupabaseClient,
+  records: Record<string, unknown>[],
+  errors: string[],
+): Promise<number> {
+  let processed = 0
+
+  for (const chunk of chunkArray(records, ARCHIVE_BATCH_SIZE)) {
+    if (chunk.length === 0) continue
+
+    const { error: archiveError } = await supabase
+      .from('cars')
+      .upsert(chunk, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
+        returning: 'minimal',
+      })
+
+    if (archiveError) {
+      console.error(`❌ Batch archive update failed for ${chunk.length} cars:`, archiveError)
+      errors.push(`Archive batch: ${archiveError.message}`)
+
+      for (const record of chunk) {
+        const carId = (record as { id?: string | number }).id
+        const { error: singleError } = await supabase
+          .from('cars')
+          .upsert(record, {
+            onConflict: 'id',
+            ignoreDuplicates: false,
+            returning: 'minimal',
+          })
+
+        if (singleError) {
+          console.error(`❌ Failed to archive car ${carId}:`, singleError)
+          errors.push(`Archive ${carId}: ${singleError.message}`)
+        } else {
+          processed += 1
+        }
+      }
+    } else {
+      processed += chunk.length
+    }
+  }
+
+  return processed
+}
 
 // Helper function for API requests with retry logic
 async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
@@ -21,51 +130,51 @@ async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
     'User-Agent': 'Encar-Sync/2.0'
   }
 
-  try {
-    console.log(`📡 API Request: ${url} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
-    
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
-    
-    const response = await fetch(url, {
-      headers,
-      signal: controller.signal
-    })
-    
-    clearTimeout(timeoutId)
-
-    if (response.status === 429) {
-      const delay = RATE_LIMIT_DELAY * Math.pow(BACKOFF_MULTIPLIER, retryCount)
-      console.log(`⏰ Rate limited. Waiting ${delay}ms before retry...`)
+    try {
+      console.log(`📡 API Request: ${url} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`)
       
-      if (retryCount < MAX_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, delay))
-        return makeApiRequest(url, retryCount + 1)
-      } else {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+      
+      const response = await fetch(url, {
+        headers,
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+
+      if (response.status === 429) {
+        const delay = RATE_LIMIT_DELAY * Math.pow(BACKOFF_MULTIPLIER, retryCount)
+        console.log(`⏰ Rate limited. Waiting ${delay}ms before retry...`)
+        
+        if (retryCount < MAX_RETRIES) {
+          await wait(delay)
+          return makeApiRequest(url, retryCount + 1)
+        }
+
         throw new Error(`Rate limit exceeded after ${MAX_RETRIES} retries`)
       }
-    }
 
-    if (!response.ok) {
-      throw new Error(`API returned ${response.status}: ${response.statusText}`)
-    }
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`)
+      }
 
-    const data = await response.json()
-    console.log(`✅ API Success: ${url} - Got ${Array.isArray(data?.data) ? data.data.length : 'unknown'} items`)
-    return data
+      const data = await response.json()
+      console.log(`✅ API Success: ${url} - Got ${Array.isArray(data?.data) ? data.data.length : 'unknown'} items`)
+      return data
 
-  } catch (error) {
-    console.error(`❌ API Error for ${url}:`, error.message)
-    
-    if (retryCount < MAX_RETRIES && !error.message.includes('Rate limit exceeded')) {
-      const delay = 1000 * Math.pow(BACKOFF_MULTIPLIER, retryCount)
-      console.log(`⏰ Retrying in ${delay}ms...`)
-      await new Promise(resolve => setTimeout(resolve, delay))
-      return makeApiRequest(url, retryCount + 1)
+    } catch (error) {
+      console.error(`❌ API Error for ${url}:`, error.message)
+      
+      if (retryCount < MAX_RETRIES && !error.message.includes('Rate limit exceeded')) {
+        const delay = 1000 * Math.pow(BACKOFF_MULTIPLIER, retryCount)
+        console.log(`⏰ Retrying in ${delay}ms...`)
+        await wait(delay)
+        return makeApiRequest(url, retryCount + 1)
+      }
+      
+      throw error
     }
-    
-    throw error
-  }
 }
 
 Deno.serve(async (req) => {
@@ -204,115 +313,110 @@ Deno.serve(async (req) => {
           pageUrl += `&minutes=${minutes}`
         }
         
-        try {
-          console.log(`📄 Fetching page ${currentPage}...`)
-          const carsData = await makeApiRequest(pageUrl)
-          
-          // Validate response structure
-          if (!carsData || typeof carsData !== 'object') {
-            console.error(`❌ Invalid API response structure for page ${currentPage}`)
-            break
-          }
-          
-          // The API returns data in carsData.data array
-          const carsArray = Array.isArray(carsData.data) ? carsData.data : []
-          
-          if (carsArray.length === 0) {
-            console.log(`⚠️ No cars data in response for page ${currentPage}`)
-            break
-          }
-
-          console.log(`📊 Processing ${carsArray.length} cars from page ${currentPage}`)
-
-          // Process each car
-          for (const apiCar of carsArray) {
-            try {
-              const primaryLot = apiCar.lots?.[0]
-              const images = primaryLot?.images?.normal || primaryLot?.images?.big || []
-              
-              const carId = apiCar.id?.toString()
-              const make = apiCar.manufacturer?.name?.trim()
-              const model = apiCar.model?.name?.trim()
-              
-              if (!carId || !make || !model) {
-                console.warn(`⚠️ Skipping car with missing data: ID=${carId}, Make=${make}, Model=${model}`)
-                continue
-              }
-
-              const transformedCar = {
-                id: carId,
-                external_id: carId,
-                make,
-                model,
-                year: apiCar.year && apiCar.year > 1900 ? apiCar.year : 2020,
-                price: Math.max(primaryLot?.buy_now || 0, 0),
-                mileage: Math.max(primaryLot?.odometer?.km || 0, 0),
-                title: apiCar.title?.trim() || `${make} ${model} ${apiCar.year || ''}`,
-                vin: apiCar.vin?.trim() || null,
-                color: apiCar.color?.name?.trim() || null,
-                fuel: apiCar.fuel?.name?.trim() || null,
-                transmission: apiCar.transmission?.name?.trim() || null,
-                lot_number: primaryLot?.lot?.toString() || null,
-                image_url: images[0] || null,
-                images: JSON.stringify(images),
-                current_bid: parseFloat(primaryLot?.bid) || 0,
-                buy_now_price: parseFloat(primaryLot?.buy_now) || 0,
-                is_live: primaryLot?.status?.name === 'sale',
-                keys_available: primaryLot?.keys_available !== false,
-                status: 'active',
-                is_archived: false,
-                condition: primaryLot?.condition?.name || 'good',
-                location: 'South Korea',
-                domain_name: 'encar_com',
-                source_api: 'auctionapis',
-                last_synced_at: new Date().toISOString()
-              }
-
-              const { error: upsertError } = await supabase
-                .from('cars')
-                .upsert(transformedCar, { 
-                  onConflict: 'id',
-                  ignoreDuplicates: false 
-                })
-
-              if (upsertError) {
-                console.error(`❌ Error upserting car ${transformedCar.id}:`, upsertError)
-                errors.push(`Car ${transformedCar.id}: ${upsertError.message}`)
-              } else {
-                totalCarsProcessed++
-                if (totalCarsProcessed % 100 === 0) {
-                  console.log(`✅ Processed ${totalCarsProcessed} cars so far...`)
-                }
-              }
-            } catch (carError) {
-              console.error(`❌ Error processing car:`, carError)
-              errors.push(`Car processing error: ${carError.message}`)
+          try {
+            console.log(`📄 Fetching page ${currentPage}...`)
+            const carsData = await makeApiRequest(pageUrl)
+            
+            // Validate response structure
+            if (!carsData || typeof carsData !== 'object') {
+              console.error(`❌ Invalid API response structure for page ${currentPage}`)
+              break
             }
-          }
+            
+            // The API returns data in carsData.data array
+            const carsArray = Array.isArray(carsData.data) ? carsData.data : []
+            
+            if (carsArray.length === 0) {
+              console.log(`⚠️ No cars data in response for page ${currentPage}`)
+              break
+            }
 
-          // Check if there are more pages using API metadata
-          hasMorePages = carsData.meta?.current_page < carsData.meta?.last_page
-          consecutiveErrors = 0 // Reset error counter on success
-          
-          // Update progress in database
-          await supabase
-            .from('sync_status')
-            .update({
-              current_page: currentPage,
-              total_pages: carsData.meta?.last_page || currentPage,
-              cars_processed: totalCarsProcessed,
-              last_activity_at: new Date().toISOString(),
-              last_cars_sync_at: new Date().toISOString()
-            })
-            .eq('id', syncRecord.id)
+            console.log(`📊 Processing ${carsArray.length} cars from page ${currentPage}`)
 
-          currentPage++
-          
-          // Important: Wait between requests to avoid rate limiting
-          if (hasMorePages) {
-            console.log(`⏸️ Waiting ${RATE_LIMIT_DELAY}ms before next page...`)
-            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
-          }
+            const carsForUpsert: Record<string, unknown>[] = []
+
+            for (const apiCar of carsArray) {
+              try {
+                const primaryLot = apiCar.lots?.[0]
+                const images = primaryLot?.images?.normal || primaryLot?.images?.big || []
+                
+                const carId = apiCar.id?.toString()
+                const make = apiCar.manufacturer?.name?.trim()
+                const model = apiCar.model?.name?.trim()
+                
+                if (!carId || !make || !model) {
+                  console.warn(`⚠️ Skipping car with missing data: ID=${carId}, Make=${make}, Model=${model}`)
+                  continue
+                }
+
+                carsForUpsert.push({
+                  id: carId,
+                  external_id: carId,
+                  make,
+                  model,
+                  year: apiCar.year && apiCar.year > 1900 ? apiCar.year : 2020,
+                  price: Math.max(primaryLot?.buy_now || 0, 0),
+                  mileage: Math.max(primaryLot?.odometer?.km || 0, 0),
+                  title: apiCar.title?.trim() || `${make} ${model} ${apiCar.year || ''}`,
+                  vin: apiCar.vin?.trim() || null,
+                  color: apiCar.color?.name?.trim() || null,
+                  fuel: apiCar.fuel?.name?.trim() || null,
+                  transmission: apiCar.transmission?.name?.trim() || null,
+                  lot_number: primaryLot?.lot?.toString() || null,
+                  image_url: images[0] || null,
+                  images: JSON.stringify(images),
+                  current_bid: parseFloat(primaryLot?.bid) || 0,
+                  buy_now_price: parseFloat(primaryLot?.buy_now) || 0,
+                  is_live: primaryLot?.status?.name === 'sale',
+                  keys_available: primaryLot?.keys_available !== false,
+                  status: 'active',
+                  is_archived: false,
+                  condition: primaryLot?.condition?.name || 'good',
+                  location: 'South Korea',
+                  domain_name: 'encar_com',
+                  source_api: 'auctionapis',
+                  last_synced_at: new Date().toISOString()
+                })
+              } catch (carError) {
+                console.error(`❌ Error processing car:`, carError)
+                errors.push(`Car processing error: ${carError.message}`)
+              }
+            }
+
+            const processedThisPage = await upsertCarsBatch(supabase, carsForUpsert, errors)
+            totalCarsProcessed += processedThisPage
+
+            if (processedThisPage > 0) {
+              console.log(`✅ Upserted ${processedThisPage} cars from page ${currentPage} (total: ${totalCarsProcessed})`)
+            }
+
+            // Check if there are more pages using API metadata
+            hasMorePages = carsData.meta?.current_page < carsData.meta?.last_page
+            consecutiveErrors = 0 // Reset error counter on success
+            
+            // Update progress in database
+            await supabase
+              .from('sync_status')
+              .update({
+                current_page: currentPage,
+                total_pages: carsData.meta?.last_page || currentPage,
+                cars_processed: totalCarsProcessed,
+                last_activity_at: new Date().toISOString(),
+                last_cars_sync_at: new Date().toISOString()
+              })
+              .eq('id', syncRecord.id)
+
+            currentPage++
+            
+            // Important: Wait between requests to avoid rate limiting
+            if (hasMorePages) {
+              const delay =
+                syncType === 'full'
+                  ? RATE_LIMIT_DELAY
+                  : Math.min(5000, RATE_LIMIT_DELAY)
+              console.log(`⏸️ Waiting ${delay}ms before next page...`)
+              await wait(delay)
+            }
 
         } catch (pageError) {
           console.error(`❌ Error processing page ${currentPage}:`, pageError)
@@ -320,9 +424,9 @@ Deno.serve(async (req) => {
           consecutiveErrors++
           
           // If rate limited, wait longer before next attempt
-          if (pageError.message.includes('Rate limit')) {
-            console.log(`⏸️ Rate limit detected, waiting 30 seconds...`)
-            await new Promise(resolve => setTimeout(resolve, 30000))
+            if (pageError.message.includes('Rate limit')) {
+              console.log(`⏸️ Rate limit detected, waiting 30 seconds...`)
+              await wait(30000)
           }
           
           currentPage++
@@ -359,21 +463,21 @@ Deno.serve(async (req) => {
             break
           }
 
-          console.log(`📊 Processing ${archivedLots.length} archived lots from page ${archivedPage}`)
+            console.log(`📊 Processing ${archivedLots.length} archived lots from page ${archivedPage}`)
 
-          for (const archivedLot of archivedLots) {
-            try {
-              // Try multiple ID fields as API format may vary
-              const carId = (archivedLot.car_id || archivedLot.id || archivedLot.external_id)?.toString()
-              if (!carId) {
-                console.warn(`⚠️ Skipping archived lot with no ID`)
-                continue
-              }
+            const archivedUpdates: Record<string, unknown>[] = []
 
-              // Mark car as sold/archived in our database
-              const { error: archiveError } = await supabase
-                .from('cars')
-                .update({
+            for (const archivedLot of archivedLots) {
+              try {
+                // Try multiple ID fields as API format may vary
+                const carId = (archivedLot.car_id || archivedLot.id || archivedLot.external_id)?.toString()
+                if (!carId) {
+                  console.warn(`⚠️ Skipping archived lot with no ID`)
+                  continue
+                }
+
+                archivedUpdates.push({
+                  id: carId,
                   is_archived: true,
                   is_active: false,
                   status: 'sold',
@@ -381,22 +485,18 @@ Deno.serve(async (req) => {
                   sale_date: archivedLot.sale_date || new Date().toISOString(),
                   last_synced_at: new Date().toISOString()
                 })
-                .eq('id', carId)
-
-              if (archiveError) {
-                console.error(`❌ Error archiving car ${carId}:`, archiveError)
-                errors.push(`Archive ${carId}: ${archiveError.message}`)
-              } else {
-                totalArchivedProcessed++
-                if (totalArchivedProcessed % 50 === 0) {
-                  console.log(`✅ Archived ${totalArchivedProcessed} cars so far...`)
-                }
+              } catch (archiveError) {
+                console.error(`❌ Error processing archived lot:`, archiveError)
+                errors.push(`Archive processing error: ${archiveError.message}`)
               }
-            } catch (archiveError) {
-              console.error(`❌ Error processing archived lot:`, archiveError)
-              errors.push(`Archive processing error: ${archiveError.message}`)
             }
-          }
+
+            const archivedProcessedThisPage = await applyArchivedUpdates(supabase, archivedUpdates, errors)
+            totalArchivedProcessed += archivedProcessedThisPage
+
+            if (archivedProcessedThisPage > 0) {
+              console.log(`✅ Archived ${archivedProcessedThisPage} cars from page ${archivedPage} (total: ${totalArchivedProcessed})`)
+            }
 
           // Check if there are more archived pages
           hasMoreArchived = archivedData.meta?.current_page < archivedData.meta?.last_page
@@ -413,10 +513,14 @@ Deno.serve(async (req) => {
             .eq('id', syncRecord.id)
 
           // Rate limiting between archived pages
-          if (hasMoreArchived) {
-            console.log(`⏸️ Waiting ${RATE_LIMIT_DELAY}ms before next archived page...`)
-            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
-          }
+            if (hasMoreArchived) {
+              const delay =
+                syncType === 'full'
+                  ? RATE_LIMIT_DELAY
+                  : Math.min(5000, RATE_LIMIT_DELAY)
+              console.log(`⏸️ Waiting ${delay}ms before next archived page...`)
+              await wait(delay)
+            }
 
         } catch (archivedError) {
           console.error(`❌ Error processing archived lots page ${archivedPage}:`, archivedError)
