@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Edit3, Save, X } from 'lucide-react';
-import { useAdminCheck } from '@/hooks/useAdminCheck';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import carDiagramFront from '@/assets/car-diagram-front-korean.png';
-import carDiagramBack from '@/assets/car-diagram-back-korean.png';
+import React, { useState, useEffect, useRef } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Edit3, Save, X } from "lucide-react";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import carDiagramFront from "@/assets/car-diagram-front-korean.png";
+import carDiagramBack from "@/assets/car-diagram-back-korean.png";
 
 interface DiagramMarker {
   x: number;
   y: number;
-  type: 'N' | 'R'; // N = shift (replacement), R = Repair
+  type: "N" | "R"; // N = shift (replacement), R = Repair
   label: string;
   size?: number;
 }
@@ -23,7 +28,9 @@ interface InspectionDiagramPanelProps {
 }
 
 // Map inspection items to diagram positions
-const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[], out: DiagramMarker[] } => {
+const mapInspectionToMarkers = (
+  inspectionData: any[],
+): { within: DiagramMarker[]; out: DiagramMarker[] } => {
   const withinMarkers: DiagramMarker[] = [];
   const outMarkers: DiagramMarker[] = [];
 
@@ -32,119 +39,122 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
   }
 
   // Enhanced position mapping with accurate coordinates and aliases
-  const positionMap: Record<string, { panel: 'within' | 'out', x: number, y: number, size?: number }> = {
+  const positionMap: Record<
+    string,
+    { panel: "within" | "out"; x: number; y: number; size?: number }
+  > = {
     // ===== WITHIN PANEL (Top/Side View) =====
-    
+
     // Front section
-    'hood': { panel: 'within', x: 320, y: 168 },
-    'bonnet': { panel: 'within', x: 320, y: 168 },
-    'front_panel': { panel: 'within', x: 320, y: 104 },
-    'front_bumper': { panel: 'within', x: 320, y: 48 },
-    'radiator_support': { panel: 'within', x: 320, y: 170 },
-    'cowl_panel': { panel: 'within', x: 320, y: 200 },
-    
+    hood: { panel: "within", x: 320, y: 168 },
+    bonnet: { panel: "within", x: 320, y: 168 },
+    front_panel: { panel: "within", x: 320, y: 104 },
+    front_bumper: { panel: "within", x: 320, y: 48 },
+    radiator_support: { panel: "within", x: 320, y: 170 },
+    cowl_panel: { panel: "within", x: 320, y: 200 },
+
     // Left side (driver side in Korean cars) - EXACT POSITIONS FROM REFERENCE IMAGE
-    'front_left_fender': { panel: 'within', x: 186, y: 205 },
-    'front_fender_left': { panel: 'within', x: 186, y: 205 },
-    'left_fender': { panel: 'within', x: 186, y: 205 },
-    'fender_left': { panel: 'within', x: 186, y: 205 },
+    front_left_fender: { panel: "within", x: 186, y: 205 },
+    front_fender_left: { panel: "within", x: 186, y: 205 },
+    left_fender: { panel: "within", x: 186, y: 205 },
+    fender_left: { panel: "within", x: 186, y: 205 },
 
-    'front_left_door': { panel: 'within', x: 214, y: 292, size: 20 },
-    'front_door_left': { panel: 'within', x: 214, y: 292, size: 20 },
-    'door_front_left': { panel: 'within', x: 214, y: 292, size: 20 },
+    front_left_door: { panel: "within", x: 214, y: 292, size: 20 },
+    front_door_left: { panel: "within", x: 214, y: 292, size: 20 },
+    door_front_left: { panel: "within", x: 214, y: 292, size: 20 },
 
-    'rear_left_door': { panel: 'within', x: 178, y: 357 },
-    'rear_door_left': { panel: 'within', x: 178, y: 357 },
-    'door_rear_left': { panel: 'within', x: 178, y: 357 },
+    rear_left_door: { panel: "within", x: 178, y: 357 },
+    rear_door_left: { panel: "within", x: 178, y: 357 },
+    door_rear_left: { panel: "within", x: 178, y: 357 },
 
-    'left_quarter_panel': { panel: 'within', x: 173, y: 429 },
-    'quarter_panel_left': { panel: 'within', x: 173, y: 429 },
-    'left_quarter': { panel: 'within', x: 173, y: 429 },
-    'quarter_left': { panel: 'within', x: 173, y: 429 },
-    'rear_fender_left': { panel: 'within', x: 173, y: 429 },
-    'left_rear_fender': { panel: 'within', x: 173, y: 429 },
+    left_quarter_panel: { panel: "within", x: 173, y: 429 },
+    quarter_panel_left: { panel: "within", x: 173, y: 429 },
+    left_quarter: { panel: "within", x: 173, y: 429 },
+    quarter_left: { panel: "within", x: 173, y: 429 },
+    rear_fender_left: { panel: "within", x: 173, y: 429 },
+    left_rear_fender: { panel: "within", x: 173, y: 429 },
 
-    'side_sill_panel_left': { panel: 'within', x: 290, y: 510 },
-    'side_sill_left': { panel: 'within', x: 290, y: 510 },
-    'rocker_panel_left': { panel: 'within', x: 290, y: 510 },
-    'side_room_panel_left': { panel: 'within', x: 176, y: 317 },
-    'side_panel_left': { panel: 'within', x: 176, y: 317 },
-    
+    side_sill_panel_left: { panel: "within", x: 290, y: 510 },
+    side_sill_left: { panel: "within", x: 290, y: 510 },
+    rocker_panel_left: { panel: "within", x: 290, y: 510 },
+    side_room_panel_left: { panel: "within", x: 176, y: 317 },
+    side_panel_left: { panel: "within", x: 176, y: 317 },
+
     // Right side (passenger side)
-    'front_right_fender': { panel: 'within', x: 454, y: 205 },
-    'front_fender_right': { panel: 'within', x: 454, y: 205 },
-    'right_fender': { panel: 'within', x: 454, y: 205 },
-    'fender_right': { panel: 'within', x: 454, y: 205 },
+    front_right_fender: { panel: "within", x: 454, y: 205 },
+    front_fender_right: { panel: "within", x: 454, y: 205 },
+    right_fender: { panel: "within", x: 454, y: 205 },
+    fender_right: { panel: "within", x: 454, y: 205 },
 
-    'front_right_door': { panel: 'within', x: 426, y: 292, size: 20 },
-    'front_door_right': { panel: 'within', x: 426, y: 292, size: 20 },
+    front_right_door: { panel: "within", x: 426, y: 292, size: 20 },
+    front_door_right: { panel: "within", x: 426, y: 292, size: 20 },
 
-    'rear_right_door': { panel: 'within', x: 410, y: 343 },
-    'rear_door_right': { panel: 'within', x: 410, y: 343 },
-    'rear_door_(right)_-_replacement': { panel: 'within', x: 410, y: 343 },
+    rear_right_door: { panel: "within", x: 410, y: 343 },
+    rear_door_right: { panel: "within", x: 410, y: 343 },
+    "rear_door_(right)_-_replacement": { panel: "within", x: 410, y: 343 },
 
-    'right_quarter_panel': { panel: 'within', x: 466, y: 429 },
-    'quarter_panel_right': { panel: 'within', x: 466, y: 429 },
-    'right_quarter': { panel: 'within', x: 466, y: 429 },
-    'quarter_right': { panel: 'within', x: 466, y: 429 },
+    right_quarter_panel: { panel: "within", x: 466, y: 429 },
+    quarter_panel_right: { panel: "within", x: 466, y: 429 },
+    right_quarter: { panel: "within", x: 466, y: 429 },
+    quarter_right: { panel: "within", x: 466, y: 429 },
 
-    'side_sill_panel_right': { panel: 'within', x: 349, y: 510 },
-    'side_sill_right': { panel: 'within', x: 349, y: 510 },
-    'rocker_panel_right': { panel: 'within', x: 349, y: 510 },
-    
+    side_sill_panel_right: { panel: "within", x: 349, y: 510 },
+    side_sill_right: { panel: "within", x: 349, y: 510 },
+    rocker_panel_right: { panel: "within", x: 349, y: 510 },
+
     // Top/Roof
-    'roof': { panel: 'within', x: 320, y: 295 },
-    'roof_panel': { panel: 'within', x: 320, y: 295 },
-    'sunroof': { panel: 'within', x: 320, y: 275 },
-    
+    roof: { panel: "within", x: 320, y: 295 },
+    roof_panel: { panel: "within", x: 320, y: 295 },
+    sunroof: { panel: "within", x: 320, y: 275 },
+
     // ===== OUT PANEL (Rear/Bottom View) =====
-    
+
     // Rear section - EXACT POSITIONS FROM REFERENCE IMAGE
-    'trunk': { panel: 'out', x: 320, y: 415 },
-    'trunk_lid': { panel: 'out', x: 320, y: 405 },
-    'deck_lid': { panel: 'out', x: 320, y: 405 },
-    'trunk_floor': { panel: 'out', x: 320, y: 415 },
-    'luggage_floor': { panel: 'out', x: 320, y: 415 },
-    'floor_trunk': { panel: 'out', x: 320, y: 415 },
-    
-    'rear_panel': { panel: 'out', x: 320, y: 425 },
-    'back_panel': { panel: 'out', x: 320, y: 425 },
-    
-    'rear_bumper': { panel: 'out', x: 320, y: 450 },
-    'back_bumper': { panel: 'out', x: 320, y: 450 },
-    
+    trunk: { panel: "out", x: 320, y: 415 },
+    trunk_lid: { panel: "out", x: 320, y: 405 },
+    deck_lid: { panel: "out", x: 320, y: 405 },
+    trunk_floor: { panel: "out", x: 320, y: 415 },
+    luggage_floor: { panel: "out", x: 320, y: 415 },
+    floor_trunk: { panel: "out", x: 320, y: 415 },
+
+    rear_panel: { panel: "out", x: 320, y: 425 },
+    back_panel: { panel: "out", x: 320, y: 425 },
+
+    rear_bumper: { panel: "out", x: 320, y: 450 },
+    back_bumper: { panel: "out", x: 320, y: 450 },
+
     // Wheel houses - EXACT POSITIONS FROM REFERENCE IMAGE
-    'rear_wheel_house_left': { panel: 'out', x: 285, y: 565 },
-    'rear_wheelhouse_left': { panel: 'out', x: 285, y: 565 },
-    'wheel_house_rear_left': { panel: 'out', x: 285, y: 565 },
-    'wheelhouse_rear_left': { panel: 'out', x: 285, y: 565 },
-    
-    'rear_wheel_house_right': { panel: 'out', x: 355, y: 565 },
-    'rear_wheelhouse_right': { panel: 'out', x: 355, y: 565 },
-    'wheel_house_rear_right': { panel: 'out', x: 355, y: 565 },
-    'wheelhouse_rear_right': { panel: 'out', x: 355, y: 565 },
-    
-    'front_wheel_house_left': { panel: 'out', x: 215, y: 175 },
-    'front_wheelhouse_left': { panel: 'out', x: 215, y: 175 },
-    
-    'front_wheel_house_right': { panel: 'out', x: 425, y: 175 },
-    'front_wheelhouse_right': { panel: 'out', x: 425, y: 175 },
-    
+    rear_wheel_house_left: { panel: "out", x: 285, y: 565 },
+    rear_wheelhouse_left: { panel: "out", x: 285, y: 565 },
+    wheel_house_rear_left: { panel: "out", x: 285, y: 565 },
+    wheelhouse_rear_left: { panel: "out", x: 285, y: 565 },
+
+    rear_wheel_house_right: { panel: "out", x: 355, y: 565 },
+    rear_wheelhouse_right: { panel: "out", x: 355, y: 565 },
+    wheel_house_rear_right: { panel: "out", x: 355, y: 565 },
+    wheelhouse_rear_right: { panel: "out", x: 355, y: 565 },
+
+    front_wheel_house_left: { panel: "out", x: 215, y: 175 },
+    front_wheelhouse_left: { panel: "out", x: 215, y: 175 },
+
+    front_wheel_house_right: { panel: "out", x: 425, y: 175 },
+    front_wheelhouse_right: { panel: "out", x: 425, y: 175 },
+
     // Cross members and structural
-    'front_cross_member': { panel: 'out', x: 320, y: 145 },
-    'rear_cross_member': { panel: 'out', x: 320, y: 395 },
-    'front_rail': { panel: 'out', x: 320, y: 130 },
-    'rear_rail': { panel: 'out', x: 320, y: 410 },
+    front_cross_member: { panel: "out", x: 320, y: 145 },
+    rear_cross_member: { panel: "out", x: 320, y: 395 },
+    front_rail: { panel: "out", x: 320, y: 130 },
+    rear_rail: { panel: "out", x: 320, y: 410 },
   };
 
-  console.log('🔍 Processing inspection data for diagram:', {
+  console.log("🔍 Processing inspection data for diagram:", {
     totalItems: inspectionData.length,
-    items: inspectionData.map(item => ({
+    items: inspectionData.map((item) => ({
       title: item?.type?.title,
       code: item?.type?.code,
       statusTypes: item?.statusTypes,
-      attributes: item?.attributes
-    }))
+      attributes: item?.attributes,
+    })),
   });
 
   inspectionData.forEach((item, idx) => {
@@ -176,40 +186,47 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
 
     // Check statusTypes for exchange/replacement (N) or repair (R)
     statusTypes.forEach((status: any) => {
-      const statusTitle = (status?.title || '').toString().toLowerCase();
-      const statusCode = (status?.code || '').toString().toUpperCase();
-      
-      if (statusCode === 'X' || statusCode === 'N' || 
-          statusTitle.includes('exchange') || 
-          statusTitle.includes('replacement') || 
-          statusTitle.includes('교환')) {
-        markerType = 'N';
+      const statusTitle = (status?.title || "").toString().toLowerCase();
+      const statusCode = (status?.code || "").toString().toUpperCase();
+
+      if (
+        statusCode === "X" ||
+        statusCode === "N" ||
+        statusTitle.includes("exchange") ||
+        statusTitle.includes("replacement") ||
+        statusTitle.includes("교환")
+      ) {
+        markerType = "N";
         hasIssue = true;
-      } else if (statusCode === 'A' || statusCode === 'R' || statusCode === 'W' ||
-                 statusTitle.includes('repair') || 
-                 statusTitle.includes('수리') || 
-                 statusTitle.includes('weld') || 
-                 statusTitle.includes('용접')) {
-        markerType = 'R';
+      } else if (
+        statusCode === "A" ||
+        statusCode === "R" ||
+        statusCode === "W" ||
+        statusTitle.includes("repair") ||
+        statusTitle.includes("수리") ||
+        statusTitle.includes("weld") ||
+        statusTitle.includes("용접")
+      ) {
+        markerType = "R";
         hasIssue = true;
       }
     });
 
     // Check attributes for RANK indicators - if present, assume there's an issue
-    const hasHighRank = attributes.some((attr: any) =>
-      typeof attr === 'string' && (
-        attr.includes('RANK_ONE') || 
-        attr.includes('RANK_TWO') || 
-        attr.includes('RANK_A') || 
-        attr.includes('RANK_B')
-      )
+    const hasHighRank = attributes.some(
+      (attr: any) =>
+        typeof attr === "string" &&
+        (attr.includes("RANK_ONE") ||
+          attr.includes("RANK_TWO") ||
+          attr.includes("RANK_A") ||
+          attr.includes("RANK_B")),
     );
 
     if (hasHighRank) {
       hasIssue = true;
       // Keep the markerType from statusTypes, or default to 'N' if no statusTypes found
       if (statusTypes.length === 0) {
-        markerType = 'N';
+        markerType = "N";
       }
     }
 
@@ -231,27 +248,30 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
 
     let bestMatch: string | null = null;
     let bestScore = 0;
-    
+
     const normalizedTitle = normalize(typeTitle);
     const normalizedCode = normalize(typeCode);
-    
+
     // Try exact match first (highest priority)
     for (const partKey of Object.keys(positionMap)) {
       const normalizedPartKey = normalize(partKey);
-      
+
       // Exact match gets highest score
-      if (normalizedPartKey === normalizedTitle || normalizedPartKey === normalizedCode) {
+      if (
+        normalizedPartKey === normalizedTitle ||
+        normalizedPartKey === normalizedCode
+      ) {
         bestMatch = partKey;
         bestScore = 1000;
         break;
       }
     }
-    
+
     // If no exact match, try fuzzy matching
     if (!bestMatch) {
       for (const partKey of Object.keys(positionMap)) {
         const normalizedPartKey = normalize(partKey);
-        
+
         // Check if one contains the other (prefer longer matches)
         if (normalizedTitle && normalizedPartKey) {
           if (normalizedTitle.includes(normalizedPartKey)) {
@@ -268,11 +288,15 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
             }
           }
         }
-        
+
         // Also check code matching
         if (normalizedCode && normalizedPartKey) {
-          if (normalizedCode.includes(normalizedPartKey) || normalizedPartKey.includes(normalizedCode)) {
-            const score = Math.min(normalizedCode.length, normalizedPartKey.length) * 8;
+          if (
+            normalizedCode.includes(normalizedPartKey) ||
+            normalizedPartKey.includes(normalizedCode)
+          ) {
+            const score =
+              Math.min(normalizedCode.length, normalizedPartKey.length) * 8;
             if (score > bestScore) {
               bestScore = score;
               bestMatch = partKey;
@@ -284,26 +308,27 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
 
     if (bestMatch) {
       const pos = positionMap[bestMatch];
-      
+
       // Check for collision with existing markers and offset if needed
       let finalX = pos.x;
       let finalY = pos.y;
       const collisionRadius = 35; // Minimum distance between markers
-      
-      const markersToCheck = pos.panel === 'within' ? withinMarkers : outMarkers;
+
+      const markersToCheck =
+        pos.panel === "within" ? withinMarkers : outMarkers;
       let hasCollision = true;
       let attempts = 0;
       const maxAttempts = 8; // Try 8 positions around the original
-      
+
       while (hasCollision && attempts < maxAttempts) {
         hasCollision = false;
-        
+
         for (const existingMarker of markersToCheck) {
           const distance = Math.sqrt(
-            Math.pow(existingMarker.x - finalX, 2) + 
-            Math.pow(existingMarker.y - finalY, 2)
+            Math.pow(existingMarker.x - finalX, 2) +
+              Math.pow(existingMarker.y - finalY, 2),
           );
-          
+
           if (distance < collisionRadius) {
             hasCollision = true;
             // Offset in a circular pattern
@@ -313,67 +338,78 @@ const mapInspectionToMarkers = (inspectionData: any[]): { within: DiagramMarker[
             break;
           }
         }
-        
+
         attempts++;
       }
-      
+
       const marker: DiagramMarker = {
         x: finalX,
         y: finalY,
         type: markerType,
-        label: item?.type?.title || '',
-        size: pos.size
+        label: item?.type?.title || "",
+        size: pos.size,
       };
 
-      console.log(`✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? ' [offset for collision]' : ''}`);
+      console.log(
+        `✅ Mapped "${item?.type?.title}" → ${bestMatch} (${pos.panel}), type: ${markerType}, position: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [offset for collision]" : ""}`,
+      );
 
-      if (pos.panel === 'within') {
+      if (pos.panel === "within") {
         withinMarkers.push(marker);
       } else {
         outMarkers.push(marker);
       }
     } else {
-      console.warn(`❌ No position mapping found for: "${item?.type?.title}" (searched: ${normalizedTitle}, ${normalizedCode})`);
+      console.warn(
+        `❌ No position mapping found for: "${item?.type?.title}" (searched: ${normalizedTitle}, ${normalizedCode})`,
+      );
     }
   });
 
   console.log(`\n🎯 Final diagram markers:`, {
     within: withinMarkers.length,
     out: outMarkers.length,
-    withinItems: withinMarkers.map(m => m.label),
-    outItems: outMarkers.map(m => m.label)
+    withinItems: withinMarkers.map((m) => m.label),
+    outItems: outMarkers.map((m) => m.label),
   });
-  
+
   return { within: withinMarkers, out: outMarkers };
 };
 
-const DiagramMarkerWithTooltip: React.FC<{ 
-  marker: DiagramMarker; 
+const DiagramMarkerWithTooltip: React.FC<{
+  marker: DiagramMarker;
   index: number;
   editMode: boolean;
   onDrag?: (x: number, y: number) => void;
 }> = ({ marker, index, editMode, onDrag }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+
   const leftPercent = (marker.x / 640) * 100;
   const topPercent = (marker.y / 600) * 100;
-  const markerSize = marker.size ?? 24;
+  const markerBaseSize = marker.size ?? 24;
+  const markerSize = `clamp(14px, 3.2vw, ${markerBaseSize}px)`;
+  const markerFontSize = "clamp(8px, 1.6vw, 11px)";
 
   const baseClasses =
-    "absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold shadow-md border-[2px] pointer-events-auto transition-none";
+    "absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center font-bold shadow-sm border pointer-events-auto transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
   const variantClasses =
     marker.type === "N"
-      ? "bg-[#E53935] text-white border-white"
-      : "bg-[#E53935] text-white border-white";
-  const editModeClasses = editMode ? "cursor-move ring-2 ring-yellow-400" : "cursor-pointer";
+      ? "bg-[#E53935] text-white border-white/80"
+      : "bg-[#D84315] text-white border-white/80";
+  const editModeClasses = editMode
+    ? "cursor-move ring-2 ring-yellow-400"
+    : "cursor-pointer";
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!editMode) return;
     e.preventDefault();
     setIsDragging(true);
     const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const parentRect = (e.target as HTMLElement).parentElement?.getBoundingClientRect();
+    const parentRect = (
+      e.target as HTMLElement
+    ).parentElement?.getBoundingClientRect();
     if (parentRect) {
       setDragOffset({
         x: e.clientX - rect.left - rect.width / 2,
@@ -384,17 +420,18 @@ const DiagramMarkerWithTooltip: React.FC<{
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging || !editMode || !onDrag) return;
-    const parentElement = document.querySelector('.diagram-container');
+    const parentElement =
+      buttonRef.current?.closest<HTMLDivElement>(".diagram-container");
     if (!parentElement) return;
-    
+
     const rect = parentElement.getBoundingClientRect();
     const x = ((e.clientX - rect.left - dragOffset.x) / rect.width) * 640;
     const y = ((e.clientY - rect.top - dragOffset.y) / rect.height) * 600;
-    
+
     // Clamp values to valid range
     const clampedX = Math.max(20, Math.min(620, x));
     const clampedY = Math.max(20, Math.min(580, y));
-    
+
     onDrag(clampedX, clampedY);
   };
 
@@ -404,14 +441,14 @@ const DiagramMarkerWithTooltip: React.FC<{
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, editMode, onDrag]);
 
   return (
     <Tooltip delayDuration={editMode ? 999999 : 0}>
@@ -419,13 +456,14 @@ const DiagramMarkerWithTooltip: React.FC<{
         <button
           type="button"
           aria-label={`${marker.label} - ${marker.type === "N" ? "Replacement" : "Repair"}`}
+          ref={buttonRef}
           className={`${baseClasses} ${variantClasses} ${editModeClasses}`}
           style={{
             left: `${leftPercent}%`,
             top: `${topPercent}%`,
             width: markerSize,
             height: markerSize,
-            fontSize: markerSize <= 20 ? '10px' : '11px',
+            fontSize: markerFontSize,
           }}
           onMouseDown={handleMouseDown}
         >
@@ -446,32 +484,39 @@ const DiagramMarkerWithTooltip: React.FC<{
   );
 };
 
-export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({ 
+export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
   outerInspectionData = [],
-  className = ""
+  className = "",
 }) => {
   const { isAdmin } = useAdminCheck();
   const { toast } = useToast();
   const [editMode, setEditMode] = useState(false);
-  const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number; panel: string }>>({});
-  const [editedMarkers, setEditedMarkers] = useState<Record<string, { x: number; y: number }>>({});
-  
+  const [customPositions, setCustomPositions] = useState<
+    Record<string, { x: number; y: number; panel: string }>
+  >({});
+  const [editedMarkers, setEditedMarkers] = useState<
+    Record<string, { x: number; y: number }>
+  >({});
+
   const { within, out } = mapInspectionToMarkers(outerInspectionData);
-  
+
   // Load custom positions from database
   useEffect(() => {
     const loadCustomPositions = async () => {
       const { data, error } = await supabase
-        .from('inspection_marker_positions')
-        .select('*');
-      
+        .from("inspection_marker_positions")
+        .select("*");
+
       if (error) {
-        console.error('Error loading custom positions:', error);
+        console.error("Error loading custom positions:", error);
         return;
       }
-      
+
       if (data) {
-        const positions: Record<string, { x: number; y: number; panel: string }> = {};
+        const positions: Record<
+          string,
+          { x: number; y: number; panel: string }
+        > = {};
         data.forEach((pos) => {
           positions[pos.part_key] = {
             x: Number(pos.x),
@@ -482,44 +527,52 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         setCustomPositions(positions);
       }
     };
-    
+
     loadCustomPositions();
   }, []);
-  
+
   // Apply custom positions to markers
-  const applyCustomPositions = (markers: DiagramMarker[], panel: 'within' | 'out') => {
+  const applyCustomPositions = (
+    markers: DiagramMarker[],
+    panel: "within" | "out",
+  ) => {
     return markers.map((marker) => {
-      const key = `${panel}_${marker.label.toLowerCase().replace(/\s+/g, '_')}`;
+      const key = `${panel}_${marker.label.toLowerCase().replace(/\s+/g, "_")}`;
       const customPos = customPositions[key];
       const editedPos = editedMarkers[key];
-      
+
       if (editedPos) {
         return { ...marker, x: editedPos.x, y: editedPos.y };
       }
-      
+
       if (customPos && customPos.panel === panel) {
         return { ...marker, x: customPos.x, y: customPos.y };
       }
-      
+
       return marker;
     });
   };
-  
-  const withinWithCustomPos = applyCustomPositions(within, 'within');
-  const outWithCustomPos = applyCustomPositions(out, 'out');
-  
-  const handleMarkerDrag = (marker: DiagramMarker, panel: 'within' | 'out', x: number, y: number) => {
-    const key = `${panel}_${marker.label.toLowerCase().replace(/\s+/g, '_')}`;
-    setEditedMarkers(prev => ({
+
+  const withinWithCustomPos = applyCustomPositions(within, "within");
+  const outWithCustomPos = applyCustomPositions(out, "out");
+
+  const handleMarkerDrag = (
+    marker: DiagramMarker,
+    panel: "within" | "out",
+    x: number,
+    y: number,
+  ) => {
+    const key = `${panel}_${marker.label.toLowerCase().replace(/\s+/g, "_")}`;
+    setEditedMarkers((prev) => ({
       ...prev,
-      [key]: { x, y }
+      [key]: { x, y },
     }));
   };
-  
+
   const handleSavePositions = async () => {
     try {
       const updates = Object.entries(editedMarkers).map(([key, pos]) => {
-        const [panel] = key.split('_');
+        const [panel] = key.split("_");
         return {
           part_key: key,
           panel,
@@ -527,30 +580,33 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           y: pos.y,
         };
       });
-      
+
       for (const update of updates) {
         const { error } = await supabase
-          .from('inspection_marker_positions')
-          .upsert(update, { onConflict: 'part_key' });
-        
+          .from("inspection_marker_positions")
+          .upsert(update, { onConflict: "part_key" });
+
         if (error) throw error;
       }
-      
+
       toast({
         title: "Positions saved",
         description: `Updated ${updates.length} marker position(s)`,
       });
-      
+
       setEditedMarkers({});
       setEditMode(false);
-      
+
       // Reload positions
       const { data } = await supabase
-        .from('inspection_marker_positions')
-        .select('*');
-      
+        .from("inspection_marker_positions")
+        .select("*");
+
       if (data) {
-        const positions: Record<string, { x: number; y: number; panel: string }> = {};
+        const positions: Record<
+          string,
+          { x: number; y: number; panel: string }
+        > = {};
         data.forEach((pos) => {
           positions[pos.part_key] = {
             x: Number(pos.x),
@@ -561,7 +617,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         setCustomPositions(positions);
       }
     } catch (error) {
-      console.error('Error saving positions:', error);
+      console.error("Error saving positions:", error);
       toast({
         title: "Error",
         description: "Failed to save marker positions",
@@ -569,13 +625,14 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
       });
     }
   };
-  
+
   const handleCancelEdit = () => {
     setEditedMarkers({});
     setEditMode(false);
   };
-  
-  const hasAnyMarkers = withinWithCustomPos.length > 0 || outWithCustomPos.length > 0;
+
+  const hasAnyMarkers =
+    withinWithCustomPos.length > 0 || outWithCustomPos.length > 0;
   const hasData = outerInspectionData && outerInspectionData.length > 0;
 
   return (
@@ -604,11 +661,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
               </Button>
             ) : (
               <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                >
+                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
@@ -618,19 +671,22 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
                   disabled={Object.keys(editedMarkers).length === 0}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save {Object.keys(editedMarkers).length > 0 && `(${Object.keys(editedMarkers).length})`}
+                  Save{" "}
+                  {Object.keys(editedMarkers).length > 0 &&
+                    `(${Object.keys(editedMarkers).length})`}
                 </Button>
               </>
             )}
           </div>
         </div>
       )}
-      
+
       {/* Debug info banner */}
       {hasData && !hasAnyMarkers && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
           <p className="text-yellow-800 dark:text-yellow-200">
-            ℹ️ Data received ({outerInspectionData.length} items) but no markers mapped. Check console for details.
+            ℹ️ Data received ({outerInspectionData.length} items) but no markers
+            mapped. Check console for details.
           </p>
         </div>
       )}
@@ -641,54 +697,33 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           </p>
         </div>
       )}
-        <div className="grid grid-cols-2 border-b border-border">
-          <div className="text-center py-3 border-r border-border bg-muted/30 font-semibold">
-            within
-          </div>
-          <div className="text-center py-3 bg-muted/30 font-semibold">
-            out
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 border-b border-border divide-y divide-border sm:divide-y-0">
+        <div className="text-center py-3 sm:border-r border-border bg-muted/30 font-semibold text-xs sm:text-sm uppercase tracking-wide">
+          Pamje e brendshme
         </div>
-        
-        <div className="grid grid-cols-2">
-          {/* Within panel - interior/side view */}
-          <div className="relative border-r border-border p-4 bg-white dark:bg-muted/5 diagram-container">
-            <img 
-              src={carDiagramFront} 
-              alt="Car side/interior view" 
+        <div className="text-center py-3 bg-muted/30 font-semibold text-xs sm:text-sm uppercase tracking-wide">
+          Pamje e jashtme
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Within panel - interior/side view */}
+        <div className="relative p-4 lg:border-r border-border bg-white dark:bg-muted/5">
+          <div className="relative mx-auto max-w-[640px]">
+            <img
+              src={carDiagramFront}
+              alt="Car side/interior view"
               className="w-full h-auto"
             />
-            <div className="absolute inset-0 w-full h-full pointer-events-none">
+            <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
                 {withinWithCustomPos.map((marker, idx) => (
-                  <DiagramMarkerWithTooltip 
-                    key={idx} 
-                    marker={marker} 
-                    index={idx} 
-                    editMode={editMode}
-                    onDrag={(x, y) => handleMarkerDrag(marker, 'within', x, y)}
-                  />
-                ))}
-              </TooltipProvider>
-            </div>
-          </div>
-
-          {/* Out panel - underside/bottom view */}
-          <div className="relative p-4 bg-white dark:bg-muted/5 diagram-container">
-            <img 
-              src={carDiagramBack} 
-              alt="Car underside/bottom view" 
-              className="w-full h-auto"
-            />
-            <div className="absolute inset-0 w-full h-full pointer-events-none">
-              <TooltipProvider delayDuration={0}>
-                {outWithCustomPos.map((marker, idx) => (
-                  <DiagramMarkerWithTooltip 
-                    key={idx} 
-                    marker={marker} 
+                  <DiagramMarkerWithTooltip
+                    key={idx}
+                    marker={marker}
                     index={idx}
                     editMode={editMode}
-                    onDrag={(x, y) => handleMarkerDrag(marker, 'out', x, y)}
+                    onDrag={(x, y) => handleMarkerDrag(marker, "within", x, y)}
                   />
                 ))}
               </TooltipProvider>
@@ -696,21 +731,46 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="px-4 py-3 border-t border-border bg-muted/10 flex items-center justify-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
-              N
+        {/* Out panel - exterior/bottom view */}
+        <div className="relative p-4 bg-white dark:bg-muted/5">
+          <div className="relative mx-auto max-w-[640px]">
+            <img
+              src={carDiagramBack}
+              alt="Car exterior/bottom view"
+              className="w-full h-auto"
+            />
+            <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
+              <TooltipProvider delayDuration={0}>
+                {outWithCustomPos.map((marker, idx) => (
+                  <DiagramMarkerWithTooltip
+                    key={idx}
+                    marker={marker}
+                    index={idx}
+                    editMode={editMode}
+                    onDrag={(x, y) => handleMarkerDrag(marker, "out", x, y)}
+                  />
+                ))}
+              </TooltipProvider>
             </div>
-            <span className="text-sm font-medium">shift (Replacement)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
-              R
-            </div>
-            <span className="text-sm font-medium">Repair</span>
           </div>
         </div>
-      </Card>
+      </div>
+
+      {/* Legend */}
+      <div className="px-4 py-3 border-t border-border bg-muted/10 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="w-6 h-6 rounded-full bg-[#E53935] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            N
+          </div>
+          Ndërrim (Replacement)
+        </div>
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="w-6 h-6 rounded-full bg-[#D84315] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            R
+          </div>
+          Riparim (Repair)
+        </div>
+      </div>
+    </Card>
   );
 };
