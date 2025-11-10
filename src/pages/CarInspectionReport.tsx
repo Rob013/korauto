@@ -1189,46 +1189,46 @@ const CarInspectionReport = () => {
       ? car.title
       : undefined;
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="bg-muted/30 border-b border-border">
-        <div className="container-responsive py-3 flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="outline"
-              className="flex items-center gap-2"
-              onClick={() => openCarDetailsInNewTab(car.lot || lot)}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Kthehu te makina
-            </Button>
-            <Badge variant="secondary" className="text-sm">
-              <FileText className="h-3.5 w-3.5 mr-1" />
-              Raporti i Inspektimit
-            </Badge>
-          </div>
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="bg-muted/30 border-b border-border">
+          <div className="container-responsive py-3 flex flex-col gap-2 items-start text-left">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => openCarDetailsInNewTab(car.lot || lot)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Kthehu te makina
+              </Button>
+              <Badge variant="secondary" className="text-sm">
+                <FileText className="h-3.5 w-3.5 mr-1" />
+                Raporti i Inspektimit
+              </Badge>
+            </div>
 
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              {carName || car.title || "Raporti i Automjetit"}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span>
-                Raport i detajuar i inspektimit dhe historisë së automjetit
-              </span>
-              {car.location?.name && (
-                <>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {car.location.name}
-                  </span>
-                </>
-              )}
+            <div className="flex flex-col gap-1">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {carName || car.title || "Raporti i Automjetit"}
+              </h1>
+              <div className="flex flex-wrap items-center justify-start gap-2 text-sm text-muted-foreground text-left">
+                <span>
+                  Raport i detajuar i inspektimit dhe historisë së automjetit
+                </span>
+                {car.location?.name && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {car.location.name}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       <div className="container-responsive py-3 md:py-5">
         <Card className="overflow-hidden border border-border/70 bg-background/95 shadow-lg">
@@ -1260,7 +1260,7 @@ const CarInspectionReport = () => {
               )}
             </div>
             <div className="flex flex-col gap-4 p-4 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3 text-left">
                 <div className="space-y-1">
                   <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                     {carName || car.title || "Raporti i Automjetit"}
@@ -1300,7 +1300,7 @@ const CarInspectionReport = () => {
                 {quickStats.map(({ label, value, icon: Icon, highlight }) => (
                   <div
                     key={label}
-                    className={`flex items-center gap-3 rounded-lg border p-3 ${
+                    className={`flex items-start gap-3 rounded-lg border p-3 text-left ${
                       highlight
                         ? "border-destructive/40 bg-destructive/5"
                         : "border-border/60 bg-muted/40"
@@ -1315,8 +1315,8 @@ const CarInspectionReport = () => {
                     >
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div className="space-y-0.5">
-                      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <div className="space-y-0.5 text-left">
+                      <span className="block text-[11px] uppercase tracking-wide text-muted-foreground">
                         {label}
                       </span>
                       <span
@@ -1343,44 +1343,44 @@ const CarInspectionReport = () => {
         </Card>
       </div>
 
-      <div className="container-responsive py-2 md:py-4 space-y-3 md:space-y-4">
-        <Tabs defaultValue="diagram" className="space-y-2 md:space-y-3">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1 md:gap-1.5 bg-muted/60 backdrop-blur-sm p-1 md:p-1.5 rounded-2xl h-auto">
-            <TabsTrigger
-              value="diagram"
-              className="flex w-full items-center justify-center sm:justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
-            >
-              <FileText className="h-4 w-4 text-primary" />
-              <span>Diagrami i Inspektimit</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="exterior"
-              className="flex w-full items-center justify-center sm:justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
-            >
-              <CheckCircle className="h-4 w-4 text-primary" />
-              <span>Gjendja e Jashtme</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="insurance"
-              className="flex w-full items-center justify-center sm:justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
-            >
-              <AlertTriangle className="h-4 w-4 text-primary" />
-              <span>Historia e Sigurimit</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="options"
-              className="flex w-full items-center justify-center sm:justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
-            >
-              <Cog className="h-4 w-4 text-primary" />
-              <span>Pajisjet & Opsionet</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="warranty"
-              className="flex w-full items-center justify-center sm:justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
-            >
-              <Shield className="h-4 w-4 text-primary" />
-              <span>Garancioni</span>
-            </TabsTrigger>
+        <div className="container-responsive py-2 md:py-4 space-y-3 md:space-y-4">
+          <Tabs defaultValue="diagram" className="space-y-2 md:space-y-3">
+            <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1 md:gap-1.5 bg-muted/60 backdrop-blur-sm p-1 md:p-1.5 rounded-2xl h-auto">
+              <TabsTrigger
+                value="diagram"
+                className="flex w-full items-center justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
+              >
+                <FileText className="h-4 w-4 text-primary" />
+                <span>Diagrami i Inspektimit</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="exterior"
+                className="flex w-full items-center justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
+              >
+                <CheckCircle className="h-4 w-4 text-primary" />
+                <span>Gjendja e Jashtme</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="insurance"
+                className="flex w-full items-center justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
+              >
+                <AlertTriangle className="h-4 w-4 text-primary" />
+                <span>Historia e Sigurimit</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="options"
+                className="flex w-full items-center justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
+              >
+                <Cog className="h-4 w-4 text-primary" />
+                <span>Pajisjet & Opsionet</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="warranty"
+                className="flex w-full items-center justify-start gap-1.5 rounded-xl border border-transparent bg-transparent px-2.5 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:border-border/50 hover:bg-background/40 data-[state=active]:border-primary/40 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm md:px-3.5 md:py-2.5 md:text-xs lg:text-sm"
+              >
+                <Shield className="h-4 w-4 text-primary" />
+                <span>Garancioni</span>
+              </TabsTrigger>
           </TabsList>
 
           <TabsContent value="diagram" className="space-y-3 md:space-y-4">
