@@ -1,4 +1,13 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  memo,
+  useMemo,
+  lazy,
+  Suspense,
+  useRef,
+} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
@@ -9,10 +18,69 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useHaptics } from "@/hooks/useHaptics";
-import InspectionRequestForm from "@/components/InspectionRequestForm";
 import type { LucideIcon } from "lucide-react";
-import { ArrowLeft, Phone, Mail, MapPin, Car, Gauge, Settings, Fuel, Palette, Hash, Calendar, Shield, FileText, Search, Info, Eye, CheckCircle, AlertTriangle, Star, Clock, Users, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, Expand, Copy, ChevronDown, ChevronUp, DollarSign, Cog, Lightbulb, Camera, Wind, Radar, Tag, Armchair, DoorClosed, Cylinder, CircleDot, PaintBucket, Disc3, Instagram, Facebook, Bluetooth, Usb, Cable, Navigation, Wifi, Smartphone, Speaker, Music, Fan, Snowflake, Flame, Sun, KeyRound, ShieldCheck, Power } from "lucide-react";
-import { ImageZoom } from "@/components/ImageZoom";
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  MapPin,
+  Car,
+  Gauge,
+  Settings,
+  Fuel,
+  Palette,
+  Hash,
+  Calendar,
+  Shield,
+  FileText,
+  Search,
+  Info,
+  Eye,
+  CheckCircle,
+  AlertTriangle,
+  Star,
+  Clock,
+  Users,
+  MessageCircle,
+  Share2,
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  Expand,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  DollarSign,
+  Cog,
+  Lightbulb,
+  Camera,
+  Wind,
+  Radar,
+  Tag,
+  Armchair,
+  DoorClosed,
+  Cylinder,
+  CircleDot,
+  PaintBucket,
+  Disc3,
+  Instagram,
+  Facebook,
+  Bluetooth,
+  Usb,
+  Cable,
+  Navigation,
+  Wifi,
+  Smartphone,
+  Speaker,
+  Music,
+  Fan,
+  Snowflake,
+  Flame,
+  Sun,
+  KeyRound,
+  ShieldCheck,
+  Power,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
@@ -22,6 +90,15 @@ import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 import { openCarReportInNewTab } from "@/utils/navigation";
+
+const InspectionRequestForm = lazy(
+  () => import("@/components/InspectionRequestForm"),
+);
+const ImageZoom = lazy(() =>
+  import("@/components/ImageZoom").then((module) => ({
+    default: module.ImageZoom,
+  })),
+);
 
 // Enhanced Feature mapping for equipment/options - supporting both string and numeric formats
 const FEATURE_MAPPING: { [key: string]: string } = {
@@ -176,7 +253,7 @@ const FEATURE_MAPPING: { [key: string]: string } = {
   "1047": "Defogger i Prapëm i Prapme",
   "1048": "Sistemi i Ndriçimit të Brendshëm të Prapme",
   "1049": "Sistemi i Ngrohjes së Dritareve të Prapme",
-  "1050": "Kontrolli i Temperaturës së Klimatizimit të Prapme"
+  "1050": "Kontrolli i Temperaturës së Klimatizimit të Prapme",
 };
 
 const normalizeText = (value: string) =>
@@ -188,7 +265,10 @@ type EquipmentIconMapping = {
 };
 
 const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
-  { icon: Bluetooth, keywords: ["bluetooth", "handsfree", "hands-free", "hands free"] },
+  {
+    icon: Bluetooth,
+    keywords: ["bluetooth", "handsfree", "hands-free", "hands free"],
+  },
   { icon: Usb, keywords: ["usb"] },
   { icon: Cable, keywords: ["aux", "auxiliar", "auxiliary"] },
   {
@@ -204,11 +284,25 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "smart link",
       "mirrorlink",
       "mirror link",
-      "wireless charging"
-    ]
+      "wireless charging",
+    ],
   },
-  { icon: Wifi, keywords: ["wifi", "wi-fi", "wireless", "hotspot", "hot spot"] },
-  { icon: Navigation, keywords: ["navigation", "navigacion", "navigator", "navi", "gps", "map", "maps"] },
+  {
+    icon: Wifi,
+    keywords: ["wifi", "wi-fi", "wireless", "hotspot", "hot spot"],
+  },
+  {
+    icon: Navigation,
+    keywords: [
+      "navigation",
+      "navigacion",
+      "navigator",
+      "navi",
+      "gps",
+      "map",
+      "maps",
+    ],
+  },
   {
     icon: Speaker,
     keywords: [
@@ -220,10 +314,13 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "woofer",
       "surround",
       "hi-fi",
-      "hifi"
-    ]
+      "hifi",
+    ],
   },
-  { icon: Music, keywords: ["cd", "dvd", "mp3", "media", "entertainment", "multimedia"] },
+  {
+    icon: Music,
+    keywords: ["cd", "dvd", "mp3", "media", "entertainment", "multimedia"],
+  },
   {
     icon: Radar,
     keywords: [
@@ -240,8 +337,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "lane keep",
       "lane keeping",
       "blind spot",
-      "distance control"
-    ]
+      "distance control",
+    ],
   },
   {
     icon: Camera,
@@ -253,8 +350,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "360",
       "surround view",
       "dashcam",
-      "reverse camera"
-    ]
+      "reverse camera",
+    ],
   },
   {
     icon: Gauge,
@@ -264,8 +361,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "kontroll i shpejtesise",
       "limiter",
       "adaptive cruise",
-      "pilot assist"
-    ]
+      "pilot assist",
+    ],
   },
   {
     icon: Power,
@@ -280,8 +377,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "push button start",
       "start button",
       "keyless go",
-      "remote start"
-    ]
+      "remote start",
+    ],
   },
   {
     icon: KeyRound,
@@ -294,8 +391,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "locking",
       "lock",
       "central locking",
-      "immobilizer"
-    ]
+      "immobilizer",
+    ],
   },
   {
     icon: ShieldCheck,
@@ -318,8 +415,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "lane departure",
       "stability control",
       "kontroll stabiliteti",
-      "monitoring"
-    ]
+      "monitoring",
+    ],
   },
   {
     icon: Wind,
@@ -333,12 +430,42 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "aircondition",
       "a/c",
       "hvac",
-      "aircon"
-    ]
+      "aircon",
+    ],
   },
-  { icon: Snowflake, keywords: ["cooling", "cooled", "cooler", "ventilated", "climatizim", "climatization"] },
-  { icon: Flame, keywords: ["heated", "ngroh", "heat", "defrost", "defog", "heated seat", "heated steering"] },
-  { icon: Fan, keywords: ["ventilated seat", "ventilated seats", "ventilim", "ventiluar", "ventiluara"] },
+  {
+    icon: Snowflake,
+    keywords: [
+      "cooling",
+      "cooled",
+      "cooler",
+      "ventilated",
+      "climatizim",
+      "climatization",
+    ],
+  },
+  {
+    icon: Flame,
+    keywords: [
+      "heated",
+      "ngroh",
+      "heat",
+      "defrost",
+      "defog",
+      "heated seat",
+      "heated steering",
+    ],
+  },
+  {
+    icon: Fan,
+    keywords: [
+      "ventilated seat",
+      "ventilated seats",
+      "ventilim",
+      "ventiluar",
+      "ventiluara",
+    ],
+  },
   {
     icon: Armchair,
     keywords: [
@@ -352,18 +479,106 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "leather",
       "lekure",
       "lekur",
-      "alcantara"
-    ]
+      "alcantara",
+    ],
   },
-  { icon: Users, keywords: ["pasagjer", "passenger", "family", "rear seats", "row", "isofix", "child"] },
-  { icon: Disc3, keywords: ["wheel", "rrota", "rim", "alloy", "tire", "tyre", "gom", "goma", "pneumatic"] },
-  { icon: Eye, keywords: ["window", "dritare", "glass", "windshield", "sunshade", "xham"] },
-  { icon: Sun, keywords: ["sunroof", "moonroof", "panoram", "panoramik", "panoramic", "tavan"] },
-  { icon: Lightbulb, keywords: ["light", "drite", "drita", "headlight", "xenon", "led", "fog", "daylight", "ndricim"] },
-  { icon: Fuel, keywords: ["fuel", "diesel", "gasoline", "benzin", "nafte", "battery", "electric", "hybrid", "plug in", "plug-in"] },
-  { icon: Cog, keywords: ["engine", "motor", "transmission", "gearbox", "gear", "powertrain", "drivetrain"] },
-  { icon: Settings, keywords: ["suspension", "tuning", "mode", "drive mode", "setup", "adjustable"] },
-  { icon: DoorClosed, keywords: ["door", "dyer", "mirror", "pasqyre", "pasqyra", "pasqyr"] }
+  {
+    icon: Users,
+    keywords: [
+      "pasagjer",
+      "passenger",
+      "family",
+      "rear seats",
+      "row",
+      "isofix",
+      "child",
+    ],
+  },
+  {
+    icon: Disc3,
+    keywords: [
+      "wheel",
+      "rrota",
+      "rim",
+      "alloy",
+      "tire",
+      "tyre",
+      "gom",
+      "goma",
+      "pneumatic",
+    ],
+  },
+  {
+    icon: Eye,
+    keywords: ["window", "dritare", "glass", "windshield", "sunshade", "xham"],
+  },
+  {
+    icon: Sun,
+    keywords: [
+      "sunroof",
+      "moonroof",
+      "panoram",
+      "panoramik",
+      "panoramic",
+      "tavan",
+    ],
+  },
+  {
+    icon: Lightbulb,
+    keywords: [
+      "light",
+      "drite",
+      "drita",
+      "headlight",
+      "xenon",
+      "led",
+      "fog",
+      "daylight",
+      "ndricim",
+    ],
+  },
+  {
+    icon: Fuel,
+    keywords: [
+      "fuel",
+      "diesel",
+      "gasoline",
+      "benzin",
+      "nafte",
+      "battery",
+      "electric",
+      "hybrid",
+      "plug in",
+      "plug-in",
+    ],
+  },
+  {
+    icon: Cog,
+    keywords: [
+      "engine",
+      "motor",
+      "transmission",
+      "gearbox",
+      "gear",
+      "powertrain",
+      "drivetrain",
+    ],
+  },
+  {
+    icon: Settings,
+    keywords: [
+      "suspension",
+      "tuning",
+      "mode",
+      "drive mode",
+      "setup",
+      "adjustable",
+    ],
+  },
+  {
+    icon: DoorClosed,
+    keywords: ["door", "dyer", "mirror", "pasqyre", "pasqyra", "pasqyr"],
+  },
 ];
 
 const matchesKeyword = (normalizedItem: string, keyword: string) => {
@@ -461,80 +676,87 @@ interface EquipmentOptionsProps {
   safetyFeatures?: string[];
   comfortFeatures?: string[];
 }
-const EquipmentOptionsSection = memo(({
-  options,
-  features,
-  safetyFeatures,
-  comfortFeatures
-}: EquipmentOptionsProps) => {
-  const [showAllStandard, setShowAllStandard] = useState(false);
-  const [showAllChoice, setShowAllChoice] = useState(false);
-  const [showAllFeatures, setShowAllFeatures] = useState(false);
-  const [showAllSafety, setShowAllSafety] = useState(false);
-  const [showAllComfort, setShowAllComfort] = useState(false);
-  const [showOptions, setShowOptions] = useState(false);
-  const INITIAL_SHOW_COUNT = 6;
-  const PREVIEW_SHOW_COUNT = 10;
+const EquipmentOptionsSection = memo(
+  ({
+    options,
+    features,
+    safetyFeatures,
+    comfortFeatures,
+  }: EquipmentOptionsProps) => {
+    const [showAllStandard, setShowAllStandard] = useState(false);
+    const [showAllChoice, setShowAllChoice] = useState(false);
+    const [showAllFeatures, setShowAllFeatures] = useState(false);
+    const [showAllSafety, setShowAllSafety] = useState(false);
+    const [showAllComfort, setShowAllComfort] = useState(false);
+    const [showOptions, setShowOptions] = useState(false);
+    const INITIAL_SHOW_COUNT = 6;
+    const PREVIEW_SHOW_COUNT = 10;
 
-  // Get specific equipment preview items (up to 10 items from real API data)
-  const getSpecificPreviewItems = () => {
-    if (!options.standard || options.standard.length === 0) {
+    // Get specific equipment preview items (up to 10 items from real API data)
+    const getSpecificPreviewItems = () => {
+      if (!options.standard || options.standard.length === 0) {
+        return [];
+      }
+
+      // Get the first 10 most useful equipment items from the API
+      const previewItems = options.standard.slice(0, 10);
+
+      return previewItems.map((item) => {
+        const itemName = typeof item === "string" ? item : String(item);
+        const IconComponent = getEquipmentIcon(itemName);
+
+        return {
+          name: itemName,
+          hasFeature: true, // All items from options.standard are available features
+          icon: IconComponent,
+        };
+      });
+    };
+
+    // Get preview items for display (standard equipment items)
+    const getPreviewItems = () => {
+      if (options.standard && options.standard.length > 0) {
+        return options.standard.slice(0, PREVIEW_SHOW_COUNT);
+      }
       return [];
-    }
+    };
 
-    // Get the first 10 most useful equipment items from the API
-    const previewItems = options.standard.slice(0, 10);
+    const previewItems = getPreviewItems();
+    const specificFeatures = getSpecificPreviewItems();
 
-    return previewItems.map((item) => {
-      const itemName = typeof item === 'string' ? item : String(item);
-      const IconComponent = getEquipmentIcon(itemName);
-
-      return {
-        name: itemName,
-        hasFeature: true, // All items from options.standard are available features
-        icon: IconComponent
-      };
-    });
-  };
-
-  // Get preview items for display (standard equipment items)
-  const getPreviewItems = () => {
-    if (options.standard && options.standard.length > 0) {
-      return options.standard.slice(0, PREVIEW_SHOW_COUNT);
-    }
-    return [];
-  };
-
-  const previewItems = getPreviewItems();
-  const specificFeatures = getSpecificPreviewItems();
-  
-  return <div className="overflow-hidden bg-gradient-to-br from-background to-muted/20 rounded-xl border border-border/40 backdrop-blur-sm shadow-lg">
+    return (
+      <div className="overflow-hidden bg-gradient-to-br from-background to-muted/20 rounded-xl border border-border/40 backdrop-blur-sm shadow-lg">
         {/* Equipment Preview - Shows up to 10 real equipment items from API */}
         {!showOptions && (
           <div className="p-4 border-b border-border/20">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-primary"></div>
-              <h5 className="text-sm font-medium text-foreground">Pajisje Standarde</h5>
+              <h5 className="text-sm font-medium text-foreground">
+                Pajisje Standarde
+              </h5>
             </div>
             <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
               {specificFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
-                  <div key={index} className={`flex flex-col items-center gap-1 p-2 rounded-md transition-colors ${
-                    feature.hasFeature 
-                      ? 'bg-primary/10 border border-primary/30' 
-                      : 'bg-gray-100 border border-gray-200'
-                  }`}>
-                    <IconComponent className={`h-4 w-4 flex-shrink-0 ${
-                      feature.hasFeature 
-                        ? 'text-primary' 
-                        : 'text-gray-400'
-                    }`} />
-                    <span className={`text-[10px] leading-tight text-center line-clamp-2 ${
-                      feature.hasFeature 
-                        ? 'text-foreground' 
-                        : 'text-gray-400'
-                    }`}>
+                  <div
+                    key={index}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-md transition-colors ${
+                      feature.hasFeature
+                        ? "bg-primary/10 border border-primary/30"
+                        : "bg-gray-100 border border-gray-200"
+                    }`}
+                  >
+                    <IconComponent
+                      className={`h-4 w-4 flex-shrink-0 ${
+                        feature.hasFeature ? "text-primary" : "text-gray-400"
+                      }`}
+                    />
+                    <span
+                      className={`text-[10px] leading-tight text-center line-clamp-2 ${
+                        feature.hasFeature ? "text-foreground" : "text-gray-400"
+                      }`}
+                    >
                       {feature.name}
                     </span>
                   </div>
@@ -543,61 +765,104 @@ const EquipmentOptionsSection = memo(({
             </div>
           </div>
         )}
-        
-        <Button onClick={() => setShowOptions(!showOptions)} variant="ghost" className="w-full justify-between p-4 h-auto group hover:bg-gradient-to-r hover:from-muted/20 hover:to-muted/10 transition-all duration-300">
+
+        <Button
+          onClick={() => setShowOptions(!showOptions)}
+          variant="ghost"
+          className="w-full justify-between p-4 h-auto group hover:bg-gradient-to-r hover:from-muted/20 hover:to-muted/10 transition-all duration-300"
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <Cog className="h-4 w-4 text-primary" />
             </div>
             <span className="font-semibold text-foreground">
-              {showOptions ? "Fsheh Pajisjet dhe Opsionet" : "Shfaq të Gjitha Pajisjet dhe Opsionet"}
+              {showOptions
+                ? "Fsheh Pajisjet dhe Opsionet"
+                : "Shfaq të Gjitha Pajisjet dhe Opsionet"}
             </span>
           </div>
-          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-all duration-300 ${showOptions ? "rotate-180 text-primary" : ""}`} />
+          <ChevronDown
+            className={`h-5 w-5 text-muted-foreground transition-all duration-300 ${showOptions ? "rotate-180 text-primary" : ""}`}
+          />
         </Button>
 
-        {showOptions && <div className="px-4 pb-4 space-y-6 animate-fade-in-up">
+        {showOptions && (
+          <div className="px-4 pb-4 space-y-6 animate-fade-in-up">
             {/* Standard Equipment */}
-            {options.standard && options.standard.length > 0 && <div className="space-y-3">
+            {options.standard && options.standard.length > 0 && (
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <h5 className="text-base font-semibold text-foreground">Pajisje Standarde</h5>
+                  <h5 className="text-base font-semibold text-foreground">
+                    Pajisje Standarde
+                  </h5>
                   <div className="flex-1 h-px bg-border"></div>
-                  <span className="text-xs text-muted-foreground font-medium">{options.standard.length} pajisje</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {options.standard.length} pajisje
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                  {(showAllStandard ? options.standard : options.standard.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
+                  {(showAllStandard
+                    ? options.standard
+                    : options.standard.slice(0, INITIAL_SHOW_COUNT)
+                  ).map((option, index) => {
                     const OptionIcon = getEquipmentIcon(option.toString());
                     return (
-                      <div key={index} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group">
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group"
+                      >
                         <div className="flex-shrink-0">
                           <OptionIcon className="h-3.5 w-3.5 text-primary" />
                         </div>
-                        <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">{option}</span>
+                        <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">
+                          {option}
+                        </span>
                       </div>
                     );
                   })}
                 </div>
-                {options.standard.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowAllStandard(!showAllStandard)} className="h-9 px-4 text-sm text-primary hover:bg-primary/10 font-medium border-primary/30">
-                    {showAllStandard ? `Më pak` : `Shiko të gjitha (${options.standard.length - INITIAL_SHOW_COUNT} më shumë)`}
-                  </Button>
-                </div>}
-              </div>}
+                {options.standard.length > INITIAL_SHOW_COUNT && (
+                  <div className="flex justify-center pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAllStandard(!showAllStandard)}
+                      className="h-9 px-4 text-sm text-primary hover:bg-primary/10 font-medium border-primary/30"
+                    >
+                      {showAllStandard
+                        ? `Më pak`
+                        : `Shiko të gjitha (${options.standard.length - INITIAL_SHOW_COUNT} më shumë)`}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Optional Equipment */}
-            {options.choice && options.choice.length > 0 && <div className="space-y-3">
+            {options.choice && options.choice.length > 0 && (
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-accent"></div>
-                  <h5 className="text-base font-semibold text-foreground">Pajisje Opsionale</h5>
+                  <h5 className="text-base font-semibold text-foreground">
+                    Pajisje Opsionale
+                  </h5>
                   <div className="flex-1 h-px bg-border"></div>
-                  <span className="text-xs text-muted-foreground font-medium">{options.choice.length} opsione</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {options.choice.length} opsione
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {(showAllChoice ? options.choice : options.choice.slice(0, INITIAL_SHOW_COUNT)).map((option, index) => {
+                  {(showAllChoice
+                    ? options.choice
+                    : options.choice.slice(0, INITIAL_SHOW_COUNT)
+                  ).map((option, index) => {
                     const OptionIcon = getEquipmentIcon(option.toString());
                     return (
-                      <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                      <div
+                        key={index}
+                        className="group relative overflow-hidden h-16 sm:h-20"
+                      >
                         <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-r from-accent/5 to-accent/10 border border-accent/20 rounded-lg sm:rounded-xl hover:bg-gradient-to-r hover:from-accent/10 hover:to-accent/15 hover:border-accent/30 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-accent/10 group-hover:-translate-y-0.5">
                           <div className="flex-shrink-0">
                             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-accent/25 transition-all duration-300">
@@ -617,51 +882,83 @@ const EquipmentOptionsSection = memo(({
                     );
                   })}
                 </div>
-                {options.choice.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
-                  <Button variant="outline" size="sm" onClick={() => setShowAllChoice(!showAllChoice)} className="h-10 px-6 text-sm font-semibold text-accent hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/100 dark:hover:from-accent/900/20 dark:hover:to-accent/800/20 border-accent/30 dark:border-accent/600/60 hover:border-accent/40/80 dark:hover:border-accent/500/80 transition-all duration-300 hover:shadow-md hover:shadow-accent/10">
-                    {showAllChoice ? (
-                      <div className="flex items-center gap-2">
-                        <span>Më pak</span>
-                        <div className="w-1 h-1 rounded-full bg-accent"></div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span>Shiko të gjitha ({options.choice.length - INITIAL_SHOW_COUNT} më shumë)</span>
-                        <div className="w-1 h-1 rounded-full bg-accent"></div>
-                      </div>
-                    )}
-                  </Button>
-                </div>}
-              </div>}
+                {options.choice.length > INITIAL_SHOW_COUNT && (
+                  <div className="flex justify-center pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAllChoice(!showAllChoice)}
+                      className="h-10 px-6 text-sm font-semibold text-accent hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/100 dark:hover:from-accent/900/20 dark:hover:to-accent/800/20 border-accent/30 dark:border-accent/600/60 hover:border-accent/40/80 dark:hover:border-accent/500/80 transition-all duration-300 hover:shadow-md hover:shadow-accent/10"
+                    >
+                      {showAllChoice ? (
+                        <div className="flex items-center gap-2">
+                          <span>Më pak</span>
+                          <div className="w-1 h-1 rounded-full bg-accent"></div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span>
+                            Shiko të gjitha (
+                            {options.choice.length - INITIAL_SHOW_COUNT} më
+                            shumë)
+                          </span>
+                          <div className="w-1 h-1 rounded-full bg-accent"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Tuning Modifications */}
-            {options.tuning && options.tuning.length > 0 && <div className="space-y-3">
+            {options.tuning && options.tuning.length > 0 && (
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                  <h5 className="text-base font-semibold text-foreground">Modifikimet</h5>
+                  <h5 className="text-base font-semibold text-foreground">
+                    Modifikimet
+                  </h5>
                   <div className="flex-1 h-px bg-border"></div>
-                  <span className="text-xs text-muted-foreground font-medium">{options.tuning.length} modifikime</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {options.tuning.length} modifikime
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {options.tuning.map((option, index) => {
                     const itemLower = option.toString().toLowerCase();
                     let OptionIcon = Settings;
-                    if (itemLower.includes('sport') || itemLower.includes('performance')) OptionIcon = Gauge;
-                    else if (itemLower.includes('exhaust') || itemLower.includes('marmit')) OptionIcon = Cog;
+                    if (
+                      itemLower.includes("sport") ||
+                      itemLower.includes("performance")
+                    )
+                      OptionIcon = Gauge;
+                    else if (
+                      itemLower.includes("exhaust") ||
+                      itemLower.includes("marmit")
+                    )
+                      OptionIcon = Cog;
                     return (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-destructive/5 to-destructive/10 border border-destructive/20 rounded-lg hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/15 hover:border-destructive/30 transition-all duration-200 group">
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-3 bg-gradient-to-r from-destructive/5 to-destructive/10 border border-destructive/20 rounded-lg hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/15 hover:border-destructive/30 transition-all duration-200 group"
+                      >
                         <div className="flex-shrink-0">
                           <OptionIcon className="h-4 w-4 text-destructive" />
                         </div>
-                        <span className="text-sm font-medium text-foreground group-hover:text-destructive transition-colors">{option}</span>
+                        <span className="text-sm font-medium text-foreground group-hover:text-destructive transition-colors">
+                          {option}
+                        </span>
                       </div>
                     );
                   })}
                 </div>
-              </div>}
+              </div>
+            )}
 
             {/* General Features */}
-            {features && features.length > 0 && <div className="space-y-4">
+            {features && features.length > 0 && (
+              <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm"></div>
@@ -679,8 +976,14 @@ const EquipmentOptionsSection = memo(({
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {(showAllFeatures ? features : features.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
-                    <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                  {(showAllFeatures
+                    ? features
+                    : features.slice(0, INITIAL_SHOW_COUNT)
+                  ).map((feature, index) => (
+                    <div
+                      key={index}
+                      className="group relative overflow-hidden h-16 sm:h-20"
+                    >
                       <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 border border-slate-200/60 dark:border-slate-700/60 rounded-lg sm:rounded-xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 hover:border-blue-300/60 dark:hover:border-blue-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-500/10 group-hover:-translate-y-0.5">
                         <div className="flex-shrink-0">
                           <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-500/25 transition-all duration-300">
@@ -699,30 +1002,37 @@ const EquipmentOptionsSection = memo(({
                     </div>
                   ))}
                 </div>
-                {features.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setShowAllFeatures(!showAllFeatures)} 
-                    className="h-10 px-6 text-sm font-semibold text-blue-700 dark:text-blue-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 border-blue-300/60 dark:border-blue-600/60 hover:border-blue-400/80 dark:hover:border-blue-500/80 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
-                  >
-                    {showAllFeatures ? (
-                      <div className="flex items-center gap-2">
-                        <span>Më pak</span>
-                        <div className="w-1 h-1 rounded-full bg-blue-500"></div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span>Shiko të gjitha ({features.length - INITIAL_SHOW_COUNT} më shumë)</span>
-                        <div className="w-1 h-1 rounded-full bg-blue-500"></div>
-                      </div>
-                    )}
-                  </Button>
-                </div>}
-              </div>}
+                {features.length > INITIAL_SHOW_COUNT && (
+                  <div className="flex justify-center pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAllFeatures(!showAllFeatures)}
+                      className="h-10 px-6 text-sm font-semibold text-blue-700 dark:text-blue-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 border-blue-300/60 dark:border-blue-600/60 hover:border-blue-400/80 dark:hover:border-blue-500/80 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                    >
+                      {showAllFeatures ? (
+                        <div className="flex items-center gap-2">
+                          <span>Më pak</span>
+                          <div className="w-1 h-1 rounded-full bg-blue-500"></div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span>
+                            Shiko të gjitha (
+                            {features.length - INITIAL_SHOW_COUNT} më shumë)
+                          </span>
+                          <div className="w-1 h-1 rounded-full bg-blue-500"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Safety Features */}
-            {safetyFeatures && safetyFeatures.length > 0 && <div className="space-y-4">
+            {safetyFeatures && safetyFeatures.length > 0 && (
+              <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 to-red-600 shadow-sm"></div>
@@ -740,8 +1050,14 @@ const EquipmentOptionsSection = memo(({
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {(showAllSafety ? safetyFeatures : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
-                    <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                  {(showAllSafety
+                    ? safetyFeatures
+                    : safetyFeatures.slice(0, INITIAL_SHOW_COUNT)
+                  ).map((feature, index) => (
+                    <div
+                      key={index}
+                      className="group relative overflow-hidden h-16 sm:h-20"
+                    >
                       <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200/60 dark:border-red-700/60 rounded-lg sm:rounded-xl hover:bg-gradient-to-br hover:from-red-100 hover:to-red-200 dark:hover:from-red-800/30 dark:hover:to-red-700/30 hover:border-red-300/60 dark:hover:border-red-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-red-500/10 group-hover:-translate-y-0.5">
                         <div className="flex-shrink-0">
                           <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-red-500/25 transition-all duration-300">
@@ -760,30 +1076,38 @@ const EquipmentOptionsSection = memo(({
                     </div>
                   ))}
                 </div>
-                {safetyFeatures.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setShowAllSafety(!showAllSafety)} 
-                    className="h-10 px-6 text-sm font-semibold text-red-700 dark:text-red-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20 border-red-300/60 dark:border-red-600/60 hover:border-red-400/80 dark:hover:border-red-500/80 transition-all duration-300 hover:shadow-md hover:shadow-red-500/10"
-                  >
-                    {showAllSafety ? (
-                      <div className="flex items-center gap-2">
-                        <span>Më pak</span>
-                        <div className="w-1 h-1 rounded-full bg-red-500"></div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span>Shiko të gjitha ({safetyFeatures.length - INITIAL_SHOW_COUNT} më shumë)</span>
-                        <div className="w-1 h-1 rounded-full bg-red-500"></div>
-                      </div>
-                    )}
-                  </Button>
-                </div>}
-              </div>}
+                {safetyFeatures.length > INITIAL_SHOW_COUNT && (
+                  <div className="flex justify-center pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAllSafety(!showAllSafety)}
+                      className="h-10 px-6 text-sm font-semibold text-red-700 dark:text-red-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20 border-red-300/60 dark:border-red-600/60 hover:border-red-400/80 dark:hover:border-red-500/80 transition-all duration-300 hover:shadow-md hover:shadow-red-500/10"
+                    >
+                      {showAllSafety ? (
+                        <div className="flex items-center gap-2">
+                          <span>Më pak</span>
+                          <div className="w-1 h-1 rounded-full bg-red-500"></div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span>
+                            Shiko të gjitha (
+                            {safetyFeatures.length - INITIAL_SHOW_COUNT} më
+                            shumë)
+                          </span>
+                          <div className="w-1 h-1 rounded-full bg-red-500"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Comfort Features */}
-            {comfortFeatures && comfortFeatures.length > 0 && <div className="space-y-4">
+            {comfortFeatures && comfortFeatures.length > 0 && (
+              <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-sm"></div>
@@ -801,8 +1125,14 @@ const EquipmentOptionsSection = memo(({
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {(showAllComfort ? comfortFeatures : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)).map((feature, index) => (
-                    <div key={index} className="group relative overflow-hidden h-16 sm:h-20">
+                  {(showAllComfort
+                    ? comfortFeatures
+                    : comfortFeatures.slice(0, INITIAL_SHOW_COUNT)
+                  ).map((feature, index) => (
+                    <div
+                      key={index}
+                      className="group relative overflow-hidden h-16 sm:h-20"
+                    >
                       <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 h-full bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border border-emerald-200/60 dark:border-emerald-700/60 rounded-lg sm:rounded-xl hover:bg-gradient-to-br hover:from-emerald-100 hover:to-emerald-200 dark:hover:from-emerald-800/30 dark:hover:to-emerald-700/30 hover:border-emerald-300/60 dark:hover:border-emerald-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-emerald-500/10 group-hover:-translate-y-0.5">
                         <div className="flex-shrink-0">
                           <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-emerald-500/25 transition-all duration-300">
@@ -821,100 +1151,104 @@ const EquipmentOptionsSection = memo(({
                     </div>
                   ))}
                 </div>
-                {comfortFeatures.length > INITIAL_SHOW_COUNT && <div className="flex justify-center pt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setShowAllComfort(!showAllComfort)} 
-                    className="h-10 px-6 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-emerald-100 dark:hover:from-emerald-900/20 dark:hover:to-emerald-800/20 border-emerald-300/60 dark:border-emerald-600/60 hover:border-emerald-400/80 dark:hover:border-emerald-500/80 transition-all duration-300 hover:shadow-md hover:shadow-emerald-500/10"
-                  >
-                    {showAllComfort ? (
-                      <div className="flex items-center gap-2">
-                        <span>Më pak</span>
-                        <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span>Shiko të gjitha ({comfortFeatures.length - INITIAL_SHOW_COUNT} më shumë)</span>
-                        <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
-                      </div>
-                    )}
-                  </Button>
-                </div>}
-              </div>}
-          </div>}
-      </div>;
-});
+                {comfortFeatures.length > INITIAL_SHOW_COUNT && (
+                  <div className="flex justify-center pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAllComfort(!showAllComfort)}
+                      className="h-10 px-6 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-emerald-100 dark:hover:from-emerald-900/20 dark:hover:to-emerald-800/20 border-emerald-300/60 dark:border-emerald-600/60 hover:border-emerald-400/80 dark:hover:border-emerald-500/80 transition-all duration-300 hover:shadow-md hover:shadow-emerald-500/10"
+                    >
+                      {showAllComfort ? (
+                        <div className="flex items-center gap-2">
+                          <span>Më pak</span>
+                          <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span>
+                            Shiko të gjitha (
+                            {comfortFeatures.length - INITIAL_SHOW_COUNT} më
+                            shumë)
+                          </span>
+                          <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  },
+);
 EquipmentOptionsSection.displayName = "EquipmentOptionsSection";
 const CarDetails = memo(() => {
   // Translation functions for Albanian
   const translateTransmission = (transmission: string): string => {
     const transmissionMap: Record<string, string> = {
-      'automatic': 'automatik',
-      'manual': 'manual',
-      'cvt': 'CVT',
-      'semiautomatic': 'gjysëm automatik',
-      'automated manual': 'manual i automatizuar'
+      automatic: "automatik",
+      manual: "manual",
+      cvt: "CVT",
+      semiautomatic: "gjysëm automatik",
+      "automated manual": "manual i automatizuar",
     };
     return transmissionMap[transmission?.toLowerCase()] || transmission;
   };
   const translateColor = (color: string): string => {
     const colorMap: Record<string, string> = {
-      'black': 'zi',
-      'white': 'bardhë',
-      'grey': 'gri',
-      'gray': 'gri',
-      'red': 'kuq',
-      'blue': 'blu',
-      'silver': 'argjend',
-      'green': 'jeshil',
-      'yellow': 'verdh',
-      'brown': 'kafe',
-      'orange': 'portokalli',
-      'purple': 'vjollcë',
-      'pink': 'rozë',
-      'gold': 'ar',
-      'beige': 'bezhë',
-      'dark blue': 'blu i errët',
-      'light blue': 'blu i çelët',
-      'dark green': 'jeshil i errët',
-      'light green': 'jeshil i çelët'
+      black: "zi",
+      white: "bardhë",
+      grey: "gri",
+      gray: "gri",
+      red: "kuq",
+      blue: "blu",
+      silver: "argjend",
+      green: "jeshil",
+      yellow: "verdh",
+      brown: "kafe",
+      orange: "portokalli",
+      purple: "vjollcë",
+      pink: "rozë",
+      gold: "ar",
+      beige: "bezhë",
+      "dark blue": "blu i errët",
+      "light blue": "blu i çelët",
+      "dark green": "jeshil i errët",
+      "light green": "jeshil i çelët",
     };
     return colorMap[color?.toLowerCase()] || color;
   };
   const translateFuel = (fuel: string): string => {
     const fuelMap: Record<string, string> = {
-      'gasoline': 'Benzin',
-      'petrol': 'Benzin',
-      'diesel': 'Diesel',
-      'hybrid': 'Hibrid',
-      'electric': 'Elektrik',
-      'lpg': 'LPG',
-      'gas': 'Gaz'
+      gasoline: "Benzin",
+      petrol: "Benzin",
+      diesel: "Diesel",
+      hybrid: "Hibrid",
+      electric: "Elektrik",
+      lpg: "LPG",
+      gas: "Gaz",
     };
     return fuelMap[fuel?.toLowerCase()] || fuel;
   };
-  const {
-    id: lot
-  } = useParams<{
+  const { id: lot } = useParams<{
     id: string;
   }>();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const { impact, notification } = useHaptics();
-  const {
-    goBack,
-    restorePageState,
-    pageState
-  } = useNavigation();
+  const { goBack, restorePageState, pageState } = useNavigation();
   const { exchangeRate } = useCurrencyAPI();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
+  const [shouldRenderMap, setShouldRenderMap] = useState(false);
+  const mapTargets = useRef<HTMLDivElement[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
@@ -978,7 +1312,7 @@ const CarDetails = memo(() => {
           "accidentCnt",
           "accidentCount",
           "totalAccidentCnt",
-          "totalAccidentCount"
+          "totalAccidentCount",
         ];
 
         for (const key of valueKeys) {
@@ -1026,7 +1360,7 @@ const CarDetails = memo(() => {
         "accident_history_total",
         "accidentHistoryTotal",
         "count",
-        "total"
+        "total",
       ];
 
       numericFields.forEach((field) => {
@@ -1056,13 +1390,17 @@ const CarDetails = memo(() => {
         "accident_history",
         "accident_history_detail",
         "accident_history_details",
-        "accident_history_list"
+        "accident_history_list",
       ];
 
       let aggregatedArrayCount = 0;
       arrayFields.forEach((field) => {
         const value = source[field];
-        if (Array.isArray(value) && value.length > 0 && !seenArrays.has(value)) {
+        if (
+          Array.isArray(value) &&
+          value.length > 0 &&
+          !seenArrays.has(value)
+        ) {
           seenArrays.add(value);
           candidateCounts.push(value.length);
           aggregatedArrayCount += value.length;
@@ -1089,7 +1427,13 @@ const CarDetails = memo(() => {
       });
 
       Object.entries(source)
-        .filter(([key, value]) => /accident/i.test(key) && value && typeof value === "object" && !Array.isArray(value))
+        .filter(
+          ([key, value]) =>
+            /accident/i.test(key) &&
+            value &&
+            typeof value === "object" &&
+            !Array.isArray(value),
+        )
         .forEach(([, value]) => addCandidate(value));
     };
 
@@ -1097,10 +1441,12 @@ const CarDetails = memo(() => {
       car.insurance_v2 as Record<string, unknown> | undefined,
       car.details?.insurance_v2 as Record<string, unknown> | undefined,
       car.details?.insurance as Record<string, unknown> | undefined,
-      (car.details?.insurance as Record<string, unknown> | undefined)?.car_info as Record<string, unknown> | undefined,
-      (car.details?.insurance as Record<string, unknown> | undefined)?.summary as Record<string, unknown> | undefined,
+      (car.details?.insurance as Record<string, unknown> | undefined)
+        ?.car_info as Record<string, unknown> | undefined,
+      (car.details?.insurance as Record<string, unknown> | undefined)
+        ?.summary as Record<string, unknown> | undefined,
       car.inspect as Record<string, unknown> | undefined,
-      car.details?.inspect as Record<string, unknown> | undefined
+      car.details?.inspect as Record<string, unknown> | undefined,
     ];
 
     potentialSources.forEach((source) => {
@@ -1112,15 +1458,19 @@ const CarDetails = memo(() => {
     const summarySources = [
       car.inspect?.accident_summary,
       car.details?.inspect?.accident_summary,
-      (car.details?.insurance as Record<string, unknown> | undefined)?.accident_summary
+      (car.details?.insurance as Record<string, unknown> | undefined)
+        ?.accident_summary,
     ];
 
     summarySources.forEach((summary) => {
       if (summary && typeof summary === "object" && !Array.isArray(summary)) {
-        const total: number = (Object.values(summary) as any[]).reduce((sum: number, entry) => {
-          const parsed = parseNumericValue(entry);
-          return parsed !== null ? sum + parsed : sum;
-        }, 0);
+        const total: number = (Object.values(summary) as any[]).reduce(
+          (sum: number, entry) => {
+            const parsed = parseNumericValue(entry);
+            return parsed !== null ? sum + parsed : sum;
+          },
+          0,
+        );
         if (total > 0) {
           candidateCounts.push(total);
         }
@@ -1144,7 +1494,12 @@ const CarDetails = memo(() => {
   // Auto-expand detailed info if car has rich data (only once)
   useEffect(() => {
     if (car && !hasAutoExpanded) {
-      const hasRichData = car.details?.options || car.insurance_v2 || car.details?.inspect_outer || car.details?.inspect?.inner || car.details?.insurance;
+      const hasRichData =
+        car.details?.options ||
+        car.insurance_v2 ||
+        car.details?.inspect_outer ||
+        car.details?.inspect?.inner ||
+        car.details?.insurance;
       if (hasRichData) {
         setShowDetailedInfo(true);
         setHasAutoExpanded(true);
@@ -1153,135 +1508,233 @@ const CarDetails = memo(() => {
   }, [car, hasAutoExpanded]);
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
-  const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
+  const KBC_DOMAINS = [
+    "kbchachacha",
+    "kbchacha",
+    "kb_chachacha",
+    "kbc",
+    "kbcchachacha",
+  ];
 
-  const buildCarDetails = useCallback((carData: any, lotData: any): CarDetails | null => {
-    if (!carData || !lotData) {
-      return null;
-    }
+  const buildCarDetails = useCallback(
+    (carData: any, lotData: any): CarDetails | null => {
+      if (!carData || !lotData) {
+        return null;
+      }
 
-    const buyNow = Number(lotData?.buy_now || carData?.buy_now || carData?.price);
-    if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
-      return null;
-    }
+      const buyNow = Number(
+        lotData?.buy_now || carData?.buy_now || carData?.price,
+      );
+      if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
+        return null;
+      }
 
-    const price = calculateFinalPriceEUR(buyNow, exchangeRate.rate);
-    const domainRaw = String(lotData?.domain?.name || carData?.domain_name || carData?.provider || carData?.source_api || "").toLowerCase();
-    const isKbc = domainRaw ? KBC_DOMAINS.some(k => domainRaw.includes(k)) : false;
-    const sourceLabel = domainRaw ? (isKbc ? 'KB Chachacha' : 'Encar') : undefined;
+      const price = calculateFinalPriceEUR(buyNow, exchangeRate.rate);
+      const domainRaw = String(
+        lotData?.domain?.name ||
+          carData?.domain_name ||
+          carData?.provider ||
+          carData?.source_api ||
+          "",
+      ).toLowerCase();
+      const isKbc = domainRaw
+        ? KBC_DOMAINS.some((k) => domainRaw.includes(k))
+        : false;
+      const sourceLabel = domainRaw
+        ? isKbc
+          ? "KB Chachacha"
+          : "Encar"
+        : undefined;
 
-    const manufacturerName = carData?.manufacturer?.name || carData?.make || "Unknown";
-    const modelName = carData?.model?.name || carData?.model || "Unknown";
+      const manufacturerName =
+        carData?.manufacturer?.name || carData?.make || "Unknown";
+      const modelName = carData?.model?.name || carData?.model || "Unknown";
 
-    // Extract year from multiple possible sources
-    const year = carData?.year 
-      || lotData?.year 
-      || carData?.model_year 
-      || lotData?.model_year 
-      || carData?.production_year 
-      || lotData?.production_year
-      || (carData?.registration_date ? new Date(carData.registration_date).getFullYear() : null)
-      || (lotData?.registration_date ? new Date(lotData.registration_date).getFullYear() : null)
-      || null;
+      // Extract year from multiple possible sources
+      const year =
+        carData?.year ||
+        lotData?.year ||
+        carData?.model_year ||
+        lotData?.model_year ||
+        carData?.production_year ||
+        lotData?.production_year ||
+        (carData?.registration_date
+          ? new Date(carData.registration_date).getFullYear()
+          : null) ||
+        (lotData?.registration_date
+          ? new Date(lotData.registration_date).getFullYear()
+          : null) ||
+        null;
 
-    if (!year) {
-      console.warn('⚠️ No year found in car data, using fallback');
-    }
+      if (!year) {
+        console.warn("⚠️ No year found in car data, using fallback");
+      }
 
-    const odometer = lotData?.odometer 
-      || carData?.odometer 
-      || (lotData?.odometer_km ? { km: lotData.odometer_km, mi: Math.round(Number(lotData.odometer_km) * 0.621371) } : null)
-      || (carData?.odometer_km ? { km: carData.odometer_km, mi: Math.round(Number(carData.odometer_km) * 0.621371) } : null)
-      || (lotData?.mileage ? { km: lotData.mileage, mi: Math.round(Number(lotData.mileage) * 0.621371) } : null)
-      || (carData?.mileage ? { km: carData.mileage, mi: Math.round(Number(carData.mileage) * 0.621371) } : null);
+      const odometer =
+        lotData?.odometer ||
+        carData?.odometer ||
+        (lotData?.odometer_km
+          ? {
+              km: lotData.odometer_km,
+              mi: Math.round(Number(lotData.odometer_km) * 0.621371),
+            }
+          : null) ||
+        (carData?.odometer_km
+          ? {
+              km: carData.odometer_km,
+              mi: Math.round(Number(carData.odometer_km) * 0.621371),
+            }
+          : null) ||
+        (lotData?.mileage
+          ? {
+              km: lotData.mileage,
+              mi: Math.round(Number(lotData.mileage) * 0.621371),
+            }
+          : null) ||
+        (carData?.mileage
+          ? {
+              km: carData.mileage,
+              mi: Math.round(Number(carData.mileage) * 0.621371),
+            }
+          : null);
 
-    const images = lotData?.images?.normal 
-      || lotData?.images?.big 
-      || carData?.images?.normal 
-      || carData?.images?.big
-      || lotData?.images 
-      || carData?.images 
-      || [];
+      const images =
+        lotData?.images?.normal ||
+        lotData?.images?.big ||
+        carData?.images?.normal ||
+        carData?.images?.big ||
+        lotData?.images ||
+        carData?.images ||
+        [];
 
-    return {
-      id: carData?.id?.toString() || lotData?.lot,
-      make: manufacturerName,
-      model: modelName,
-      year: year || 2020, // Use extracted year or fallback to 2020
-      price,
-      image: images?.[0],
-      images,
-      source_label: sourceLabel,
-      vin: carData?.vin,
-      mileage: odometer?.km,
-      transmission: carData?.transmission?.name || carData?.transmission || lotData?.transmission?.name || lotData?.transmission,
-      fuel: carData?.fuel?.name || carData?.fuel || lotData?.fuel?.name || lotData?.fuel,
-      color: carData?.color?.name || carData?.color || lotData?.color?.name || lotData?.color,
-      condition: lotData?.condition?.name?.replace("run_and_drives", "Good Condition") || carData?.condition,
-      lot: lotData?.lot || carData?.lot_number,
-      title: carData?.title || lotData?.title,
-      odometer: odometer
-        ? {
-            km: odometer.km,
-            mi: odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
-            status: lotData?.odometer?.status || carData?.odometer?.status || { name: "Verified" },
-          }
-        : undefined,
-      engine: carData?.engine || lotData?.engine,
-      cylinders: carData?.cylinders || lotData?.cylinders,
-      drive_wheel: carData?.drive_wheel || lotData?.drive_wheel,
-      body_type: carData?.body_type || lotData?.body_type,
-      damage: lotData?.damage || carData?.damage,
-      keys_available: lotData?.keys_available ?? carData?.keys_available,
-      airbags: lotData?.airbags || carData?.airbags,
-      grade_iaai: lotData?.grade_iaai || carData?.grade?.name || carData?.grade || lotData?.grade?.name || lotData?.grade,
-      seller: lotData?.seller || carData?.seller,
-      seller_type: lotData?.seller_type || carData?.seller_type,
-      sale_date: lotData?.sale_date || carData?.sale_date,
-      bid: lotData?.bid || carData?.bid,
-      buy_now: lotData?.buy_now || carData?.buy_now,
-      final_bid: lotData?.final_bid || carData?.final_bid,
-      features: getCarFeatures(carData, lotData),
-      safety_features: getSafetyFeatures(carData, lotData),
-      comfort_features: getComfortFeatures(carData, lotData),
-      performance_rating: 4.5,
-      popularity_score: 85,
-      insurance: lotData?.insurance,
-      insurance_v2: lotData?.insurance_v2 || carData?.insurance_v2,
-      location: lotData?.location,
-      inspect: lotData?.inspect || carData?.inspect,
-      // Merge details from both sources to get all variant info + inspect data
-      details: {
-        ...(carData?.details || {}),
-        ...(lotData?.details || {}),
-        grade: carData?.grade || lotData?.grade || carData?.details?.grade || lotData?.details?.grade,
-        variant: carData?.variant || lotData?.variant || carData?.details?.variant || lotData?.details?.variant,
-        trim: carData?.trim || lotData?.trim || carData?.details?.trim || lotData?.details?.trim,
-        // Include inspect data from lotData.inspect as per API support
-        inspect: lotData?.inspect || lotData?.details?.inspect || {
-          accident_summary: lotData?.inspect?.accident_summary || lotData?.details?.inspect?.accident_summary,
-          outer: lotData?.inspect?.outer || lotData?.details?.inspect?.outer || lotData?.inspect_outer,
-          inner: lotData?.inspect?.inner || lotData?.details?.inspect?.inner,
+      return {
+        id: carData?.id?.toString() || lotData?.lot,
+        make: manufacturerName,
+        model: modelName,
+        year: year || 2020, // Use extracted year or fallback to 2020
+        price,
+        image: images?.[0],
+        images,
+        source_label: sourceLabel,
+        vin: carData?.vin,
+        mileage: odometer?.km,
+        transmission:
+          carData?.transmission?.name ||
+          carData?.transmission ||
+          lotData?.transmission?.name ||
+          lotData?.transmission,
+        fuel:
+          carData?.fuel?.name ||
+          carData?.fuel ||
+          lotData?.fuel?.name ||
+          lotData?.fuel,
+        color:
+          carData?.color?.name ||
+          carData?.color ||
+          lotData?.color?.name ||
+          lotData?.color,
+        condition:
+          lotData?.condition?.name?.replace(
+            "run_and_drives",
+            "Good Condition",
+          ) || carData?.condition,
+        lot: lotData?.lot || carData?.lot_number,
+        title: carData?.title || lotData?.title,
+        odometer: odometer
+          ? {
+              km: odometer.km,
+              mi:
+                odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
+              status: lotData?.odometer?.status ||
+                carData?.odometer?.status || { name: "Verified" },
+            }
+          : undefined,
+        engine: carData?.engine || lotData?.engine,
+        cylinders: carData?.cylinders || lotData?.cylinders,
+        drive_wheel: carData?.drive_wheel || lotData?.drive_wheel,
+        body_type: carData?.body_type || lotData?.body_type,
+        damage: lotData?.damage || carData?.damage,
+        keys_available: lotData?.keys_available ?? carData?.keys_available,
+        airbags: lotData?.airbags || carData?.airbags,
+        grade_iaai:
+          lotData?.grade_iaai ||
+          carData?.grade?.name ||
+          carData?.grade ||
+          lotData?.grade?.name ||
+          lotData?.grade,
+        seller: lotData?.seller || carData?.seller,
+        seller_type: lotData?.seller_type || carData?.seller_type,
+        sale_date: lotData?.sale_date || carData?.sale_date,
+        bid: lotData?.bid || carData?.bid,
+        buy_now: lotData?.buy_now || carData?.buy_now,
+        final_bid: lotData?.final_bid || carData?.final_bid,
+        features: getCarFeatures(carData, lotData),
+        safety_features: getSafetyFeatures(carData, lotData),
+        comfort_features: getComfortFeatures(carData, lotData),
+        performance_rating: 4.5,
+        popularity_score: 85,
+        insurance: lotData?.insurance,
+        insurance_v2: lotData?.insurance_v2 || carData?.insurance_v2,
+        location: lotData?.location,
+        inspect: lotData?.inspect || carData?.inspect,
+        // Merge details from both sources to get all variant info + inspect data
+        details: {
+          ...(carData?.details || {}),
+          ...(lotData?.details || {}),
+          grade:
+            carData?.grade ||
+            lotData?.grade ||
+            carData?.details?.grade ||
+            lotData?.details?.grade,
+          variant:
+            carData?.variant ||
+            lotData?.variant ||
+            carData?.details?.variant ||
+            lotData?.details?.variant,
+          trim:
+            carData?.trim ||
+            lotData?.trim ||
+            carData?.details?.trim ||
+            lotData?.details?.trim,
+          // Include inspect data from lotData.inspect as per API support
+          inspect: lotData?.inspect ||
+            lotData?.details?.inspect || {
+              accident_summary:
+                lotData?.inspect?.accident_summary ||
+                lotData?.details?.inspect?.accident_summary,
+              outer:
+                lotData?.inspect?.outer ||
+                lotData?.details?.inspect?.outer ||
+                lotData?.inspect_outer,
+              inner:
+                lotData?.inspect?.inner || lotData?.details?.inspect?.inner,
+            },
+          inspect_outer:
+            lotData?.inspect?.outer ||
+            lotData?.details?.inspect_outer ||
+            lotData?.inspect_outer,
+          // Include options data
+          options: lotData?.details?.options || carData?.details?.options,
+          options_extra:
+            lotData?.details?.options_extra || carData?.details?.options_extra,
         },
-        inspect_outer: lotData?.inspect?.outer || lotData?.details?.inspect_outer || lotData?.inspect_outer,
-        // Include options data
-        options: lotData?.details?.options || carData?.details?.options,
-        options_extra: lotData?.details?.options_extra || carData?.details?.options_extra,
-      },
-    };
-  }, [KBC_DOMAINS, exchangeRate.rate]);
-  
+      };
+    },
+    [KBC_DOMAINS, exchangeRate.rate],
+  );
+
   // Convert option numbers to feature names
   const convertOptionsToNames = (options: any): any => {
-    if (!options) return {
-      standard: [],
-      choice: [],
-      tuning: []
-    };
+    if (!options)
+      return {
+        standard: [],
+        choice: [],
+        tuning: [],
+      };
     const result: any = {
       standard: [],
       choice: [],
-      tuning: []
+      tuning: [],
     };
 
     // Process standard equipment
@@ -1324,7 +1777,7 @@ const CarDetails = memo(() => {
         }
       });
     }
-    
+
     return result;
   };
 
@@ -1335,13 +1788,13 @@ const CarDetails = memo(() => {
 
     try {
       const { data, error } = await supabase
-        .from('cars_cache')
-        .select('*')
+        .from("cars_cache")
+        .select("*")
         .or(`lot_number.eq.${lot},api_id.eq.${lot}`)
         .maybeSingle();
 
       if (error) {
-        console.warn('Failed to load cached car', error);
+        console.warn("Failed to load cached car", error);
         return null;
       }
 
@@ -1356,13 +1809,13 @@ const CarDetails = memo(() => {
           try {
             sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
           } catch (storageError) {
-            console.warn('Failed to store in sessionStorage:', storageError);
+            console.warn("Failed to store in sessionStorage:", storageError);
           }
           return details;
         }
       }
     } catch (cacheError) {
-      console.warn('Cache hydration failed', cacheError);
+      console.warn("Cache hydration failed", cacheError);
     }
 
     // Try sessionStorage as backup
@@ -1375,7 +1828,7 @@ const CarDetails = memo(() => {
         return restoredCar;
       }
     } catch (sessionError) {
-      console.warn('Failed to restore from sessionStorage:', sessionError);
+      console.warn("Failed to restore from sessionStorage:", sessionError);
     }
 
     return null;
@@ -1384,33 +1837,44 @@ const CarDetails = memo(() => {
   // Extract features from car data
   const getCarFeatures = (carData: any, lot: any): string[] => {
     const features = [];
-    if (carData.transmission?.name) features.push(`Transmisioni: ${carData.transmission.name}`);
+    if (carData.transmission?.name)
+      features.push(`Transmisioni: ${carData.transmission.name}`);
     if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
     if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
     if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
     if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
-    if (carData.drive_wheel?.name) features.push(`Tërheqje: ${carData.drive_wheel.name}`);
+    if (carData.drive_wheel?.name)
+      features.push(`Tërheqje: ${carData.drive_wheel.name}`);
     if (lot?.keys_available) features.push("Çelësat të Disponueshëm");
 
     // Add basic features if list is empty
     if (features.length === 0) {
-      return ["Klimatizimi", "Dritaret Elektrike", "Mbyllja Qendrore", "Frena ABS"];
+      return [
+        "Klimatizimi",
+        "Dritaret Elektrike",
+        "Mbyllja Qendrore",
+        "Frena ABS",
+      ];
     }
     return features;
   };
   const getSafetyFeatures = (carData: any, lot: any): string[] => {
     const safety = [];
     if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
-    if (carData.transmission?.name === "automatic") safety.push("ABS Sistemi i Frënimit");
+    if (carData.transmission?.name === "automatic")
+      safety.push("ABS Sistemi i Frënimit");
     safety.push("Sistemi i Stabilitetit Elektronik");
     if (lot?.keys_available) safety.push("Sistemi i Sigurisë");
 
     // Add default safety features
-    return safety.length > 0 ? safety : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
+    return safety.length > 0
+      ? safety
+      : ["ABS Sistemi i Frënimit", "Airbag Sistemi", "Mbyllja Qendrore"];
   };
   const getComfortFeatures = (carData: any, lot: any): string[] => {
     const comfort = [];
-    if (carData.transmission?.name === "automatic") comfort.push("Transmisioni Automatik");
+    if (carData.transmission?.name === "automatic")
+      comfort.push("Transmisioni Automatik");
     comfort.push("Klimatizimi");
     comfort.push("Dritaret Elektrike");
     comfort.push("Pasqyrat Elektrike");
@@ -1422,14 +1886,10 @@ const CarDetails = memo(() => {
     const checkAdminStatus = async () => {
       try {
         const {
-          data: {
-            session
-          }
+          data: { session },
         } = await supabase.auth.getSession();
         if (session?.user) {
-          const {
-            data: adminCheck
-          } = await supabase.rpc("is_admin");
+          const { data: adminCheck } = await supabase.rpc("is_admin");
           setIsAdmin(adminCheck || false);
         }
       } catch (error) {
@@ -1443,86 +1903,91 @@ const CarDetails = memo(() => {
 
     const fetchFromApi = async () => {
       if (!lot) return;
-      
+
       // Check if car is already loaded (from cache restoration)
       if (car) {
         return;
       }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        let response: Response;
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
+            headers: {
+              accept: "*/*",
+              "x-api-key": API_KEY,
+            },
+            signal: controller.signal,
+          });
+        } catch (firstAttemptError) {
+          response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
+            headers: {
+              accept: "*/*",
+              "x-api-key": API_KEY,
+            },
+            signal: controller.signal,
+          });
+        }
 
-          let response: Response;
-          try {
-            response = await fetch(`${API_BASE_URL}/search-lot/${lot}/iaai`, {
-              headers: {
-                accept: "*/*",
-                "x-api-key": API_KEY
-              },
-              signal: controller.signal
-            });
-          } catch (firstAttemptError) {
-            response = await fetch(`${API_BASE_URL}/search?lot_number=${lot}`, {
-              headers: {
-                accept: "*/*",
-                "x-api-key": API_KEY
-              },
-              signal: controller.signal
-            });
-          }
+        clearTimeout(timeoutId);
 
-          clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error(
+            `API returned ${response.status}: ${response.statusText}`,
+          );
+        }
 
-          if (!response.ok) {
-            throw new Error(`API returned ${response.status}: ${response.statusText}`);
-          }
+        const data = await response.json();
+        if (!isMounted) return;
 
-          const data = await response.json();
-          if (!isMounted) return;
+        const carData = data.data;
+        const lotData = carData?.lots?.[0];
+        const details = buildCarDetails(carData, lotData);
 
-          const carData = data.data;
-          const lotData = carData?.lots?.[0];
-          const details = buildCarDetails(carData, lotData);
+        if (!details) {
+          navigate("/catalog");
+          return;
+        }
 
-          if (!details) {
-            navigate('/catalog');
+        setCar(details);
+        setLoading(false);
+
+        try {
+          sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
+        } catch (storageError) {
+          console.warn("Failed to store in sessionStorage:", storageError);
+        }
+
+        trackCarView(lot, details);
+      } catch (apiError) {
+        console.error("Failed to fetch car data:", apiError);
+        if (!isMounted) return;
+
+        const fallbackCar = fallbackCars.find(
+          (fallback) => fallback.id === lot || fallback.lot_number === lot,
+        );
+        if (fallbackCar && fallbackCar.lots?.[0]) {
+          const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
+          if (details) {
+            setCar(details);
+            setLoading(false);
             return;
           }
+        }
 
-          setCar(details);
-          setLoading(false);
-
-          try {
-            sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
-          } catch (storageError) {
-            console.warn('Failed to store in sessionStorage:', storageError);
-          }
-
-          trackCarView(lot, details);
-        } catch (apiError) {
-          console.error("Failed to fetch car data:", apiError);
-          if (!isMounted) return;
-
-          const fallbackCar = fallbackCars.find((fallback) => fallback.id === lot || fallback.lot_number === lot);
-          if (fallbackCar && fallbackCar.lots?.[0]) {
-            const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
-            if (details) {
-              setCar(details);
-              setLoading(false);
-              return;
-            }
-          }
-
-          const errorMessage = apiError instanceof Error
+        const errorMessage =
+          apiError instanceof Error
             ? apiError.message.includes("Failed to fetch")
               ? "Unable to connect to the server. Please check your internet connection and try again."
               : apiError.message.includes("404")
                 ? `Car with ID ${lot} is not available. This car may have been sold or removed.`
                 : "Car not found"
             : "Car not found";
-          setError(errorMessage);
-          setLoading(false);
-        }
+        setError(errorMessage);
+        setLoading(false);
+      }
     };
 
     const loadCar = async () => {
@@ -1538,26 +2003,36 @@ const CarDetails = memo(() => {
     return () => {
       isMounted = false;
     };
-  }, [API_BASE_URL, API_KEY, buildCarDetails, fallbackCars, hydrateFromCache, lot, navigate, trackCarView, car]);
+  }, [
+    API_BASE_URL,
+    API_KEY,
+    buildCarDetails,
+    fallbackCars,
+    hydrateFromCache,
+    lot,
+    navigate,
+    trackCarView,
+    car,
+  ]);
   const handleContactWhatsApp = useCallback(() => {
-    impact('light');
+    impact("light");
     const currentUrl = window.location.href;
     const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   }, [car, lot, impact]);
   const handleShare = useCallback(() => {
-    impact('light');
+    impact("light");
     navigator.clipboard.writeText(window.location.href);
     toast({
       title: "Link-u u kopjua",
       description: "Link-u i makinës u kopjua në clipboard",
-      duration: 3000
+      duration: 3000,
     });
   }, [toast, impact]);
 
   const handleOpenInspectionReport = useCallback(() => {
-    impact('light');
+    impact("light");
     const reportLot = car?.lot || lot;
     if (!reportLot) return;
 
@@ -1582,10 +2057,10 @@ const CarDetails = memo(() => {
     goToNext,
     goToPrevious,
     goToIndex,
-    isClickAllowed
+    isClickAllowed,
   } = useImageSwipe({
     images,
-    onImageChange: index => setSelectedImageIndex(index)
+    onImageChange: (index) => setSelectedImageIndex(index),
   });
 
   // Sync swipe current index with selected image index
@@ -1594,18 +2069,52 @@ const CarDetails = memo(() => {
       goToIndex(selectedImageIndex);
     }
   }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
+  const registerMapTarget = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    mapTargets.current = mapTargets.current.filter((target) => target !== node);
+    mapTargets.current.push(node);
+  }, []);
 
-  const handleImageZoomOpen = useCallback((event?: { preventDefault(): void; stopPropagation(): void }) => {
-    event?.preventDefault();
-    event?.stopPropagation();
-
-    if (!images.length || !isClickAllowed()) {
+  useEffect(() => {
+    if (shouldRenderMap) return;
+    if (
+      typeof window === "undefined" ||
+      !(window as any).IntersectionObserver
+    ) {
+      setShouldRenderMap(true);
       return;
     }
+    if (mapTargets.current.length === 0) return;
 
-    impact('light');
-    setIsImageZoomOpen(true);
-  }, [images.length, impact, isClickAllowed]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldRenderMap(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    mapTargets.current.forEach((target) => observer.observe(target));
+
+    return () => observer.disconnect();
+  }, [shouldRenderMap]);
+
+  const handleImageZoomOpen = useCallback(
+    (event?: { preventDefault(): void; stopPropagation(): void }) => {
+      event?.preventDefault();
+      event?.stopPropagation();
+
+      if (!images.length || !isClickAllowed()) {
+        return;
+      }
+
+      impact("light");
+      setIsImageZoomOpen(true);
+    },
+    [images.length, impact, isClickAllowed],
+  );
 
   const handleImageZoomClose = useCallback(() => {
     setIsImageZoomOpen(false);
@@ -1613,39 +2122,45 @@ const CarDetails = memo(() => {
   const carImages = useMemo(() => car?.images || [], [car?.images]);
   const [isLiked, setIsLiked] = useState(false);
   const handleLike = useCallback(() => {
-    impact(isLiked ? 'light' : 'medium');
+    impact(isLiked ? "light" : "medium");
     setIsLiked(!isLiked);
     toast({
       title: isLiked ? "U hoq nga të preferuarat" : "U shtua në të preferuarat",
-      description: isLiked ? "Makina u hoq nga lista juaj e të preferuarave" : "Makina u shtua në listën tuaj të të preferuarave",
-      duration: 3000
+      description: isLiked
+        ? "Makina u hoq nga lista juaj e të preferuarave"
+        : "Makina u shtua në listën tuaj të të preferuarave",
+      duration: 3000,
     });
   }, [isLiked, toast, impact]);
 
   // Handler for opening gallery images in a new page
-  const handleGalleryClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isClickAllowed()) {
-      return;
-    }
-    // Track gallery view
-    trackPageView(`/car/${lot}/gallery`);
-    // Navigate to gallery page with all images
-    navigate(`/car/${lot}/gallery`, {
-      state: {
-        images: images, // Already limited to 20 in images memo
-        carMake: car?.make,
-        carModel: car?.model,
-        carYear: car?.year,
-        carLot: car?.lot || lot
+  const handleGalleryClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isClickAllowed()) {
+        return;
       }
-    });
-  }, [images, navigate, lot, car, isClickAllowed]);
+      // Track gallery view
+      trackPageView(`/car/${lot}/gallery`);
+      // Navigate to gallery page with all images
+      navigate(`/car/${lot}/gallery`, {
+        state: {
+          images: images, // Already limited to 20 in images memo
+          carMake: car?.make,
+          carModel: car?.model,
+          carYear: car?.year,
+          carLot: car?.lot || lot,
+        },
+      });
+    },
+    [images, navigate, lot, car, isClickAllowed],
+  );
 
   // Preload important images
   useImagePreload(car?.image);
   if (loading) {
-    return <div className="min-h-screen bg-background">
+    return (
+      <div className="min-h-screen bg-background">
         <div className="container-responsive py-8">
           <div className="space-y-6 animate-fade-in">
             <div className="h-8 bg-muted/50 rounded-lg w-32 animate-pulse"></div>
@@ -1663,12 +2178,18 @@ const CarDetails = memo(() => {
             </div>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
   if (error || !car) {
-    return <div className="min-h-screen bg-background animate-fade-in">
+    return (
+      <div className="min-h-screen bg-background animate-fade-in">
         <div className="container-responsive py-8">
-          <Button variant="outline" onClick={() => navigate("/")} className="mb-6 hover:scale-105 transition-transform">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/")}
+            className="mb-6 hover:scale-105 transition-transform"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kryefaqja
           </Button>
@@ -1683,7 +2204,8 @@ const CarDetails = memo(() => {
             </p>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in">
@@ -1691,39 +2213,58 @@ const CarDetails = memo(() => {
         {/* Header with Actions - Modern Layout with animations */}
         <div className="flex flex-col gap-3 mb-6">
           {/* Navigation and Action Buttons with hover effects */}
-          <div className="flex flex-wrap items-center gap-2"
+          <div
+            className="flex flex-wrap items-center gap-2"
             style={{
-              animation: 'fadeIn 0.3s ease-out forwards',
-              animationDelay: '0.1s',
-              opacity: 0
+              animation: "fadeIn 0.3s ease-out forwards",
+              animationDelay: "0.1s",
+              opacity: 0,
             }}
+          >
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (pageState && pageState.url) {
+                  navigate(pageState.url);
+                } else {
+                  goBack();
+                }
+              }}
+              className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
             >
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (pageState && pageState.url) {
-                    navigate(pageState.url);
-                  } else {
-                    goBack();
-                  }
-                }}
-                className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
-              >
               <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
-              <span className="hidden sm:inline font-medium">Kthehu te Makinat</span>
+              <span className="hidden sm:inline font-medium">
+                Kthehu te Makinat
+              </span>
               <span className="sm:hidden font-medium">Kthehu</span>
             </Button>
-            <Button variant="outline" onClick={() => navigate("/")} className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/")}
+              className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+            >
               <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
               <span className="hidden sm:inline font-medium">Kryefaqja</span>
               <span className="sm:hidden font-medium">Home</span>
             </Button>
             <div className="flex-1"></div>
-            <Button variant="outline" size="sm" onClick={handleLike} className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
-              <Heart className={`h-4 w-4 mr-2 transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "group-hover:scale-110"}`} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLike}
+              className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+            >
+              <Heart
+                className={`h-4 w-4 mr-2 transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "group-hover:scale-110"}`}
+              />
               <span className="hidden sm:inline font-medium">Pëlqej</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+            >
               <Share2 className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
               <span className="hidden sm:inline font-medium">Ndaj</span>
             </Button>
@@ -1733,280 +2274,119 @@ const CarDetails = memo(() => {
         {/* Main Content - Modern Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
-          <div className="space-y-6 animate-fade-in" style={{animationDelay: '100ms'}}>
+          <div
+            className="space-y-6 animate-fade-in"
+            style={{ animationDelay: "100ms" }}
+          >
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
               <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
                 <CardContent className="p-0">
-              <div
-                    ref={imageContainerRef}
-                className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
-                onClick={handleImageZoomOpen}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    handleImageZoomOpen(event);
-                  }
-                }}
-                aria-label="Hap imazhin e makinës në modal me zoom"
-                  >
-                  {/* Main Image with improved loading states */}
-                  {images.length > 0 ? (
-                    <img 
-                      src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
-                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
-                      onError={e => {
-                        e.currentTarget.src = "/placeholder.svg";
-                        setIsPlaceholderImage(true);
-                      }} 
-                      onLoad={e => {
-                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
-                          setIsPlaceholderImage(false);
-                        }
-                      }}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Car className="h-16 w-16 text-muted-foreground" />
-                    </div>
-                  )}
-                  
-                  {/* Navigation arrows - Improved positioning and visibility */}
-                  {images.length > 1 && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          impact('light');
-                          goToPrevious();
-                        }}
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          impact('light');
-                          goToNext();
-                        }}
-                        aria-label="Next image"
-                      >
-                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    </>
-                  )}
-                  
-                  {/* Image counter and gallery button - Improved mobile design */}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      {/* Mobile gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-3 w-3" />
-                        {selectedImageIndex + 1}/{images.length}
-                      </button>
-                      
-                      {/* Desktop gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-4 w-4" />
-                        View Gallery ({images.length})
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Lot number badge - Improved positioning */}
-                  {car.lot && (
-                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                      {car.lot}
-                    </Badge>
-                  )}
-                  
-                  {/* Zoom icon - Improved positioning and visibility */}
-                <button
-                  type="button"
-                  onClick={handleImageZoomOpen}
-                  className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  aria-label="Zmadho imazhin"
-                >
-                  <Expand className="h-4 w-4 text-white" />
-                </button>
-                  
-                  {/* Loading indicator */}
-                  {isPlaceholderImage && (
-                    <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
-            {images.length > 1 && (
-                <div className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in" style={{animationDelay: '200ms'}}>
-                {images.slice(1, 7).map((image, index) => (
-                  <button
-                    key={index + 1}
-                    onClick={() => {
-                      impact('light');
-                      setSelectedImageIndex(index + 1);
-                    }}
-                    className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                      selectedImageIndex === index + 1 
-                        ? 'border-primary shadow-lg scale-105' 
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                    aria-label={`View image ${index + 2}`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                      }}
-                    />
-                  </button>
-                ))}
-                {images.length > 7 && (
-                  <button
-                    onClick={handleGalleryClick}
-                    className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
-                    aria-label="View all images"
-                  >
-                    <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
-                    <span className="text-xs xl:text-sm text-primary font-medium">+{images.length - 7}</span>
-                  </button>
-                )}
-              </div>
-            )}
-            </div>
-
-            {/* Mobile Main Image - Full width for mobile */}
-            <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
-              <CardContent className="p-0">
                   <div
-                  ref={imageContainerRef}
-                    className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
+                    ref={imageContainerRef}
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
                     onClick={handleImageZoomOpen}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
+                      if (event.key === "Enter" || event.key === " ") {
                         handleImageZoomOpen(event);
                       }
                     }}
                     aria-label="Hap imazhin e makinës në modal me zoom"
-                >
-                  {/* Main Image with improved loading states */}
-                  {images.length > 0 ? (
-                    <img 
-                      src={images[selectedImageIndex]} 
-                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`} 
-                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105" 
-                      onError={e => {
-                        e.currentTarget.src = "/placeholder.svg";
-                        setIsPlaceholderImage(true);
-                      }} 
-                      onLoad={e => {
-                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
-                          setIsPlaceholderImage(false);
-                        }
-                      }}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Car className="h-16 w-16 text-muted-foreground" />
-                    </div>
-                  )}
-                  
-                  {/* Navigation arrows - Improved positioning and visibility */}
-                  {images.length > 1 && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          impact('light');
-                          goToPrevious();
+                  >
+                    {/* Main Image with improved loading states */}
+                    {images.length > 0 ? (
+                      <img
+                        src={images[selectedImageIndex]}
+                        alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg";
+                          setIsPlaceholderImage(true);
                         }}
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110" 
-                        onClick={e => {
-                          e.stopPropagation();
-                          impact('light');
-                          goToNext();
+                        onLoad={(e) => {
+                          if (
+                            !e.currentTarget.src.includes("/placeholder.svg")
+                          ) {
+                            setIsPlaceholderImage(false);
+                          }
                         }}
-                        aria-label="Next image"
-                      >
-                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    </>
-                  )}
-                  
-                  {/* Image counter and gallery button - Improved mobile design */}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      {/* Mobile gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-3 w-3" />
-                        {selectedImageIndex + 1}/{images.length}
-                      </button>
-                      
-                      {/* Desktop gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-4 w-4" />
-                        View Gallery ({images.length})
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Lot number badge - Improved positioning */}
-                  {car.lot && (
-                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                      {car.lot}
-                    </Badge>
-                  )}
-                  
-                  {/* Zoom icon - Improved positioning and visibility */}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Car className="h-16 w-16 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Navigation arrows - Improved positioning and visibility */}
+                    {images.length > 1 && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            impact("light");
+                            goToPrevious();
+                          }}
+                          aria-label="Previous image"
+                        >
+                          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            impact("light");
+                            goToNext();
+                          }}
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </Button>
+                      </>
+                    )}
+
+                    {/* Image counter and gallery button - Improved mobile design */}
+                    {images.length > 1 && (
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        {/* Mobile gallery button */}
+                        <button
+                          onClick={handleGalleryClick}
+                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-3 w-3" />
+                          {selectedImageIndex + 1}/{images.length}
+                        </button>
+
+                        {/* Desktop gallery button */}
+                        <button
+                          onClick={handleGalleryClick}
+                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-4 w-4" />
+                          View Gallery ({images.length})
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Lot number badge - Improved positioning */}
+                    {car.lot && (
+                      <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                        {car.lot}
+                      </Badge>
+                    )}
+
+                    {/* Zoom icon - Improved positioning and visibility */}
                     <button
                       type="button"
                       onClick={handleImageZoomOpen}
@@ -2015,7 +2395,178 @@ const CarDetails = memo(() => {
                     >
                       <Expand className="h-4 w-4 text-white" />
                     </button>
-                  
+
+                    {/* Loading indicator */}
+                    {isPlaceholderImage && (
+                      <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
+              {images.length > 1 && (
+                <div
+                  className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
+                  style={{ animationDelay: "200ms" }}
+                >
+                  {images.slice(1, 7).map((image, index) => (
+                    <button
+                      key={index + 1}
+                      onClick={() => {
+                        impact("light");
+                        setSelectedImageIndex(index + 1);
+                      }}
+                      className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                        selectedImageIndex === index + 1
+                          ? "border-primary shadow-lg scale-105"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      aria-label={`View image ${index + 2}`}
+                    >
+                      <img
+                        src={image}
+                        alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
+                      />
+                    </button>
+                  ))}
+                  {images.length > 7 && (
+                    <button
+                      onClick={handleGalleryClick}
+                      className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
+                      aria-label="View all images"
+                    >
+                      <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
+                      <span className="text-xs xl:text-sm text-primary font-medium">
+                        +{images.length - 7}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Main Image - Full width for mobile */}
+            <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+              <CardContent className="p-0">
+                <div
+                  ref={imageContainerRef}
+                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
+                  onClick={handleImageZoomOpen}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      handleImageZoomOpen(event);
+                    }
+                  }}
+                  aria-label="Hap imazhin e makinës në modal me zoom"
+                >
+                  {/* Main Image with improved loading states */}
+                  {images.length > 0 ? (
+                    <img
+                      src={images[selectedImageIndex]}
+                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.svg";
+                        setIsPlaceholderImage(true);
+                      }}
+                      onLoad={(e) => {
+                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
+                          setIsPlaceholderImage(false);
+                        }
+                      }}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Car className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                  )}
+
+                  {/* Navigation arrows - Improved positioning and visibility */}
+                  {images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          impact("light");
+                          goToPrevious();
+                        }}
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          impact("light");
+                          goToNext();
+                        }}
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Image counter and gallery button - Improved mobile design */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                      {/* Mobile gallery button */}
+                      <button
+                        onClick={handleGalleryClick}
+                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                        aria-label={`View all ${images.length} images`}
+                      >
+                        <Camera className="h-3 w-3" />
+                        {selectedImageIndex + 1}/{images.length}
+                      </button>
+
+                      {/* Desktop gallery button */}
+                      <button
+                        onClick={handleGalleryClick}
+                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                        aria-label={`View all ${images.length} images`}
+                      >
+                        <Camera className="h-4 w-4" />
+                        View Gallery ({images.length})
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Lot number badge - Improved positioning */}
+                  {car.lot && (
+                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                      {car.lot}
+                    </Badge>
+                  )}
+
+                  {/* Zoom icon - Improved positioning and visibility */}
+                  <button
+                    type="button"
+                    onClick={handleImageZoomOpen}
+                    className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="Zmadho imazhin"
+                  >
+                    <Expand className="h-4 w-4 text-white" />
+                  </button>
+
                   {/* Loading indicator */}
                   {isPlaceholderImage && (
                     <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
@@ -2026,9 +2577,11 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-
             {/* Car Title with Price - Compact mobile design */}
-            <div className="animate-fade-in" style={{animationDelay: '200ms'}}>
+            <div
+              className="animate-fade-in"
+              style={{ animationDelay: "200ms" }}
+            >
               <div className="flex items-center justify-between gap-2 mb-1">
                 <div className="flex-1 min-w-0">
                   <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight">
@@ -2050,9 +2603,27 @@ const CarDetails = memo(() => {
                   </div>
                 </div>
               </div>
-              
-                {/* Action Buttons - Modernized Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 mb-5">
+
+              {/* Action Buttons - Modernized Layout */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 mb-5">
+                <Suspense
+                  fallback={
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="group relative w-full h-14 rounded-xl border-2 border-primary/20 bg-muted/40 text-primary opacity-70 px-5 font-semibold transition-all duration-300 overflow-hidden"
+                      disabled
+                    >
+                      <span className="relative flex items-center justify-between w-full">
+                        <span className="flex items-center gap-2.5">
+                          <FileText className="h-5 w-5" />
+                          <span className="text-sm">Duke u ngarkuar...</span>
+                        </span>
+                        <ChevronRight className="h-5 w-5 opacity-50" />
+                      </span>
+                    </Button>
+                  }
+                >
                   <InspectionRequestForm
                     trigger={
                       <Button
@@ -2075,52 +2646,56 @@ const CarDetails = memo(() => {
                     carModel={car.model}
                     carYear={car.year}
                   />
-                  {car.details && (
-                    <Button
-                      onClick={handleOpenInspectionReport}
-                      size="lg"
-                      variant="outline"
-                      className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                    >
-                      <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                      <span className="relative flex items-center justify-between w-full">
-                        <span className="flex items-center gap-2.5">
-                          <Shield className="h-5 w-5" />
-                          <span className="text-sm">Shiko aksidentet</span>
-                        </span>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
-                            accidentCount > 0
-                              ? "bg-destructive/20 text-destructive ring-2 ring-destructive/20"
-                              : "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400"
-                          }`}
-                        >
-                          {accidentCount}
-                        </span>
-                      </span>
-                    </Button>
-                  )}
+                </Suspense>
+                {car.details && (
                   <Button
-                    onClick={handleContactWhatsApp}
+                    onClick={handleOpenInspectionReport}
                     size="lg"
                     variant="outline"
-                    className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
+                    className="group relative w-full h-14 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-primary hover:border-primary hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                    <span className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                     <span className="relative flex items-center justify-between w-full">
                       <span className="flex items-center gap-2.5">
-                        <MessageCircle className="h-5 w-5" />
-                        <span className="text-sm">WhatsApp</span>
+                        <Shield className="h-5 w-5" />
+                        <span className="text-sm">Historia</span>
                       </span>
-                      <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+                          accidentCount > 0
+                            ? "bg-destructive/20 text-destructive ring-2 ring-destructive/20"
+                            : "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400"
+                        }`}
+                      >
+                        {accidentCount}
+                      </span>
                     </span>
                   </Button>
-                </div>
+                )}
+                <Button
+                  onClick={handleContactWhatsApp}
+                  size="lg"
+                  variant="outline"
+                  className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                  <span className="relative flex items-center justify-between w-full">
+                    <span className="flex items-center gap-2.5">
+                      <MessageCircle className="h-5 w-5" />
+                      <span className="text-sm">WhatsApp</span>
+                    </span>
+                    <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
+                  </span>
+                </Button>
+              </div>
             </div>
 
-
             {/* Vehicle Specifications - Compact Mobile Card */}
-            <Card id="specifications" className="border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in" style={{animationDelay: '400ms'}}>
+            <Card
+              id="specifications"
+              className="border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in"
+              style={{ animationDelay: "400ms" }}
+            >
               <CardContent className="p-3 md:p-6">
                 <div className="flex flex-col gap-2 md:gap-4 mb-3 md:mb-6">
                   <h3 className="text-base md:text-xl font-bold flex items-center text-foreground">
@@ -2155,53 +2730,95 @@ const CarDetails = memo(() => {
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {(() => {
                         // Build full model specification with all available variant/trim info from API
-                        let fullModel = car.model || '';
+                        let fullModel = car.model || "";
                         const parts: string[] = [];
                         // Try to get grade from various sources
-                        const grade = car.grade_iaai || car.details?.grade?.name || car.details?.grade;
-                        if (grade && typeof grade === 'string' && !fullModel.toLowerCase().includes(grade.toLowerCase())) {
+                        const grade =
+                          car.grade_iaai ||
+                          car.details?.grade?.name ||
+                          car.details?.grade;
+                        if (
+                          grade &&
+                          typeof grade === "string" &&
+                          !fullModel.toLowerCase().includes(grade.toLowerCase())
+                        ) {
                           parts.push(grade);
                         }
-                        
+
                         // Try to get variant/trim info
-                        const variant = car.details?.variant?.name || car.details?.variant;
-                        if (variant && typeof variant === 'string' && !fullModel.toLowerCase().includes(variant.toLowerCase())) {
+                        const variant =
+                          car.details?.variant?.name || car.details?.variant;
+                        if (
+                          variant &&
+                          typeof variant === "string" &&
+                          !fullModel
+                            .toLowerCase()
+                            .includes(variant.toLowerCase())
+                        ) {
                           parts.push(variant);
                         }
-                        
-                        const trim = car.details?.trim?.name || car.details?.trim;
-                        if (trim && typeof trim === 'string' && !fullModel.toLowerCase().includes(trim.toLowerCase()) && !parts.join(' ').toLowerCase().includes(trim.toLowerCase())) {
+
+                        const trim =
+                          car.details?.trim?.name || car.details?.trim;
+                        if (
+                          trim &&
+                          typeof trim === "string" &&
+                          !fullModel
+                            .toLowerCase()
+                            .includes(trim.toLowerCase()) &&
+                          !parts
+                            .join(" ")
+                            .toLowerCase()
+                            .includes(trim.toLowerCase())
+                        ) {
                           parts.push(trim);
                         }
-                        
+
                         // Add engine info
                         const engineName = car.engine?.name || car.engine;
-                        const engineStr = typeof engineName === 'string' ? engineName : '';
-                        if (engineStr && engineStr !== car.model && !fullModel.toLowerCase().includes(engineStr.toLowerCase())) {
+                        const engineStr =
+                          typeof engineName === "string" ? engineName : "";
+                        if (
+                          engineStr &&
+                          engineStr !== car.model &&
+                          !fullModel
+                            .toLowerCase()
+                            .includes(engineStr.toLowerCase())
+                        ) {
                           const engineInfo = engineStr.trim();
                           if (engineInfo && engineInfo.length > 0) {
                             parts.push(engineInfo);
                           }
                         }
-                        
-                          // Add drive type (Quattro, xDrive, 4WD, etc.)
-                          const driveType = car.drive_wheel?.name || car.drive_wheel;
-                          const driveStr = typeof driveType === 'string' ? driveType : '';
-                          if (
-                            driveStr &&
-                            !fullModel.toLowerCase().includes(driveStr.toLowerCase()) &&
-                            !parts.join(' ').toLowerCase().includes(driveStr.toLowerCase())
-                          ) {
-                            const driveInfo = driveStr.trim();
-                            if (driveInfo && driveInfo.length > 0) {
-                              parts.push(driveInfo);
-                            }
-                          }
 
-                          // Combine model with all parts
-                          const result = parts.length > 0 ? `${fullModel} ${parts.join(' ')}` : fullModel;
-                          return result;
-                        })()}
+                        // Add drive type (Quattro, xDrive, 4WD, etc.)
+                        const driveType =
+                          car.drive_wheel?.name || car.drive_wheel;
+                        const driveStr =
+                          typeof driveType === "string" ? driveType : "";
+                        if (
+                          driveStr &&
+                          !fullModel
+                            .toLowerCase()
+                            .includes(driveStr.toLowerCase()) &&
+                          !parts
+                            .join(" ")
+                            .toLowerCase()
+                            .includes(driveStr.toLowerCase())
+                        ) {
+                          const driveInfo = driveStr.trim();
+                          if (driveInfo && driveInfo.length > 0) {
+                            parts.push(driveInfo);
+                          }
+                        }
+
+                        // Combine model with all parts
+                        const result =
+                          parts.length > 0
+                            ? `${fullModel} ${parts.join(" ")}`
+                            : fullModel;
+                        return result;
+                      })()}
                     </span>
                   </div>
 
@@ -2265,7 +2882,7 @@ const CarDetails = memo(() => {
                       </div>
                     </div>
                     <span className="text-muted-foreground font-medium text-right leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {translateFuel(car.fuel || 'Diesel')}
+                      {translateFuel(car.fuel || "Diesel")}
                     </span>
                   </div>
 
@@ -2375,59 +2992,83 @@ const CarDetails = memo(() => {
             {/* Enhanced Detailed Information Section */}
             <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
               <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  
-                  
-                </div>
+                <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4"></div>
 
-                {showDetailedInfo && <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-top-2 duration-300">
+                {showDetailedInfo && (
+                  <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-top-2 duration-300">
                     {/* Insurance & Safety Report - Mobile Optimized */}
-                    {(car.insurance_v2 || car.inspect || car.insurance) && <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section">
+                    {(car.insurance_v2 || car.inspect || car.insurance) && (
+                      <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section">
                         <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                           <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
                           Raporti i Sigurisë dhe Sigurimit
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                          {car.insurance_v2?.accidentCnt !== undefined && <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
+                          {car.insurance_v2?.accidentCnt !== undefined && (
+                            <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
                               <span className="text-xs sm:text-sm font-medium">
                                 Historia e Aksidenteve:
                               </span>
-                              <Badge variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"} className="text-xs">
-                                {car.insurance_v2.accidentCnt === 0 ? "E Pastër" : `${car.insurance_v2.accidentCnt} aksidente`}
+                              <Badge
+                                variant={
+                                  car.insurance_v2.accidentCnt === 0
+                                    ? "secondary"
+                                    : "destructive"
+                                }
+                                className="text-xs"
+                              >
+                                {car.insurance_v2.accidentCnt === 0
+                                  ? "E Pastër"
+                                  : `${car.insurance_v2.accidentCnt} aksidente`}
                               </Badge>
-                            </div>}
-                          {car.insurance_v2?.ownerChangeCnt !== undefined && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>
+                          )}
+                          {car.insurance_v2?.ownerChangeCnt !== undefined && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                               <span className="text-sm">
                                 Ndryshime Pronësie:
                               </span>
                               <span className="font-medium">
                                 {car.insurance_v2.ownerChangeCnt}
                               </span>
-                            </div>}
-                          {car.insurance_v2?.totalLossCnt !== undefined && car.insurance_v2.totalLossCnt > 0 && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                            </div>
+                          )}
+                          {car.insurance_v2?.totalLossCnt !== undefined &&
+                            car.insurance_v2.totalLossCnt > 0 && (
+                              <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                                 <span className="text-sm">Humbje Totale:</span>
                                 <Badge variant="destructive">
                                   {car.insurance_v2.totalLossCnt}
                                 </Badge>
-                              </div>}
-                          {car.insurance_v2?.floodTotalLossCnt !== undefined && car.insurance_v2.floodTotalLossCnt > 0 && <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                                <span className="text-sm">
-                                  demtime:
-                                </span>
+                              </div>
+                            )}
+                          {car.insurance_v2?.floodTotalLossCnt !== undefined &&
+                            car.insurance_v2.floodTotalLossCnt > 0 && (
+                              <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                                <span className="text-sm">demtime:</span>
                                 <Badge variant="destructive">
                                   {car.insurance_v2.floodTotalLossCnt}
                                 </Badge>
-                              </div>}
+                              </div>
+                            )}
                         </div>
-                      </div>}
-
+                      </div>
+                    )}
 
                     {/* Equipment & Options */}
 
-                    {car.details?.options && <EquipmentOptionsSection options={convertOptionsToNames(car.details.options)} features={car.features} safetyFeatures={car.safety_features} comfortFeatures={car.comfort_features} />}
+                    {car.details?.options && (
+                      <EquipmentOptionsSection
+                        options={convertOptionsToNames(car.details.options)}
+                        features={car.features}
+                        safetyFeatures={car.safety_features}
+                        comfortFeatures={car.comfort_features}
+                      />
+                    )}
 
                     {/* Fallback if no options found */}
-                    {!car.details?.options && <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    {!car.details?.options && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <Settings className="h-5 w-5" />
                           Pajisjet dhe Opsionet
@@ -2436,10 +3077,12 @@ const CarDetails = memo(() => {
                           Nuk ka informacion për pajisjet dhe opsionet e kësaj
                           makine.
                         </p>
-                      </div>}
+                      </div>
+                    )}
 
                     {/* Comprehensive Inspection Report */}
-                  </div>}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -2455,25 +3098,44 @@ const CarDetails = memo(() => {
 
                 {/* Enhanced Contact Buttons */}
                 <div className="space-y-3 mb-4">
-                  <Button onClick={handleContactWhatsApp} className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white">
+                  <Button
+                    onClick={handleContactWhatsApp}
+                    className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
+                  >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     WhatsApp
                   </Button>
 
-                  <InspectionRequestForm
-                    trigger={
-                      <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
+                  <Suspense
+                    fallback={
+                      <Button
+                        className="w-full h-10 text-sm font-medium bg-muted text-muted-foreground"
+                        disabled
+                      >
                         <FileText className="h-4 w-4 mr-2" />
-                        Kërko Inspektim
+                        Duke u ngarkuar...
                       </Button>
                     }
-                    carId={car.id}
-                    carMake={car.make}
-                    carModel={car.model}
-                    carYear={car.year}
-                  />
+                  >
+                    <InspectionRequestForm
+                      trigger={
+                        <Button className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-shadow">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Kërko Inspektim
+                        </Button>
+                      }
+                      carId={car.id}
+                      carMake={car.make}
+                      carModel={car.model}
+                      carYear={car.year}
+                    />
+                  </Suspense>
 
-                  <Button variant="outline" className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => window.open("tel:+38348181116", "_self")}>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => window.open("tel:+38348181116", "_self")}
+                  >
                     <Phone className="h-4 w-4 mr-2" />
                     +383 48 181 116
                   </Button>
@@ -2482,7 +3144,12 @@ const CarDetails = memo(() => {
                   <Button
                     variant="outline"
                     className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
-                    onClick={() => window.open("https://www.instagram.com/korauto.ks/", "_blank")}
+                    onClick={() =>
+                      window.open(
+                        "https://www.instagram.com/korauto.ks/",
+                        "_blank",
+                      )
+                    }
                   >
                     <Instagram className="h-4 w-4 mr-2" />
                     Instagram
@@ -2492,13 +3159,24 @@ const CarDetails = memo(() => {
                   <Button
                     variant="outline"
                     className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
-                    onClick={() => window.open("https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr", "_blank")}
+                    onClick={() =>
+                      window.open(
+                        "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
+                        "_blank",
+                      )
+                    }
                   >
                     <Facebook className="h-4 w-4 mr-2" />
                     Facebook
                   </Button>
 
-                  <Button variant="outline" className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => window.open("mailto:info@korauto.com", "_self")}>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() =>
+                      window.open("mailto:info@korauto.com", "_self")
+                    }
+                  >
                     <Mail className="h-4 w-4 mr-2" />
                     info@korauto.com
                   </Button>
@@ -2506,7 +3184,6 @@ const CarDetails = memo(() => {
 
                 {/* Enhanced Additional Buttons */}
                 <div className="border-t border-border pt-4 space-y-3">
-
                   <Button
                     variant="outline"
                     className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
@@ -2521,7 +3198,12 @@ const CarDetails = memo(() => {
                 <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-start gap-3 text-muted-foreground">
                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <a href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-primary transition-colors cursor-pointer leading-relaxed">
+                    <a
+                      href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm hover:text-primary transition-colors cursor-pointer leading-relaxed"
+                    >
                       Rr. Ilaz Kodra 70, Prishtinë, Kosovo
                     </a>
                   </div>
@@ -2532,17 +3214,26 @@ const CarDetails = memo(() => {
             {/* Desktop map - small widget under Kontakt & Inspektim */}
             <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl">
               <CardContent className="p-0">
-                <div className="h-56 w-full overflow-hidden rounded-xl">
-                  <iframe
-                    title="Korauto Location"
-                    src="https://www.google.com/maps?q=Korauto,Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
-                    width="100%"
-                    height="100%"
-                    loading="lazy"
-                    style={{ border: 0 }}
-                    referrerPolicy="no-referrer-when-downgrade"
-                    allowFullScreen
-                  />
+                <div
+                  ref={registerMapTarget}
+                  className="h-56 w-full overflow-hidden rounded-xl"
+                >
+                  {shouldRenderMap ? (
+                    <iframe
+                      title="Korauto Location"
+                      src="https://www.google.com/maps?q=Korauto,Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
+                      width="100%"
+                      height="100%"
+                      loading="lazy"
+                      style={{ border: 0 }}
+                      referrerPolicy="no-referrer-when-downgrade"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-muted/40 text-xs text-muted-foreground">
+                      Harta do të shfaqet kur afroheni
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -2553,32 +3244,43 @@ const CarDetails = memo(() => {
         <div className="container-responsive mt-6 lg:hidden">
           <Card className="glass-panel border-0 shadow-2xl rounded-xl">
             <CardContent className="p-0">
-              <div className="h-56 w-full overflow-hidden rounded-xl">
-                <iframe
-                  title="Korauto Location"
-                  src="https://www.google.com/maps?q=Korauto,Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
-                  width="100%"
-                  height="100%"
-                  loading="lazy"
-                  style={{ border: 0 }}
-                  referrerPolicy="no-referrer-when-downgrade"
-                  allowFullScreen
-                />
+              <div
+                ref={registerMapTarget}
+                className="h-56 w-full overflow-hidden rounded-xl"
+              >
+                {shouldRenderMap ? (
+                  <iframe
+                    title="Korauto Location"
+                    src="https://www.google.com/maps?q=Korauto,Rr.+Ilaz+Kodra+70,+Prishtin%C3%AB,+Kosovo&z=16&output=embed"
+                    width="100%"
+                    height="100%"
+                    loading="lazy"
+                    style={{ border: 0 }}
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-muted/40 text-xs text-muted-foreground">
+                    Harta do të shfaqet kur afroheni
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
         {images.length > 0 && (
-          <ImageZoom
-            src={images[selectedImageIndex] ?? car?.image ?? ""}
-            alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-            isOpen={isImageZoomOpen}
-            onClose={handleImageZoomClose}
-            images={images}
-            currentIndex={selectedImageIndex}
-            onImageChange={setSelectedImageIndex}
-          />
+          <Suspense fallback={null}>
+            <ImageZoom
+              src={images[selectedImageIndex] ?? car?.image ?? ""}
+              alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+              isOpen={isImageZoomOpen}
+              onClose={handleImageZoomClose}
+              images={images}
+              currentIndex={selectedImageIndex}
+              onImageChange={setSelectedImageIndex}
+            />
+          </Suspense>
         )}
       </div>
     </div>
