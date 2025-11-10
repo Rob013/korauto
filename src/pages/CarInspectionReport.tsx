@@ -1908,24 +1908,25 @@ const CarInspectionReport = () => {
 
           <Separator />
 
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p>
-                Për informacione shtesë ose pyetje, kontaktoni ekipin tonë të inspektimit.
-              </p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p>
+                  Për informacione shtesë ose pyetje, kontaktoni ekipin tonë të inspektimit.
+                </p>
+              </div>
+              <Button
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => openCarDetailsInNewTab(car.lot || lot)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Kthehu te faqja e makinës
+              </Button>
             </div>
-            <Button
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => openCarDetailsInNewTab(car.lot || lot)}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kthehu te faqja e makinës
-            </Button>
           </div>
         </div>
-    </div>
-  );
+      </div>
+    );
 };
 
 export default CarInspectionReport;
