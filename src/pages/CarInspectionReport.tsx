@@ -1023,6 +1023,22 @@ const CarInspectionReport = () => {
     toYesNo,
   ]);
 
+  const handleContactWhatsApp = useCallback(() => {
+    if (!car) return;
+    const messageParts = [
+      "Përshëndetje! Jam i interesuar për raportin e inspektimit",
+      car.year ? `${car.year}` : "",
+      car.make ?? "",
+      car.model ?? "",
+      car.lot ? `(Kodi ${car.lot})` : "",
+      "- a mund të më dërgoni më shumë informacione?",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(messageParts)}`;
+    window.open(whatsappUrl, "_blank");
+  }, [car]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1172,22 +1188,6 @@ const CarInspectionReport = () => {
     car.title.trim().toLowerCase() !== carName.toLowerCase()
       ? car.title
       : undefined;
-
-  const handleContactWhatsApp = useCallback(() => {
-    if (!car) return;
-    const messageParts = [
-      "Përshëndetje! Jam i interesuar për raportin e inspektimit",
-      car.year ? `${car.year}` : "",
-      car.make ?? "",
-      car.model ?? "",
-      car.lot ? `(Kodi ${car.lot})` : "",
-      "- a mund të më dërgoni më shumë informacione?",
-    ]
-      .filter(Boolean)
-      .join(" ");
-    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(messageParts)}`;
-    window.open(whatsappUrl, "_blank");
-  }, [car]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
