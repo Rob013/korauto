@@ -854,6 +854,19 @@ const CarInspectionReport = () => {
         "no rental",
         "no rent",
         "no commercial",
+        "no usage",
+        "no usage history",
+        "no history of use",
+        "no business history",
+        "no rental history",
+        "without usage",
+        "without usage history",
+        "without history of use",
+        "usage history not found",
+        "history of use none",
+        "nuk ka histori",
+        "nuk ka perdorim",
+        "nuk ka përdorim",
         "not found",
         "norent",
         "norental",
@@ -867,6 +880,83 @@ const CarInspectionReport = () => {
         containsIndicator(compact, negativeIndicators)
       ) {
         return "Jo";
+      }
+
+      const historyContextTerms = [
+        "history",
+        "record",
+        "histori",
+        "perdorim",
+        "përdorim",
+        "이력",
+        "기록",
+      ];
+      const usageContextTerms = [
+        "use",
+        "usage",
+        "perdorim",
+        "perdorimi",
+        "përdorim",
+        "përdorimi",
+        "rental",
+        "rent",
+        "lease",
+        "leasing",
+        "business",
+        "commercial",
+        "fleet",
+        "operation",
+        "biznes",
+        "taxi",
+      ];
+      const positiveHistoryPresenceTerms = [
+        "has",
+        "have",
+        "having",
+        "with",
+        "exists",
+        "exist",
+        "present",
+        "available",
+        "recorded",
+        "ka ",
+        "ka-",
+        "ka histori",
+        "ka perdorim",
+        "ka përdorim",
+      ];
+      const negativeHistoryPresenceTerms = [
+        "no",
+        "without",
+        "none",
+        "never",
+        "lack",
+        "absent",
+        "nuk",
+        "pa ",
+        "pa-",
+      ];
+
+      const hasHistoryContext =
+        containsIndicator(normalized, historyContextTerms) ||
+        containsIndicator(compact, historyContextTerms);
+      const hasUsageContext =
+        containsIndicator(normalized, usageContextTerms) ||
+        containsIndicator(compact, usageContextTerms);
+      const hasPositiveHistoryPresence =
+        containsIndicator(normalized, positiveHistoryPresenceTerms) ||
+        /있다|있음|보유|유|존재/.test(normalized);
+      const hasNegativeHistoryPresence =
+        containsIndicator(normalized, negativeHistoryPresenceTerms) ||
+        /없|無|미사용|비사용|무이력/.test(normalized);
+
+      if (
+        hasHistoryContext &&
+        hasUsageContext &&
+        hasPositiveHistoryPresence &&
+        !hasNegativeHistoryPresence
+      ) {
+        return "Po";
       }
 
       if (
