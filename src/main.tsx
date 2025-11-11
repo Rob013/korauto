@@ -28,12 +28,16 @@ cacheManager.initialize().then((cacheCleared) => {
 // Register service worker for caching with update handling
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker
+      .register('/sw.js')
       .then((registration) => {
         console.log('✅ Service Worker registered:', registration);
 
-        // Check for updates every 30 seconds with error handling
-        setInterval(() => {
+        const UPDATE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+        const tryUpdate = () => {
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            return;
+          }
           try {
             registration.update().catch(() => {
               // Silently ignore update errors
@@ -41,7 +45,10 @@ if ('serviceWorker' in navigator) {
           } catch (e) {
             // Ignore errors during update check
           }
-        }, 30000);
+        };
+
+        tryUpdate();
+        setInterval(tryUpdate, UPDATE_INTERVAL_MS);
 
         // Listen for service worker updates
         registration.addEventListener('updatefound', () => {

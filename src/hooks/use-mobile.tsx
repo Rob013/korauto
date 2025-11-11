@@ -15,20 +15,33 @@ export function useIsMobile() {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const mediaQuery = window.matchMedia(
+      `(max-width: ${MOBILE_BREAKPOINT - 1}px)`,
+    );
 
     const update = () => {
       setIsMobile(getIsMobile());
     };
+    const supportsAddEventListener =
+      typeof mediaQuery.addEventListener === "function";
+    const supportsAddListener = typeof mediaQuery.addListener === "function";
 
     update();
 
-    mediaQuery.addEventListener("change", update);
+    if (supportsAddEventListener) {
+      mediaQuery.addEventListener("change", update);
+    } else if (supportsAddListener) {
+      mediaQuery.addListener(update);
+    }
     window.addEventListener("resize", update);
     window.addEventListener("orientationchange", update);
 
     return () => {
-      mediaQuery.removeEventListener("change", update);
+      if (supportsAddEventListener) {
+        mediaQuery.removeEventListener("change", update);
+      } else if (supportsAddListener) {
+        mediaQuery.removeListener(update);
+      }
       window.removeEventListener("resize", update);
       window.removeEventListener("orientationchange", update);
     };
