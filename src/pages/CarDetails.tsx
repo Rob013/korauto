@@ -2181,56 +2181,28 @@ const CarDetails = memo(() => {
         return "-";
       }
 
-      const detailData = car.details as Record<string, unknown> | undefined;
-      const insuranceData = car.insurance_v2 as Record<string, unknown> | undefined;
-      const inspectData = car.inspect as Record<string, unknown> | undefined;
+      const resolvedFuel =
+        resolveFuelFromSources(
+          car,
+          car.details,
+          car.details?.specs,
+          car.details?.specifications,
+          car.details?.specification,
+          car.details?.technical,
+          (car.details as any)?.technicalSpecifications,
+          (car.details as any)?.technicalSpecification,
+          car.details?.summary,
+          (car.details?.summary as any)?.specs,
+          (car.details?.summary as any)?.specifications,
+          car.insurance_v2,
+          (car.insurance_v2 as any)?.vehicle,
+          car.inspect,
+          car.insurance,
+        ) ?? undefined;
 
-      const candidateValues: unknown[] = [
-        car.fuel,
-        detailData?.fuel,
-        detailData?.fuel_type,
-        (detailData as any)?.fuelType,
-        (detailData as any)?.specs?.fuel,
-        (detailData as any)?.specs?.fuel_type,
-        (detailData as any)?.specs?.fuelType,
-        (detailData as any)?.summary?.fuel,
-        (detailData as any)?.summary?.fuel_type,
-        (detailData as any)?.technical?.fuel,
-        (detailData as any)?.technical?.fuel_type,
-        insuranceData?.fuel,
-        (insuranceData as any)?.vehicle?.fuel,
-        inspectData?.fuel,
-      ];
-
-      for (const candidate of candidateValues) {
-        if (candidate === undefined || candidate === null) {
-          continue;
-        }
-
-        const localized = localizeFuel(candidate, "sq");
-        if (localized) {
-          return localized;
-        }
-
-        if (typeof candidate === "string") {
-          const sanitized = candidate.trim();
-          if (sanitized) {
-            const fallbackLocalized = localizeFuel(sanitized, "sq");
-            return fallbackLocalized || sanitized;
-          }
-        } else if (typeof candidate === "object") {
-          const nameCandidate =
-            (candidate as any).name ||
-            (candidate as any).label ||
-            (candidate as any).value;
-          if (typeof nameCandidate === "string") {
-            const sanitized = nameCandidate.trim();
-            if (sanitized) {
-              const nestedLocalized = localizeFuel(sanitized, "sq");
-              return nestedLocalized || sanitized;
-            }
-          }
-        }
+      if (resolvedFuel) {
+        const localized = localizeFuel(resolvedFuel, "sq");
+        return localized || resolvedFuel;
       }
 
       if (Array.isArray(car.features)) {
