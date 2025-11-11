@@ -478,7 +478,11 @@ const accidentKeyWordTranslations: Record<string, string> = {
   status: "Statusi",
 };
 
-const ACCIDENT_SUMMARY_HIDDEN_KEYS = new Set(["transmissioncheck", "comments"]);
+const ACCIDENT_SUMMARY_HIDDEN_KEYS = new Set([
+  "transmissioncheck",
+  "comments",
+  "enginecheck",
+]);
 
 const accidentValueExactTranslations: Record<string, string> = {
   yes: "Po",
@@ -1972,18 +1976,29 @@ const accidentSummaryEntries = useMemo(
       secondaryCodeSet.add(code);
     };
 
-    const addTextSource = (value: unknown) => {
-      if (Array.isArray(value)) {
-        value.forEach(addTextSource);
-        return;
-      }
-      if (typeof value === "string") {
-        const trimmed = value.trim();
-        if (trimmed) {
+      const addTextSource = (value: unknown) => {
+        if (Array.isArray(value)) {
+          value.forEach(addTextSource);
+          return;
+        }
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (!trimmed || trimmed === "-" || trimmed === "--") return;
+          const normalized = trimmed.toLowerCase();
+          if (
+            normalized === "informacion i padisponueshëm" ||
+            normalized === "informacion i padisponueshem" ||
+            normalized === "pa të dhëna" ||
+            normalized === "pa te dhena" ||
+            normalized === "n/a" ||
+            normalized === "na" ||
+            normalized === "none"
+          ) {
+            return;
+          }
           textSourceSet.add(trimmed);
         }
-      }
-    };
+      };
 
     addTextSource(car?.details?.insurance?.general_info?.usage_type);
     addTextSource((car?.details?.insurance?.car_info as any)?.usage_type);
@@ -2007,168 +2022,247 @@ const accidentSummaryEntries = useMemo(
       addTextSource(entry.value);
     });
 
-    type EvaluateUsageConfig = {
-      primaryCodes: string[];
-      secondaryCodes: string[];
-      textSources: string[];
-      positivePrimaryCodes?: Set<string>;
-      negativePrimaryCodes?: Set<string>;
-      positiveSecondaryCodes?: Set<string>;
-      negativeSecondaryCodes?: Set<string>;
-      positiveKeywords?: string[];
-    };
+      const primaryCodes = Array.from(primaryCodeSet);
+      const secondaryCodes = Array.from(secondaryCodeSet);
+      const textSources = Array.from(textSourceSet);
 
-    const evaluateUsage = ({
-      primaryCodes,
-      secondaryCodes,
-      textSources,
-      positivePrimaryCodes = new Set<string>(),
-      negativePrimaryCodes = new Set<string>(),
-      positiveSecondaryCodes = new Set<string>(),
-      negativeSecondaryCodes = new Set<string>(),
-      positiveKeywords = [],
-    }: EvaluateUsageConfig) => {
-      let hasPositive = false;
-      let hasNegative = false;
-      const detailSet = new Set<string>();
+      const rentalDetails = new Set<string>();
+      const commercialDetails = new Set<string>();
+      const generalDetails = new Set<string>();
 
-      const recordPositive = (detail?: string) => {
-        hasPositive = true;
-        if (detail) {
-          const trimmed = detail.trim();
-          if (trimmed && trimmed !== "Informacion i padisponueshëm") {
-            detailSet.add(trimmed);
-          }
+      const addDetail = (set: Set<string>, detail?: string) => {
+        if (!detail) return;
+        const trimmed = detail.trim();
+        if (
+          !trimmed ||
+          trimmed === "-" ||
+          trimmed === "--" ||
+          trimmed === "Informacion i padisponueshëm" ||
+          trimmed.toLowerCase().includes("pa të dhëna") ||
+          trimmed.toLowerCase().includes("pa te dhena")
+        ) {
+          return;
         }
+        set.add(trimmed);
       };
 
-      const recordNegative = (detail?: string) => {
-        hasNegative = true;
-        if (detail) {
-          const trimmed = detail.trim();
-          if (trimmed && trimmed !== "Informacion i padisponueshëm") {
-            detailSet.add(trimmed);
-          }
-        }
-      };
+      let codeIndicatesRental = false;
+      let codeIndicatesCommercial = false;
+      let codeIndicatesGeneral = false;
 
       primaryCodes.forEach((code) => {
         if (!code) return;
-        if (positivePrimaryCodes.has(code)) {
-          recordPositive(decodePrimaryUsage(code));
-        } else if (negativePrimaryCodes.has(code)) {
-          recordNegative(decodePrimaryUsage(code));
+        if (["2", "3", "4"].includes(code)) {
+          codeIndicatesCommercial = true;
+          addDetail(commercialDetails, decodePrimaryUsage(code));
+        } else if (code === "1") {
+          codeIndicatesGeneral = true;
+          addDetail(generalDetails, decodePrimaryUsage(code));
         }
       });
 
       secondaryCodes.forEach((code) => {
         if (!code) return;
-        if (positiveSecondaryCodes.has(code)) {
-          recordPositive(decodeSecondaryUsage(code));
-        } else if (negativeSecondaryCodes.has(code)) {
-          if (code !== "0") {
-            recordNegative(decodeSecondaryUsage(code));
-          } else {
-            hasNegative = true;
-          }
+        if (["4", "5"].includes(code)) {
+          codeIndicatesRental = true;
+          addDetail(rentalDetails, decodeSecondaryUsage(code));
+        } else if (["2", "3", "6", "7", "8"].includes(code)) {
+          codeIndicatesCommercial = true;
+          addDetail(commercialDetails, decodeSecondaryUsage(code));
+        } else if (code === "1") {
+          codeIndicatesGeneral = true;
+          addDetail(generalDetails, decodeSecondaryUsage(code));
         }
       });
+
+      const rentalKeywords = [
+        "rent",
+        "rental",
+        "rentcar",
+        "rent car",
+        "lease",
+        "leasing",
+        "qira",
+        "qiraja",
+        "rentë",
+        "rentim",
+        "임대",
+        "임차",
+        "렌트",
+        "렌터카",
+        "대여",
+      ];
+      const commercialKeywords = [
+        "komerc",
+        "komercial",
+        "commercial",
+        "business",
+        "biznes",
+        "corporate",
+        "company",
+        "fleet",
+        "taxi",
+        "transport",
+        "delivery",
+        "cargo",
+        "logistics",
+        "영업",
+        "영업용",
+        "사업",
+        "사업용",
+        "법인",
+        "업무",
+      ];
+      const generalKeywords = [
+        "general",
+        "i përgjithshëm",
+        "i pergjithshem",
+        "përdorim i përgjithshëm",
+        "perdorim i pergjithshem",
+        "private",
+        "personal",
+        "individual",
+        "vetjak",
+        "non-commercial",
+        "non commercial",
+        "noncommercial",
+        "비영업",
+        "자가용",
+      ];
+
+      const negativeRentalPatterns = [
+        /no\s+rent/i,
+        /no\s+rental/i,
+        /without\s+rent/i,
+        /without\s+rental/i,
+        /no\s+rentcar/i,
+        /norent/i,
+        /norental/i,
+        /nuk\s+ka\s+rent/i,
+        /nuk\s+ka\s+qira/i,
+        /pa\s+qira/i,
+        /미렌트/,
+        /렌트이력없음/,
+      ];
+      const negativeCommercialPatterns = [
+        /no\s+commercial/i,
+        /without\s+commercial/i,
+        /non[-\s]?commercial/i,
+        /no\s+business/i,
+        /without\s+business/i,
+        /nuk\s+ka\s+biznes/i,
+        /pa\s+biznes/i,
+        /비영업/,
+        /영업이력없음/,
+      ];
+
+      let textIndicatesRental = false;
+      let textIndicatesCommercial = false;
+      let textIndicatesGeneral = false;
+
+      const includesAny = (normalized: string, keywords: string[]) =>
+        keywords.some((keyword) => normalized.includes(keyword));
 
       textSources.forEach((text) => {
         if (!text) return;
         if (/^-?\d+(\.\d+)?$/.test(text)) {
           return;
         }
-        const status = toYesNo(text as any);
-        if (status === "Po") {
-          recordPositive(text);
-        } else if (status === "Jo") {
-          recordNegative(text);
-        } else {
-          const normalized = text.toLowerCase();
-          if (
-            positiveKeywords.some((keyword) => normalized.includes(keyword))
-          ) {
-            recordPositive(text);
+        const normalized = text.toLowerCase();
+        const yesNo = toYesNo(text as any);
+        const rentKeyword = includesAny(normalized, rentalKeywords);
+        const commercialKeyword = includesAny(normalized, commercialKeywords);
+        const generalKeyword = includesAny(normalized, generalKeywords);
+
+        const rentNeg = negativeRentalPatterns.some((pattern) =>
+          pattern.test(text),
+        );
+        const commercialNeg = negativeCommercialPatterns.some((pattern) =>
+          pattern.test(text),
+        );
+
+        if (rentKeyword) {
+          if (yesNo === "Jo" || rentNeg) {
+            textIndicatesGeneral = true;
+            addDetail(generalDetails, text);
+          } else {
+            textIndicatesRental = true;
+            addDetail(rentalDetails, text);
           }
+        }
+
+        if (commercialKeyword) {
+          if (yesNo === "Jo" || commercialNeg) {
+            textIndicatesGeneral = true;
+            addDetail(generalDetails, text);
+          } else {
+            textIndicatesCommercial = true;
+            addDetail(commercialDetails, text);
+          }
+        }
+
+        if (
+          generalKeyword ||
+          (!rentKeyword && !commercialKeyword && yesNo === "Jo")
+        ) {
+          textIndicatesGeneral = true;
+          addDetail(generalDetails, text);
         }
       });
 
-      const value = hasPositive
+      const hasRent =
+        codeIndicatesRental || textIndicatesRental || rentalDetails.size > 0;
+      const hasCommercial =
+        codeIndicatesCommercial ||
+        textIndicatesCommercial ||
+        commercialDetails.size > 0;
+      const hasGeneral =
+        codeIndicatesGeneral || textIndicatesGeneral || generalDetails.size > 0;
+
+      const hasNonZeroPrimaryCode = primaryCodes.some(
+        (code) => code && code !== "0",
+      );
+      const hasNonZeroSecondaryCode = secondaryCodes.some(
+        (code) => code && code !== "0",
+      );
+      const hasMeaningfulEvidence =
+        hasRent ||
+        hasCommercial ||
+        hasGeneral ||
+        hasNonZeroPrimaryCode ||
+        hasNonZeroSecondaryCode ||
+        textSources.length > 0;
+
+      const rentalValue = hasRent
         ? "Po"
-        : hasNegative
+        : hasGeneral || hasMeaningfulEvidence
           ? "Jo"
           : "Nuk ka informata";
 
-      return {
-        value,
-        details: Array.from(detailSet),
-      };
-    };
-
-    const primaryCodes = Array.from(primaryCodeSet);
-    const secondaryCodes = Array.from(secondaryCodeSet);
-    const textSources = Array.from(textSourceSet);
-
-    const rentalStatus = evaluateUsage({
-      primaryCodes,
-      secondaryCodes,
-      textSources,
-      negativePrimaryCodes: new Set(["1"]),
-      positiveSecondaryCodes: new Set(["4", "5"]),
-      negativeSecondaryCodes: new Set(["0", "1", "2", "3", "6", "7", "8"]),
-      positiveKeywords: [
-        "rent",
-        "rental",
-        "qira",
-        "lease",
-        "leasing",
-        "임대",
-        "렌트",
-        "렌터카",
-        "임차",
-        "대여",
-      ],
-    });
-
-    const commercialStatus = evaluateUsage({
-      primaryCodes,
-      secondaryCodes,
-      textSources,
-      positivePrimaryCodes: new Set(["2", "3", "4"]),
-      negativePrimaryCodes: new Set(["0", "1"]),
-      positiveSecondaryCodes: new Set(["2", "3", "4", "5", "6", "7", "8"]),
-      negativeSecondaryCodes: new Set(["0", "1"]),
-      positiveKeywords: [
-        "komerc",
-        "komercial",
-        "commercial",
-        "biznes",
-        "business",
-        "fleet",
-        "taxi",
-        "영업",
-        "영업용",
-        "사업",
-        "사업용",
-        "업무",
-        "법인",
-      ],
-    });
-
-      const rentalValue = rentalStatus.value === "Po" ? "Po" : "Jo";
-      const commercialValue = commercialStatus.value === "Po" ? "Po" : "Jo";
+      const commercialValue = hasCommercial
+        ? "Po"
+        : hasGeneral || hasMeaningfulEvidence
+          ? "Jo"
+          : "Nuk ka informata";
 
       return [
         {
           label: "Përdorur si veturë me qira",
           value: rentalValue,
-          details: rentalStatus.details,
+          details: hasRent
+            ? Array.from(rentalDetails)
+            : hasGeneral
+              ? Array.from(generalDetails)
+              : [],
         },
         {
           label: "Përdorur për qëllime komerciale",
           value: commercialValue,
-          details: commercialStatus.details,
+          details: hasCommercial
+            ? Array.from(commercialDetails)
+            : hasGeneral
+              ? Array.from(generalDetails)
+              : [],
         },
       ];
   }, [car, toYesNo, usageHistoryList]);
@@ -2533,10 +2627,12 @@ const accidentSummaryEntries = useMemo(
               </TabsTrigger>
               <TabsTrigger
                 value="insurance"
-                className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+                className="flex items-start justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium text-left whitespace-normal leading-tight min-h-[48px]"
               >
                 <AlertTriangle className="h-4 w-4 text-primary" />
-                <span>Aksidentet & Sigurimi</span>
+                <span className="text-left leading-tight whitespace-normal">
+                  Aksidentet & Sigurimi
+                </span>
               </TabsTrigger>
               <TabsTrigger
                 value="options"
