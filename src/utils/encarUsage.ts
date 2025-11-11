@@ -45,6 +45,187 @@ export const decodeSecondaryUsage = (code?: string | null) => {
     : `Kodi i përdorimit sekondar ${normalized}`;
 };
 
+const usageHiddenPatterns: RegExp[] = [
+  /përdorur\s+për\s+qëllime\s+komerciale/i,
+  /përdorim\s+komercial/i,
+  /used\s+for\s+commercial\s+purposes/i,
+  /commercial\s+use/i,
+];
+
+const usageTextExactTranslations: Record<string, string> = {
+  "used for commercial purposes": "Përdorur për qëllime komerciale",
+  "commercial use": "Përdorim komercial",
+  "commercial usage": "Përdorim komercial",
+  "commercial record": "Regjistër komercial",
+  "no commercial history": "Pa histori komerciale",
+  "no commercial use": "Pa përdorim komercial",
+  "non commercial use": "Përdorim jo komercial",
+  "private use": "Përdorim privat",
+  "personal use": "Përdorim personal",
+  "business use": "Përdorim biznesi",
+  "taxi use": "Përdorim taksi",
+  "rental use": "Përdorim qiraje",
+  "rent car": "Automjet me qira",
+  "rent-car": "Automjet me qira",
+  rental: "Qira",
+  lease: "Leasing",
+  "lease use": "Leasing",
+  fleet: "Flotë automjetesh",
+  "company car": "Automjet i kompanisë",
+  "corporate use": "Përdorim korporativ",
+  "general use": "Përdorim i përgjithshëm",
+  "private vehicle": "Automjet privat",
+  "owner change": "Ndryshim pronari",
+  "ownership change": "Ndryshim pronësie",
+  "usage change": "Ndryshim përdorimi",
+  "usage history": "Historia e përdorimit",
+  taxi: "Taksi",
+  cargo: "Transport mallrash",
+  delivery: "Transport dorëzimi",
+  "passenger transport": "Transport pasagjerësh",
+  "commercial vehicle": "Automjet komercial",
+  "비영업": "Përdorim jo komercial",
+  "영업용": "Përdorim komercial",
+  "렌트": "Qira",
+  "렌터카": "Auto me qira",
+  "영업 이력 없음": "Pa histori komerciale",
+  "렌트 이력 없음": "Pa histori qiraje",
+};
+
+const usageTextRegexTranslations: Array<{ pattern: RegExp; translation: string }> =
+  [
+    { pattern: /rental\s+history/i, translation: "Histori qiraje" },
+    { pattern: /rental\s+record/i, translation: "Regjistër qiraje" },
+    { pattern: /rent\s+history/i, translation: "Histori qiraje" },
+    { pattern: /rent\s+record/i, translation: "Regjistër qiraje" },
+    { pattern: /taxi/i, translation: "Taksi" },
+    { pattern: /lease/i, translation: "Leasing" },
+    { pattern: /fleet/i, translation: "Flotë automjetesh" },
+    { pattern: /business/i, translation: "Biznes" },
+    { pattern: /transport/i, translation: "Transport" },
+    { pattern: /delivery/i, translation: "Dërgesa" },
+    { pattern: /cargo/i, translation: "Mallra" },
+    { pattern: /logistic/i, translation: "Logjistikë" },
+    { pattern: /commercial/i, translation: "Komercial" },
+    { pattern: /non[-\s]?commercial/i, translation: "Jo komercial" },
+    { pattern: /general/i, translation: "I përgjithshëm" },
+    { pattern: /private/i, translation: "Privat" },
+    { pattern: /personal/i, translation: "Personal" },
+  ];
+
+const usageTokenTranslations: Record<string, string> = {
+  used: "Përdorur",
+  use: "përdorim",
+  usage: "përdorim",
+  for: "për",
+  purpose: "qëllim",
+  purposes: "qëllime",
+  commercial: "komerciale",
+  business: "biznes",
+  company: "kompani",
+  corporate: "korporatë",
+  fleet: "flotë",
+  taxi: "taksi",
+  rental: "qiraje",
+  rent: "qira",
+  lease: "leasing",
+  record: "regjistër",
+  history: "histori",
+  change: "ndryshim",
+  changed: "ndryshuar",
+  owner: "pronar",
+  ownership: "pronësi",
+  general: "i përgjithshëm",
+  private: "privat",
+  personal: "personal",
+  vehicle: "automjet",
+  car: "automjet",
+  transport: "transport",
+  delivery: "dërgesë",
+  cargo: "mallra",
+  logistic: "logjistikë",
+  no: "nuk ka",
+  none: "asnjë",
+  found: "gjetur",
+  detected: "zbuluar",
+  evidence: "dëshmi",
+  available: "i disponueshëm",
+  unavailable: "i padisponueshëm",
+  confirm: "konfirmo",
+  confirmed: "konfirmuar",
+};
+
+const preserveTokenCasing = (source: string, translated: string) => {
+  if (!source) return translated;
+  if (source === source.toUpperCase()) return translated.toUpperCase();
+  if (source === source.toLowerCase()) return translated;
+  if (/^[A-Z]/.test(source)) {
+    return translated.charAt(0).toUpperCase() + translated.slice(1);
+  }
+  return translated;
+};
+
+export const isUsageDetailHidden = (input?: string | null) => {
+  if (!input) return false;
+  return usageHiddenPatterns.some((pattern) => pattern.test(input));
+};
+
+export const translateUsageText = (input?: string | null) => {
+  if (input === null || input === undefined) return "";
+
+  const text = input.toString();
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+
+  const hasLetters = /[A-Za-z]/.test(trimmed);
+  const hasKorean = /[가-힣]/.test(trimmed);
+
+  if (!hasLetters && !hasKorean) {
+    return trimmed;
+  }
+
+  const normalized = trimmed.toLowerCase();
+  if (usageTextExactTranslations[normalized]) {
+    return usageTextExactTranslations[normalized];
+  }
+
+  for (const { pattern, translation } of usageTextRegexTranslations) {
+    if (pattern.test(trimmed)) {
+      return translation;
+    }
+  }
+
+  const segments = trimmed.split(/(\s+|[(),.;:/-]+)/);
+  let translatedCount = 0;
+  const translatedSegments = segments.map((segment) => {
+    if (!segment) return segment;
+    if (!/[A-Za-z가-힣]/.test(segment)) {
+      return segment;
+    }
+
+    const pure = segment.replace(/[^A-Za-z가-힣]/g, "").toLowerCase();
+    if (!pure) return segment;
+
+    const direct =
+      usageTextExactTranslations[pure] ||
+      usageTokenTranslations[pure] ||
+      (hasKorean ? usageTextExactTranslations[segment] : undefined);
+
+    if (direct) {
+      translatedCount += 1;
+      return preserveTokenCasing(segment, direct);
+    }
+
+    return segment;
+  });
+
+  if (translatedCount === 0) {
+    return trimmed;
+  }
+
+  return translatedSegments.join("").replace(/\s+/g, (space) => (space.includes("\n") ? space : " "));
+};
+
 export const buildUsageHistoryList = (
   car: any,
   formatDate?: (value: unknown, options?: { monthYear?: boolean }) => string | undefined,
@@ -55,14 +236,27 @@ export const buildUsageHistoryList = (
     if (!entry) return;
     const description = entry.description ?? entry.type ?? entry.label;
     const rawValue = entry.value ?? entry.result ?? entry.details;
+    const translatedDescription =
+      description !== undefined && description !== null
+        ? translateUsageText(description)
+        : undefined;
+    const translatedValue =
+      typeof rawValue === "string"
+        ? translateUsageText(rawValue)
+        : rawValue !== undefined && rawValue !== null
+          ? String(rawValue)
+          : undefined;
+
+    if (
+      isUsageDetailHidden(translatedDescription) ||
+      isUsageDetailHidden(translatedValue)
+    ) {
+      return;
+    }
+
     entries.push({
-      description,
-      value:
-        typeof rawValue === "string"
-          ? rawValue
-          : rawValue !== undefined && rawValue !== null
-            ? String(rawValue)
-            : undefined,
+      description: translatedDescription,
+      value: translatedValue,
     });
   };
 
@@ -89,7 +283,7 @@ export const buildUsageHistoryList = (
         (typeof change?.changed_at === "string" ? change.changed_at : undefined);
 
       entries.push({
-        description,
+        description: translateUsageText(description),
         value: formattedDate,
       });
     });
