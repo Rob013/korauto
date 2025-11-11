@@ -1,5 +1,5 @@
 //@ts-nocheck
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from "react";
 import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
 import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSold } from "@/services/carCache";
 import { findGenerationYears } from "@/data/generationYears";
@@ -277,6 +277,40 @@ interface APIFilters {
   sort_direction?: string;
 }
 
+const CARS_CACHE_TTL = 60 * 1000; // 1 minute snapshot window
+const MAX_CARS_CACHE_ENTRIES = 30;
+
+const normalizeFiltersForCache = (filters: APIFilters = {}) => {
+  const entries = Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== "");
+  entries.sort(([a], [b]) => a.localeCompare(b));
+  return entries.reduce<Record<string, any>>((acc, [key, value]) => {
+    acc[key] = value;
+    return acc;
+  }, {});
+};
+
+const createCarsCacheKey = (page: number, filters: APIFilters = {}) => {
+  return JSON.stringify({
+    page,
+    filters: normalizeFiltersForCache(filters),
+  });
+};
+
+const pruneCacheMap = (cache: Map<string, any>) => {
+  if (cache.size <= MAX_CARS_CACHE_ENTRIES) {
+    return;
+  }
+  const entries = Array.from(cache.entries()).sort(
+    (a, b) => (a[1]?.timestamp || 0) - (b[1]?.timestamp || 0)
+  );
+  while (cache.size > MAX_CARS_CACHE_ENTRIES && entries.length > 0) {
+    const [keyToRemove] = entries.shift() || [];
+    if (keyToRemove) {
+      cache.delete(keyToRemove);
+    }
+  }
+};
+
 interface APIResponse {
   data: Car[];
   meta: {
@@ -302,6 +336,7 @@ export const useSecureAuctionAPI = () => {
   const [isPrimingCache, setIsPrimingCache] = useState(false);
   const [cachePrimed, setCachePrimed] = useState(false);
   const prefetchedCarIdsRef = useRef<Set<string>>(new Set());
+  const carsCacheRef = useRef<Map<string, { cars: Car[]; totalCount: number; hasMorePages: boolean; timestamp: number }>>(new Map());
 
   const prefetchCarDetails = useCallback(async (carsToCache: Car[]) => {
     if (!Array.isArray(carsToCache) || carsToCache.length === 0) {
@@ -345,6 +380,10 @@ export const useSecureAuctionAPI = () => {
         console.warn("Prefetch cars request failed", error);
       }
     }
+  }, []);
+
+  const clearCarsCache = useCallback(() => {
+    carsCacheRef.current.clear();
   }, []);
 
   const delay = (ms: number) =>
@@ -484,14 +523,33 @@ export const useSecureAuctionAPI = () => {
     newFilters: APIFilters = filters,
     resetList: boolean = true
   ): Promise<void> => {
+    const cacheKey = createCarsCacheKey(page, newFilters);
+    const cachedEntry = carsCacheRef.current.get(cacheKey);
+    const cacheIsFresh = cachedEntry && Date.now() - cachedEntry.timestamp < CARS_CACHE_TTL;
+
     if (resetList) {
-      setFilters(newFilters);
-      setLoading(true);
-      // Don't reset page to 1 if we're explicitly requesting a different page
-      if (page === 1) {
-        setCurrentPage(1);
+      startTransition(() => {
+        setFilters(newFilters);
+      });
+
+      if (cacheIsFresh) {
+        startTransition(() => {
+          setCars(cachedEntry.cars);
+          setTotalCount(cachedEntry.totalCount);
+          setHasMorePages(cachedEntry.hasMorePages);
+          setCurrentPage(page);
+        });
+        setLoading(false);
+      } else {
+        setLoading(true);
+        if (page === 1) {
+          setCurrentPage(1);
+        }
       }
+    } else {
+      setLoading(true);
     }
+
     setError(null);
 
     try {
@@ -591,22 +649,38 @@ export const useSecureAuctionAPI = () => {
 
       // Always use server-side total count regardless of client-side filtering
       // Client-side filtering should not affect the total count or pagination logic
-      setTotalCount(data.meta?.total || 0);
-      setHasMorePages(page < (data.meta?.last_page || 1));
+        const total = data.meta?.total || 0;
+        const lastPage = data.meta?.last_page || 1;
+        const hasMore = page < lastPage;
 
-      const activeCars = filteredCars.filter(car => !isCarSold(car));
+        const activeCars = filteredCars.filter(car => !isCarSold(car));
 
       console.log(
         `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, active displayed: ${activeCars.length}`
       );
 
-      if (resetList || page === 1) {
-        setCars(activeCars);
-        setCurrentPage(page); // Set the actual requested page, not always 1
-      } else {
-        setCars((prev) => [...prev, ...activeCars]);
-        setCurrentPage(page);
-      }
+        startTransition(() => {
+          setTotalCount(total);
+          setHasMorePages(hasMore);
+
+          if (resetList || page === 1) {
+            setCars(activeCars);
+          } else {
+            setCars((prev) => [...prev, ...activeCars]);
+          }
+
+          setCurrentPage(page);
+        });
+
+        if (resetList) {
+          carsCacheRef.current.set(cacheKey, {
+            cars: activeCars,
+            totalCount: total,
+            hasMorePages: hasMore,
+            timestamp: Date.now(),
+          });
+          pruneCacheMap(carsCacheRef.current);
+        }
 
       prefetchCarDetails(activeCars);
     } catch (err: any) {
@@ -660,16 +734,21 @@ export const useSecureAuctionAPI = () => {
         `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
       );
       
-      setTotalCount(fallbackCars.length);
-      setHasMorePages(endIndex < fallbackCars.length);
-      
-      if (resetList || page === 1) {
-        setCars(paginatedCars);
-        setCurrentPage(page);
-      } else {
-        setCars((prev) => [...prev, ...paginatedCars]);
-        setCurrentPage(page);
-      }
+        const fallbackTotal = fallbackCars.length;
+        const fallbackHasMore = endIndex < fallbackCars.length;
+
+        startTransition(() => {
+          setTotalCount(fallbackTotal);
+          setHasMorePages(fallbackHasMore);
+
+          if (resetList || page === 1) {
+            setCars(paginatedCars);
+          } else {
+            setCars((prev) => [...prev, ...paginatedCars]);
+          }
+
+          setCurrentPage(page);
+        });
 
       // Clear error since we're showing fallback data
       setError(null);
@@ -1793,12 +1872,16 @@ export const useSecureAuctionAPI = () => {
 
   const refreshInventory = useCallback(async (minutes = 60) => {
     try {
-      return await triggerInventoryRefresh(minutes);
+      const result = await triggerInventoryRefresh(minutes);
+      if (result?.success) {
+        clearCarsCache();
+      }
+      return result;
     } catch (error) {
       console.error("Failed to trigger inventory refresh", error);
       return { success: false, error };
     }
-  }, []);
+  }, [clearCarsCache]);
   return {
     cars,
     setCars, // ✅ Export setCars so it can be used in components
@@ -1825,6 +1908,7 @@ export const useSecureAuctionAPI = () => {
     fetchTrimLevels,
     loadMore,
     refreshInventory,
+    clearCarsCache,
   };
 };
 
