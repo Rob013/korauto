@@ -1278,28 +1278,138 @@ const CarInspectionReport = () => {
       }
     };
 
-    [
-      car?.details?.inspect_outer,
-      car?.inspect?.outer,
-      car?.inspect?.inspect_outer,
-      (car as any)?.details?.inspect?.outer,
-      (car as any)?.details?.outer,
-      car?.encarInspection?.outers,
-    ].forEach(collectItems);
+      [
+        car?.details?.inspect_outer,
+        car?.inspect?.outer,
+        car?.inspect?.inspect_outer,
+        (car as any)?.details?.inspect?.outer,
+        (car as any)?.details?.outer,
+        car?.encarInspection?.outers,
+      ].forEach(collectItems);
 
-    const keyed = new Map<string, any>();
+      const plainOuterSources: Array<Record<string, unknown> | undefined> = [
+        (car?.inspect?.outer as Record<string, unknown> | undefined),
+        (car?.inspect?.inspect_outer as Record<string, unknown> | undefined),
+        (car as any)?.details?.inspect_outer as Record<string, unknown> | undefined,
+        (car as any)?.details?.inspect?.outer as Record<string, unknown> | undefined,
+      ];
+
+      plainOuterSources.forEach((source) => {
+        if (!source || typeof source !== "object" || Array.isArray(source)) {
+          return;
+        }
+
+        Object.entries(source).forEach(([partKey, rawValue]) => {
+          if (rawValue === undefined || rawValue === null) {
+            return;
+          }
+
+          const entries = Array.isArray(rawValue)
+            ? rawValue
+            : [rawValue];
+          if (entries.length === 0) return;
+
+          const statusTypes = entries
+            .map((entry) => {
+              if (entry && typeof entry === "object") {
+                const candidate = entry as Record<string, unknown>;
+                const codeCandidate =
+                  candidate.code ??
+                  candidate.status ??
+                  candidate.value ??
+                  candidate.result ??
+                  candidate.type;
+                const titleCandidate =
+                  candidate.title ??
+                  candidate.name ??
+                  candidate.description ??
+                  candidate.label ??
+                  candidate.text;
+
+                if (codeCandidate === undefined && titleCandidate === undefined) {
+                  return null;
+                }
+
+                return {
+                  code:
+                    codeCandidate !== undefined
+                      ? String(codeCandidate)
+                      : undefined,
+                  title:
+                    titleCandidate !== undefined
+                      ? String(titleCandidate)
+                      : undefined,
+                };
+              }
+
+              const value = String(entry ?? "").trim();
+              if (!value) {
+                return null;
+              }
+
+              return {
+                code: value.length <= 4 ? value.toUpperCase() : undefined,
+                title: value,
+              };
+            })
+            .filter(Boolean);
+
+          if (statusTypes.length === 0) return;
+
+          collected.push({
+            type: { code: partKey, title: partKey },
+            statusTypes,
+            attributes: [],
+          });
+        });
+      });
+
+      const keyed = new Map<string, any>();
     for (const item of collected) {
       const key =
         (item as any)?.type?.code ||
         (item as any)?.code ||
         (item as any)?.type?.title ||
         JSON.stringify(item);
-      if (!keyed.has(key)) {
-        keyed.set(key, item);
+        if (!keyed.has(key)) {
+          keyed.set(key, {
+            ...item,
+            statusTypes: Array.isArray((item as any)?.statusTypes)
+              ? [...(item as any).statusTypes]
+              : [],
+            attributes: Array.isArray((item as any)?.attributes)
+              ? [...(item as any).attributes]
+              : [],
+          });
+        } else {
+          const existing = keyed.get(key);
+          if (Array.isArray((item as any)?.statusTypes) && (item as any).statusTypes.length > 0) {
+            existing.statusTypes.push(...(item as any).statusTypes);
+          }
+          if (Array.isArray((item as any)?.attributes) && (item as any).attributes.length > 0) {
+            existing.attributes.push(...(item as any).attributes);
+          }
+          if (!existing.type?.title && item?.type?.title) {
+            existing.type = existing.type ?? {};
+            existing.type.title = item.type.title;
+          }
       }
     }
 
-    return Array.from(keyed.values());
+      return Array.from(keyed.values()).map((entry) => {
+        if (Array.isArray(entry.statusTypes) && entry.statusTypes.length > 1) {
+          const seen = new Set<string>();
+          entry.statusTypes = entry.statusTypes.filter((status: any) => {
+            const statusKey = `${status?.code ?? ""}|${status?.title ?? ""}`.toLowerCase();
+            if (seen.has(statusKey)) {
+              return false;
+            }
+            seen.add(statusKey);
+            return true;
+          });
+        }
+        return entry;
+      });
   }, [car]);
 
   const inspectionInnerData = useMemo(() => {

@@ -1,4 +1,5 @@
 import React, { memo, useState, useCallback, useRef, useEffect, useMemo } from "react";
+import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +45,84 @@ interface LazyCarCardProps {
   viewMode?: 'grid' | 'list';
 }
 
+type UserFavoritesState = {
+  user: User | null;
+  favorites: Set<string>;
+};
+
+let cachedUserFavorites: UserFavoritesState | null = null;
+let inflightUserFavoritesPromise: Promise<UserFavoritesState> | null = null;
+
+type FavoritesListener = (state: UserFavoritesState) => void;
+const favoriteListeners = new Set<FavoritesListener>();
+
+const notifyFavoritesListeners = (state: UserFavoritesState) => {
+  favoriteListeners.forEach((listener) =>
+    listener({
+      user: state.user,
+      favorites: new Set(state.favorites),
+    })
+  );
+};
+
+const subscribeToFavorites = (listener: FavoritesListener) => {
+  favoriteListeners.add(listener);
+  if (cachedUserFavorites) {
+    listener({
+      user: cachedUserFavorites.user,
+      favorites: new Set(cachedUserFavorites.favorites),
+    });
+  }
+  return () => {
+    favoriteListeners.delete(listener);
+  };
+};
+
+const ensureUserFavorites = async (): Promise<UserFavoritesState> => {
+  if (cachedUserFavorites) {
+    return cachedUserFavorites;
+  }
+
+  if (!inflightUserFavoritesPromise) {
+    inflightUserFavoritesPromise = supabase.auth
+      .getUser()
+      .then(async ({ data: { user } }) => {
+        if (!user) {
+          const state: UserFavoritesState = { user: null, favorites: new Set() };
+          cachedUserFavorites = state;
+          return state;
+        }
+
+        const { data, error } = await supabase
+          .from("favorite_cars")
+          .select("car_id")
+          .eq("user_id", user.id);
+
+        const favorites = new Set<string>(
+          error || !Array.isArray(data)
+            ? []
+            : data.map((row: any) => String(row.car_id))
+        );
+
+        const state: UserFavoritesState = { user, favorites };
+        cachedUserFavorites = state;
+        return state;
+      })
+      .catch(() => {
+        const state: UserFavoritesState = { user: null, favorites: new Set() };
+        cachedUserFavorites = state;
+        return state;
+      })
+      .finally(() => {
+        inflightUserFavoritesPromise = null;
+      });
+  }
+
+  const result = await inflightUserFavoritesPromise!;
+  notifyFavoritesListeners(result);
+  return result;
+};
+
   const LazyCarCard = memo(({
   id,
   make,
@@ -72,8 +151,12 @@ interface LazyCarCardProps {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
   const { toast } = useToast();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [isFavorite, setIsFavorite] = useState(
+    () => cachedUserFavorites?.favorites.has(String(id)) ?? false
+  );
+  const [user, setUser] = useState<User | null>(
+    cachedUserFavorites?.user ?? null
+  );
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -107,6 +190,29 @@ interface LazyCarCardProps {
 
   const hideSoldCar = shouldHideSoldCar();
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const unsubscribe = subscribeToFavorites((state) => {
+      if (cancelled) return;
+      setUser(state.user);
+      setIsFavorite(state.favorites.has(String(id)));
+    });
+
+    if (!cachedUserFavorites) {
+      ensureUserFavorites().catch(() => {
+        // Swallow auth errors silently
+      });
+    } else {
+      setIsFavorite(cachedUserFavorites.favorites.has(String(id)));
+    }
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [id]);
+
   // Intersection Observer for lazy loading
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -125,48 +231,6 @@ interface LazyCarCardProps {
 
     return () => observer.disconnect();
   }, []);
-
-  // Optimized user data fetching
-  useEffect(() => {
-    let isMounted = true;
-    
-    const getUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!isMounted) return;
-        
-        setUser(user);
-        
-        if (user) {
-          const [{ data: favorite }, { data: userRole }] = await Promise.all([
-            supabase
-              .from('favorite_cars')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('car_id', id)
-              .maybeSingle(),
-            supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', user.id)
-              .maybeSingle()
-          ]);
-          
-          if (isMounted) {
-            setIsFavorite(!!favorite);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-    
-    getUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
 
     const normalizedSource = typeof source === 'string' ? source : '';
     const sourceBadgeLabel = normalizedSource
@@ -198,59 +262,82 @@ interface LazyCarCardProps {
         accident: 'bg-orange-600/95 text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow flex items-center gap-1'
       };
 
-  const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login to save favorite cars",
-      });
-      navigate('/auth');
-      return;
-    }
+    const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
+      e.stopPropagation();
 
-    try {
-      if (isFavorite) {
-        await supabase
-          .from('favorite_cars')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('car_id', id);
-        
-        setIsFavorite(false);
+      if (!user) {
         toast({
-          title: "Removed from favorites",
-          description: "Car removed from your favorites",
+          title: "Login Required",
+          description: "Please login to save favorite cars",
         });
-      } else {
-        await supabase
-          .from('favorite_cars')
-          .insert({
+        navigate("/auth");
+        return;
+      }
+
+      const carId = String(id);
+
+      try {
+        if (isFavorite) {
+          await supabase
+            .from("favorite_cars")
+            .delete()
+            .eq("user_id", user.id)
+            .eq("car_id", carId);
+
+          setIsFavorite(false);
+
+          const updatedFavorites =
+            cachedUserFavorites && cachedUserFavorites.user?.id === user.id
+              ? new Set(cachedUserFavorites.favorites)
+              : new Set<string>();
+          updatedFavorites.delete(carId);
+          cachedUserFavorites = {
+            user,
+            favorites: updatedFavorites,
+          };
+          notifyFavoritesListeners(cachedUserFavorites);
+
+          toast({
+            title: "Removed from favorites",
+            description: "Car removed from your favorites",
+          });
+        } else {
+          await supabase.from("favorite_cars").insert({
             user_id: user.id,
-            car_id: id,
+            car_id: carId,
             car_make: make,
             car_model: model,
             car_year: year,
             car_price: price,
-            car_image: image
+            car_image: image,
           });
-        
-        setIsFavorite(true);
+
+          setIsFavorite(true);
+
+          const updatedFavorites = new Set(
+            cachedUserFavorites?.favorites ?? []
+          );
+          updatedFavorites.add(carId);
+          cachedUserFavorites = {
+            user,
+            favorites: updatedFavorites,
+          };
+          notifyFavoritesListeners(cachedUserFavorites);
+
+          toast({
+            title: "Added to favorites",
+            description: "Car saved to your favorites",
+          });
+        }
+      } catch (error) {
+        console.error("Error toggling favorite:", error);
         toast({
-          title: "Added to favorites",
-          description: "Car saved to your favorites",
+          title: "Error",
+          description: "Failed to update favorites",
+          variant: "destructive",
         });
       }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update favorites",
-        variant: "destructive",
-      });
-    }
-  }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
+    }, [user, isFavorite, id, make, model, year, price, image, toast, navigate]);
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();

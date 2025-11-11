@@ -348,11 +348,26 @@ const normalizeForMatching = (input: string) => {
     { pattern: /사이드\s*실|사이드실/g, value: " side sill " },
     { pattern: /라디에이터/g, value: " radiator " },
     { pattern: /서포트/g, value: " support " },
+    { pattern: /\bfl\b/g, value: " front left " },
+    { pattern: /\bfr\b/g, value: " front right " },
+    { pattern: /\brl\b/g, value: " rear left " },
+    { pattern: /\brr\b/g, value: " rear right " },
+    { pattern: /\blh\b/g, value: " left " },
+    { pattern: /\brh\b/g, value: " right " },
+    { pattern: /\bqtr\b/g, value: " quarter " },
+    { pattern: /\bfrm\b/g, value: " front member " },
+    { pattern: /\brrm\b/g, value: " rear member " },
+    { pattern: /panl/g, value: " panel " },
   ];
 
   replacements.forEach(({ pattern, value }) => {
     normalized = normalized.replace(pattern, value);
   });
+
+  normalized = normalized
+    .replace(/(front|rear)(door|fender|quarter|bumper|panel|floor)/g, "$1 $2")
+    .replace(/(left|right)(door|fender|quarter|sill|panel)/g, "$1 $2")
+    .replace(/(door|fender|quarter|bumper|panel|sill|wheel)(left|right)/g, "$1 $2");
 
   normalized = normalized
     .replace(/[_-]/g, " ")
