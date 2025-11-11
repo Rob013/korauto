@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { FixedSizeGrid as Grid } from 'react-window';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import LoadingLogo from "@/components/LoadingLogo";
 import { formatMileage } from '@/utils/mileageFormatter';
 import { localizeFuel } from '@/utils/fuel';
+import { useViewportSize } from '@/hooks/use-viewport';
 
 interface Car {
   id: string;
@@ -191,28 +192,112 @@ const CarsList: React.FC<CarsListProps> = ({
   activeFiltersCount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { width: viewportWidth, height: viewportHeight } = useViewportSize();
+  const [containerWidth, setContainerWidth] = useState<number>(0);
 
-  // Calculate grid dimensions
-  const { columnsPerRow, rowCount, cardWidth, cardHeight } = useMemo(() => {
-    const containerWidth = window.innerWidth;
-    
-    // Responsive card sizing
-    let cardWidth: number;
-    let columnsPerRow: number;
-    
-    if (containerWidth >= 768) { // Tablet and desktop
-      cardWidth = 240;
-      columnsPerRow = 4;
-    } else { // Mobile
-      cardWidth = Math.min(300, containerWidth - 32);
-      columnsPerRow = 1;
+  // Track container width (with ResizeObserver fallback) to react to zoom + resize.
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
     }
 
-    const cardHeight = 320; // Fixed height for consistent grid
-    const rowCount = Math.ceil(cars.length / columnsPerRow);
+    const node = containerRef.current;
 
-    return { columnsPerRow, rowCount, cardWidth, cardHeight };
-  }, [cars.length]);
+    if (!node) {
+      setContainerWidth((prev) => (prev > 0 ? prev : viewportWidth));
+      return;
+    }
+
+    const updateFromNode = () => {
+      const nextWidth = Math.round(node.getBoundingClientRect().width);
+      if (nextWidth > 0) {
+        setContainerWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+      }
+    };
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        const nextWidth = Math.round(entry.contentRect.width);
+        if (nextWidth > 0) {
+          setContainerWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+        }
+      });
+
+      observer.observe(node);
+      updateFromNode();
+
+      return () => {
+        observer.disconnect();
+      };
+    }
+
+    // Legacy fallback when ResizeObserver unavailable.
+    updateFromNode();
+    window.addEventListener('resize', updateFromNode);
+    window.addEventListener('orientationchange', updateFromNode);
+
+    return () => {
+      window.removeEventListener('resize', updateFromNode);
+      window.removeEventListener('orientationchange', updateFromNode);
+    };
+  }, [viewportWidth]);
+
+  // Ensure we have at least a usable width even before observers fire.
+  useEffect(() => {
+    if (containerWidth === 0 && viewportWidth > 0) {
+      setContainerWidth(viewportWidth);
+    }
+  }, [containerWidth, viewportWidth]);
+
+  // Calculate grid dimensions
+  const { columnsPerRow, rowCount, cardWidth, cardHeight, gridWidth } = useMemo(() => {
+    const widthForCalc = containerWidth > 0 ? containerWidth : viewportWidth || 1024;
+    const GAP = 16;
+    const MIN_CARD_WIDTH = 200;
+    const MAX_CARD_WIDTH = 320;
+
+    let columns = 1;
+    if (widthForCalc >= 1440) {
+      columns = 5;
+    } else if (widthForCalc >= 1280) {
+      columns = 4;
+    } else if (widthForCalc >= 1024) {
+      columns = 3;
+    } else if (widthForCalc >= 768) {
+      columns = 2;
+    }
+
+    // Guarantee at least one column.
+    columns = Math.max(columns, 1);
+
+    const safeWidth = Math.max(widthForCalc, columns * (MIN_CARD_WIDTH + GAP));
+    const rawCardWidth = Math.floor(safeWidth / columns) - GAP;
+    const normalizedCardWidth = Math.max(
+      MIN_CARD_WIDTH,
+      Math.min(MAX_CARD_WIDTH, rawCardWidth)
+    );
+
+    const cardHeight = 320; // Fixed height for consistent grid
+    const rowCount = Math.max(1, Math.ceil(cars.length / columns));
+    const gridWidth = columns * (normalizedCardWidth + GAP);
+
+    return {
+      columnsPerRow: columns,
+      rowCount,
+      cardWidth: normalizedCardWidth,
+      cardHeight,
+      gridWidth,
+    };
+  }, [cars.length, containerWidth, viewportWidth]);
+
+  const GAP_BETWEEN_ITEMS = 16;
+  const safeViewportHeight = viewportHeight > 0 ? viewportHeight : 720;
+  const gridHeight = Math.min(
+    Math.max(safeViewportHeight * 0.8, cardHeight + GAP_BETWEEN_ITEMS),
+    rowCount * (cardHeight + GAP_BETWEEN_ITEMS)
+  );
 
   // Prefetch next page when near bottom
   const loadMoreRef = useLoadMoreObserver(
@@ -265,14 +350,20 @@ const CarsList: React.FC<CarsListProps> = ({
   return (
     <div className={`w-full ${className}`} ref={containerRef}>
       {/* Grid Container */}
-      <div className="w-full" style={{ height: '80vh', minHeight: '600px' }}>
+      <div
+        className="w-full overflow-hidden"
+        style={{
+          height: gridHeight,
+          minHeight: Math.min(Math.max(cardHeight + GAP_BETWEEN_ITEMS, 320), gridHeight),
+        }}
+      >
         <Grid
           columnCount={columnsPerRow}
           rowCount={rowCount}
-          columnWidth={cardWidth + 16} // Add margin
-          rowHeight={cardHeight + 16} // Add margin
-          width={columnsPerRow * (cardWidth + 16)}
-          height={Math.min(window.innerHeight * 0.8, rowCount * (cardHeight + 16))}
+          columnWidth={cardWidth + GAP_BETWEEN_ITEMS} // Include horizontal padding
+          rowHeight={cardHeight + GAP_BETWEEN_ITEMS} // Include vertical padding
+          width={gridWidth}
+          height={gridHeight}
           itemData={gridData}
           className="scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
         >

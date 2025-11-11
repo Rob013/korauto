@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
 import carDiagramTop from '@/assets/car-diagram-top.jpeg';
 import carDiagramBottom from '@/assets/car-diagram-bottom.webp';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useViewportSize } from "@/hooks/use-viewport";
 
 interface InspectionItem {
   type: { code: string; title: string };
@@ -64,25 +65,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const [viewportWidth, setViewportWidth] = useState<number>(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleResize = () => {
-      setViewportWidth(window.innerWidth);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-    };
-  }, []);
+  const { width: rawViewportWidth } = useViewportSize();
+  const viewportWidth = Math.max(rawViewportWidth, 320);
 
   const markerScale = useMemo(() => {
     if (isMobile) {
