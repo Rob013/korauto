@@ -2230,6 +2230,45 @@ const CarDetails = memo(() => {
     return [];
   }, [car?.images, car?.image]);
 
+  const mainTitle = useMemo(() => {
+    if (!car) {
+      return "";
+    }
+    return [car.year, car.make, car.model]
+      .filter((value) => value !== null && value !== undefined && value !== "")
+      .join(" ")
+      .trim();
+  }, [car]);
+
+  const secondaryTitle = useMemo(() => {
+    if (!car) {
+      return "";
+    }
+
+    const rawParts = [
+      typeof car.title === "string" ? car.title.trim() : "",
+      typeof car.details?.variant === "string" ? car.details.variant.trim() : "",
+      typeof car.details?.trim === "string" ? car.details.trim.trim() : "",
+      typeof car.details?.grade === "string" ? car.details.grade.trim() : "",
+    ].filter(Boolean);
+
+    const uniqueParts: string[] = [];
+    const seen = new Set<string>();
+    rawParts.forEach((part) => {
+      const normalized = part.toLowerCase();
+      if (!seen.has(normalized)) {
+        seen.add(normalized);
+        uniqueParts.push(part);
+      }
+    });
+
+    if (uniqueParts.length > 0) {
+      return uniqueParts.join(" • ");
+    }
+
+    return mainTitle;
+  }, [car, mainTitle]);
+
   // Add swipe functionality for car detail photos - must be before early returns
   const {
     currentIndex: swipeCurrentIndex,
@@ -2314,26 +2353,35 @@ const CarDetails = memo(() => {
   }, [isLiked, toast, impact]);
 
   // Handler for opening gallery images in a new page
+  const openGallery = useCallback(() => {
+    trackPageView(`/car/${lot}/gallery`);
+    navigate(`/car/${lot}/gallery`, {
+      state: {
+        images,
+        carMake: car?.make,
+        carModel: car?.model,
+        carYear: car?.year,
+        carLot: car?.lot || lot,
+      },
+    });
+  }, [car?.lot, car?.make, car?.model, car?.year, images, lot, navigate]);
+
   const handleGalleryClick = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.MouseEvent, bypassSwipeGuard = false) => {
       e.stopPropagation();
-      if (!isClickAllowed()) {
+      if (!bypassSwipeGuard && !isClickAllowed()) {
         return;
       }
-      // Track gallery view
-      trackPageView(`/car/${lot}/gallery`);
-      // Navigate to gallery page with all images
-      navigate(`/car/${lot}/gallery`, {
-        state: {
-          images: images, // Already limited to 20 in images memo
-          carMake: car?.make,
-          carModel: car?.model,
-          carYear: car?.year,
-          carLot: car?.lot || lot,
-        },
-      });
+      openGallery();
     },
-    [images, navigate, lot, car, isClickAllowed],
+    [isClickAllowed, openGallery],
+  );
+
+  const handleGalleryButtonClick = useCallback(
+    (e: React.MouseEvent) => {
+      handleGalleryClick(e, true);
+    },
+    [handleGalleryClick],
   );
 
   // Preload important images
@@ -2539,7 +2587,7 @@ const CarDetails = memo(() => {
                       <div className="absolute bottom-3 right-3 flex items-center gap-2">
                         {/* Mobile gallery button */}
                         <button
-                          onClick={handleGalleryClick}
+                          onClick={handleGalleryButtonClick}
                           className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
                           aria-label={`View all ${images.length} images`}
                         >
@@ -2549,7 +2597,7 @@ const CarDetails = memo(() => {
 
                         {/* Desktop gallery button */}
                         <button
-                          onClick={handleGalleryClick}
+                          onClick={handleGalleryButtonClick}
                           className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
                           aria-label={`View all ${images.length} images`}
                         >
@@ -2587,50 +2635,50 @@ const CarDetails = memo(() => {
               </Card>
 
               {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
-              {images.length > 1 && (
-                <div
-                  className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
-                  style={{ animationDelay: "200ms" }}
-                >
-                  {images.slice(1, 7).map((image, index) => (
-                    <button
-                      key={index + 1}
-                      onClick={() => {
-                        impact("light");
-                        setSelectedImageIndex(index + 1);
-                      }}
-                      className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                        selectedImageIndex === index + 1
-                          ? "border-primary shadow-lg scale-105"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      aria-label={`View image ${index + 2}`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
+                {images.length > 1 && (
+                  <div
+                    className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
+                    style={{ animationDelay: "200ms" }}
+                  >
+                    {images.slice(1, 7).map((image, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => {
+                          impact("light");
+                          setSelectedImageIndex(index + 1);
                         }}
-                      />
-                    </button>
-                  ))}
-                  {images.length > 7 && (
-                    <button
-                      onClick={handleGalleryClick}
-                      className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
-                      aria-label="View all images"
-                    >
-                      <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
-                      <span className="text-xs xl:text-sm text-primary font-medium">
-                        +{images.length - 7}
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )}
+                        className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                          selectedImageIndex === index + 1
+                            ? "border-primary shadow-lg scale-105"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        aria-label={`View image ${index + 2}`}
+                      >
+                        <img
+                          src={image}
+                          alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
+                      </button>
+                    ))}
+                    {images.length > 7 && (
+                      <button
+                        onClick={handleGalleryButtonClick}
+                        className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
+                        aria-label="View all images"
+                      >
+                        <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
+                        <span className="text-xs xl:text-sm text-primary font-medium">
+                          +{images.length - 7}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Mobile Main Image - Full width for mobile */}
@@ -2707,27 +2755,27 @@ const CarDetails = memo(() => {
 
                   {/* Image counter and gallery button - Improved mobile design */}
                   {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      {/* Mobile gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-3 w-3" />
-                        {selectedImageIndex + 1}/{images.length}
-                      </button>
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        {/* Mobile gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-3 w-3" />
+                          {selectedImageIndex + 1}/{images.length}
+                        </button>
 
-                      {/* Desktop gallery button */}
-                      <button
-                        onClick={handleGalleryClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-4 w-4" />
-                        View Gallery ({images.length})
-                      </button>
-                    </div>
+                        {/* Desktop gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-4 w-4" />
+                          View Gallery ({images.length})
+                        </button>
+                      </div>
                   )}
 
                   {/* Lot number badge - Improved positioning */}
@@ -2762,15 +2810,14 @@ const CarDetails = memo(() => {
               className="animate-fade-in"
               style={{ animationDelay: "200ms" }}
             >
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <div className="flex-1 min-w-0 space-y-0.5">
                   <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight">
-                    {car.year} {car.make} {car.model}
+                    {mainTitle}
                   </h1>
-                  {/* Subtitle with variant info - matching car card format */}
-                  {car.title && car.title !== `${car.make} ${car.model}` && (
-                    <p className="text-sm md:text-base text-muted-foreground font-medium mt-0.5 line-clamp-1">
-                      {car.title}
+                  {secondaryTitle && (
+                    <p className="text-sm md:text-base text-muted-foreground font-medium leading-tight line-clamp-2">
+                      {secondaryTitle}
                     </p>
                   )}
                 </div>
