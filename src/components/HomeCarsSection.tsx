@@ -1,5 +1,6 @@
 // @ts-nocheck
 import LazyCarCard from "./LazyCarCard";
+import { resolveFuelFromSources } from "@/utils/fuel";
 import { memo, useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -147,7 +148,8 @@ const HomeCarsSection = memo(() => {
       }
 
       // Fuel type filter
-      if (filters.fuel_type && (car.fuel?.name || '').toLowerCase() !== filters.fuel_type.toLowerCase()) {
+      const carFuel = resolveFuelFromSources(car, car.lots?.[0]);
+      if (filters.fuel_type && (carFuel || '').toLowerCase() !== filters.fuel_type.toLowerCase()) {
         return false;
       }
 
@@ -531,7 +533,7 @@ const HomeCarsSection = memo(() => {
             const lot = car.lots?.[0];
             const usdPrice = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
             const price = usdPrice > 0 ? calculateFinalPriceEUR(usdPrice, exchangeRate.rate) : 0;
-            return <LazyCarCard key={car.id} id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={car.fuel?.name} color={car.color?.name} condition={car.condition?.replace("run_and_drives", "Good")} lot={car.lot_number || lot?.lot} title={car.title} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />;
+            return <LazyCarCard key={car.id} id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} condition={car.condition?.replace("run_and_drives", "Good")} lot={car.lot_number || lot?.lot} title={car.title} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />;
           })}
             </div>
 

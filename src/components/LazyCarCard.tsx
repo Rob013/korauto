@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useRef, useEffect } from "react";
+import React, { memo, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { formatModelName } from "@/utils/modelNameFormatter";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
+import { localizeFuel } from "@/utils/fuel";
 
 interface LazyCarCardProps {
   id: string;
@@ -43,7 +44,7 @@ interface LazyCarCardProps {
   viewMode?: 'grid' | 'list';
 }
 
-const LazyCarCard = memo(({
+  const LazyCarCard = memo(({
   id,
   make,
   model,
@@ -67,7 +68,7 @@ const LazyCarCard = memo(({
   archive_reason,
   source,
   viewMode = 'grid'
-}: LazyCarCardProps) => {
+  }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
   const { toast } = useToast();
@@ -167,14 +168,15 @@ const LazyCarCard = memo(({
     };
   }, [id]);
 
-  const normalizedSource = typeof source === 'string' ? source : '';
-  const sourceBadgeLabel = normalizedSource
-    ? (normalizedSource || '').toLowerCase() === 'encar'
-      ? 'Encar'
-      : (normalizedSource || '').toLowerCase().includes('kbc')
-        ? 'KBC'
-        : normalizedSource.toUpperCase()
-    : null;
+    const normalizedSource = typeof source === 'string' ? source : '';
+    const sourceBadgeLabel = normalizedSource
+      ? (normalizedSource || '').toLowerCase() === 'encar'
+        ? 'Encar'
+        : (normalizedSource || '').toLowerCase().includes('kbc')
+          ? 'KBC'
+          : normalizedSource.toUpperCase()
+      : null;
+    const fuelDisplay = useMemo(() => localizeFuel(fuel, "sq"), [fuel]);
   
   // Determine accident status
   const hasAccidentData = insurance_v2 && typeof insurance_v2.accidentCnt === 'number';
@@ -405,10 +407,10 @@ const LazyCarCard = memo(({
                     <span className="font-medium text-foreground">{mileage}</span>
                   </div>
                 )}
-                {fuel && (
+                  {fuelDisplay && (
                   <div className="flex items-center gap-0.5">
                     <Fuel className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                    <span className="capitalize text-foreground">{fuel}</span>
+                      <span className="text-foreground">{fuelDisplay}</span>
                   </div>
                 )}
                 {transmission && (
@@ -557,10 +559,10 @@ const LazyCarCard = memo(({
               <span className="truncate text-foreground">{year}</span>
             </div>
           )}
-          {fuel && (
+            {fuelDisplay && (
             <div className="flex items-center gap-1.5 min-w-0">
               <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-foreground">{fuel}</span>
+                <span className="truncate text-foreground">{fuelDisplay}</span>
             </div>
           )}
           {transmission && (

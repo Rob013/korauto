@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import LoadingLogo from "@/components/LoadingLogo";
 import { formatMileage } from '@/utils/mileageFormatter';
+import { localizeFuel } from '@/utils/fuel';
 
 interface Car {
   id: string;
@@ -53,67 +54,71 @@ const CarCardSkeleton: React.FC = () => (
 );
 
 // Individual car card component
-const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, onClick }) => (
-  <Card 
-    className="w-full h-full cursor-pointer transition-all duration-200 car-card-container"
-    onClick={onClick}
-  >
-    <CardContent className="p-4">
-      {/* Car Image */}
-      <div className="car-image-wrapper mb-4">
-        {car.images && car.images.length > 0 ? (
-          <img
-            src={car.images[0]}
-            alt={`${car.make} ${car.model}`}
-            className="car-image"
-            loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/images/car-placeholder.jpg';
-            }}
-          />
-        ) : (
-          <div className="car-image flex items-center justify-center text-muted-foreground">
-            <span className="text-sm">No Image</span>
-          </div>
-        )}
-      </div>
+const CarCard: React.FC<{ car: Car; onClick: () => void }> = React.memo(({ car, onClick }) => {
+  const fuelDisplay = useMemo(() => localizeFuel(car.fuel, "sq"), [car.fuel]);
 
-      {/* Car Details */}
-      <div className="space-y-2">
-        <h3 className="font-semibold text-lg line-clamp-1">
-          {car.year} {car.make} {car.model}
-        </h3>
-        
-        <div className="text-sm text-muted-foreground space-y-1">
-          {car.mileage && (
-            <p>{formatMileage(car.mileage)}</p>
-          )}
-          {car.fuel && car.transmission && (
-            <p>{car.fuel} • {car.transmission}</p>
-          )}
-          {car.color && (
-            <p>Color: {car.color}</p>
-          )}
-          {car.location && (
-            <p>📍 {car.location}</p>
+  return (
+    <Card 
+      className="w-full h-full cursor-pointer transition-all duration-200 car-card-container"
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        {/* Car Image */}
+        <div className="car-image-wrapper mb-4">
+          {car.images && car.images.length > 0 ? (
+            <img
+              src={car.images[0]}
+              alt={`${car.make} ${car.model}`}
+              className="car-image"
+              loading="lazy"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/car-placeholder.jpg';
+              }}
+            />
+          ) : (
+            <div className="car-image flex items-center justify-center text-muted-foreground">
+              <span className="text-sm">No Image</span>
+            </div>
           )}
         </div>
 
-        {/* Price and Body Type */}
-        <div className="flex justify-between items-center mt-3">
-          <div className="text-xl font-bold text-primary">
-            €{car.price.toLocaleString()}
+        {/* Car Details */}
+        <div className="space-y-2">
+          <h3 className="font-semibold text-lg line-clamp-1">
+            {car.year} {car.make} {car.model}
+          </h3>
+          
+          <div className="text-sm text-muted-foreground space-y-1">
+            {car.mileage && (
+              <p>{formatMileage(car.mileage)}</p>
+            )}
+            {fuelDisplay && car.transmission && (
+              <p>{fuelDisplay} • {car.transmission}</p>
+            )}
+            {car.color && (
+              <p>Color: {car.color}</p>
+            )}
+            {car.location && (
+              <p>📍 {car.location}</p>
+            )}
           </div>
-          {car.bodyType && (
-            <Badge variant="outline" className="text-xs">
-              {car.bodyType}
-            </Badge>
-          )}
+
+          {/* Price and Body Type */}
+          <div className="flex justify-between items-center mt-3">
+            <div className="text-xl font-bold text-primary">
+              €{car.price.toLocaleString()}
+            </div>
+            {car.bodyType && (
+              <Badge variant="outline" className="text-xs">
+                {car.bodyType}
+              </Badge>
+            )}
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </Card>
-));
+      </CardContent>
+    </Card>
+  );
+});
 
 CarCard.displayName = 'CarCard';
 
