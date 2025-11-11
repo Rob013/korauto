@@ -69,7 +69,8 @@ const EncarCatalog = ({
     fetchGrades,
     fetchTrimLevels,
     loadMore,
-    refreshInventory
+    refreshInventory,
+    clearCarsCache
   } = useSecureAuctionAPI();
   const {
     convertUSDtoEUR,
@@ -498,9 +499,10 @@ const EncarCatalog = ({
     setGenerations([]);
     setHasUserSelectedSort(false); // Reset sort preference
     setSortBy("recently_added"); // Reset to recently_added default
+    clearCarsCache();
     fetchCars(1, {}, true);
     setSearchParams({});
-  }, [fetchCars, setSearchParams]);
+  }, [fetchCars, setSearchParams, clearCarsCache]);
   const handleSearch = useCallback(() => {
     const newFilters = {
       ...(filters || {}),
