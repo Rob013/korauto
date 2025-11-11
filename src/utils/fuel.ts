@@ -354,17 +354,7 @@ const normalizeFuelString = (value: string): string => {
 };
 
 const normalizeCandidateValue = (value: unknown): string | null => {
-  const extracted = extractFuelString(value);
-  if (!extracted) {
-    return null;
-  }
-
-  const normalized = normalizeFuelString(extracted);
-  if (!normalized) {
-    return null;
-  }
-
-  return normalized;
+  return normalizeFuelValue(value);
 };
 
 const extractFuelFromSpecObject = (obj: Record<string, unknown> | null | undefined): string | null => {
@@ -508,6 +498,26 @@ export const normalizeFuelValue = (value: unknown): string | null => {
   const normalized = normalizeFuelString(extracted);
   if (!normalized) {
     return null;
+  }
+
+  const sanitizedOriginal = sanitizeRawValue(extracted);
+  if (!sanitizedOriginal) {
+    return normalized;
+  }
+
+  const normalizedLower = normalized.toLowerCase();
+  const originalLower = sanitizedOriginal.toLowerCase();
+
+  if (originalLower === normalizedLower) {
+    return normalized;
+  }
+
+  const hasAdditionalDetail =
+    /[()\/\\+&,;]/.test(sanitizedOriginal) ||
+    sanitizedOriginal.trim().split(/\s+/).length > 1;
+
+  if (hasAdditionalDetail) {
+    return sanitizedOriginal;
   }
 
   return normalized;
