@@ -73,48 +73,60 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
       evaluateSwipe(touchStartX.current - touchEndX.current);
     };
 
-    const handlePointerDown = (e: PointerEvent) => {
-      pointerActive.current = true;
-      pointerStartX.current = e.clientX;
-      pointerLastX.current = e.clientX;
-      if (typeof container.setPointerCapture === 'function') {
-        try {
-          container.setPointerCapture(e.pointerId);
-        } catch {
-          // ignore capture errors
+      const handlePointerDown = (e: PointerEvent) => {
+        if ((e.pointerType as string | undefined) === "touch") {
+          return;
         }
-      }
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!pointerActive.current) return;
-      pointerLastX.current = e.clientX;
-    };
-
-    const handlePointerUp = (e: PointerEvent) => {
-      if (!pointerActive.current) return;
-      pointerActive.current = false;
-      if (typeof container.releasePointerCapture === 'function') {
-        try {
-          container.releasePointerCapture(e.pointerId);
-        } catch {
-          // ignore release errors
+        pointerActive.current = true;
+        pointerStartX.current = e.clientX;
+        pointerLastX.current = e.clientX;
+        if (typeof container.setPointerCapture === "function") {
+          try {
+            container.setPointerCapture(e.pointerId);
+          } catch {
+            // ignore capture errors
+          }
         }
-      }
-      evaluateSwipe(pointerStartX.current - pointerLastX.current);
-    };
+      };
 
-    const handlePointerCancel = (e: PointerEvent) => {
-      if (!pointerActive.current) return;
-      pointerActive.current = false;
-      if (typeof container.releasePointerCapture === 'function') {
-        try {
-          container.releasePointerCapture(e.pointerId);
-        } catch {
-          // ignore release errors
+      const handlePointerMove = (e: PointerEvent) => {
+        if ((e.pointerType as string | undefined) === "touch") {
+          return;
         }
-      }
-    };
+        if (!pointerActive.current) return;
+        pointerLastX.current = e.clientX;
+      };
+
+      const handlePointerUp = (e: PointerEvent) => {
+        if ((e.pointerType as string | undefined) === "touch") {
+          return;
+        }
+        if (!pointerActive.current) return;
+        pointerActive.current = false;
+        if (typeof container.releasePointerCapture === "function") {
+          try {
+            container.releasePointerCapture(e.pointerId);
+          } catch {
+            // ignore release errors
+          }
+        }
+        evaluateSwipe(pointerStartX.current - pointerLastX.current);
+      };
+
+      const handlePointerCancel = (e: PointerEvent) => {
+        if ((e.pointerType as string | undefined) === "touch") {
+          return;
+        }
+        if (!pointerActive.current) return;
+        pointerActive.current = false;
+        if (typeof container.releasePointerCapture === "function") {
+          try {
+            container.releasePointerCapture(e.pointerId);
+          } catch {
+            // ignore release errors
+          }
+        }
+      };
 
     // Add touch event listeners for mobile
     container.addEventListener('touchstart', handleTouchStart, { passive: false });
@@ -122,11 +134,11 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     container.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     // Add pointer event listeners for desktop drag support
-    container.addEventListener('pointerdown', handlePointerDown);
-    container.addEventListener('pointermove', handlePointerMove);
-    container.addEventListener('pointerup', handlePointerUp);
-    container.addEventListener('pointercancel', handlePointerCancel);
-    container.addEventListener('pointerleave', handlePointerUp);
+      container.addEventListener("pointerdown", handlePointerDown);
+      container.addEventListener("pointermove", handlePointerMove);
+      container.addEventListener("pointerup", handlePointerUp);
+      container.addEventListener("pointercancel", handlePointerCancel);
+      container.addEventListener("pointerleave", handlePointerUp);
 
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);

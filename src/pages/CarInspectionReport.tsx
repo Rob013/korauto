@@ -1194,26 +1194,58 @@ const CarInspectionReport = () => {
   }, [fetchInspectionReport]);
 
   const inspectionOuterData = useMemo(() => {
-    // Try multiple potential locations and merge arrays if found
-    const candidates: unknown[] = [];
-    const pushIfArray = (val: unknown) => {
-      if (Array.isArray(val)) candidates.push(...val);
+    const collected: any[] = [];
+    const visited = new Set<unknown>();
+
+    const collectItems = (value: unknown) => {
+      if (!value || visited.has(value)) {
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        visited.add(value);
+        value.forEach(collectItems);
+        return;
+      }
+
+      if (typeof value === "object") {
+        visited.add(value);
+        const typedValue = value as Record<string, unknown>;
+        const potentialItem =
+          "type" in typedValue ||
+          "statusTypes" in typedValue ||
+          "status_types" in typedValue ||
+          "attributes" in typedValue;
+
+        if (potentialItem) {
+          collected.push(value);
+        }
+
+        Object.values(typedValue).forEach(collectItems);
+      }
     };
-    pushIfArray(car?.details?.inspect_outer);
-    pushIfArray(car?.inspect?.outer);
-    pushIfArray(car?.inspect?.inspect_outer);
-    pushIfArray((car as any)?.details?.inspect?.outer);
-    pushIfArray((car as any)?.details?.outer);
-    pushIfArray(car?.encarInspection?.outers);
-    // Deduplicate by type.code if present
+
+    [
+      car?.details?.inspect_outer,
+      car?.inspect?.outer,
+      car?.inspect?.inspect_outer,
+      (car as any)?.details?.inspect?.outer,
+      (car as any)?.details?.outer,
+      car?.encarInspection?.outers,
+    ].forEach(collectItems);
+
     const keyed = new Map<string, any>();
-    for (const item of candidates) {
-      const code =
+    for (const item of collected) {
+      const key =
         (item as any)?.type?.code ||
         (item as any)?.code ||
+        (item as any)?.type?.title ||
         JSON.stringify(item);
-      if (!keyed.has(code)) keyed.set(code, item);
+      if (!keyed.has(key)) {
+        keyed.set(key, item);
+      }
     }
+
     return Array.from(keyed.values());
   }, [car]);
 
