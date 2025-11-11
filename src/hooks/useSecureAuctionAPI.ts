@@ -5,6 +5,7 @@ import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSo
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 import { getBrandLogo } from '@/data/brandLogos';
+import { DEFAULT_CARS_PER_PAGE } from "@/utils/catalog-filter";
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -419,7 +420,7 @@ export const useSecureAuctionAPI = () => {
     } else {
       const params = new URLSearchParams();
       // default per_page
-      if (!filters?.per_page) params.append('per_page', '200');
+      if (!filters?.per_page) params.append('per_page', DEFAULT_CARS_PER_PAGE.toString());
       Object.entries(filters || {}).forEach(([k, v]) => {
         if (v !== undefined && v !== null && String(v).trim() !== '') params.append(k, String(v));
       });
@@ -466,11 +467,11 @@ export const useSecureAuctionAPI = () => {
       setIsPrimingCache(true);
 
       try {
-        const cachedCars = await fetchCachedCars({ limit: 200 });
+        const cachedCars = await fetchCachedCars({ limit: DEFAULT_CARS_PER_PAGE });
         if (!cancelled && Array.isArray(cachedCars) && cachedCars.length > 0) {
           setCars((prev) => (prev.length === 0 ? cachedCars : prev));
           setTotalCount((prev) => (prev === 0 ? cachedCars.length : prev));
-          setHasMorePages(cachedCars.length >= 200);
+          setHasMorePages(cachedCars.length >= DEFAULT_CARS_PER_PAGE);
           setLoading(false);
         }
       } catch (error) {
@@ -554,10 +555,11 @@ export const useSecureAuctionAPI = () => {
 
     try {
       // Pass filters to the API - DO NOT send grade_iaai to server for filtering
+      const perPage = newFilters.per_page || DEFAULT_CARS_PER_PAGE.toString();
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "200", // Show 200 cars per page
+        per_page: perPage,
         simple_paginate: "0",
       };
       
@@ -725,7 +727,7 @@ export const useSecureAuctionAPI = () => {
       }
       
       // Simulate pagination with fallback data
-      const pageSize = parseInt(newFilters.per_page || "200");
+        const pageSize = parseInt(newFilters.per_page || DEFAULT_CARS_PER_PAGE.toString());
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const paginatedCars = fallbackCars.slice(startIndex, endIndex).filter(car => !isCarSold(car));
