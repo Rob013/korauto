@@ -241,10 +241,17 @@ export class FrameRateOptimizer {
 
     // Listen for reduced motion preference changes
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    reducedMotionQuery.addEventListener('change', (e) => {
-      this.config.reducedMotion = e.matches;
+    const handleReducedMotionChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      const matches = 'matches' in event ? event.matches : reducedMotionQuery.matches;
+      this.config.reducedMotion = matches;
       this.applyOptimizations();
-    });
+    };
+
+    if (typeof reducedMotionQuery.addEventListener === 'function') {
+      reducedMotionQuery.addEventListener('change', handleReducedMotionChange);
+    } else if (typeof reducedMotionQuery.addListener === 'function') {
+      reducedMotionQuery.addListener(handleReducedMotionChange);
+    }
   }
 
   public getCurrentFPS(): number {

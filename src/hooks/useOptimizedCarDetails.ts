@@ -7,6 +7,98 @@ export interface OptimizedCarDetailsOptions {
   prefetch?: boolean;
 }
 
+const SESSION_CACHE_PREFIX = 'korauto-car-details:';
+const SESSION_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const MAX_SESSION_CACHE_ITEMS = 5;
+
+const isSessionStorageAvailable = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const testKey = '__korauto-car-cache-test__';
+    window.sessionStorage.setItem(testKey, '1');
+    window.sessionStorage.removeItem(testKey);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const readFromSessionCache = (id: string): any | null => {
+  if (!isSessionStorageAvailable()) return null;
+  const key = SESSION_CACHE_PREFIX + id;
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.timestamp !== 'number') {
+      window.sessionStorage.removeItem(key);
+      return null;
+    }
+    if (Date.now() - parsed.timestamp > SESSION_CACHE_TTL) {
+      window.sessionStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    window.sessionStorage.removeItem(key);
+    return null;
+  }
+};
+
+const trimSessionCache = () => {
+  if (!isSessionStorageAvailable()) return;
+  const entries: Array<{ key: string; timestamp: number }> = [];
+
+  for (let i = 0; i < window.sessionStorage.length; i += 1) {
+    const key = window.sessionStorage.key(i);
+    if (!key || !key.startsWith(SESSION_CACHE_PREFIX)) continue;
+    try {
+      const raw = window.sessionStorage.getItem(key);
+      if (!raw) {
+        window.sessionStorage.removeItem(key);
+        continue;
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.timestamp !== 'number') {
+        window.sessionStorage.removeItem(key);
+        continue;
+      }
+      entries.push({ key, timestamp: parsed.timestamp });
+    } catch {
+      window.sessionStorage.removeItem(key);
+    }
+  }
+
+  if (entries.length <= MAX_SESSION_CACHE_ITEMS) {
+    return;
+  }
+
+  entries
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(MAX_SESSION_CACHE_ITEMS)
+    .forEach((entry) => {
+      window.sessionStorage.removeItem(entry.key);
+    });
+};
+
+const writeToSessionCache = (id: string, data: unknown) => {
+  if (!isSessionStorageAvailable()) return;
+  const key = SESSION_CACHE_PREFIX + id;
+
+  try {
+    window.sessionStorage.setItem(
+      key,
+      JSON.stringify({
+        timestamp: Date.now(),
+        data,
+      }),
+    );
+    trimSessionCache();
+  } catch {
+    // Ignore quota exceeded or serialization errors
+  }
+};
+
 /**
  * Optimized hook for instant car details loading
  * Uses aggressive caching and prefetching strategies
@@ -19,79 +111,150 @@ export const useOptimizedCarDetails = ({ carId, prefetch = true }: OptimizedCarD
   // Memory cache for instant access
   const [memoryCache] = useState(() => new Map<string, any>());
 
-  const loadCarDetails = useCallback(async (id: string, fromCache = true) => {
-    try {
-      // Check memory cache first for instant load
-      if (fromCache && memoryCache.has(id)) {
-        const cached = memoryCache.get(id);
-        setCar(cached);
-        setLoading(false);
-        return cached;
-      }
+  const loadCarDetails = useCallback(
+    async (id: string, fromCache = true) => {
+      if (!id) return null;
 
-      setLoading(true);
+      try {
+        if (fromCache) {
+          if (memoryCache.has(id)) {
+            const cached = memoryCache.get(id);
+            if (cached) {
+              setCar(cached);
+              return cached;
+            }
+          }
 
-      // Try to load from Supabase cache with minimal fields first for speed
-      const { data: cacheData, error: cacheError } = await supabase
-        .from('cars_cache')
-        .select('id, car_data, updated_at')
-        .eq('id', id)
-        .single();
+          const sessionCached = readFromSessionCache(id);
+          if (sessionCached) {
+            memoryCache.set(id, sessionCached);
+            setCar(sessionCached);
+            return sessionCached;
+          }
+        }
 
-      if (cacheError) throw cacheError;
+        setLoading(true);
+        setError(null);
 
-      if (cacheData) {
+        const { data: cacheData, error: cacheError } = await supabase
+          .from('cars_cache')
+          .select('id, car_data, updated_at')
+          .eq('id', id)
+          .single();
+
+        if (cacheError) throw cacheError;
+        if (!cacheData) {
+          throw new Error('Car not found');
+        }
+
         const transformedCar = transformCachedCarRecord(cacheData);
-        
-        // Store in memory cache
-        memoryCache.set(id, transformedCar);
-        
-        setCar(transformedCar);
-        setLoading(false);
-        return transformedCar;
-      }
 
-      throw new Error('Car not found');
-    } catch (err) {
-      console.error('Error loading car details:', err);
-      setError(err as Error);
-      setLoading(false);
-      return null;
-    }
-  }, [memoryCache]);
+        memoryCache.set(id, transformedCar);
+        writeToSessionCache(id, transformedCar);
+
+        setCar(transformedCar);
+        return transformedCar;
+      } catch (err) {
+        console.error('Error loading car details:', err);
+        setError(err as Error);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [memoryCache],
+  );
 
   // Prefetch adjacent cars for instant navigation
-  const prefetchAdjacentCars = useCallback(async (currentId: string) => {
-    if (!prefetch) return;
+  const prefetchAdjacentCars = useCallback(
+    async (currentId: string) => {
+      if (!prefetch) return;
 
-    try {
-      // Get adjacent cars (previous and next) for instant navigation
-      const { data: adjacentCars } = await supabase
-        .from('cars_cache')
-        .select('id, car_data')
-        .neq('id', currentId)
-        .limit(4);
-
-      if (adjacentCars) {
-        adjacentCars.forEach(car => {
-          const transformed = transformCachedCarRecord(car);
-          memoryCache.set(car.id, transformed);
-        });
+      if (typeof navigator !== 'undefined') {
+        const connection = (navigator as any).connection;
+        const effectiveType = connection?.effectiveType?.toLowerCase() as string | undefined;
+        if (connection?.saveData) {
+          return;
+        }
+        if (effectiveType && ['slow-2g', '2g', '3g'].includes(effectiveType)) {
+          return;
+        }
       }
-    } catch (err) {
-      console.error('Error prefetching adjacent cars:', err);
-    }
-  }, [prefetch, memoryCache]);
+
+      try {
+        const { data: adjacentCars } = await supabase
+          .from('cars_cache')
+          .select('id, car_data, updated_at')
+          .neq('id', currentId)
+          .limit(2);
+
+        if (adjacentCars) {
+          adjacentCars.forEach((adjacent) => {
+            if (!adjacent?.id || memoryCache.has(adjacent.id)) {
+              return;
+            }
+            const transformed = transformCachedCarRecord(adjacent);
+            memoryCache.set(adjacent.id, transformed);
+            writeToSessionCache(adjacent.id, transformed);
+          });
+        }
+      } catch (err) {
+        console.error('Error prefetching adjacent cars:', err);
+      }
+    },
+    [prefetch, memoryCache],
+  );
 
   useEffect(() => {
-    if (carId) {
-      loadCarDetails(carId).then(carData => {
-        if (carData) {
-          // Prefetch adjacent cars in background
+    if (!carId) {
+      return;
+    }
+
+    let cancelled = false;
+    let idleId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    loadCarDetails(carId).then((carData) => {
+      if (!carData || cancelled) {
+        return;
+      }
+
+      const schedulePrefetch = () => {
+        if (!cancelled) {
           prefetchAdjacentCars(carId);
         }
-      });
-    }
+      };
+
+      if (typeof window !== 'undefined') {
+        const idleCallback = (window as typeof window & {
+          requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+          cancelIdleCallback?: (handle: number) => void;
+        }).requestIdleCallback;
+
+        if (typeof idleCallback === 'function') {
+          idleId = idleCallback(schedulePrefetch, { timeout: 2000 });
+        } else {
+          timeoutId = window.setTimeout(schedulePrefetch, 1500);
+        }
+      } else {
+        schedulePrefetch();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (typeof window !== 'undefined') {
+        const cancelIdle = (window as typeof window & {
+          cancelIdleCallback?: (handle: number) => void;
+        }).cancelIdleCallback;
+        if (idleId !== null && typeof cancelIdle === 'function') {
+          cancelIdle(idleId);
+        }
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId);
+        }
+      }
+    };
   }, [carId, loadCarDetails, prefetchAdjacentCars]);
 
   return {
