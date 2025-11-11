@@ -2349,65 +2349,16 @@ const accidentSummaryEntries = useMemo(
 
     return (
       <div className="min-h-screen bg-background text-foreground">
-        {/* Clean, single header section */}
-        <div className="border-b border-border/60 bg-gradient-to-b from-muted/30 to-background">
-          <div className="container-responsive py-6 md:py-8">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className="text-xs font-semibold">
-                    Raporti Zyrtar i Inspektimit
-                  </Badge>
-                  {car.grade && (
-                    <Badge variant="outline" className="border-primary/50 text-primary">
-                      <Shield className="mr-1 h-3 w-3" />
-                      {car.grade}
-                    </Badge>
-                  )}
-                  {accidentBadgeCount > 0 && (
-                    <Badge variant="destructive" className="text-xs font-semibold">
-                      {accidentBadgeCount} aksidente
-                    </Badge>
-                  )}
-                </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
-                  {carName || car.title || "Raport Inspektimi"}
-                </h1>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Gauge className="h-4 w-4" />
-                    {mileageDisplay}
-                  </span>
-                  <span className="text-border">•</span>
-                  <span>{car.vin || "-"}</span>
-                </div>
-              </div>
-              <div className="flex flex-col items-start md:items-end gap-2">
-                {formattedPrice && (
-                  <div className="text-2xl font-bold text-primary">
-                    {formattedPrice}
-                  </div>
-                )}
-                {car.lot && (
-                  <Badge variant="outline" className="text-xs">
-                    Kodi: {car.lot}
-                  </Badge>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => openCarDetailsInNewTab(car.lot || lot)}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Kthehu te makina
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="container-responsive py-6 md:py-8">
+        <div className="container-responsive py-4 md:py-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openCarDetailsInNewTab(car.lot || lot)}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kthehu te makinat
+          </Button>
           <Tabs defaultValue="diagram" className="space-y-4">
             <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
               <TabsTrigger
@@ -2415,28 +2366,28 @@ const accidentSummaryEntries = useMemo(
                 className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
               >
                 <FileText className="h-4 w-4 text-primary" />
-                <span>Diagrami</span>
+                <span>Diagrami i Inspektimit</span>
               </TabsTrigger>
               <TabsTrigger
                 value="exterior"
                 className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
               >
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>I Jashtëm</span>
+                <Car className="h-4 w-4 text-primary" />
+                <span>Historia e Përdorimit</span>
               </TabsTrigger>
               <TabsTrigger
                 value="insurance"
                 className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
               >
                 <AlertTriangle className="h-4 w-4 text-primary" />
-                <span>Sigurimi</span>
+                <span>Aksidentet & Sigurimi</span>
               </TabsTrigger>
               <TabsTrigger
                 value="options"
                 className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
               >
                 <Cog className="h-4 w-4 text-primary" />
-                <span>Opsionet</span>
+                <span>Pajisjet & Opsionet</span>
               </TabsTrigger>
               <TabsTrigger
                 value="warranty"
@@ -3238,42 +3189,53 @@ const accidentSummaryEntries = useMemo(
                 <div className="flex items-center gap-3">
                   <Car className="h-5 w-5 text-primary" />
                   <CardTitle className="text-xl">
-                    Gjendja e Jashtme dhe Përdorimi
+                    Historia e Përdorimit të Automjetit
                   </CardTitle>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Informacion për historinë e përdorimit dhe pronësisë së
-                  automjetit
+                  Informacion i detajuar nga API për historinë e përdorimit, pronësisë dhe ndërrimeve
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground">
-                    Historia e përdorimit të veturës
-                  </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {usageHighlights.map((item) => (
-                      <div
-                        key={item.label}
-                        className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 p-3"
-                      >
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {item.label}
-                        </span>
-                        <span className="text-base font-semibold text-foreground">
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  {usageHistoryList.length > 0 && (
-                    <div className="space-y-2 mt-4">
+              <CardContent className="space-y-6">
+                {/* Usage Type Highlights */}
+                {usageHighlights.length > 0 && (
+                  <section className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <div className="w-1 h-5 bg-primary rounded-full"></div>
+                      Lloji i Përdorimit
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {usageHighlights.map((item) => (
+                        <div
+                          key={item.label}
+                          className="flex flex-col gap-1.5 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 hover:shadow-md transition-shadow"
+                        >
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                            {item.label}
+                          </span>
+                          <span className={`text-lg font-bold ${item.value === "Po" ? "text-destructive" : "text-emerald-600"}`}>
+                            {item.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Detailed Usage History */}
+                {usageHistoryList.length > 0 && (
+                  <section className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <div className="w-1 h-5 bg-primary rounded-full"></div>
+                      Detajet e Historisë së Përdorimit
+                    </h3>
+                    <div className="space-y-2">
                       {usageHistoryList.map((entry, index) => (
                         <div
                           key={`${entry.description || "usage"}-${index}`}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/60 px-4 py-3 text-sm"
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/80 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
                         >
-                          <span className="font-medium text-foreground">
+                          <span className="font-semibold text-foreground">
                             {entry.description || "Përdorim"}
                           </span>
                           <span className="text-muted-foreground font-medium">
@@ -3282,115 +3244,91 @@ const accidentSummaryEntries = useMemo(
                         </div>
                       ))}
                     </div>
-                  )}
-                </section>
+                  </section>
+                )}
 
+                {/* Owner Changes History */}
                 <section className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground">
-                    Historia e ndërrimit të pronarëve
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <div className="w-1 h-5 bg-primary rounded-full"></div>
+                    Historia e Ndërrimit të Pronarëve
                   </h3>
                   {ownerChangesList.length > 0 ? (
                     <div className="space-y-3">
                       {ownerChangesList.map((change, index) => (
-                        <div
+                        <Card
                           key={`${change?.change_type || "owner"}-${index}`}
-                          className="rounded-lg border border-border/60 bg-muted/40 p-4 text-sm space-y-2"
+                          className="border-l-4 border-l-primary/50"
                         >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="font-semibold text-foreground">
-                              {change?.change_type || "Ndryshim pronari"}
-                            </span>
-                            {change?.date && (
-                              <Badge variant="outline" className="text-xs">
-                                {formatDisplayDate(change.date) ?? change.date}
-                              </Badge>
+                          <CardContent className="p-4 space-y-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-semibold text-foreground text-base">
+                                {change?.change_type || "Ndryshim pronari"}
+                              </span>
+                              {change?.date && (
+                                <Badge variant="outline" className="text-xs font-medium">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {formatDisplayDate(change.date) ?? change.date}
+                                </Badge>
+                              )}
+                            </div>
+                            {change?.usage_type && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-xs text-muted-foreground">Lloji i përdorimit:</span>
+                                <span className="text-xs font-medium text-foreground">{change.usage_type}</span>
+                              </div>
                             )}
-                          </div>
-                          {change?.usage_type && (
-                            <p className="text-xs text-muted-foreground">
-                              Përdorim: {change.usage_type}
-                            </p>
-                          )}
-                          {change?.previous_number && (
-                            <p className="text-xs text-muted-foreground">
-                              Numri paraprak: {change.previous_number}
-                            </p>
-                          )}
-                        </div>
+                            {change?.previous_number && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-xs text-muted-foreground">Numri paraprak:</span>
+                                <span className="text-xs font-mono font-medium text-foreground">{change.previous_number}</span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground bg-muted/20 p-3 rounded-lg">
-                      Nuk ka informata për ndërrimin e pronarëve.
-                    </p>
+                    <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
+                      <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="font-medium">Nuk ka informata për ndërrimin e pronarëve</p>
+                    </div>
                   )}
                 </section>
-              </CardContent>
-            </Card>
 
-            {car.damage && (car.damage.main || car.damage.second) && (
-              <Card className="shadow-md border-border/80">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-xl">
-                      Dëmtimet e raportuara
-                    </CardTitle>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Vlerësimi i dëmtimeve të evidentuara nga inspektimi
-                  </p>
-                </CardHeader>
-                <CardContent className="grid gap-3 md:grid-cols-2">
-                  {car.damage?.main && (
-                    <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Dëmtimi kryesor
-                      </h3>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {car.damage.main}
-                      </p>
+                {/* Reported Damages */}
+                {car.damage && (car.damage.main || car.damage.second) && (
+                  <section className="space-y-3">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <div className="w-1 h-5 bg-destructive rounded-full"></div>
+                      Dëmtimet e Raportuara
+                    </h3>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {car.damage?.main && (
+                        <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+                          <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                            Dëmtimi Kryesor
+                          </h4>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {car.damage.main}
+                          </p>
+                        </div>
+                      )}
+                      {car.damage?.second && (
+                        <div className="p-4 rounded-lg border border-orange-400/30 bg-orange-50/50 dark:bg-orange-500/5">
+                          <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-orange-500" />
+                            Dëmtimi Dytësor
+                          </h4>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {car.damage.second}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {car.damage?.second && (
-                    <div className="p-3 rounded-lg border border-border/60 bg-muted/40">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Dëmtimi dytësor
-                      </h3>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {car.damage.second}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="shadow-md border-border/80">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">
-                    Historia e aksidenteve
-                  </CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Detaje të plota të aksidenteve të raportuara për automjetin.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <p>
-                  Detajet e plota të aksidenteve tani gjenden në tabin{" "}
-                  <span className="font-semibold text-foreground">
-                    Historia e Sigurimit
-                  </span>
-                  , ku ofrohet tabela me shpenzimet, pjesët dhe kronologjinë e
-                  ngjarjeve.
-                </p>
-                <p className="text-xs sm:text-sm">
-                  Shfrytëzoni tabin për të parë çdo aksident individual, kostot
-                  e riparimit dhe shënimet nga kompania e sigurimit.
-                </p>
+                  </section>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
