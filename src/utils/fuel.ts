@@ -37,12 +37,40 @@ const FUEL_PATH_CANDIDATES = [
   "details.specs.fuel_type",
   "details.specs.fuelType",
   "details.specification.fuel",
+  "details.specification.fuel_type",
+  "details.specification.fuelType",
+  "details.specifications.fuel",
+  "details.specifications.fuel_type",
+  "details.specifications.fuelType",
   "details.summary.fuel",
+  "specification.fuel",
+  "specification.fuel_type",
+  "specification.fuelType",
+  "specifications.fuel",
+  "specifications.fuel_type",
+  "specifications.fuelType",
   "specs.fuel",
   "specs.fuel_type",
   "specs.fuelType",
   "summary.fuel",
+  "summary.specification.fuel",
+  "summary.specification.fuel_type",
+  "summary.specification.fuelType",
   "technical.fuel",
+  "technical.fuel_type",
+  "technical.fuelType",
+  "technicalSpecification.fuel",
+  "technicalSpecification.fuel_type",
+  "technicalSpecification.fuelType",
+  "technicalSpecifications.fuel",
+  "technicalSpecifications.fuel_type",
+  "technicalSpecifications.fuelType",
+  "specs.specification.fuel",
+  "specs.specification.fuel_type",
+  "specs.specification.fuelType",
+  "specs.technical.fuel",
+  "specs.technical.fuel_type",
+  "specs.technical.fuelType",
   "vehicle.fuel",
   "vehicle.fuel_type",
   "engine.fuel",
@@ -85,6 +113,34 @@ const FUEL_TRANSLATIONS_SQ: Record<string, string> = {
   Gas: "Gaz",
 };
 
+const FUEL_KEY_PATTERN = /(fuel|karburant)/i;
+const FUEL_LABEL_KEYS = [
+  "label",
+  "name",
+  "title",
+  "key",
+  "attribute",
+  "header",
+  "field",
+  "type",
+  "id",
+  "code",
+];
+const FUEL_VALUE_KEYS = [
+  "value",
+  "val",
+  "data",
+  "content",
+  "display",
+  "displayValue",
+  "display_value",
+  "text",
+  "name",
+  "value_text",
+];
+const MAX_DEEP_SEARCH_DEPTH = 6;
+const MAX_DEEP_SEARCH_NODES = 5000;
+
 const capitalizeWords = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -126,9 +182,14 @@ const extractFuelString = (value: unknown): string | null => {
 
   if (typeof value === "object") {
     const candidates = [
+      (value as any).value,
+      (value as any).val,
+      (value as any).data,
+      (value as any).text,
+      (value as any).displayValue,
+      (value as any).display_value,
       (value as any).name,
       (value as any).label,
-      (value as any).value,
       (value as any).type,
       (value as any).fuel,
     ];
@@ -292,6 +353,152 @@ const normalizeFuelString = (value: string): string => {
   return normalizeSingleFuelString(value);
 };
 
+const normalizeCandidateValue = (value: unknown): string | null => {
+  const extracted = extractFuelString(value);
+  if (!extracted) {
+    return null;
+  }
+
+  const normalized = normalizeFuelString(extracted);
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized;
+};
+
+const extractFuelFromSpecObject = (obj: Record<string, unknown> | null | undefined): string | null => {
+  if (!obj || typeof obj !== "object") {
+    return null;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (FUEL_LABEL_KEYS.includes(key)) {
+      continue;
+    }
+
+    if (FUEL_KEY_PATTERN.test(key)) {
+      const normalized = normalizeCandidateValue(value);
+      if (normalized) {
+        return normalized;
+      }
+    }
+  }
+
+  for (const labelKey of FUEL_LABEL_KEYS) {
+    const rawLabel = obj[labelKey];
+    if (typeof rawLabel === "string" && FUEL_KEY_PATTERN.test(rawLabel)) {
+      for (const valueKey of FUEL_VALUE_KEYS) {
+        if (valueKey in obj) {
+          const normalized = normalizeCandidateValue(obj[valueKey]);
+          if (normalized) {
+            return normalized;
+          }
+        }
+      }
+
+      const values = (obj as any).values;
+      if (Array.isArray(values)) {
+        for (const entry of values) {
+          const normalized = normalizeCandidateValue(entry);
+          if (normalized) {
+            return normalized;
+          }
+        }
+      }
+
+      const labelParts = rawLabel.split(":");
+      if (labelParts.length > 1) {
+        const inlineValue = labelParts.slice(1).join(":").trim();
+        const normalized = normalizeCandidateValue(inlineValue);
+        if (normalized) {
+          return normalized;
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+const deepSearchFuel = (
+  source: unknown,
+  maxDepth = MAX_DEEP_SEARCH_DEPTH,
+  maxNodes = MAX_DEEP_SEARCH_NODES,
+): string | null => {
+  if (source === null || source === undefined) {
+    return null;
+  }
+
+  const visited = new Set<unknown>();
+  const stack: Array<{ value: unknown; depth: number }> = [
+    { value: source, depth: 0 },
+  ];
+  let processed = 0;
+
+  while (stack.length > 0) {
+    const { value, depth } = stack.pop() as { value: unknown; depth: number };
+
+    if (value === null || value === undefined) {
+      continue;
+    }
+
+    if (typeof value === "string" || typeof value === "number") {
+      const normalized = normalizeCandidateValue(value);
+      if (normalized) {
+        return normalized;
+      }
+      continue;
+    }
+
+    if (typeof value !== "object") {
+      continue;
+    }
+
+    if (visited.has(value)) {
+      continue;
+    }
+    visited.add(value);
+
+    if (++processed > maxNodes) {
+      break;
+    }
+
+    const specCandidate = extractFuelFromSpecObject(value as Record<string, unknown>);
+    if (specCandidate) {
+      return specCandidate;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const normalized = normalizeCandidateValue(item);
+        if (normalized) {
+          return normalized;
+        }
+        if (depth + 1 <= maxDepth) {
+          stack.push({ value: item, depth: depth + 1 });
+        }
+      }
+      continue;
+    }
+
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      if (FUEL_KEY_PATTERN.test(key)) {
+        const normalized = normalizeCandidateValue(child);
+        if (normalized) {
+          return normalized;
+        }
+      }
+
+      if (depth + 1 <= maxDepth) {
+        stack.push({ value: child, depth: depth + 1 });
+      }
+    }
+  }
+
+  return null;
+};
+
 export const normalizeFuelValue = (value: unknown): string | null => {
   const extracted = extractFuelString(value);
   if (!extracted) {
@@ -306,36 +513,54 @@ export const normalizeFuelValue = (value: unknown): string | null => {
   return normalized;
 };
 
-export const resolveFuelFromSources = (
-  carData?: any,
-  lotData?: any,
-): string | null => {
-  for (const path of FUEL_PATH_CANDIDATES) {
-    const carCandidate = normalizeFuelValue(getNestedValue(carData, path));
-    if (carCandidate) {
-      return carCandidate;
-    }
+export const resolveFuelFromSources = (...sources: any[]): string | null => {
+  const uniqueSources = sources.filter(Boolean);
+  if (uniqueSources.length === 0) {
+    return null;
+  }
 
-    const lotCandidate = normalizeFuelValue(getNestedValue(lotData, path));
-    if (lotCandidate) {
-      return lotCandidate;
+  for (const path of FUEL_PATH_CANDIDATES) {
+    for (const source of uniqueSources) {
+      const candidate = normalizeFuelValue(getNestedValue(source, path));
+      if (candidate) {
+        return candidate;
+      }
     }
   }
 
-  // Direct fallbacks for common shorthand objects
-  const fallbackCandidates = [
-    carData?.fuel,
-    lotData?.fuel,
-    carData?.fuel_name,
-    lotData?.fuel_name,
-    carData?.fueltype,
-    lotData?.fueltype,
-  ];
+  for (const source of uniqueSources) {
+    const directCandidates = [
+      source?.fuel,
+      source?.fuel_type,
+      source?.fuelType,
+      source?.fuel_name,
+      source?.fuelName,
+      source?.fueltype,
+      source?.fueltype_name,
+      source?.fuel_type_name,
+      source?.technical?.fuel,
+      source?.technical?.fuel_type,
+      source?.technical?.fuelType,
+      source?.spec?.fuel,
+      source?.spec?.fuel_type,
+      source?.spec?.fuelType,
+      source?.primary_attributes?.fuel,
+      source?.attributes?.fuel,
+      source?.properties?.fuel,
+    ];
 
-  for (const candidate of fallbackCandidates) {
-    const normalized = normalizeFuelValue(candidate);
-    if (normalized) {
-      return normalized;
+    for (const candidate of directCandidates) {
+      const normalized = normalizeFuelValue(candidate);
+      if (normalized) {
+        return normalized;
+      }
+    }
+  }
+
+  for (const source of uniqueSources) {
+    const deepCandidate = deepSearchFuel(source);
+    if (deepCandidate) {
+      return deepCandidate;
     }
   }
 
