@@ -19,7 +19,7 @@ import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
-import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce, extractUniqueEngineSpecs, matchesEngineFilter } from "@/utils/catalog-filter";
+import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce, extractUniqueEngineSpecs, matchesEngineFilter, DEFAULT_CARS_PER_PAGE } from "@/utils/catalog-filter";
 import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -86,15 +86,15 @@ const EncarCatalog = ({
     isGlobalSortingReady,
     getPageInfo,
     clearGlobalSorting
-  } = useGlobalCarSorting({
-    fetchAllCars,
-    currentCars: cars,
-    filters,
-    totalCount,
-    carsPerPage: 200,
-    enableCaching: true,
-    validationEnabled: false
-  });
+    } = useGlobalCarSorting({
+      fetchAllCars,
+      currentCars: cars,
+      filters,
+      totalCount,
+      carsPerPage: DEFAULT_CARS_PER_PAGE,
+      enableCaching: true,
+      validationEnabled: false
+    });
 
   // Default sort: recently_added when no filters selected
   const [sortBy, setSortBy] = useState<SortOption>("recently_added");
@@ -431,8 +431,8 @@ const EncarCatalog = ({
     // Reset global sorting when filters change
     clearGlobalSorting();
 
-    // Use 200 cars per page for proper pagination - fetch from ALL sources
-    const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
+    // Use default cars per page for proper pagination - fetch from ALL sources
+    const filtersWithPagination = addPaginationToFilters(newFilters, DEFAULT_CARS_PER_PAGE, 1);
 
     // Use current sort if user has selected one
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
@@ -464,32 +464,28 @@ const EncarCatalog = ({
 
   // Apply filters instantly without debouncing
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
-      // Reset sorting to neutral whenever filters change
-      setHasUserSelectedSort(false);
-      setSortBy("");
+    // Update UI immediately for instant response
+    setFilters(newFilters);
 
-      // Update UI immediately for instant response
-      setFilters(newFilters);
+    // Reset "Show All" mode when filters change
+    setShowAllCars(false);
+    setAllCarsData([]);
 
-      // Reset "Show All" mode when filters change
-      setShowAllCars(false);
-      setAllCarsData([]);
+    // Clear global sorting when filters change
+    clearGlobalSorting();
 
-      // Clear global sorting when filters change
-      clearGlobalSorting();
+    // Apply filters immediately - no debouncing - fetch from ALL sources
+    const filtersWithPagination = addPaginationToFilters(newFilters, DEFAULT_CARS_PER_PAGE, 1);
+    fetchCars(1, filtersWithPagination, true);
+    setCurrentPage(1);
 
-      // Apply filters immediately - no debouncing - fetch from ALL sources
-      const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
-      fetchCars(1, filtersWithPagination, true);
-      setCurrentPage(1);
+    // Update URL
+    const searchParams = filtersToURLParams(newFilters);
+    searchParams.set('page', '1');
+    setSearchParams(searchParams);
 
-      // Update URL
-      const searchParams = filtersToURLParams(newFilters);
-      searchParams.set('page', '1');
-      setSearchParams(searchParams);
-      
-      setIsFilterLoading(false);
-    }, [fetchCars, setSearchParams, clearGlobalSorting]);
+    setIsFilterLoading(false);
+  }, [fetchCars, setSearchParams, clearGlobalSorting]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -519,7 +515,7 @@ const EncarCatalog = ({
     setCurrentPage(page);
 
     // Fetch cars for the specific page with proper API pagination - fetch from ALL sources
-    const filtersWithPagination = addPaginationToFilters(filters, 200, page);
+    const filtersWithPagination = addPaginationToFilters(filters, DEFAULT_CARS_PER_PAGE, page);
     const filtersWithSort = hasUserSelectedSort && sortBy ? {
       ...filtersWithPagination,
       sort_by: sortBy
@@ -608,7 +604,7 @@ const EncarCatalog = ({
       lastSortParamsRef.current = sortKey;
 
       // Check if current page is beyond available pages and reset to page 1 if needed
-      const maxPages = Math.ceil(filteredAllCars.length / 200);
+        const maxPages = Math.ceil(filteredAllCars.length / DEFAULT_CARS_PER_PAGE);
       if (currentPage > maxPages && maxPages > 0) {
         console.log(`📄 Resetting page from ${currentPage} to 1 (max available: ${maxPages})`);
         setCurrentPage(1);
@@ -629,13 +625,10 @@ const EncarCatalog = ({
   }, [totalCount, fetchAllCars, filters?.grade_iaai, filters?.manufacturer_id, filters?.model_id, filters?.generation_id, filters?.from_year, filters?.to_year, sortBy,
   // Remove filteredCars from dependencies as it's computed and can cause infinite loops
   // filteredCars,
-  totalPages || 0, currentPage, setSearchParams]);
-    const handleManufacturerChange = async (manufacturerId: string) => {
-      console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
-  
-      // Reset sorting to neutral when manufacturer changes
-      setHasUserSelectedSort(false);
-      setSortBy("");
+    totalPages || 0, currentPage, setSearchParams]);
+
+  const handleManufacturerChange = async (manufacturerId: string) => {
+    console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
 
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
@@ -653,7 +646,7 @@ const EncarCatalog = ({
       buy_now_price_from: filters.buy_now_price_from,
       buy_now_price_to: filters.buy_now_price_to,
       seats_count: filters.seats_count,
-      search: filters.search
+      search: filters.search,
     };
     setFilters(newFilters);
     setLoadedPages(1);
@@ -669,7 +662,7 @@ const EncarCatalog = ({
       }
 
       // Optimistically show fallback models instantly (replaced when API returns)
-      const selectedManufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+      const selectedManufacturer = manufacturers.find((m) => m.id.toString() === manufacturerId);
       if (selectedManufacturer?.name) {
         try {
           const optimisticModels = createFallbackModels(selectedManufacturer.name);
@@ -682,15 +675,20 @@ const EncarCatalog = ({
       // Fetch models in parallel
       const modelPromise = fetchModels(manufacturerId);
 
-        // Fetch cars with neutral sorting (user can re-apply a sort after filters)
-        const filtersForCars = {
-          ...newFilters,
-          per_page: "50"
-        };
-      await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
-        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-        setModels(modelData);
-      }).catch(err => console.warn('Failed to load models:', err))]);
+      // Fetch cars with neutral sorting (user can re-apply a sort after filters)
+      const filtersForCars = {
+        ...newFilters,
+        per_page: DEFAULT_CARS_PER_PAGE.toString(),
+      };
+      await Promise.all([
+        fetchCars(1, filtersForCars, true),
+        modelPromise
+          .then((modelData) => {
+            console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+            setModels(modelData);
+          })
+          .catch((err) => console.warn('Failed to load models:', err)),
+      ]);
 
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -712,17 +710,14 @@ const EncarCatalog = ({
   useEffect(() => {
     console.log(`[EncarCatalog] Models state updated:`, models);
   }, [models]);
-    const handleModelChange = async (modelId: string) => {
-      // Reset sorting to neutral when model changes
-      setHasUserSelectedSort(false);
-      setSortBy("");
 
+  const handleModelChange = async (modelId: string) => {
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
       ...filters,
       model_id: modelId,
       generation_id: undefined,
-      grade_iaai: undefined
+      grade_iaai: undefined,
     };
     setFilters(newFilters);
     setLoadedPages(1);
@@ -731,16 +726,18 @@ const EncarCatalog = ({
     // Only show loading for cars
     setIsLoading(true);
     try {
-        // Fetch cars with neutral sorting (user can re-apply a sort after filters)
-        const filtersForCars = {
-          ...newFilters,
-          per_page: "50"
-        };
+      // Fetch cars with neutral sorting (user can re-apply a sort after filters)
+      const filtersForCars = {
+        ...newFilters,
+        per_page: DEFAULT_CARS_PER_PAGE.toString(),
+      };
       await fetchCars(1, filtersForCars, true);
 
       // Fetch generations in background (non-blocking)
       if (modelId) {
-        fetchGenerations(modelId).then(generationData => setGenerations(generationData)).catch(err => console.warn('Failed to load generations:', err));
+        fetchGenerations(modelId)
+          .then((generationData) => setGenerations(generationData))
+          .catch((err) => console.warn('Failed to load generations:', err));
       }
 
       // Update URL after successful data fetch
@@ -766,17 +763,6 @@ const EncarCatalog = ({
     return entries.some(([key, value]) => !!value && value !== 'all');
   }, [filters]);
 
-    // Adjust sort depending on filter presence
-    useEffect(() => {
-      if (hasUserSelectedSort) {
-        return;
-      }
-
-      setSortBy((currentSort) => {
-        const desiredSort: SortOption = anyFilterApplied ? "" : "recently_added";
-        return currentSort === desiredSort ? currentSort : desiredSort;
-      });
-    }, [anyFilterApplied, hasUserSelectedSort]);
 
   // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
@@ -838,7 +824,7 @@ const EncarCatalog = ({
         // Load cars last - this is the most expensive operation
         const initialFilters = {
           ...urlFilters,
-          per_page: "200",
+          per_page: DEFAULT_CARS_PER_PAGE.toString(),
           page: urlCurrentPage.toString(),
           ...(hasUserSelectedSort && sortBy ? {
             sort_by: sortBy
@@ -1011,16 +997,16 @@ const EncarCatalog = ({
   }, [manufacturers.length]); // Only run when manufacturers are first loaded
 
   // Calculate total pages based on actual total count
-  useEffect(() => {
-    if (totalCount > 0) {
-      const calculatedPages = Math.ceil(totalCount / 200);
-      setTotalPages(calculatedPages);
-      console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (200 cars per page)`);
-    } else {
-      setTotalPages(0);
-      console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
-    }
-  }, [totalCount]); // Update when totalCount changes
+    useEffect(() => {
+      if (totalCount > 0) {
+        const calculatedPages = Math.ceil(totalCount / DEFAULT_CARS_PER_PAGE);
+        setTotalPages(calculatedPages);
+        console.log(`📊 Calculated pagination: ${totalCount} cars across ${calculatedPages} pages (${DEFAULT_CARS_PER_PAGE} cars per page)`);
+      } else {
+        setTotalPages(0);
+        console.log(`📊 No cars available: ${totalCount} cars, 0 pages`);
+      }
+    }, [totalCount]); // Update when totalCount changes
 
   // Initialize global sorting when sortBy changes or totalCount becomes available
   useEffect(() => {
@@ -1177,14 +1163,14 @@ const EncarCatalog = ({
             console.log("Search button clicked, isMobile:", isMobile);
             // Apply search/filters with current sort preference - fetch from ALL sources
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
-            const searchFilters = effectiveSort ? {
-              ...filters,
-              per_page: "200",
-              sort_by: effectiveSort
-            } : {
-              ...filters,
-              per_page: "200"
-            };
+              const searchFilters = effectiveSort ? {
+                ...filters,
+                per_page: DEFAULT_CARS_PER_PAGE.toString(),
+                sort_by: effectiveSort
+              } : {
+                ...filters,
+                per_page: DEFAULT_CARS_PER_PAGE.toString()
+              };
             fetchCars(1, searchFilters, true);
 
             // Close filter panel on mobile only; keep open on desktop

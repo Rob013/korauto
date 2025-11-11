@@ -332,7 +332,9 @@ export const isYearRangeChange = (newFilters: APIFilters, currentFilters: APIFil
 /**
  * Creates filters with pagination
  */
-export const addPaginationToFilters = (filters: APIFilters, perPage: number = 200, page: number = 1): APIFilters => {
+export const DEFAULT_CARS_PER_PAGE = 50;
+
+export const addPaginationToFilters = (filters: APIFilters, perPage: number = DEFAULT_CARS_PER_PAGE, page: number = 1): APIFilters => {
   return {
     ...filters,
     per_page: perPage.toString(),
