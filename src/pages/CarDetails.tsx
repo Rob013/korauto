@@ -1553,208 +1553,223 @@ const CarDetails = memo(() => {
     "kbcchachacha",
   ];
 
-  const buildCarDetails = useCallback(
-    (carData: any, lotData: any): CarDetails | null => {
-      if (!carData || !lotData) {
-        return null;
-      }
+    const buildCarDetails = useCallback(
+      (
+        carData: any,
+        lotData: any,
+        additionalSources: any[] = [],
+      ): CarDetails | null => {
+        if (!carData || !lotData) {
+          return null;
+        }
 
-      const buyNow = Number(
-        lotData?.buy_now || carData?.buy_now || carData?.price,
-      );
-      if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
-        return null;
-      }
+        const buyNow = Number(
+          lotData?.buy_now || carData?.buy_now || carData?.price,
+        );
+        if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
+          return null;
+        }
 
-      const price = calculateFinalPriceEUR(buyNow, exchangeRate.rate);
-      const domainRaw = String(
-        lotData?.domain?.name ||
-          carData?.domain_name ||
-          carData?.provider ||
-          carData?.source_api ||
-          "",
-      ).toLowerCase();
-      const isKbc = domainRaw
-        ? KBC_DOMAINS.some((k) => domainRaw.includes(k))
-        : false;
-      const sourceLabel = domainRaw
-        ? isKbc
-          ? "KB Chachacha"
-          : "Encar"
-        : undefined;
+        const price = calculateFinalPriceEUR(buyNow, exchangeRate.rate);
+        const domainRaw = String(
+          lotData?.domain?.name ||
+            carData?.domain_name ||
+            carData?.provider ||
+            carData?.source_api ||
+            "",
+        ).toLowerCase();
+        const isKbc = domainRaw
+          ? KBC_DOMAINS.some((k) => domainRaw.includes(k))
+          : false;
+        const sourceLabel = domainRaw
+          ? isKbc
+            ? "KB Chachacha"
+            : "Encar"
+          : undefined;
 
-      const manufacturerName =
-        carData?.manufacturer?.name || carData?.make || "Unknown";
-      const modelName = carData?.model?.name || carData?.model || "Unknown";
+        const manufacturerName =
+          carData?.manufacturer?.name || carData?.make || "Unknown";
+        const modelName = carData?.model?.name || carData?.model || "Unknown";
 
-      // Extract year from multiple possible sources
-      const year =
-        carData?.year ||
-        lotData?.year ||
-        carData?.model_year ||
-        lotData?.model_year ||
-        carData?.production_year ||
-        lotData?.production_year ||
-        (carData?.registration_date
-          ? new Date(carData.registration_date).getFullYear()
-          : null) ||
-        (lotData?.registration_date
-          ? new Date(lotData.registration_date).getFullYear()
-          : null) ||
-        null;
+        // Extract year from multiple possible sources
+        const year =
+          carData?.year ||
+          lotData?.year ||
+          carData?.model_year ||
+          lotData?.model_year ||
+          carData?.production_year ||
+          lotData?.production_year ||
+          (carData?.registration_date
+            ? new Date(carData.registration_date).getFullYear()
+            : null) ||
+          (lotData?.registration_date
+            ? new Date(lotData.registration_date).getFullYear()
+            : null) ||
+          null;
 
-      if (!year) {
-        console.warn("⚠️ No year found in car data, using fallback");
-      }
+        if (!year) {
+          console.warn("⚠️ No year found in car data, using fallback");
+        }
 
-      const odometer =
-        lotData?.odometer ||
-        carData?.odometer ||
-        (lotData?.odometer_km
-          ? {
-              km: lotData.odometer_km,
-              mi: Math.round(Number(lotData.odometer_km) * 0.621371),
-            }
-          : null) ||
-        (carData?.odometer_km
-          ? {
-              km: carData.odometer_km,
-              mi: Math.round(Number(carData.odometer_km) * 0.621371),
-            }
-          : null) ||
-        (lotData?.mileage
-          ? {
-              km: lotData.mileage,
-              mi: Math.round(Number(lotData.mileage) * 0.621371),
-            }
-          : null) ||
-        (carData?.mileage
-          ? {
-              km: carData.mileage,
-              mi: Math.round(Number(carData.mileage) * 0.621371),
-            }
-          : null);
+        const odometer =
+          lotData?.odometer ||
+          carData?.odometer ||
+          (lotData?.odometer_km
+            ? {
+                km: lotData.odometer_km,
+                mi: Math.round(Number(lotData.odometer_km) * 0.621371),
+              }
+            : null) ||
+          (carData?.odometer_km
+            ? {
+                km: carData.odometer_km,
+                mi: Math.round(Number(carData.odometer_km) * 0.621371),
+              }
+            : null) ||
+          (lotData?.mileage
+            ? {
+                km: lotData.mileage,
+                mi: Math.round(Number(lotData.mileage) * 0.621371),
+              }
+            : null) ||
+          (carData?.mileage
+            ? {
+                km: carData.mileage,
+                mi: Math.round(Number(carData.mileage) * 0.621371),
+              }
+            : null);
 
-      const images =
-        lotData?.images?.normal ||
-        lotData?.images?.big ||
-        carData?.images?.normal ||
-        carData?.images?.big ||
-        lotData?.images ||
-        carData?.images ||
-        [];
+        const images =
+          lotData?.images?.normal ||
+          lotData?.images?.big ||
+          carData?.images?.normal ||
+          carData?.images?.big ||
+          lotData?.images ||
+          carData?.images ||
+          [];
 
-      return {
-        id: carData?.id?.toString() || lotData?.lot,
-        make: manufacturerName,
-        model: modelName,
-        year: year || 2020, // Use extracted year or fallback to 2020
-        price,
-        image: images?.[0],
-        images,
-        source_label: sourceLabel,
-        vin: carData?.vin,
-        mileage: odometer?.km,
-        transmission:
-          carData?.transmission?.name ||
-          carData?.transmission ||
-          lotData?.transmission?.name ||
-          lotData?.transmission,
-        fuel: resolveFuelFromSources(carData, lotData) || undefined,
-        color:
-          carData?.color?.name ||
-          carData?.color ||
-          lotData?.color?.name ||
-          lotData?.color,
-        condition:
-          lotData?.condition?.name?.replace(
-            "run_and_drives",
-            "Good Condition",
-          ) || carData?.condition,
-        lot: lotData?.lot || carData?.lot_number,
-        title: carData?.title || lotData?.title,
-        odometer: odometer
-          ? {
-              km: odometer.km,
-              mi:
-                odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
-              status: lotData?.odometer?.status ||
-                carData?.odometer?.status || { name: "Verified" },
-            }
-          : undefined,
-        engine: carData?.engine || lotData?.engine,
-        cylinders: carData?.cylinders || lotData?.cylinders,
-        drive_wheel: carData?.drive_wheel || lotData?.drive_wheel,
-        body_type: carData?.body_type || lotData?.body_type,
-        damage: lotData?.damage || carData?.damage,
-        keys_available: lotData?.keys_available ?? carData?.keys_available,
-        airbags: lotData?.airbags || carData?.airbags,
-        grade_iaai:
-          lotData?.grade_iaai ||
-          carData?.grade?.name ||
-          carData?.grade ||
-          lotData?.grade?.name ||
-          lotData?.grade,
-        seller: lotData?.seller || carData?.seller,
-        seller_type: lotData?.seller_type || carData?.seller_type,
-        sale_date: lotData?.sale_date || carData?.sale_date,
-        bid: lotData?.bid || carData?.bid,
-        buy_now: lotData?.buy_now || carData?.buy_now,
-        final_bid: lotData?.final_bid || carData?.final_bid,
-        features: getCarFeatures(carData, lotData),
-        safety_features: getSafetyFeatures(carData, lotData),
-        comfort_features: getComfortFeatures(carData, lotData),
-        performance_rating: 4.5,
-        popularity_score: 85,
-        insurance: lotData?.insurance,
-        insurance_v2: lotData?.insurance_v2 || carData?.insurance_v2,
-        location: lotData?.location,
-        inspect: lotData?.inspect || carData?.inspect,
-        // Merge details from both sources to get all variant info + inspect data
-        details: {
-          ...(carData?.details || {}),
-          ...(lotData?.details || {}),
-          grade:
+        const normalizedFuelSources = Array.isArray(additionalSources)
+          ? additionalSources.filter(Boolean)
+          : [];
+        const resolvedFuel = resolveFuelFromSources(
+          carData,
+          lotData,
+          ...normalizedFuelSources,
+        );
+
+        return {
+          id: carData?.id?.toString() || lotData?.lot,
+          make: manufacturerName,
+          model: modelName,
+          year: year || 2020, // Use extracted year or fallback to 2020
+          price,
+          image: images?.[0],
+          images,
+          source_label: sourceLabel,
+          vin: carData?.vin,
+          mileage: odometer?.km,
+          transmission:
+            carData?.transmission?.name ||
+            carData?.transmission ||
+            lotData?.transmission?.name ||
+            lotData?.transmission,
+          fuel: resolvedFuel || undefined,
+          color:
+            carData?.color?.name ||
+            carData?.color ||
+            lotData?.color?.name ||
+            lotData?.color,
+          condition:
+            lotData?.condition?.name?.replace(
+              "run_and_drives",
+              "Good Condition",
+            ) || carData?.condition,
+          lot: lotData?.lot || carData?.lot_number,
+          title: carData?.title || lotData?.title,
+          odometer: odometer
+            ? {
+                km: odometer.km,
+                mi:
+                  odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
+                status:
+                  lotData?.odometer?.status ||
+                  carData?.odometer?.status || { name: "Verified" },
+              }
+            : undefined,
+          engine: carData?.engine || lotData?.engine,
+          cylinders: carData?.cylinders || lotData?.cylinders,
+          drive_wheel: carData?.drive_wheel || lotData?.drive_wheel,
+          body_type: carData?.body_type || lotData?.body_type,
+          damage: lotData?.damage || carData?.damage,
+          keys_available: lotData?.keys_available ?? carData?.keys_available,
+          airbags: lotData?.airbags || carData?.airbags,
+          grade_iaai:
+            lotData?.grade_iaai ||
+            carData?.grade?.name ||
             carData?.grade ||
-            lotData?.grade ||
-            carData?.details?.grade ||
-            lotData?.details?.grade,
-          variant:
-            carData?.variant ||
-            lotData?.variant ||
-            carData?.details?.variant ||
-            lotData?.details?.variant,
-          trim:
-            carData?.trim ||
-            lotData?.trim ||
-            carData?.details?.trim ||
-            lotData?.details?.trim,
-          // Include inspect data from lotData.inspect as per API support
-          inspect: lotData?.inspect ||
-            lotData?.details?.inspect || {
-              accident_summary:
-                lotData?.inspect?.accident_summary ||
-                lotData?.details?.inspect?.accident_summary,
-              outer:
-                lotData?.inspect?.outer ||
-                lotData?.details?.inspect?.outer ||
-                lotData?.inspect_outer,
-              inner:
-                lotData?.inspect?.inner || lotData?.details?.inspect?.inner,
-            },
-          inspect_outer:
-            lotData?.inspect?.outer ||
-            lotData?.details?.inspect_outer ||
-            lotData?.inspect_outer,
-          // Include options data
-          options: lotData?.details?.options || carData?.details?.options,
-          options_extra:
-            lotData?.details?.options_extra || carData?.details?.options_extra,
-        },
-      };
-    },
-    [KBC_DOMAINS, exchangeRate.rate],
-  );
+            lotData?.grade?.name ||
+            lotData?.grade,
+          seller: lotData?.seller || carData?.seller,
+          seller_type: lotData?.seller_type || carData?.seller_type,
+          sale_date: lotData?.sale_date || carData?.sale_date,
+          bid: lotData?.bid || carData?.bid,
+          buy_now: lotData?.buy_now || carData?.buy_now,
+          final_bid: lotData?.final_bid || carData?.final_bid,
+          features: getCarFeatures(carData, lotData, normalizedFuelSources),
+          safety_features: getSafetyFeatures(carData, lotData),
+          comfort_features: getComfortFeatures(carData, lotData),
+          performance_rating: 4.5,
+          popularity_score: 85,
+          insurance: lotData?.insurance,
+          insurance_v2: lotData?.insurance_v2 || carData?.insurance_v2,
+          location: lotData?.location,
+          inspect: lotData?.inspect || carData?.inspect,
+          // Merge details from both sources to get all variant info + inspect data
+          details: {
+            ...(carData?.details || {}),
+            ...(lotData?.details || {}),
+            grade:
+              carData?.grade ||
+              lotData?.grade ||
+              carData?.details?.grade ||
+              lotData?.details?.grade,
+            variant:
+              carData?.variant ||
+              lotData?.variant ||
+              carData?.details?.variant ||
+              lotData?.details?.variant,
+            trim:
+              carData?.trim ||
+              lotData?.trim ||
+              carData?.details?.trim ||
+              lotData?.details?.trim,
+            // Include inspect data from lotData.inspect as per API support
+            inspect:
+              lotData?.inspect ||
+              lotData?.details?.inspect || {
+                accident_summary:
+                  lotData?.inspect?.accident_summary ||
+                  lotData?.details?.inspect?.accident_summary,
+                outer:
+                  lotData?.inspect?.outer ||
+                  lotData?.details?.inspect?.outer ||
+                  lotData?.inspect_outer,
+                inner:
+                  lotData?.inspect?.inner || lotData?.details?.inspect?.inner,
+              },
+            inspect_outer:
+              lotData?.inspect?.outer ||
+              lotData?.details?.inspect_outer ||
+              lotData?.inspect_outer,
+            // Include options data
+            options: lotData?.details?.options || carData?.details?.options,
+            options_extra:
+              lotData?.details?.options_extra || carData?.details?.options_extra,
+          },
+        };
+      },
+      [KBC_DOMAINS, exchangeRate.rate],
+    );
 
   // Convert option numbers to human-friendly names using the Korea options API
   const convertOptionsToNames = useCallback(
@@ -1878,50 +1893,98 @@ const CarDetails = memo(() => {
 
     return null;
   }, [buildCarDetails, lot]);
+ 
+    const getFirstNonEmptyString = (...values: unknown[]): string | null => {
+      for (const value of values) {
+        if (value === null || value === undefined) {
+          continue;
+        }
+        const candidate = String(value).trim();
+        if (candidate) {
+          return candidate;
+        }
+      }
+      return null;
+    };
 
-  // Extract features from car data
-  const getCarFeatures = (carData: any, lot: any): string[] => {
-    const features = [];
-    if (carData.transmission?.name) {
-      features.push(`Transmisioni: ${carData.transmission.name}`);
-    }
+    const selectLotForSource = (source: any, lotNumber?: string) => {
+      if (!source) {
+        return null;
+      }
 
-    const resolvedFuel = resolveFuelFromSources(carData, lot);
-    if (resolvedFuel) {
-      features.push(
-        `Karburanti: ${localizeFuel(resolvedFuel, "sq") || resolvedFuel}`,
-      );
-    } else if (carData.fuel?.name) {
-      features.push(`Karburanti: ${carData.fuel.name}`);
-    }
+      const lots = Array.isArray(source?.lots) ? source.lots : [];
+      if (!lots.length) {
+        return null;
+      }
 
-    if (carData.color?.name) {
-      features.push(`Ngjyra: ${carData.color.name}`);
-    }
-    if (carData.engine?.name) {
-      features.push(`Motori: ${carData.engine.name}`);
-    }
-    if (carData.cylinders) {
-      features.push(`${carData.cylinders} Cilindra`);
-    }
-    if (carData.drive_wheel?.name) {
-      features.push(`Tërheqje: ${carData.drive_wheel.name}`);
-    }
-    if (lot?.keys_available) {
-      features.push("Çelësat të Disponueshëm");
-    }
+      if (lotNumber) {
+        const normalizedLot = String(lotNumber).trim();
+        const matchedLot = lots.find((candidate: any) => {
+          const candidateValue =
+            candidate?.lot ??
+            candidate?.lot_number ??
+            candidate?.lotNumber ??
+            candidate?.lotNo;
+          if (candidateValue === null || candidateValue === undefined) {
+            return false;
+          }
+          return String(candidateValue).trim() === normalizedLot;
+        });
+        if (matchedLot) {
+          return matchedLot;
+        }
+      }
 
-    // Add basic features if list is empty
-    if (features.length === 0) {
-      return [
-        "Klimatizimi",
-        "Dritaret Elektrike",
-        "Mbyllja Qendrore",
-        "Frena ABS",
-      ];
-    }
-    return features;
-  };
+      return lots[0];
+    };
+
+    // Extract features from car data
+    const getCarFeatures = (
+      carData: any,
+      lot: any,
+      extraSources: any[] = [],
+    ): string[] => {
+      const features = [];
+      if (carData.transmission?.name) {
+        features.push(`Transmisioni: ${carData.transmission.name}`);
+      }
+
+      const resolvedFuel = resolveFuelFromSources(carData, lot, ...extraSources);
+      if (resolvedFuel) {
+        features.push(
+          `Karburanti: ${localizeFuel(resolvedFuel, "sq") || resolvedFuel}`,
+        );
+      } else if (carData.fuel?.name) {
+        features.push(`Karburanti: ${carData.fuel.name}`);
+      }
+
+      if (carData.color?.name) {
+        features.push(`Ngjyra: ${carData.color.name}`);
+      }
+      if (carData.engine?.name) {
+        features.push(`Motori: ${carData.engine.name}`);
+      }
+      if (carData.cylinders) {
+        features.push(`${carData.cylinders} Cilindra`);
+      }
+      if (carData.drive_wheel?.name) {
+        features.push(`Tërheqje: ${carData.drive_wheel.name}`);
+      }
+      if (lot?.keys_available) {
+        features.push("Çelësat të Disponueshëm");
+      }
+
+      // Add basic features if list is empty
+      if (features.length === 0) {
+        return [
+          "Klimatizimi",
+          "Dritaret Elektrike",
+          "Mbyllja Qendrore",
+          "Frena ABS",
+        ];
+      }
+      return features;
+    };
   const getSafetyFeatures = (carData: any, lot: any): string[] => {
     const safety = [];
     if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
@@ -2011,9 +2074,72 @@ const CarDetails = memo(() => {
         const data = await response.json();
         if (!isMounted) return;
 
-        const carData = data.data;
-        const lotData = carData?.lots?.[0];
-        const details = buildCarDetails(carData, lotData);
+          const apiPayload = data?.data ?? data;
+          const initialLotData = selectLotForSource(apiPayload, lot);
+          let detailedCarData: any = null;
+          let detailedLotData: any = null;
+
+          const candidateCarId = getFirstNonEmptyString(
+            apiPayload?.id,
+            apiPayload?.car_id,
+            apiPayload?.api_id,
+            apiPayload?.carId,
+            initialLotData?.car_id,
+            initialLotData?.carId,
+            initialLotData?.car?.id,
+          );
+
+          if (candidateCarId) {
+            const detailController = new AbortController();
+            const detailTimeoutId = setTimeout(
+              () => detailController.abort(),
+              10000,
+            );
+            try {
+              const detailResponse = await fetch(
+                `${API_BASE_URL}/cars/${encodeURIComponent(candidateCarId)}`,
+                {
+                  headers: {
+                    accept: "*/*",
+                    "x-api-key": API_KEY,
+                  },
+                  signal: detailController.signal,
+                },
+              );
+              clearTimeout(detailTimeoutId);
+
+              if (detailResponse.ok) {
+                const detailPayload = await detailResponse.json();
+                detailedCarData = detailPayload?.data || detailPayload || null;
+                detailedLotData =
+                  selectLotForSource(detailedCarData, lot) ?? initialLotData;
+              } else {
+                console.warn(
+                  `Detailed car request failed: ${detailResponse.status} ${detailResponse.statusText}`,
+                );
+              }
+            } catch (detailError) {
+              clearTimeout(detailTimeoutId);
+              console.warn("Failed to fetch detailed car data:", detailError);
+            }
+          }
+
+          const primaryCarData = detailedCarData || apiPayload;
+          const primaryLotData = detailedLotData || initialLotData;
+
+          const additionalFuelSources: any[] = [];
+          if (detailedCarData && apiPayload && detailedCarData !== apiPayload) {
+            additionalFuelSources.push(apiPayload);
+          }
+          if (initialLotData && primaryLotData !== initialLotData) {
+            additionalFuelSources.push(initialLotData);
+          }
+
+          const details = buildCarDetails(
+            primaryCarData,
+            primaryLotData,
+            additionalFuelSources,
+          );
 
         if (!details) {
           if (!background) {
@@ -2180,6 +2306,11 @@ const CarDetails = memo(() => {
       if (!car) {
         return "-";
       }
+
+        if (car.fuel) {
+          const localizedFromState = localizeFuel(car.fuel, "sq");
+          return localizedFromState || car.fuel;
+        }
 
       const resolvedFuel =
         resolveFuelFromSources(
