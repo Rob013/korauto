@@ -1943,47 +1943,181 @@ const accidentSummaryEntries = useMemo(
           ? "1 herë"
           : `${ownerChangeCount} herë`;
 
-  const usageHighlights = useMemo(() => {
-    const resolveUsageStatus = (
-      _keywords: string[],
-      sources: Array<
-        | string
-        | number
-        | boolean
-        | null
-        | undefined
-        | string[]
-      >,
-    ) => {
+  const usageHighlights = useMemo<
+    Array<{ label: string; value: string; details?: string[] }>
+  >(() => {
+    const primaryCodeSet = new Set<string>();
+    const secondaryCodeSet = new Set<string>();
+    const textSourceSet = new Set<string>();
+
+    const addPrimaryCode = (value: unknown) => {
+      if (Array.isArray(value)) {
+        value.forEach(addPrimaryCode);
+        return;
+      }
+      if (value === null || value === undefined) return;
+      const code = String(value).trim();
+      if (!code) return;
+      primaryCodeSet.add(code);
+    };
+
+    const addSecondaryCode = (value: unknown) => {
+      if (Array.isArray(value)) {
+        value.forEach(addSecondaryCode);
+        return;
+      }
+      if (value === null || value === undefined) return;
+      const code = String(value).trim();
+      if (!code) return;
+      secondaryCodeSet.add(code);
+    };
+
+    const addTextSource = (value: unknown) => {
+      if (Array.isArray(value)) {
+        value.forEach(addTextSource);
+        return;
+      }
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed) {
+          textSourceSet.add(trimmed);
+        }
+      }
+    };
+
+    addTextSource(car?.details?.insurance?.general_info?.usage_type);
+    addTextSource((car?.details?.insurance?.car_info as any)?.usage_type);
+    addTextSource((car?.details as any)?.usage_type);
+    addTextSource((car?.insurance_v2 as any)?.usageType);
+    addTextSource((car?.insurance_v2 as any)?.useType);
+    addTextSource((car?.insurance_v2 as any)?.usage_type);
+
+    addPrimaryCode((car?.details?.insurance?.car_info as any)?.use);
+    addPrimaryCode(car?.encarRecordSummary?.use);
+    addPrimaryCode(car?.encarRecord?.use);
+    addPrimaryCode((car?.insurance_v2 as any)?.useType);
+    addPrimaryCode((car?.insurance_v2 as any)?.usageType);
+    addPrimaryCode(car?.insurance_v2?.carInfoUse1s);
+
+    addSecondaryCode(car?.insurance_v2?.carInfoUse2s);
+    addSecondaryCode((car?.encarRecord as any)?.carInfoUse2s);
+
+    usageHistoryList.forEach((entry) => {
+      addTextSource(entry.description);
+      addTextSource(entry.value);
+    });
+
+    type EvaluateUsageConfig = {
+      primaryCodes: string[];
+      secondaryCodes: string[];
+      textSources: string[];
+      positivePrimaryCodes?: Set<string>;
+      negativePrimaryCodes?: Set<string>;
+      positiveSecondaryCodes?: Set<string>;
+      negativeSecondaryCodes?: Set<string>;
+      positiveKeywords?: string[];
+    };
+
+    const evaluateUsage = ({
+      primaryCodes,
+      secondaryCodes,
+      textSources,
+      positivePrimaryCodes = new Set<string>(),
+      negativePrimaryCodes = new Set<string>(),
+      positiveSecondaryCodes = new Set<string>(),
+      negativeSecondaryCodes = new Set<string>(),
+      positiveKeywords = [],
+    }: EvaluateUsageConfig) => {
       let hasPositive = false;
       let hasNegative = false;
+      const detailSet = new Set<string>();
 
-      const consider = (input: unknown) => {
-        const status = toYesNo(input as any);
-        if (status === "Po") {
-          hasPositive = true;
-        } else if (status === "Jo") {
-          hasNegative = true;
+      const recordPositive = (detail?: string) => {
+        hasPositive = true;
+        if (detail) {
+          const trimmed = detail.trim();
+          if (trimmed && trimmed !== "Informacion i padisponueshëm") {
+            detailSet.add(trimmed);
+          }
         }
       };
 
-      for (const source of sources) {
-        if (!source) continue;
-
-        if (Array.isArray(source)) {
-          source.forEach(consider);
-        } else {
-          consider(source);
+      const recordNegative = (detail?: string) => {
+        hasNegative = true;
+        if (detail) {
+          const trimmed = detail.trim();
+          if (trimmed && trimmed !== "Informacion i padisponueshëm") {
+            detailSet.add(trimmed);
+          }
         }
-      }
+      };
 
-      if (hasPositive) return "Po";
-      if (hasNegative) return "Jo";
-      return "Jo";
+      primaryCodes.forEach((code) => {
+        if (!code) return;
+        if (positivePrimaryCodes.has(code)) {
+          recordPositive(decodePrimaryUsage(code));
+        } else if (negativePrimaryCodes.has(code)) {
+          recordNegative(decodePrimaryUsage(code));
+        }
+      });
+
+      secondaryCodes.forEach((code) => {
+        if (!code) return;
+        if (positiveSecondaryCodes.has(code)) {
+          recordPositive(decodeSecondaryUsage(code));
+        } else if (negativeSecondaryCodes.has(code)) {
+          if (code !== "0") {
+            recordNegative(decodeSecondaryUsage(code));
+          } else {
+            hasNegative = true;
+          }
+        }
+      });
+
+      textSources.forEach((text) => {
+        if (!text) return;
+        if (/^-?\d+(\.\d+)?$/.test(text)) {
+          return;
+        }
+        const status = toYesNo(text as any);
+        if (status === "Po") {
+          recordPositive(text);
+        } else if (status === "Jo") {
+          recordNegative(text);
+        } else {
+          const normalized = text.toLowerCase();
+          if (
+            positiveKeywords.some((keyword) => normalized.includes(keyword))
+          ) {
+            recordPositive(text);
+          }
+        }
+      });
+
+      const value = hasPositive
+        ? "Po"
+        : hasNegative
+          ? "Jo"
+          : "Nuk ka informata";
+
+      return {
+        value,
+        details: Array.from(detailSet),
+      };
     };
 
-    const rentalUsageValue = resolveUsageStatus(
-      [
+    const primaryCodes = Array.from(primaryCodeSet);
+    const secondaryCodes = Array.from(secondaryCodeSet);
+    const textSources = Array.from(textSourceSet);
+
+    const rentalStatus = evaluateUsage({
+      primaryCodes,
+      secondaryCodes,
+      textSources,
+      negativePrimaryCodes: new Set(["1"]),
+      positiveSecondaryCodes: new Set(["4", "5"]),
+      negativeSecondaryCodes: new Set(["0", "1", "2", "3", "6", "7", "8"]),
+      positiveKeywords: [
         "rent",
         "rental",
         "qira",
@@ -1995,22 +2129,17 @@ const accidentSummaryEntries = useMemo(
         "임차",
         "대여",
       ],
-      [
-        car?.details?.insurance?.general_info?.usage_type,
-        (car?.insurance_v2 as any)?.usageType,
-        (car?.insurance_v2 as any)?.useType,
-        (car?.insurance_v2 as any)?.rent,
-        (car?.insurance_v2 as any)?.rentCnt,
-        (car?.insurance_v2 as any)?.rentHistory,
-        (car?.insurance_v2 as any)?.rental,
-        car?.insurance_v2?.carInfoUse1s,
-        car?.insurance_v2?.carInfoUse2s,
-        (car?.details as any)?.usage_type,
-      ],
-    );
+    });
 
-    const commercialUsageValue = resolveUsageStatus(
-      [
+    const commercialStatus = evaluateUsage({
+      primaryCodes,
+      secondaryCodes,
+      textSources,
+      positivePrimaryCodes: new Set(["2", "3", "4"]),
+      negativePrimaryCodes: new Set(["0", "1"]),
+      positiveSecondaryCodes: new Set(["2", "3", "4", "5", "6", "7", "8"]),
+      negativeSecondaryCodes: new Set(["0", "1"]),
+      positiveKeywords: [
         "komerc",
         "komercial",
         "commercial",
@@ -2025,29 +2154,21 @@ const accidentSummaryEntries = useMemo(
         "업무",
         "법인",
       ],
-      [
-        car?.details?.insurance?.general_info?.usage_type,
-        (car?.insurance_v2 as any)?.business,
-        (car?.insurance_v2 as any)?.businessCnt,
-        (car?.insurance_v2 as any)?.companyUse,
-        (car?.insurance_v2 as any)?.government,
-        car?.insurance_v2?.carInfoUse1s,
-        car?.insurance_v2?.carInfoUse2s,
-        (car?.details as any)?.usage_type,
-      ],
-    );
+    });
 
     return [
       {
         label: "Përdorur si veturë me qira",
-        value: rentalUsageValue,
+        value: rentalStatus.value,
+        details: rentalStatus.details,
       },
       {
         label: "Përdorur për qëllime komerciale",
-        value: commercialUsageValue,
+        value: commercialStatus.value,
+        details: commercialStatus.details,
       },
     ];
-  }, [car, toYesNo]);
+  }, [car, toYesNo, usageHistoryList]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
     const entries: SpecialAccidentEntry[] = [];
@@ -3236,21 +3357,34 @@ const accidentSummaryEntries = useMemo(
                       <div className="w-1 h-5 bg-primary rounded-full"></div>
                       Lloji i Përdorimit
                     </h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {usageHighlights.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex flex-col gap-1.5 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 hover:shadow-md transition-shadow"
-                        >
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                            {item.label}
-                          </span>
-                          <span className={`text-lg font-bold ${item.value === "Po" ? "text-destructive" : "text-emerald-600"}`}>
-                            {item.value}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {usageHighlights.map((item) => (
+                          <div
+                            key={item.label}
+                            className="flex flex-col gap-1.5 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 hover:shadow-md transition-shadow"
+                          >
+                            <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                              {item.label}
+                            </span>
+                            <span
+                              className={`text-lg font-semibold ${
+                                item.value === "Po"
+                                  ? "text-destructive"
+                                  : item.value === "Jo"
+                                    ? "text-emerald-600"
+                                    : "text-muted-foreground"
+                              }`}
+                            >
+                              {item.value}
+                            </span>
+                            {item.details && item.details.length > 0 && (
+                              <span className="text-xs text-muted-foreground leading-relaxed">
+                                {item.details.join(" • ")}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                   </section>
                 )}
 
