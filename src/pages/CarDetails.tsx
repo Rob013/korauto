@@ -12,6 +12,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
+import { resolveFuelFromSources, localizeFuel } from "@/utils/fuel";
 import { useOptimizedCarDetails } from "@/hooks/useOptimizedCarDetails";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1221,18 +1222,6 @@ const CarDetails = memo(() => {
     };
     return colorMap[color?.toLowerCase()] || color;
   };
-  const translateFuel = (fuel: string): string => {
-    const fuelMap: Record<string, string> = {
-      gasoline: "Benzin",
-      petrol: "Benzin",
-      diesel: "Diesel",
-      hybrid: "Hibrid",
-      electric: "Elektrik",
-      lpg: "LPG",
-      gas: "Gaz",
-    };
-    return fuelMap[fuel?.toLowerCase()] || fuel;
-  };
   const { id: lot } = useParams<{
     id: string;
   }>();
@@ -1768,11 +1757,7 @@ const CarDetails = memo(() => {
           carData?.transmission ||
           lotData?.transmission?.name ||
           lotData?.transmission,
-        fuel:
-          carData?.fuel?.name ||
-          carData?.fuel ||
-          lotData?.fuel?.name ||
-          lotData?.fuel,
+        fuel: resolveFuelFromSources(carData, lotData) || undefined,
         color:
           carData?.color?.name ||
           carData?.color ||
@@ -1994,15 +1979,34 @@ const CarDetails = memo(() => {
   // Extract features from car data
   const getCarFeatures = (carData: any, lot: any): string[] => {
     const features = [];
-    if (carData.transmission?.name)
+    if (carData.transmission?.name) {
       features.push(`Transmisioni: ${carData.transmission.name}`);
-    if (carData.fuel?.name) features.push(`Karburanti: ${carData.fuel.name}`);
-    if (carData.color?.name) features.push(`Ngjyra: ${carData.color.name}`);
-    if (carData.engine?.name) features.push(`Motori: ${carData.engine.name}`);
-    if (carData.cylinders) features.push(`${carData.cylinders} Cilindra`);
-    if (carData.drive_wheel?.name)
+    }
+
+    const resolvedFuel = resolveFuelFromSources(carData, lot);
+    if (resolvedFuel) {
+      features.push(
+        `Karburanti: ${localizeFuel(resolvedFuel, "sq") || resolvedFuel}`,
+      );
+    } else if (carData.fuel?.name) {
+      features.push(`Karburanti: ${carData.fuel.name}`);
+    }
+
+    if (carData.color?.name) {
+      features.push(`Ngjyra: ${carData.color.name}`);
+    }
+    if (carData.engine?.name) {
+      features.push(`Motori: ${carData.engine.name}`);
+    }
+    if (carData.cylinders) {
+      features.push(`${carData.cylinders} Cilindra`);
+    }
+    if (carData.drive_wheel?.name) {
       features.push(`Tërheqje: ${carData.drive_wheel.name}`);
-    if (lot?.keys_available) features.push("Çelësat të Disponueshëm");
+    }
+    if (lot?.keys_available) {
+      features.push("Çelësat të Disponueshëm");
+    }
 
     // Add basic features if list is empty
     if (features.length === 0) {
@@ -3064,9 +3068,9 @@ const CarDetails = memo(() => {
                         <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
                       </div>
                     </div>
-                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {translateFuel(car.fuel || "Diesel")}
-                    </span>
+                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
+                        {localizeFuel(car.fuel, "sq") || "-"}
+                      </span>
                   </div>
 
                   {/* 5. Engine - e.g., 998cc */}

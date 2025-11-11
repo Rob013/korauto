@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigation } from "@/contexts/NavigationContext";
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import InspectionRequestForm from "./InspectionRequestForm";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
+import { localizeFuel } from "@/utils/fuel";
 
 interface EncarCarCardProps {
   id: string;
@@ -133,7 +134,7 @@ const EncarCarCard = ({
     checkAdminStatus();
   }, []);
 
-  const handleCardClick = () => {
+    const handleCardClick = () => {
     // Save current page and any filter state before opening the new tab
     setPreviousPage(window.location.pathname + window.location.search);
     openCarDetailsInNewTab(id);
@@ -158,6 +159,8 @@ const EncarCarCard = ({
     const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
+
+    const fuelDisplay = useMemo(() => localizeFuel(fuel, "sq"), [fuel]);
 
   return (
     <Card 
@@ -266,10 +269,10 @@ const EncarCarCard = ({
               <span className="font-medium truncate">{mileage}</span>
             </div>
           )}
-          {fuel && (
+            {fuelDisplay && (
             <div className="flex items-center gap-1.5 truncate">
               <Fuel className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              <span className="font-medium capitalize truncate">{typeof fuel === 'object' ? (fuel as any)?.name || '' : fuel || ''}</span>
+                <span className="font-medium truncate">{fuelDisplay}</span>
             </div>
           )}
           {transmission && (

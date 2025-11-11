@@ -32,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
+import { localizeFuel } from "@/utils/fuel";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
 interface CarCardProps {
   id: string;
@@ -405,7 +406,8 @@ const CarCard = ({
     openCarDetailsInNewTab(lot ?? id);
   }, [id, lot, setPreviousPage]);
 
-  const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
+    const statusBadge = useMemo(() => getStatusBadgeConfig({ status, sale_status }), [status, sale_status]);
+    const fuelDisplay = useMemo(() => localizeFuel(fuel, "sq"), [fuel]);
 
   // Don't render the component if it should be hidden
   if (hideSoldCar) {
@@ -489,10 +491,10 @@ const CarCard = ({
               <span className="capitalize truncate text-muted-foreground">{transmission}</span>
             </div>
           )}
-          {fuel && (
+            {fuelDisplay && (
             <div className="flex items-center gap-1">
               <Fuel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="capitalize truncate text-muted-foreground">{fuel}</span>
+                <span className="truncate text-muted-foreground">{fuelDisplay}</span>
             </div>
           )}
           {color && (
