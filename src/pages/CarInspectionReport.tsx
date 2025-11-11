@@ -2156,18 +2156,21 @@ const accidentSummaryEntries = useMemo(
       ],
     });
 
-    return [
-      {
-        label: "Përdorur si veturë me qira",
-        value: rentalStatus.value,
-        details: rentalStatus.details,
-      },
-      {
-        label: "Përdorur për qëllime komerciale",
-        value: commercialStatus.value,
-        details: commercialStatus.details,
-      },
-    ];
+      const rentalValue = rentalStatus.value === "Po" ? "Po" : "Jo";
+      const commercialValue = commercialStatus.value === "Po" ? "Po" : "Jo";
+
+      return [
+        {
+          label: "Përdorur si veturë me qira",
+          value: rentalValue,
+          details: rentalStatus.details,
+        },
+        {
+          label: "Përdorur për qëllime komerciale",
+          value: commercialValue,
+          details: commercialStatus.details,
+        },
+      ];
   }, [car, toYesNo, usageHistoryList]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {

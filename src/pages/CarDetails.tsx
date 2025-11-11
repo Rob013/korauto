@@ -2244,34 +2244,107 @@ const CarDetails = memo(() => {
       .trim();
   }, [car]);
 
-  const secondaryTitle = useMemo(() => {
-    if (!car) {
-      return "";
-    }
-
-    const rawParts = [
-      typeof car.title === "string" ? car.title.trim() : "",
-      typeof car.details?.variant === "string" ? car.details.variant.trim() : "",
-      typeof car.details?.trim === "string" ? car.details.trim.trim() : "",
-      typeof car.details?.grade === "string" ? car.details.grade.trim() : "",
-    ].filter(Boolean);
-
-    const uniqueParts: string[] = [];
-    const seen = new Set<string>();
-    rawParts.forEach((part) => {
-      const normalized = part.toLowerCase();
-      if (!seen.has(normalized)) {
-        seen.add(normalized);
-        uniqueParts.push(part);
+    const secondaryTitle = useMemo(() => {
+      if (!car) {
+        return "";
       }
-    });
 
-    if (uniqueParts.length > 0) {
-      return uniqueParts.join(" • ");
-    }
+      const rawParts = [
+        typeof car.title === "string" ? car.title.trim() : "",
+        typeof car.details?.variant === "string" ? car.details.variant.trim() : "",
+        typeof car.details?.trim === "string" ? car.details.trim.trim() : "",
+        typeof car.details?.grade === "string" ? car.details.grade.trim() : "",
+      ].filter(Boolean);
 
-    return mainTitle;
-  }, [car, mainTitle]);
+      const uniqueParts: string[] = [];
+      const seen = new Set<string>();
+      rawParts.forEach((part) => {
+        const normalized = part.toLowerCase();
+        if (!seen.has(normalized)) {
+          seen.add(normalized);
+          uniqueParts.push(part);
+        }
+      });
+
+      if (uniqueParts.length > 0) {
+        return uniqueParts.join(" • ");
+      }
+
+      return mainTitle;
+    }, [car, mainTitle]);
+
+    const fuelDisplay = useMemo(() => {
+      if (!car) {
+        return "-";
+      }
+
+      const detailData = car.details as Record<string, unknown> | undefined;
+      const insuranceData = car.insurance_v2 as Record<string, unknown> | undefined;
+      const inspectData = car.inspect as Record<string, unknown> | undefined;
+
+      const candidateValues: unknown[] = [
+        car.fuel,
+        detailData?.fuel,
+        detailData?.fuel_type,
+        (detailData as any)?.fuelType,
+        (detailData as any)?.specs?.fuel,
+        (detailData as any)?.specs?.fuel_type,
+        (detailData as any)?.specs?.fuelType,
+        (detailData as any)?.summary?.fuel,
+        (detailData as any)?.summary?.fuel_type,
+        (detailData as any)?.technical?.fuel,
+        (detailData as any)?.technical?.fuel_type,
+        insuranceData?.fuel,
+        (insuranceData as any)?.vehicle?.fuel,
+        inspectData?.fuel,
+      ];
+
+      for (const candidate of candidateValues) {
+        if (candidate === undefined || candidate === null) {
+          continue;
+        }
+
+        const localized = localizeFuel(candidate, "sq");
+        if (localized) {
+          return localized;
+        }
+
+        if (typeof candidate === "string") {
+          const sanitized = candidate.trim();
+          if (sanitized) {
+            const fallbackLocalized = localizeFuel(sanitized, "sq");
+            return fallbackLocalized || sanitized;
+          }
+        } else if (typeof candidate === "object") {
+          const nameCandidate =
+            (candidate as any).name ||
+            (candidate as any).label ||
+            (candidate as any).value;
+          if (typeof nameCandidate === "string") {
+            const sanitized = nameCandidate.trim();
+            if (sanitized) {
+              const nestedLocalized = localizeFuel(sanitized, "sq");
+              return nestedLocalized || sanitized;
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(car.features)) {
+        const fuelFeature = car.features.find((feature) =>
+          feature.toLowerCase().startsWith("karburanti"),
+        );
+        if (fuelFeature) {
+          const value = fuelFeature.split(":").slice(1).join(":").trim();
+          if (value) {
+            const localized = localizeFuel(value, "sq");
+            return localized || value;
+          }
+        }
+      }
+
+      return "-";
+    }, [car]);
 
   // Add swipe functionality for car detail photos - must be before early returns
   const {
@@ -2829,29 +2902,25 @@ const CarDetails = memo(() => {
                   <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                     €{car.price.toLocaleString()}
                   </div>
-                  <div className="text-xs text-muted-foreground font-medium">
-                    +350€ deri në Prishtinë
-                  </div>
-                    {(car.insurance_v2 ||
-                      car.details?.insurance ||
-                      car.details?.insurance_v2 ||
-                      car.inspect) && (
-                      <button
-                        type="button"
-                        onClick={handleOpenInspectionReport}
-                        className="mt-2 inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-primary hover:text-primary/80 hover:underline focus:outline-none"
+                    <div className="text-xs text-muted-foreground font-medium">
+                      +350€ deri në Prishtinë
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenInspectionReport}
+                      className="mt-2 inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-primary hover:text-primary/80 hover:underline focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                      disabled={!car?.lot && !lot}
+                    >
+                      <Shield className="h-3 w-3 md:h-4 md:w-4" />
+                      <span>Historia e Sigurimit</span>
+                      <Badge
+                        variant="secondary"
+                        className={`ml-0.5 text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
                       >
-                        <Shield className="h-3 w-3 md:h-4 md:w-4" />
-                        <span>Historia e Sigurimit</span>
-                        <Badge
-                          variant="secondary"
-                          className={`ml-0.5 text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
-                        >
-                          {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
-                        </Badge>
-                        <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
-                      </button>
-                    )}
+                        {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                      </Badge>
+                      <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+                    </button>
                 </div>
               </div>
 
@@ -3061,17 +3130,17 @@ const CarDetails = memo(() => {
                     </div>
                   )}
 
-                  {/* Fuel Type */}
-                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                    <div className="flex items-center">
-                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                    {/* Fuel Type */}
+                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
+                      <div className="flex items-center">
+                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
+                          <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                        </div>
                       </div>
-                    </div>
                       <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {localizeFuel(car.fuel, "sq") || "-"}
+                        {fuelDisplay}
                       </span>
-                  </div>
+                    </div>
 
                   {/* 5. Engine - e.g., 998cc */}
                   {car.details?.engine_volume && (
