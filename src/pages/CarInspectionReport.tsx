@@ -23,6 +23,8 @@ import {
   buildUsageHistoryList,
   decodePrimaryUsage,
   decodeSecondaryUsage,
+  isUsageDetailHidden,
+  translateUsageText,
   type UsageHistoryEntry,
 } from "@/utils/encarUsage";
 import type {
@@ -381,6 +383,54 @@ const statusValueExactTranslations: Record<string, string> = {
   "적정": "Në nivel të duhur",
 };
 
+const statusValueKeywordTranslations: Record<string, string> = {
+  normal: "Normal",
+  abnormal: "Jo normal",
+  good: "Mirë",
+  great: "Shkëlqyeshëm",
+  excellent: "Shkëlqyeshëm",
+  fine: "Mirë",
+  ok: "Në rregull",
+  okay: "Në rregull",
+  perfect: "Perfekt",
+  pass: "Në rregull",
+  passed: "Në rregull",
+  fail: "Dështoi",
+  failed: "Dështoi",
+  caution: "Kujdes",
+  warning: "Paralajmërim",
+  replace: "Zëvendësim",
+  replacement: "Zëvendësim",
+  replaced: "I zëvendësuar",
+  repair: "Riparim",
+  repaired: "I riparuar",
+  welding: "Saldim",
+  weld: "Saldim",
+  corrosion: "Korrozion",
+  corroded: "I korroduar",
+  scratch: "Gërvishje",
+  scratches: "Gërvishtje",
+  dent: "Gropë",
+  dents: "Gropa",
+  leak: "Rrjedhje",
+  leaks: "Rrjedhje",
+  detected: "Zbuluar",
+  found: "Gjetur",
+  present: "Prezent",
+  absent: "Mungon",
+  available: "Në dispozicion",
+  unavailable: "I padisponueshëm",
+  none: "Asnjë",
+  unknown: "Panjohet",
+  pending: "Në pritje",
+  damaged: "Dëmtuar",
+  damage: "Dëmtim",
+  broken: "Thyer",
+  worn: "I konsumuar",
+  loose: "I liruar",
+  vibration: "Dridhje",
+};
+
 const statusValueRegexTranslations: Array<{
   pattern: RegExp;
   translation: string;
@@ -486,6 +536,7 @@ const ACCIDENT_SUMMARY_HIDDEN_KEYS = new Set([
   "transmissioncheck",
   "comments",
   "enginecheck",
+  "recall",
 ]);
 
 const accidentValueExactTranslations: Record<string, string> = {
@@ -570,14 +621,44 @@ const translateStatusValue = (value: unknown) => {
   if (typeof value === "boolean") return value ? "Po" : "Jo";
   if (typeof value === "number") return value.toString();
   if (typeof value !== "string") return String(value ?? "") || "-";
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) return "-";
+  const normalizedRaw = value.trim();
+  if (!normalizedRaw) return "-";
+  const normalized = normalizedRaw.toLowerCase();
   if (statusValueExactTranslations[normalized]) {
     return statusValueExactTranslations[normalized];
   }
+
+  const sanitized = normalized
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (sanitized && statusValueExactTranslations[sanitized]) {
+    return statusValueExactTranslations[sanitized];
+  }
+
   for (const { pattern, translation } of statusValueRegexTranslations) {
     if (pattern.test(normalized)) return translation;
+    if (sanitized && pattern.test(sanitized)) return translation;
   }
+
+  if (sanitized) {
+    const tokens = sanitized.split(/\s+/);
+    let translated = false;
+    const translatedTokens = tokens.map((token) => {
+      const direct =
+        statusValueExactTranslations[token] || statusValueKeywordTranslations[token];
+      if (direct) {
+        translated = true;
+        return direct;
+      }
+      return token;
+    });
+    if (translated) {
+      return translatedTokens.join(" ");
+    }
+  }
+
   return value;
 };
 
@@ -1967,7 +2048,11 @@ const accidentSummaryEntries = useMemo(
         ) {
           return;
         }
-        set.add(trimmed);
+        const translated = translateUsageText(trimmed).trim();
+        if (!translated || isUsageDetailHidden(translated)) {
+          return;
+        }
+        set.add(translated);
       };
 
       let codeIndicatesRental = false;
@@ -2163,38 +2248,50 @@ const accidentSummaryEntries = useMemo(
           ? "Jo"
           : "Nuk ka informata";
 
-        const commercialValue = hasCommercial
-          ? "Po"
-          : hasGeneral || hasMeaningfulEvidence
-            ? "Jo"
-            : "Nuk ka informata";
+          const generalDetailsList = Array.from(generalDetails);
+          if (hasGeneral) {
+            generalDetailsList.unshift(
+              "Raporti përmend përdorim të përgjithshëm (informativ)",
+            );
+          }
 
-        const generalDetailsList = Array.from(generalDetails);
-        if (hasGeneral) {
-          generalDetailsList.unshift(
-            "Raporti përmend përdorim të përgjithshëm (informativ)",
+          const generalValue = hasMeaningfulEvidence ? "Jo" : "Nuk ka informata";
+
+          const sanitizeDetails = (details: Iterable<string>) => {
+            const seen = new Set<string>();
+            const result: string[] = [];
+            for (const detail of details) {
+              const translated = translateUsageText(detail).trim();
+              if (!translated || isUsageDetailHidden(translated) || seen.has(translated)) {
+                continue;
+              }
+              seen.add(translated);
+              result.push(translated);
+            }
+            return result;
+          };
+
+          const rentalDetailsList = sanitizeDetails(rentalDetails);
+          const generalDetailsSanitized = sanitizeDetails(generalDetailsList);
+
+          const highlightItems = [
+            {
+              label: "Përdorur si veturë me qira",
+              value: rentalValue,
+              details: rentalDetailsList,
+            },
+            {
+              label: "Përdorim i përgjithshëm",
+              value: generalValue,
+              details: generalDetailsSanitized,
+            },
+          ];
+
+          return highlightItems.filter(
+            (item) =>
+              item.value !== "Nuk ka informata" ||
+              (item.details && item.details.length > 0),
           );
-        }
-
-        const generalValue = hasMeaningfulEvidence ? "Jo" : "Nuk ka informata";
-
-        return [
-          {
-            label: "Përdorur si veturë me qira",
-            value: rentalValue,
-            details: hasRent ? Array.from(rentalDetails) : [],
-          },
-          {
-            label: "Përdorur për qëllime komerciale",
-            value: commercialValue,
-            details: hasCommercial ? Array.from(commercialDetails) : [],
-          },
-          {
-            label: "Përdorim i përgjithshëm",
-            value: generalValue,
-            details: generalDetailsList,
-          },
-        ];
   }, [car, toYesNo, usageHistoryList]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
@@ -3424,21 +3521,34 @@ const accidentSummaryEntries = useMemo(
                       <div className="w-1 h-5 bg-primary rounded-full"></div>
                       Detajet e Historisë së Përdorimit
                     </h3>
-                    <div className="space-y-2">
-                      {usageHistoryList.map((entry, index) => (
-                        <div
-                          key={`${entry.description || "usage"}-${index}`}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/80 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
-                        >
-                          <span className="font-semibold text-foreground">
-                            {entry.description || "Përdorim"}
-                          </span>
-                          <span className="text-muted-foreground font-medium">
-                            {entry.value || "-"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                      <div className="space-y-2">
+                        {usageHistoryList
+                          .filter(
+                            (entry) =>
+                              !isUsageDetailHidden(entry.description) &&
+                              !isUsageDetailHidden(entry.value),
+                          )
+                          .map((entry, index) => {
+                            const description =
+                              translateUsageText(entry.description ?? "").trim() ||
+                              "Përdorim";
+                            const valueDisplay =
+                              translateUsageText(entry.value ?? "").trim() || "-";
+                            return (
+                              <div
+                                key={`${entry.description || "usage"}-${index}`}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/80 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
+                              >
+                                <span className="font-semibold text-foreground">
+                                  {description}
+                                </span>
+                                <span className="text-muted-foreground font-medium">
+                                  {valueDisplay}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
                   </section>
                 )}
 

@@ -30,13 +30,13 @@ interface InspectionDiagramPanelProps {
 
 const BASE_CANVAS_WIDTH = 640;
 const BASE_CANVAS_HEIGHT = 600;
-const DEFAULT_MARKER_SIZE = 12;
-const MIN_MARKER_DIAMETER = 6;
-const MAX_MARKER_DIAMETER = 14;
-const MARKER_FONT_MIN = 4.75;
-const MARKER_FONT_MAX = 7.25;
-const MARKER_VW_SCALE = 0.95;
-const COLLISION_SPACING_MULTIPLIER = 1.1;
+const DEFAULT_MARKER_SIZE = 9;
+const MIN_MARKER_DIAMETER = 5;
+const MAX_MARKER_DIAMETER = 12;
+const MARKER_FONT_MIN = 4;
+const MARKER_FONT_MAX = 6;
+const MARKER_VW_SCALE = 0.8;
+const COLLISION_SPACING_MULTIPLIER = 1.05;
 const DIAGRAM_EDGE_PADDING = 16;
 
 const replacementStatusCodes = new Set(["X", "N", "E", "T", "P", "Z", "B"]);
@@ -524,9 +524,9 @@ const mapInspectionToMarkers = (
     left_fender: { panel: "within", x: 186, y: 205 },
     fender_left: { panel: "within", x: 186, y: 205 },
 
-    front_left_door: { panel: "within", x: 214, y: 292, size: 20 },
-    front_door_left: { panel: "within", x: 214, y: 292, size: 20 },
-    door_front_left: { panel: "within", x: 214, y: 292, size: 20 },
+      front_left_door: { panel: "within", x: 214, y: 292, size: 12 },
+      front_door_left: { panel: "within", x: 214, y: 292, size: 12 },
+      door_front_left: { panel: "within", x: 214, y: 292, size: 12 },
 
     rear_left_door: { panel: "within", x: 178, y: 357 },
     rear_door_left: { panel: "within", x: 178, y: 357 },
@@ -551,8 +551,8 @@ const mapInspectionToMarkers = (
     right_fender: { panel: "within", x: 454, y: 205 },
     fender_right: { panel: "within", x: 454, y: 205 },
 
-    front_right_door: { panel: "within", x: 426, y: 292, size: 20 },
-    front_door_right: { panel: "within", x: 426, y: 292, size: 20 },
+      front_right_door: { panel: "within", x: 426, y: 292, size: 12 },
+      front_door_right: { panel: "within", x: 426, y: 292, size: 12 },
 
     rear_right_door: { panel: "within", x: 410, y: 343 },
     rear_door_right: { panel: "within", x: 410, y: 343 },

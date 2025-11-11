@@ -26,11 +26,11 @@ interface CarPart {
   markerPos?: { x: number; y: number };
 }
 
-const BASE_MARKER_RADIUS = 7;
-const BASE_MARKER_OUTER_RADIUS = 10;
-const BASE_MARKER_STROKE_WIDTH = 1.5;
-const BASE_MARKER_SPACING = 12;
-const BASE_MARKER_FONT_SIZE = 9;
+const BASE_MARKER_RADIUS = 4.5;
+const BASE_MARKER_OUTER_RADIUS = 7;
+const BASE_MARKER_STROKE_WIDTH = 1;
+const BASE_MARKER_SPACING = 9;
+const BASE_MARKER_FONT_SIZE = 7.5;
 
 // Precise marker positions aligned to actual diagram parts
 const PRECISE_MARKER_POSITIONS: Record<string, { x: number; y: number }> = {
@@ -86,40 +86,47 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
   const markerScale = useMemo(() => {
     if (isMobile) {
-      return 0.52;
+      return 0.45;
     }
     if (viewportWidth < 1024) {
-      return 0.78;
+      return 0.68;
     }
     if (viewportWidth < 1440) {
-      return 0.9;
+      return 0.82;
     }
-    return 1;
+    return 0.9;
   }, [isMobile, viewportWidth]);
 
   const markerSizing = useMemo(() => {
-    const spacing = BASE_MARKER_SPACING * markerScale;
+    const spacing = Math.max(6, BASE_MARKER_SPACING * markerScale);
 
     return {
-      radius: Math.max(3, BASE_MARKER_RADIUS * markerScale),
-      outerRadius: Math.max(4.5, BASE_MARKER_OUTER_RADIUS * markerScale * (isMobile ? 0.9 : 1)),
-      strokeWidth: Math.max(0.85, BASE_MARKER_STROKE_WIDTH * markerScale),
+      radius: Math.max(2.6, BASE_MARKER_RADIUS * markerScale),
+      outerRadius: Math.max(
+        3.6,
+        BASE_MARKER_OUTER_RADIUS * markerScale * (isMobile ? 0.85 : 1),
+      ),
+      strokeWidth: Math.max(0.7, BASE_MARKER_STROKE_WIDTH * markerScale),
       spacing,
-      verticalOffset: spacing / 2.4,
-      fontSize: Math.max(6.5, BASE_MARKER_FONT_SIZE * (isMobile ? 0.72 : markerScale)),
+      verticalOffset: spacing / 2.6,
+      fontSize: Math.max(
+        5.5,
+        BASE_MARKER_FONT_SIZE * (isMobile ? 0.7 : markerScale),
+      ),
     };
   }, [isMobile, markerScale]);
 
   // Enhanced car parts mapped to the actual diagram image positions
-  const carParts = useMemo<CarPart[]>(() => [
+  const carParts = useMemo<CarPart[]>(() => {
+    const parts: CarPart[] = [
     // Hood (top center of car)
-    {
-      id: 'hood',
-      name: 'Kapak',
-      nameEn: 'Hood',
-      path: 'M 240 60 L 400 60 Q 410 60 410 70 L 410 180 Q 410 190 400 190 L 240 190 Q 230 190 230 180 L 230 70 Q 230 60 240 60 Z',
-      labelPos: { x: 320, y: 120 }
-    },
+      {
+        id: 'hood',
+        name: 'Kapak',
+        nameEn: 'Hood',
+        path: 'M 240 60 L 400 60 Q 410 60 410 70 L 410 180 Q 410 190 400 190 L 240 190 Q 230 190 230 180 L 230 70 Q 230 60 240 60 Z',
+        labelPos: { x: 320, y: 120 }
+      },
     // Front Bumper
     {
       id: 'front_bumper',
@@ -198,13 +205,13 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       markerPos: { x: 320, y: 490 }
     },
     // Rear Bumper
-    {
-      id: 'rear_bumper',
-      name: 'Bamper Prapa',
-      nameEn: 'R. Bumper',
-      path: 'M 220 555 L 420 555 Q 435 555 435 570 L 435 590 Q 435 605 420 605 L 220 605 Q 205 605 205 590 L 205 570 Q 205 555 220 555 Z',
-      labelPos: { x: 320, y: 580 }
-    },
+      {
+        id: 'rear_bumper',
+        name: 'Bamper Prapa',
+        nameEn: 'R. Bumper',
+        path: 'M 220 555 L 420 555 Q 435 555 435 570 L 435 590 Q 435 605 420 605 L 220 605 Q 205 605 205 590 L 205 570 Q 205 555 220 555 Z',
+        labelPos: { x: 320, y: 580 }
+      },
       // Side Sill Panels (approximate positions under doors)
       {
         id: 'side_sill_left',
@@ -281,14 +288,25 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
       labelPos: { x: 30, y: 510 }
     },
     // Rear Right Wheel
-    {
-      id: 'rr_wheel',
-      name: 'Rrota Prapa Djathtas',
-      nameEn: 'RR Wheel',
-      path: 'M 610 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 610, y: 510 }
-    },
-  ], []);
+      {
+        id: 'rr_wheel',
+        name: 'Rrota Prapa Djathtas',
+        nameEn: 'RR Wheel',
+        path: 'M 610 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+        labelPos: { x: 610, y: 510 }
+      },
+    ];
+    return parts.map((part) => {
+      const precise = PRECISE_MARKER_POSITIONS[part.id];
+      if (precise) {
+        return { ...part, markerPos: precise };
+      }
+      if (!part.markerPos) {
+        return { ...part, markerPos: part.labelPos };
+      }
+      return part;
+    });
+  }, []);
 
   // Helper: evaluate if an item's title targets a given part id
   const titleMatchesPart = useCallback((title: string, partId: string) => {
