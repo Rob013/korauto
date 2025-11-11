@@ -2163,32 +2163,38 @@ const accidentSummaryEntries = useMemo(
           ? "Jo"
           : "Nuk ka informata";
 
-      const commercialValue = hasCommercial
-        ? "Po"
-        : hasGeneral || hasMeaningfulEvidence
-          ? "Jo"
-          : "Nuk ka informata";
+        const commercialValue = hasCommercial
+          ? "Po"
+          : hasGeneral || hasMeaningfulEvidence
+            ? "Jo"
+            : "Nuk ka informata";
 
-      return [
-        {
-          label: "Përdorur si veturë me qira",
-          value: rentalValue,
-          details: hasRent
-            ? Array.from(rentalDetails)
-            : hasGeneral
-              ? Array.from(generalDetails)
-              : [],
-        },
-        {
-          label: "Përdorur për qëllime komerciale",
-          value: commercialValue,
-          details: hasCommercial
-            ? Array.from(commercialDetails)
-            : hasGeneral
-              ? Array.from(generalDetails)
-              : [],
-        },
-      ];
+        const generalDetailsList = Array.from(generalDetails);
+        if (hasGeneral) {
+          generalDetailsList.unshift(
+            "Raporti përmend përdorim të përgjithshëm (informativ)",
+          );
+        }
+
+        const generalValue = hasMeaningfulEvidence ? "Jo" : "Nuk ka informata";
+
+        return [
+          {
+            label: "Përdorur si veturë me qira",
+            value: rentalValue,
+            details: hasRent ? Array.from(rentalDetails) : [],
+          },
+          {
+            label: "Përdorur për qëllime komerciale",
+            value: commercialValue,
+            details: hasCommercial ? Array.from(commercialDetails) : [],
+          },
+          {
+            label: "Përdorim i përgjithshëm",
+            value: generalValue,
+            details: generalDetailsList,
+          },
+        ];
   }, [car, toYesNo, usageHistoryList]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
