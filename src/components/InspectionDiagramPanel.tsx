@@ -20,6 +20,7 @@ interface DiagramMarker {
   type: "N" | "R"; // N = shift (replacement), R = Repair
   label: string;
   size?: number;
+  originalLabel?: string;
 }
 
 interface InspectionDiagramPanelProps {
@@ -29,14 +30,14 @@ interface InspectionDiagramPanelProps {
 
 const BASE_CANVAS_WIDTH = 640;
 const BASE_CANVAS_HEIGHT = 600;
-const DEFAULT_MARKER_SIZE = 16;
-const MIN_MARKER_DIAMETER = 7;
-const MAX_MARKER_DIAMETER = 18;
-const MARKER_FONT_MIN = 5.5;
-const MARKER_FONT_MAX = 8.5;
-const MARKER_VW_SCALE = 1.25;
-const COLLISION_SPACING_MULTIPLIER = 1.25;
-const DIAGRAM_EDGE_PADDING = 20;
+const DEFAULT_MARKER_SIZE = 12;
+const MIN_MARKER_DIAMETER = 6;
+const MAX_MARKER_DIAMETER = 14;
+const MARKER_FONT_MIN = 4.75;
+const MARKER_FONT_MAX = 7.25;
+const MARKER_VW_SCALE = 0.95;
+const COLLISION_SPACING_MULTIPLIER = 1.1;
+const DIAGRAM_EDGE_PADDING = 16;
 
 const replacementStatusCodes = new Set(["X", "N", "E", "T", "P", "Z", "B"]);
 const repairStatusCodes = new Set([
@@ -97,6 +98,205 @@ const neutralKeywords = [
   "양호함",
   "정상임",
 ];
+
+const diagramPartLabelMap: Record<string, string> = {};
+
+const registerPartLabels = (keys: string[], label: string) => {
+  keys.forEach((key) => {
+    const normalized = key.trim();
+    if (!normalized) return;
+    diagramPartLabelMap[normalized] = label;
+    diagramPartLabelMap[normalized.toLowerCase()] = label;
+  });
+};
+
+registerPartLabels(["hood", "bonnet"], "Kapaku i motorit");
+registerPartLabels(["front_panel"], "Paneli i përparmë");
+registerPartLabels(["front_bumper"], "Parakolpi i përparmë");
+registerPartLabels(["radiator_support"], "Mbajtësi i radiatorit");
+registerPartLabels(["cowl_panel"], "Paneli i bazës së xhamit");
+
+registerPartLabels(
+  ["front_left_fender", "front_fender_left", "left_fender", "fender_left"],
+  "Parafango i përparmë majtas",
+);
+registerPartLabels(
+  ["front_left_door", "front_door_left", "door_front_left"],
+  "Dera e përparme majtas",
+);
+registerPartLabels(
+  ["rear_left_door", "rear_door_left", "door_rear_left"],
+  "Dera e pasme majtas",
+);
+registerPartLabels(
+  [
+    "left_quarter_panel",
+    "quarter_panel_left",
+    "left_quarter",
+    "quarter_left",
+    "rear_fender_left",
+    "left_rear_fender",
+  ],
+  "Paneli anësor i pasëm majtas",
+);
+registerPartLabels(
+  ["side_sill_panel_left", "side_sill_left", "rocker_panel_left"],
+  "Pragu anësor majtas",
+);
+registerPartLabels(
+  ["side_room_panel_left", "side_panel_left"],
+  "Paneli anësor i kabinës majtas",
+);
+
+registerPartLabels(
+  ["front_right_fender", "front_fender_right", "right_fender", "fender_right"],
+  "Parafango i përparmë djathtas",
+);
+registerPartLabels(
+  ["front_right_door", "front_door_right"],
+  "Dera e përparme djathtas",
+);
+registerPartLabels(
+  ["rear_right_door", "rear_door_right", "rear_door_(right)_-_replacement"],
+  "Dera e pasme djathtas",
+);
+registerPartLabels(
+  [
+    "right_quarter_panel",
+    "quarter_panel_right",
+    "right_quarter",
+    "quarter_right",
+  ],
+  "Paneli anësor i pasëm djathtas",
+);
+registerPartLabels(
+  ["side_sill_panel_right", "side_sill_right", "rocker_panel_right"],
+  "Pragu anësor djathtas",
+);
+
+registerPartLabels(["roof", "roof_panel"], "Çatia");
+registerPartLabels(["sunroof"], "Tavan panoramik");
+
+registerPartLabels(["trunk", "trunk_lid", "deck_lid"], "Kapaku i bagazhit");
+registerPartLabels(
+  ["trunk_floor", "luggage_floor", "floor_trunk"],
+  "Dyshemeja e bagazhit",
+);
+registerPartLabels(["rear_panel", "back_panel"], "Paneli i pasëm");
+registerPartLabels(["rear_bumper", "back_bumper"], "Parakolpi i pasëm");
+
+registerPartLabels(
+  [
+    "rear_wheel_house_left",
+    "rear_wheelhouse_left",
+    "wheel_house_rear_left",
+    "wheelhouse_rear_left",
+  ],
+  "Hapësira e rrotës së pasme majtas",
+);
+registerPartLabels(
+  [
+    "rear_wheel_house_right",
+    "rear_wheelhouse_right",
+    "wheel_house_rear_right",
+    "wheelhouse_rear_right",
+  ],
+  "Hapësira e rrotës së pasme djathtas",
+);
+registerPartLabels(
+  ["front_wheel_house_left", "front_wheelhouse_left"],
+  "Hapësira e rrotës së përparme majtas",
+);
+registerPartLabels(
+  ["front_wheel_house_right", "front_wheelhouse_right"],
+  "Hapësira e rrotës së përparme djathtas",
+);
+
+registerPartLabels(["front_cross_member"], "Traversa e përparme");
+registerPartLabels(["rear_cross_member"], "Traversa e pasme");
+registerPartLabels(["front_rail"], "Shina gjatësore e përparme");
+registerPartLabels(["rear_rail"], "Shina gjatësore e pasme");
+
+const diagramPartTokenTranslations: Record<string, string> = {
+  front: "përparme",
+  rear: "pasmë",
+  left: "majtas",
+  right: "djathtas",
+  door: "derë",
+  doors: "derë",
+  fender: "parafango",
+  quarter: "panel anësor",
+  panel: "panel",
+  side: "anësor",
+  sill: "prag",
+  rocker: "prag",
+  roof: "çati",
+  trunk: "bagazh",
+  floor: "dysheme",
+  luggage: "bagazh",
+  wheel: "rrotës",
+  house: "hapësirë",
+  member: "traversë",
+  cross: "traversë",
+  rail: "shinë",
+  support: "mbajtës",
+  radiator: "radiator",
+  cowl: "panel cowl",
+  sunroof: "tavan panoramik",
+  deck: "kapak bagazhi",
+  back: "pasmë",
+  hood: "kapak motori",
+  bonnet: "kapak motori",
+};
+
+const buildLabelFromKey = (input?: string | null) => {
+  if (!input) return "";
+  const normalized = input
+    .toString()
+    .toLowerCase()
+    .replace(/[()]/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return "";
+  const tokens = normalized.split(" ").filter(Boolean);
+  if (tokens.length === 0) return "";
+
+  const translatedTokens = tokens
+    .map((token) => diagramPartTokenTranslations[token] ?? token)
+    .filter(Boolean);
+
+  if (translatedTokens.length === 0) return "";
+
+  const label = translatedTokens.join(" ").replace(/\s+/g, " ").trim();
+  if (!label) return "";
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+const getDiagramPartLabel = (
+  key: string | null | undefined,
+  fallback?: string,
+) => {
+  if (key) {
+    const direct =
+      diagramPartLabelMap[key] || diagramPartLabelMap[key.toLowerCase()];
+    if (direct) return direct;
+    const built = buildLabelFromKey(key);
+    if (built) return built;
+  }
+
+  if (fallback) {
+    const directFallback =
+      diagramPartLabelMap[fallback] ||
+      diagramPartLabelMap[fallback.toLowerCase()];
+    if (directFallback) return directFallback;
+    const builtFallback = buildLabelFromKey(fallback);
+    if (builtFallback) return builtFallback;
+    return fallback;
+  }
+
+  return key ?? "";
+};
 
 const aliasMatchers: Array<{ pattern: RegExp; key: string }> = [
   { pattern: /(front\s*)?door.*(left|\blh\b)/i, key: "front_left_door" },
@@ -627,8 +827,8 @@ const mapInspectionToMarkers = (
         }
       }
 
-      if (bestMatch) {
-        const pos = positionMap[bestMatch];
+        if (bestMatch) {
+          const pos = positionMap[bestMatch];
         const rawSize =
           typeof pos.size === "number" ? pos.size : DEFAULT_MARKER_SIZE;
         const nominalSize = Math.min(
@@ -669,17 +869,41 @@ const mapInspectionToMarkers = (
           attempts++;
         }
 
-        const marker: DiagramMarker = {
-          x: finalX,
-          y: finalY,
-          type: markerType,
-          label: item?.type?.title || "",
-          size: nominalSize,
-        };
+          const fallbackLabel =
+            (typeTitleRaw && typeTitleRaw.trim()) ||
+            (typeCodeRaw && typeCodeRaw.trim()) ||
+            bestMatch;
 
-        console.log(
-          `✅ U vendos "${item?.type?.title}" → ${bestMatch} (${pos.panel}), tip: ${markerType}, pozicioni: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [ripozicionuar për të shmangur mbivendosjen]" : ""}`,
-        );
+          let translatedLabel = getDiagramPartLabel(bestMatch, fallbackLabel);
+
+          if (
+            translatedLabel === fallbackLabel &&
+            attributeStrings.length > 0
+          ) {
+            translatedLabel = getDiagramPartLabel(
+              attributeStrings[0],
+              fallbackLabel,
+            );
+          }
+
+          const normalizedOriginal =
+            typeTitleRaw && typeTitleRaw.trim() ? typeTitleRaw.trim() : undefined;
+
+          const marker: DiagramMarker = {
+            x: finalX,
+            y: finalY,
+            type: markerType,
+            label: translatedLabel,
+            size: nominalSize,
+            originalLabel:
+              normalizedOriginal && normalizedOriginal !== translatedLabel
+                ? normalizedOriginal
+                : undefined,
+          };
+
+          console.log(
+            `✅ U vendos "${marker.label}" (nga "${typeTitleRaw || bestMatch}") → ${bestMatch} (${pos.panel}), tip: ${markerType}, pozicioni: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [ripozicionuar për të shmangur mbivendosjen]" : ""}`,
+          );
 
         if (pos.panel === "within") {
           withinMarkers.push(marker);
@@ -720,8 +944,8 @@ const DiagramMarkerWithTooltip: React.FC<{
       Math.max(markerBaseSize, MIN_MARKER_DIAMETER),
       MAX_MARKER_DIAMETER,
     );
-    const markerSize = `clamp(${MIN_MARKER_DIAMETER}px, ${MARKER_VW_SCALE}vw, ${normalizedMarkerSize}px)`;
-    const markerFontSize = `clamp(${MARKER_FONT_MIN}px, 0.95vw, ${MARKER_FONT_MAX}px)`;
+      const markerSize = `clamp(${MIN_MARKER_DIAMETER}px, ${MARKER_VW_SCALE}vw, ${normalizedMarkerSize}px)`;
+      const markerFontSize = `clamp(${MARKER_FONT_MIN}px, 0.75vw, ${MARKER_FONT_MAX}px)`;
 
   const baseClasses =
     "absolute rounded-full flex items-center justify-center font-bold shadow-sm border pointer-events-auto transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
@@ -804,7 +1028,7 @@ const DiagramMarkerWithTooltip: React.FC<{
             width: markerSize,
             height: markerSize,
             fontSize: markerFontSize,
-            transform: "translate(-50%, -55%)",
+              transform: "translate(-50%, -50%)",
           }}
           onMouseDown={handleMouseDown}
         >
@@ -819,7 +1043,12 @@ const DiagramMarkerWithTooltip: React.FC<{
         <div className="font-semibold text-sm">{marker.label}</div>
           <div className="text-xs text-muted-foreground mt-1">
             {marker.type === "N" ? "Ndërrim / zëvendësim" : "Riparim"}
+          </div>
+          {marker.originalLabel && marker.originalLabel !== marker.label && (
+            <div className="text-[10px] text-muted-foreground/80 mt-1">
+              {marker.originalLabel}
         </div>
+          )}
       </TooltipContent>
     </Tooltip>
   );

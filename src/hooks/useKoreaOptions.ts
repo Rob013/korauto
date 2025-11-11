@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getFallbackOptionName } from '@/data/koreaOptionFallbacks';
 
 interface KoreaOption {
   id: number;
@@ -23,15 +24,6 @@ interface UseKoreaOptionsReturn {
 
 const CACHE_KEY = 'korea_options_cache';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-
-const FALLBACK_OPTION_NAMES: Record<string, string> = {
-  "001": "Klimatizimi",
-  "004": "Frena ABS",
-  "005": "Sistemi i Airbag-ëve",
-  "006": "Radio / Sistemi Audio",
-  "007": "CD Player",
-  "008": "Bluetooth",
-};
 
 export const useKoreaOptions = (): UseKoreaOptionsReturn => {
   const [options, setOptions] = useState<Record<string, KoreaOption>>({});
@@ -99,44 +91,47 @@ export const useKoreaOptions = (): UseKoreaOptionsReturn => {
   }, []);
 
     const getOptionName = (code: string): string => {
-      if (!code) return code;
+        if (!code) return code;
 
-      const normalizedCode = code.trim();
+        const normalizedCode = code.trim();
+        if (!normalizedCode) return code;
 
-      // Try exact match first
-      let option = options[normalizedCode];
+        const numericMatch = /^\d+$/.test(normalizedCode);
 
-      // If not found and code is numeric, try different normalizations
-      if (!option && /^\d+$/.test(normalizedCode)) {
-        const numericCode = parseInt(normalizedCode, 10).toString();
-        const paddedFromNumeric = numericCode.padStart(3, "0");
-        const paddedFromOriginal = normalizedCode.padStart(3, "0");
-        option =
-          options[numericCode] ??
-          options[paddedFromNumeric] ??
-          options[paddedFromOriginal];
-      }
+        // Try exact match first
+        let option = options[normalizedCode];
 
-      if (option) {
-        return option.name || option.name_original || normalizedCode;
-      }
+        // If not found and code is numeric, try different normalisations
+        if (!option && numericMatch) {
+          const numericCode = Number.parseInt(normalizedCode, 10).toString();
+          const paddedFromNumeric = numericCode.padStart(3, "0");
+          const paddedFromOriginal = normalizedCode.padStart(3, "0");
+          option =
+            options[numericCode] ??
+            options[paddedFromNumeric] ??
+            options[paddedFromOriginal];
 
-      const candidateCodes = new Set<string>([normalizedCode]);
+          if (!option && normalizedCode.length > 3) {
+            const lastThree = normalizedCode.slice(-3);
+            const lastThreeNumeric = Number.parseInt(lastThree, 10).toString();
+            option =
+              options[lastThree] ??
+              options[lastThree.padStart(3, "0")] ??
+              options[lastThreeNumeric];
+          }
+        }
 
-      if (/^\d+$/.test(normalizedCode)) {
-        candidateCodes.add(parseInt(normalizedCode, 10).toString());
-        candidateCodes.add(normalizedCode.padStart(3, "0"));
-      }
+        if (option) {
+          return option.name || option.name_original || normalizedCode;
+        }
 
-      for (const candidate of candidateCodes) {
-        const fallback = FALLBACK_OPTION_NAMES[candidate];
+        const fallback = getFallbackOptionName(normalizedCode);
         if (fallback) {
           return fallback;
         }
-      }
 
-      return normalizedCode;
-    };
+        return normalizedCode;
+      };
 
   const getOptionDescription = (code: string): string => {
     if (!code) return '';
