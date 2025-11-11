@@ -19,6 +19,12 @@ import {
   fetchEncarsRecordSummary,
   fetchEncarsVehicle,
 } from "@/services/encarApi";
+import {
+  buildUsageHistoryList,
+  decodePrimaryUsage,
+  decodeSecondaryUsage,
+  type UsageHistoryEntry,
+} from "@/utils/encarUsage";
 import type {
   EncarsInspectionResponse,
   EncarsRecordOpenResponse,
@@ -92,8 +98,6 @@ type InsuranceSummaryInfo = {
   flood_damage?: unknown;
   [key: string]: unknown;
 };
-
-type UsageHistoryEntry = { description?: string; value?: string };
 
 type OwnerChangeEntry = {
   date?: string;
@@ -734,42 +738,6 @@ const formatDisplayDate = (
 
 const ENCARS_PRICE_UNIT_KRW = 10000;
 
-const primaryUsageMap: Record<string, string> = {
-  "0": "Pa të dhëna",
-  "1": "Përdorim privat",
-  "2": "Përdorim komercial",
-  "3": "Përdorim qeveritar",
-  "4": "Përdorim të përbashkët",
-};
-
-const secondaryUsageMap: Record<string, string> = {
-  "0": "Pa të dhëna",
-  "1": "Përdorim i përgjithshëm",
-  "2": "Taksi",
-  "3": "Auto-shkollë",
-  "4": "Qira afatshkurtër",
-  "5": "Qira afatgjatë",
-  "6": "Transport publik",
-  "7": "Transport i mallrave",
-  "8": "Përdorim special",
-};
-
-const decodePrimaryUsage = (code?: string | null) => {
-  if (!code) return "Informacion i padisponueshëm";
-  const normalized = code.trim();
-  const label = primaryUsageMap[normalized];
-  return label ? `${label} (${normalized})` : `Kodi i përdorimit ${normalized}`;
-};
-
-const decodeSecondaryUsage = (code?: string | null) => {
-  if (!code) return "Informacion i padisponueshëm";
-  const normalized = code.trim();
-  const label = secondaryUsageMap[normalized];
-  return label
-    ? `${label} (${normalized})`
-    : `Kodi i përdorimit sekondar ${normalized}`;
-};
-
 const buildEncarsImageUrl = (path?: string | null) => {
   if (!path) return undefined;
   return `${ENCAR_IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -923,8 +891,8 @@ const CarInspectionReport = () => {
   const [car, setCar] = useState<InspectionReportCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAllStandard, setShowAllStandard] = useState(false);
-  const [showAllChoice, setShowAllChoice] = useState(false);
+  const [showAllStandard, setShowAllStandard] = useState(true);
+  const [showAllChoice, setShowAllChoice] = useState(true);
 
   const fetchInspectionReport = useCallback(async () => {
     if (!lot) return;
@@ -1465,54 +1433,10 @@ const accidentSummaryEntries = useMemo(
     return [];
   }, [car]);
 
-  const usageHistoryList = useMemo<UsageHistoryEntry[]>(() => {
-    const entries: UsageHistoryEntry[] = [];
-
-    const addEntry = (entry: any) => {
-      if (!entry) return;
-      const description = entry.description ?? entry.type ?? entry.label;
-      const rawValue = entry.value ?? entry.result ?? entry.details;
-      entries.push({
-        description,
-        value:
-          typeof rawValue === "string"
-            ? rawValue
-            : rawValue !== undefined && rawValue !== null
-              ? String(rawValue)
-              : undefined,
-      });
-    };
-
-    const usageHistory = car?.details?.insurance?.usage_history;
-    if (Array.isArray(usageHistory)) {
-      usageHistory.forEach(addEntry);
-    }
-
-    const carInfoChanges = (car?.insurance_v2 as any)?.carInfoChanges;
-    if (Array.isArray(carInfoChanges)) {
-      carInfoChanges.forEach((change: any) => {
-        const description =
-          change?.description ||
-          change?.type ||
-          (change?.carNo
-            ? `Ndryshim targash (${change.carNo})`
-            : "Ndryshim informacioni");
-        const formattedDate =
-          formatDisplayDate(change?.date, { monthYear: true }) ??
-          formatDisplayDate(change?.changed_at, { monthYear: true }) ??
-          change?.date ??
-          change?.changed_at ??
-          undefined;
-
-        entries.push({
-          description,
-          value: formattedDate,
-        });
-      });
-    }
-
-    return entries.filter((entry) => entry.description || entry.value);
-  }, [car]);
+  const usageHistoryList = useMemo<UsageHistoryEntry[]>(
+    () => buildUsageHistoryList(car, formatDisplayDate),
+    [car],
+  );
 
   const toYesNo = useCallback((value?: string | number | boolean | null) => {
     const evaluate = (input: unknown): "Po" | "Jo" | null => {

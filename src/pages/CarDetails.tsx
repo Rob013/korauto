@@ -93,6 +93,12 @@ import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 import { openCarReportInNewTab } from "@/utils/navigation";
 import { createPortal } from "react-dom";
+import {
+  buildUsageHighlights,
+  buildUsageHistoryList,
+  type UsageHighlight,
+  type UsageHistoryEntry,
+} from "@/utils/encarUsage";
 
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
@@ -258,6 +264,46 @@ const FEATURE_MAPPING: { [key: string]: string } = {
 
 const normalizeText = (value: string) =>
   value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const formatDisplayDate = (
+  value: unknown,
+  { monthYear = false }: { monthYear?: boolean } = {},
+) => {
+  if (!value) return undefined;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = new Date(trimmed);
+    if (!Number.isNaN(parsed.getTime())) {
+      if (monthYear) {
+        return parsed.toLocaleDateString("sq-AL", {
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+      return parsed.toLocaleDateString("sq-AL", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
+    return trimmed.replace(/-/g, ".").replace(/T.*/, "");
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    if (monthYear) {
+      return value.toLocaleDateString("sq-AL", {
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
+    return value.toLocaleDateString("sq-AL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
+  return undefined;
+};
 
 type EquipmentIconMapping = {
   icon: LucideIcon;
@@ -1248,6 +1294,16 @@ const CarDetails = memo(() => {
     setIsPortalReady(true);
     return () => setIsPortalReady(false);
   }, []);
+
+  const usageHistoryList = useMemo<UsageHistoryEntry[]>(
+    () => buildUsageHistoryList(car, formatDisplayDate),
+    [car],
+  );
+
+  const usageHighlights = useMemo<UsageHighlight[]>(
+    () => buildUsageHighlights(car, usageHistoryList),
+    [car, usageHistoryList],
+  );
 
   const accidentCount = useMemo(() => {
     if (!car) {
@@ -3307,7 +3363,39 @@ const CarDetails = memo(() => {
                                 </Badge>
                               </div>
                             )}
-                        </div>
+                          </div>
+                          {usageHighlights.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                              {usageHighlights.map((item) => {
+                                const valueClass =
+                                  item.value === "Po"
+                                    ? "text-destructive"
+                                    : item.value === "Jo"
+                                      ? "text-emerald-600"
+                                      : "text-muted-foreground";
+                                return (
+                                  <div
+                                    key={item.label}
+                                    className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-4"
+                                  >
+                                    <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                                      {item.label}
+                                    </span>
+                                    <span
+                                      className={`text-base sm:text-lg font-semibold ${valueClass}`}
+                                    >
+                                      {item.value}
+                                    </span>
+                                    {item.details.length > 0 && (
+                                      <span className="text-xs text-muted-foreground leading-relaxed">
+                                        {item.details.join(" • ")}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                       </div>
                     )}
 

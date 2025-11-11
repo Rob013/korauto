@@ -198,8 +198,16 @@ const findAliasMatch = (value: string | undefined | null) => {
   return null;
 };
 
-const containsKeyword = (value: string, keywords: string[]) =>
-  keywords.some((keyword) => value.includes(keyword));
+const containsKeyword = (
+  value: string | undefined | null,
+  keywords: string[],
+) => {
+  if (value === undefined || value === null) return false;
+  const normalizedValue = value.toString().toLowerCase();
+  return keywords.some((keyword) =>
+    normalizedValue.includes(keyword.toLowerCase()),
+  );
+};
 
 const collectStatusEntries = (item: any) => {
   const statuses: Array<{ code?: string; title?: string }> = [];
@@ -424,10 +432,14 @@ const mapInspectionToMarkers = (
         : rawAttributes !== undefined && rawAttributes !== null
           ? [rawAttributes]
           : [];
-      const attributeStrings = extractAttributeStrings(attributes);
-      const normalizedAttributesForMatch = attributeStrings
-        .map((attr) => normalizeForMatching(attr))
-        .filter(Boolean);
+        const attributeStrings = extractAttributeStrings(attributes);
+        const attributeVariants = attributeStrings.map((attr) => ({
+          raw: attr,
+          normalized: normalizeForMatching(attr),
+        }));
+        const normalizedAttributesForMatch = attributeVariants
+          .map(({ normalized }) => normalized)
+          .filter(Boolean);
       const normalizedTitle = normalizeForMatching(typeTitleRaw);
       const normalizedCode = normalizeForMatching(typeCodeRaw);
 
@@ -444,26 +456,39 @@ const mapInspectionToMarkers = (
 
       statuses.forEach((status) => {
         const statusCode = (status.code || "").toString().trim().toUpperCase();
-        const normalizedStatusTitle = normalizeForMatching(
-          status.title || status.code || "",
-        );
+          const rawStatusTitle = (status.title || status.code || "")
+            .toString()
+            .toLowerCase();
+          const normalizedStatusTitle = normalizeForMatching(
+            status.title || status.code || "",
+          );
+          const hasReplacementKeyword =
+            containsKeyword(rawStatusTitle, replacementKeywords) ||
+            containsKeyword(normalizedStatusTitle, replacementKeywords);
+          const hasRepairKeyword =
+            containsKeyword(rawStatusTitle, repairKeywords) ||
+            containsKeyword(normalizedStatusTitle, repairKeywords);
+          const hasNeutralKeyword =
+            containsKeyword(rawStatusTitle, neutralKeywords) ||
+            containsKeyword(normalizedStatusTitle, neutralKeywords);
 
         if (
           replacementStatusCodes.has(statusCode) ||
-          containsKeyword(normalizedStatusTitle, replacementKeywords)
+            hasReplacementKeyword
         ) {
           markerType = "N";
           hasIssue = true;
         } else if (
           repairStatusCodes.has(statusCode) ||
-          containsKeyword(normalizedStatusTitle, repairKeywords)
+            hasRepairKeyword
         ) {
           if (markerType !== "N") markerType = "R";
           hasIssue = true;
         } else if (
           (statusCode && !neutralStatusCodes.has(statusCode)) ||
-          (normalizedStatusTitle &&
-            !containsKeyword(normalizedStatusTitle, neutralKeywords))
+            ((!statusCode || statusCode === "") &&
+              (rawStatusTitle || normalizedStatusTitle) &&
+              !hasNeutralKeyword)
         ) {
           hasNonNeutralStatus = true;
         }
@@ -475,18 +500,21 @@ const mapInspectionToMarkers = (
       }
 
       if (!hasIssue && attributeStrings.length > 0) {
-        if (
-          normalizedAttributesForMatch.some((value) =>
-            containsKeyword(value, replacementKeywords),
-          )
-        ) {
+          const attributeHasReplacement = attributeVariants.some(
+            ({ raw, normalized }) =>
+              containsKeyword(raw, replacementKeywords) ||
+              containsKeyword(normalized, replacementKeywords),
+          );
+          const attributeHasRepair = attributeVariants.some(
+            ({ raw, normalized }) =>
+              containsKeyword(raw, repairKeywords) ||
+              containsKeyword(normalized, repairKeywords),
+          );
+
+          if (attributeHasReplacement) {
           markerType = "N";
           hasIssue = true;
-        } else if (
-          normalizedAttributesForMatch.some((value) =>
-            containsKeyword(value, repairKeywords),
-          )
-        ) {
+          } else if (attributeHasRepair) {
           if (!markerType) markerType = "R";
           hasIssue = true;
         }
@@ -504,16 +532,23 @@ const mapInspectionToMarkers = (
 
       for (const candidate of textualCandidates) {
         if (!candidate || typeof candidate !== "string") continue;
-        const normalizedCandidate = normalizeForMatching(candidate);
-        if (!normalizedCandidate) continue;
+          const normalizedCandidate = normalizeForMatching(candidate);
+          const rawCandidate = candidate.toString();
+          if (!normalizedCandidate && !rawCandidate) continue;
 
-        if (containsKeyword(normalizedCandidate, replacementKeywords)) {
+          if (
+            containsKeyword(rawCandidate, replacementKeywords) ||
+            containsKeyword(normalizedCandidate, replacementKeywords)
+          ) {
           markerType = "N";
           hasIssue = true;
           break;
         }
 
-        if (containsKeyword(normalizedCandidate, repairKeywords)) {
+          if (
+            containsKeyword(rawCandidate, repairKeywords) ||
+            containsKeyword(normalizedCandidate, repairKeywords)
+          ) {
           if (markerType !== "N") markerType = "R";
           hasIssue = true;
         }
