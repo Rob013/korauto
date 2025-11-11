@@ -487,7 +487,7 @@ const mapInspectionToMarkers = (
             containsKeyword(value, repairKeywords),
           )
         ) {
-          if (markerType !== "N") markerType = "R";
+          if (!markerType) markerType = "R";
           hasIssue = true;
         }
       }

@@ -32,28 +32,29 @@ const BASE_MARKER_STROKE_WIDTH = 1.5;
 const BASE_MARKER_SPACING = 12;
 const BASE_MARKER_FONT_SIZE = 9;
 
+// Precise marker positions aligned to actual diagram parts
 const PRECISE_MARKER_POSITIONS: Record<string, { x: number; y: number }> = {
-  hood: { x: 320, y: 118 },
-  front_bumper: { x: 320, y: 52 },
-  windshield: { x: 320, y: 208 },
-  front_left_door: { x: 188, y: 262 },
-  front_right_door: { x: 452, y: 262 },
-  roof: { x: 320, y: 312 },
-  rear_left_door: { x: 188, y: 372 },
-  rear_right_door: { x: 452, y: 372 },
-  rear_glass: { x: 320, y: 405 },
-  trunk: { x: 320, y: 488 },
-  rear_bumper: { x: 320, y: 572 },
-  side_sill_left: { x: 188, y: 320 },
-  side_sill_right: { x: 452, y: 320 },
-  left_fender: { x: 170, y: 140 },
-  right_fender: { x: 470, y: 140 },
-  left_quarter: { x: 175, y: 502 },
-  right_quarter: { x: 465, y: 502 },
-  fl_wheel: { x: 70, y: 120 },
-  fr_wheel: { x: 570, y: 120 },
-  rl_wheel: { x: 70, y: 500 },
-  rr_wheel: { x: 570, y: 500 }
+  hood: { x: 320, y: 125 },
+  front_bumper: { x: 320, y: 40 },
+  windshield: { x: 320, y: 215 },
+  front_left_door: { x: 185, y: 252 },
+  front_right_door: { x: 455, y: 252 },
+  roof: { x: 320, y: 305 },
+  rear_left_door: { x: 185, y: 372 },
+  rear_right_door: { x: 455, y: 372 },
+  rear_glass: { x: 320, y: 400 },
+  trunk: { x: 320, y: 490 },
+  rear_bumper: { x: 320, y: 580 },
+  side_sill_left: { x: 185, y: 320 },
+  side_sill_right: { x: 455, y: 320 },
+  left_fender: { x: 175, y: 127 },
+  right_fender: { x: 465, y: 127 },
+  left_quarter: { x: 170, y: 490 },
+  right_quarter: { x: 470, y: 490 },
+  fl_wheel: { x: 30, y: 90 },
+  fr_wheel: { x: 610, y: 90 },
+  rl_wheel: { x: 30, y: 510 },
+  rr_wheel: { x: 610, y: 510 }
 };
 
 export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
