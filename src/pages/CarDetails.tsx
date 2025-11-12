@@ -87,6 +87,8 @@ import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { DealerInfoSection } from "@/components/DealerInfoSection";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
@@ -1123,6 +1125,7 @@ const CarDetails = memo(() => {
   const { goBack, restorePageState, pageState } = useNavigation();
   const { exchangeRate } = useCurrencyAPI();
   const { getOptionName } = useKoreaOptions();
+  const { isAdmin, isLoading: adminLoading } = useAdminCheck();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1130,7 +1133,6 @@ const CarDetails = memo(() => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [shouldRenderMap, setShouldRenderMap] = useState(false);
   const mapTargets = useRef<HTMLDivElement[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
@@ -2007,23 +2009,7 @@ const CarDetails = memo(() => {
     return comfort;
   };
 
-  // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data: adminCheck } = await supabase.rpc("is_admin");
-          setIsAdmin(adminCheck || false);
-        }
-      } catch (error) {
-        console.error("Failed to check admin status:", error);
-      }
-    };
-    checkAdminStatus();
-  }, []);
+  // Admin status is now handled by useAdminCheck hook
   useEffect(() => {
     let isMounted = true;
 
@@ -3370,6 +3356,13 @@ const CarDetails = memo(() => {
                           Nuk ka informacion për pajisjet dhe opsionet e kësaj
                           makine.
                         </p>
+                      </div>
+                    )}
+
+                    {/* Dealer Information - Admin Only */}
+                    {!adminLoading && isAdmin && (
+                      <div className="mt-6">
+                        <DealerInfoSection car={car} />
                       </div>
                     )}
 

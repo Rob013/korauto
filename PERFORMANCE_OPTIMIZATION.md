@@ -1,6 +1,6 @@
 # Performance Optimization Summary - Updated 2025
 
-This document outlines comprehensive performance improvements for instant car loading and optimized user experience.
+This document outlines comprehensive performance improvements for instant car loading, persistent authentication, and admin-only features.
 
 ## Overview
 
@@ -9,10 +9,31 @@ Major performance upgrades focused on:
 - **Database optimization** for faster queries
 - **Zoom support** without crashes
 - **Complete API data** preservation
+- **Persistent login** - never login again
+- **Admin-only dealer information** from API
 
 ## Critical Performance Improvements
 
-### 1. Advanced Car Details Caching 🚀
+### 1. Persistent Authentication 🔐
+- **Forever login**: Sessions persist indefinitely with localStorage
+- **Auto token refresh**: Seamless authentication without re-login
+- **Remember me**: Optional checkbox for session persistence
+- **Admin verification**: Server-side role validation
+- **Result**: Users stay logged in across browser sessions
+
+### 2. Admin-Only Dealer Information 📍
+- **Dealer details**: Name, address, phone, company
+- **API source**: Real-time data from encarVehicle API
+- **Security**: Only visible to administrators
+- **Location**: Displayed after equipment/options section
+- **Data fields**:
+  - Dealer name and user ID
+  - Firm/company name
+  - Complete address
+  - Phone contact
+  - User type badge
+
+### 3. Advanced Car Details Caching 🚀
 - **Memory cache**: Instant subsequent loads
 - **Session storage**: Persists across page navigations (15min TTL)
 - **Database cache**: All API data stored in `cars_cache`
@@ -121,6 +142,55 @@ await batchSyncCarsToCache(carsArray);
 - Structured data format
 - Automatic upserts
 - Timestamp tracking
+
+## Authentication Configuration
+
+### Persistent Sessions
+```typescript
+// Supabase client (already configured)
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    storage: localStorage,      // Persists across sessions
+    persistSession: true,        // Never expires
+    autoRefreshToken: true,      // Automatic renewal
+  }
+});
+```
+
+### Usage in Components
+```typescript
+import { useAdminCheck } from '@/hooks/useAdminCheck';
+
+const MyComponent = () => {
+  const { user, isAdmin, isLoading } = useAdminCheck();
+  
+  // User stays logged in forever
+  // isAdmin checked server-side for security
+};
+```
+
+## Admin-Only Features
+
+### Dealer Information Section
+```typescript
+import { DealerInfoSection } from '@/components/DealerInfoSection';
+
+// In CarDetails page, after equipment section
+{!adminLoading && isAdmin && (
+  <DealerInfoSection car={car} />
+)}
+```
+
+**Data Sources**:
+- `car.encarVehicle.partnership.dealer.*`
+- `car.encarVehicle.contact.*`
+- `car.details.dealer.*`
+
+**Displayed Information**:
+- Dealer/firm name
+- Complete address
+- Phone number
+- User ID and type
 
 ## Performance Metrics
 
