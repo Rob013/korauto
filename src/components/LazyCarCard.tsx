@@ -123,7 +123,7 @@ const ensureUserFavorites = async (): Promise<UserFavoritesState> => {
   return result;
 };
 
-  const LazyCarCard = memo(({
+const LazyCarCard = memo(({
   id,
   make,
   model,
@@ -131,6 +131,7 @@ const ensureUserFavorites = async (): Promise<UserFavoritesState> => {
   price,
   image,
   images, // New prop
+  vin,
   mileage,
   transmission,
   fuel,
@@ -146,8 +147,8 @@ const ensureUserFavorites = async (): Promise<UserFavoritesState> => {
   archived_at,
   archive_reason,
   source,
-  viewMode = 'grid'
-  }: LazyCarCardProps) => {
+  viewMode = "grid",
+}: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
   const { toast } = useToast();
@@ -189,6 +190,75 @@ const ensureUserFavorites = async (): Promise<UserFavoritesState> => {
   };
 
   const hideSoldCar = shouldHideSoldCar();
+
+  const persistCarPrefetch = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storageKeySource = lot ?? id;
+    if (storageKeySource === undefined || storageKeySource === null) {
+      return;
+    }
+
+    try {
+      const key = `car_prefetch_${encodeURIComponent(String(storageKeySource))}`;
+      const normalizedImages = Array.isArray(images)
+        ? images.filter(Boolean).slice(0, 12)
+        : image
+          ? [image]
+          : [];
+
+      const summary = {
+        id: String(id),
+        lot: lot ? String(lot) : undefined,
+        make,
+        model,
+        year,
+        price,
+        image: normalizedImages[0],
+        images: normalizedImages,
+        vin,
+        mileageLabel: mileage,
+        transmission,
+        fuel,
+        color,
+        condition,
+        title,
+        status,
+        sale_status,
+        final_price,
+        insurance_v2,
+        source,
+        cachedAt: new Date().toISOString(),
+      };
+
+      sessionStorage.setItem(key, JSON.stringify(summary));
+    } catch (storageError) {
+      console.warn("Failed to cache car summary before navigation", storageError);
+    }
+  }, [
+    id,
+    lot,
+    make,
+    model,
+    year,
+    price,
+    image,
+    images,
+    vin,
+    mileage,
+    transmission,
+    fuel,
+    color,
+    condition,
+    title,
+    status,
+    sale_status,
+    final_price,
+    insurance_v2,
+    source,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -342,40 +412,42 @@ const ensureUserFavorites = async (): Promise<UserFavoritesState> => {
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+    persistCarPrefetch();
+
     // Save complete page state including scroll position and filter panel state
-    const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
+    const currentFilterPanelState = sessionStorage.getItem("mobile-filter-panel-state");
     setCompletePageState({
       url: window.location.pathname + window.location.search,
       scrollPosition: window.scrollY,
       filterPanelState: currentFilterPanelState ? JSON.parse(currentFilterPanelState) : false,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     // Close filter panel when navigating to car details (if it's open)
-    sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
+    sessionStorage.setItem("mobile-filter-panel-state", JSON.stringify(false));
+
     openCarDetailsInNewTab(lot ?? id);
-  }, [setCompletePageState, lot, id]);
+  }, [persistCarPrefetch, setCompletePageState, lot, id]);
 
   const handleDetailsClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+    persistCarPrefetch();
+
     // Save complete page state including scroll position and filter panel state
-    const currentFilterPanelState = sessionStorage.getItem('mobile-filter-panel-state');
+    const currentFilterPanelState = sessionStorage.getItem("mobile-filter-panel-state");
     setCompletePageState({
       url: window.location.pathname + window.location.search,
       scrollPosition: window.scrollY,
       filterPanelState: currentFilterPanelState ? JSON.parse(currentFilterPanelState) : false,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     // Close filter panel when navigating to car details (if it's open)
-    sessionStorage.setItem('mobile-filter-panel-state', JSON.stringify(false));
-    
+    sessionStorage.setItem("mobile-filter-panel-state", JSON.stringify(false));
+
     openCarDetailsInNewTab(lot ?? id);
-  }, [setCompletePageState, lot, id]);
+  }, [persistCarPrefetch, setCompletePageState, lot, id]);
 
   // Don't render content until intersection
   if (!isIntersecting) {
