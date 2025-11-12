@@ -34,39 +34,35 @@ export const DealerInfoSection = ({
   const partnershipDealer = car?.encarVehicle?.partnership?.dealer ?? null;
   const fallbackDealer = car?.details?.dealer ?? null;
 
+  const NO_INFO_AVAILABLE = "No information available";
+  const NO_ADDRESS_INFO_AVAILABLE = "No address information available";
+
   // Extract dealer info from various API sources
   const dealerInfo = {
     name:
       partnershipDealer?.name ||
       partnershipDealer?.firm?.name ||
       fallbackDealer?.name ||
-      "Nuk ka informacion",
+      NO_INFO_AVAILABLE,
     userId:
       contact?.userId ||
       partnershipDealer?.userId ||
       fallbackDealer?.userId ||
       null,
-    firmName:
-      partnershipDealer?.firm?.name || fallbackDealer?.firm || null,
+    firmName: partnershipDealer?.firm?.name || fallbackDealer?.firm || null,
     address:
       contact?.address ||
       partnershipDealer?.address ||
       fallbackDealer?.address ||
-      "Nuk ka informacion për adresën",
+      NO_ADDRESS_INFO_AVAILABLE,
     phone:
-      contact?.no ||
-      partnershipDealer?.phone ||
-      fallbackDealer?.phone ||
-      null,
-    userType:
-      contact?.userType ||
-      partnershipDealer?.userType ||
-      null,
+      contact?.no || partnershipDealer?.phone || fallbackDealer?.phone || null,
+    userType: contact?.userType || partnershipDealer?.userType || null,
   };
 
   const hasValidInfo =
-    dealerInfo.name !== "Nuk ka informacion" ||
-    dealerInfo.address !== "Nuk ka informacion për adresën" ||
+    dealerInfo.name !== NO_INFO_AVAILABLE ||
+    dealerInfo.address !== NO_ADDRESS_INFO_AVAILABLE ||
     dealerInfo.firmName ||
     dealerInfo.phone;
 
@@ -89,12 +85,12 @@ export const DealerInfoSection = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <Shield className="h-5 w-5" />
-            Informacione të Dealerët (Vetëm Admin)
+            Dealer Information (Admin Only)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Nuk ka informacione të disponueshme për dealerin për këtë makinë.
+            No dealer information available for this vehicle.
           </p>
         </CardContent>
       </Card>
@@ -107,19 +103,25 @@ export const DealerInfoSection = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
             <Shield className="h-5 w-5" />
-            Informacione të Dealerët
+            Dealer Information
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100">
-              Vetëm Admin
+            <Badge
+              variant="secondary"
+              className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100"
+            >
+              Admin Only
             </Badge>
             {isLiveLoading ? (
               <span className="flex items-center gap-1 text-xs text-amber-900 dark:text-amber-200">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Duke u përditësuar
+                Updating
               </span>
             ) : liveContact ? (
-              <Badge variant="outline" className="border-amber-300 text-amber-900 dark:border-amber-700 dark:text-amber-100">
+              <Badge
+                variant="outline"
+                className="border-amber-300 text-amber-900 dark:border-amber-700 dark:text-amber-100"
+              >
                 Encars Live
               </Badge>
             ) : null}
@@ -128,14 +130,14 @@ export const DealerInfoSection = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Dealer Name */}
-        {dealerInfo.name && dealerInfo.name !== "Nuk ka informacion" && (
+        {dealerInfo.name && dealerInfo.name !== NO_INFO_AVAILABLE && (
           <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-900/40 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
             <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-md">
               <User className="h-4 w-4 text-amber-700 dark:text-amber-300" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-muted-foreground mb-0.5">
-                Emri i Dealerit
+                Dealer Name
               </p>
               <p className="text-sm font-semibold text-foreground break-words">
                 {dealerInfo.name}
@@ -157,7 +159,7 @@ export const DealerInfoSection = ({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-muted-foreground mb-0.5">
-                Kompania
+                Company
               </p>
               <p className="text-sm font-semibold text-foreground break-words">
                 {dealerInfo.firmName}
@@ -173,7 +175,7 @@ export const DealerInfoSection = ({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-muted-foreground mb-0.5">
-              Adresa
+              Address
             </p>
             <p className="text-sm font-semibold text-foreground break-words flex items-center gap-2">
               {isLiveLoading && (
@@ -192,7 +194,7 @@ export const DealerInfoSection = ({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-muted-foreground mb-0.5">
-                Telefoni
+                Phone
               </p>
               <p className="text-sm font-semibold text-foreground">
                 {dealerInfo.phone}
@@ -204,7 +206,7 @@ export const DealerInfoSection = ({
         {/* User Type Badge */}
         {dealerInfo.userType && (
           <div className="flex items-center justify-between pt-2 border-t border-amber-200/50 dark:border-amber-800/50">
-            <p className="text-xs text-muted-foreground">Lloji i përdoruesit</p>
+            <p className="text-xs text-muted-foreground">User Type</p>
             <Badge variant="outline" className="text-xs">
               {dealerInfo.userType}
             </Badge>
@@ -214,17 +216,18 @@ export const DealerInfoSection = ({
         <div className="pt-2 border-t border-amber-200/50 dark:border-amber-800/50 space-y-2">
           {error && (
             <div className="text-[11px] text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1">
-              Nuk u arrit të përditësohet nga Encars API: {error}
+              Failed to update from Encars API: {error}
             </div>
           )}
           {liveUpdatedLabel && !error && (
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
               <Sparkles className="h-3 w-3 text-amber-500" />
-              Përditësuar nga Encars API në {liveUpdatedLabel}
+              Updated from Encars API at {liveUpdatedLabel}
             </p>
           )}
           <p className="text-[10px] text-muted-foreground italic">
-            ℹ️ Këto informacione janë të dukshme vetëm për administratorët dhe përditësohen automatikisht nga Encars API kur janë të disponueshme.
+            ℹ️ This information is visible only to administrators and is
+            automatically updated from the Encars API when available.
           </p>
         </div>
       </CardContent>
