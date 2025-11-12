@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -974,11 +974,52 @@ const CarInspectionReport = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAllStandard, setShowAllStandard] = useState(true);
   const [showAllChoice, setShowAllChoice] = useState(true);
+  const cacheHydratedRef = useRef(false);
 
-  const fetchInspectionReport = useCallback(async () => {
+  const persistReportToSession = useCallback((targetLot: string, payload: unknown) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const serialized = JSON.stringify(payload);
+      sessionStorage.setItem(`car_report_${targetLot}`, serialized);
+      sessionStorage.setItem(`car_report_prefetch_${targetLot}`, serialized);
+    } catch (storageError) {
+      console.warn("Failed to persist inspection report in sessionStorage", storageError);
+    }
+  }, []);
+
+  const hydrateReportFromSession = useCallback((): InspectionReportCar | null => {
+    if (!lot || typeof window === "undefined") {
+      return null;
+    }
+
+    const keys = [`car_report_${lot}`, `car_report_prefetch_${lot}`];
+    for (const key of keys) {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) {
+          continue;
+        }
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          return parsed as InspectionReportCar;
+        }
+      } catch (sessionError) {
+        console.warn(`Failed to restore inspection report from ${key}`, sessionError);
+      }
+    }
+
+    return null;
+  }, [lot]);
+
+  const fetchInspectionReport = useCallback(async ({ background = false }: { background?: boolean } = {}) => {
     if (!lot) return;
 
-    setLoading(true);
+    if (!background) {
+      setLoading(true);
+    }
     setError(null);
 
     const controller = new AbortController();
@@ -999,26 +1040,26 @@ const CarInspectionReport = () => {
         throw mapEncarsRequiredError(vehicleResult.reason);
       }
 
-      const encarVehicle = vehicleResult.value;
+        const encarVehicle = vehicleResult.value;
 
-      const encarInspection =
-        inspectionResult.status === "fulfilled"
-          ? inspectionResult.value
-          : undefined;
-      if (inspectionResult.status === "rejected") {
-        logEncarsOptionalFailure("inspection", inspectionResult.reason);
-      }
+        const encarInspection =
+          inspectionResult.status === "fulfilled"
+            ? inspectionResult.value
+            : undefined;
+        if (inspectionResult.status === "rejected") {
+          logEncarsOptionalFailure("inspection", inspectionResult.reason);
+        }
 
-      const encarRecordSummary =
-        recordSummaryResult.status === "fulfilled"
-          ? recordSummaryResult.value
-          : undefined;
-      if (recordSummaryResult.status === "rejected") {
-        logEncarsOptionalFailure(
-          "record summary",
-          recordSummaryResult.reason,
-        );
-      }
+        const encarRecordSummary =
+          recordSummaryResult.status === "fulfilled"
+            ? recordSummaryResult.value
+            : undefined;
+        if (recordSummaryResult.status === "rejected") {
+          logEncarsOptionalFailure(
+            "record summary",
+            recordSummaryResult.reason,
+          );
+        }
 
       let encarRecord: EncarsRecordOpenResponse | undefined;
       try {
@@ -1137,12 +1178,12 @@ const CarInspectionReport = () => {
         carInfoUse2s: encarRecord?.carInfoUse2s,
       };
 
-      const inspectInner = flattenEncarsInners(encarInspection?.inners);
-      const accidentSummary = buildAccidentSummaryFromEncars(
-        encarInspection?.master,
-      );
+        const inspectInner = flattenEncarsInners(encarInspection?.inners);
+        const accidentSummary = buildAccidentSummaryFromEncars(
+          encarInspection?.master,
+        );
 
-      const transformed: InspectionReportCar = {
+        const transformed: InspectionReportCar = {
         id: (encarVehicle?.vehicleId ?? lot).toString(),
         lot,
         make: encarVehicle?.category?.manufacturerName,
@@ -1225,16 +1266,41 @@ const CarInspectionReport = () => {
       };
 
         setCar(transformed);
+        cacheHydratedRef.current = true;
+        persistReportToSession(String(lot), transformed);
         setLoading(false);
       } catch (error) {
         console.error("Nuk u arrit të ngarkohej raporti i inspektimit:", error);
-        setError(getEncarsDisplayErrorMessage(error));
-        setCar(null);
-        setLoading(false);
+        if (!background) {
+          setError(getEncarsDisplayErrorMessage(error));
+          setCar(null);
+          setLoading(false);
+        } else {
+          console.warn(
+            "Background inspection report refresh failed",
+            error,
+          );
+        }
       } finally {
         clearTimeout(timeoutId);
       }
-  }, [convertKRWtoEUR, lot]);
+  }, [convertKRWtoEUR, lot, persistReportToSession]);
+
+  useEffect(() => {
+    cacheHydratedRef.current = false;
+    setCar(null);
+    setError(null);
+    setLoading(true);
+  }, [lot]);
+
+  useEffect(() => {
+    const cached = hydrateReportFromSession();
+    if (cached) {
+      setCar(cached);
+      setLoading(false);
+      cacheHydratedRef.current = true;
+    }
+  }, [hydrateReportFromSession]);
 
   useEffect(() => {
     trackPageView(`/car/${lot}/report`, {
@@ -1243,7 +1309,7 @@ const CarInspectionReport = () => {
   }, [lot]);
 
   useEffect(() => {
-    fetchInspectionReport();
+    fetchInspectionReport({ background: cacheHydratedRef.current });
   }, [fetchInspectionReport]);
 
   const inspectionOuterData = useMemo(() => {

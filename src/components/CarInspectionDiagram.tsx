@@ -33,6 +33,40 @@ const BASE_MARKER_STROKE_WIDTH = 1;
 const BASE_MARKER_SPACING = 9;
 const BASE_MARKER_FONT_SIZE = 7.5;
 
+const POSITIVE_STATUS_CODES = new Set([
+  "",
+  "0",
+  "G",
+  "GOOD",
+  "GOODNESS",
+  "OK",
+  "PASS",
+  "NORMAL",
+  "NONE",
+  "◎",
+  "◯",
+]);
+
+const POSITIVE_STATUS_KEYWORDS = [
+  "good",
+  "goodness",
+  "ok",
+  "okay",
+  "normal",
+  "fine",
+  "pass",
+  "none",
+  "clear",
+  "no issue",
+  "no problem",
+  "양호",
+  "정상",
+  "없음",
+  "적정",
+  "이상없음",
+  "무사고",
+];
+
 // Precise marker positions aligned to actual diagram parts
 const PRECISE_MARKER_POSITIONS: Record<string, { x: number; y: number }> = {
   hood: { x: 320, y: 125 },
@@ -480,73 +514,130 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
 
   const issueCount = useMemo(() => {
     if (!inspectionData || inspectionData.length === 0) {
-      return { replacements: 0, welds: 0, repairs: 0, corrosion: 0, scratches: 0 };
+      return {
+        replacements: 0,
+        welds: 0,
+        repairs: 0,
+        corrosion: 0,
+        scratches: 0,
+        good: 0,
+      };
     }
 
     return inspectionData.reduce(
       (acc, item) => {
         const title = (item?.type?.title || "").toString().toLowerCase();
-        const codes = Array.isArray(item?.statusTypes)
-          ? item.statusTypes.map((s) => (s?.code || "").toUpperCase())
+        const rawStatuses = Array.isArray(item?.statusTypes)
+          ? item.statusTypes
           : [];
+        const normalizedStatuses = rawStatuses
+          .map((status: any) => {
+            const codeValue =
+              status?.code ??
+              status?.value ??
+              status?.status ??
+              status?.type ??
+              "";
+            const code =
+              codeValue !== null && codeValue !== undefined
+                ? String(codeValue).toUpperCase()
+                : "";
+            const titleValue =
+              status?.title ??
+              status?.name ??
+              status?.description ??
+              status?.label ??
+              status?.text ??
+              "";
+            const normalizedTitle =
+              titleValue !== null && titleValue !== undefined
+                ? String(titleValue).toLowerCase()
+                : "";
+            return { code, title: normalizedTitle };
+          })
+          .filter((status) => status.code || status.title);
+
+        const codes = normalizedStatuses.map((status) => status.code);
+        const textPool = [
+          title,
+          ...normalizedStatuses.map((status) => status.title),
+        ].filter(Boolean);
+
         const attrs = Array.isArray((item as any)?.attributes)
           ? ((item as any).attributes as string[])
           : [];
         const hasRank = attrs.some(
-          (attr) => typeof attr === "string" && attr.includes("RANK")
+          (attr) => typeof attr === "string" && attr.includes("RANK"),
         );
 
-        if (
+        const containsKeyword = (keywords: string[]) =>
+          textPool.some((value) =>
+            keywords.some((keyword) => value.includes(keyword)),
+          );
+
+        const hasExchange =
           codes.includes("X") ||
           codes.includes("N") ||
-          title.includes("exchange") ||
-          title.includes("replacement") ||
-          title.includes("replaced") ||
-          title.includes("교환") ||
-          (hasRank && title.includes("exchange"))
-        ) {
-          acc.replacements += 1;
-        }
+          containsKeyword(["exchange", "replacement", "replaced", "교환"]) ||
+          (hasRank && title.includes("exchange"));
 
-        if (
+        const hasWeld =
           codes.includes("W") ||
           codes.includes("S") ||
-          title.includes("weld") ||
-          title.includes("sheet metal") ||
-          title.includes("용접")
-        ) {
-          acc.welds += 1;
-        }
+          containsKeyword(["weld", "sheet metal", "용접"]);
 
-        if (
+        const hasRepair =
           codes.includes("A") ||
           codes.includes("R") ||
-          title.includes("repair") ||
-          title.includes("수리")
-        ) {
-          acc.repairs += 1;
-        }
+          containsKeyword(["repair", "수리"]);
 
-        if (
+        const hasCorrosion =
           codes.includes("U") ||
           codes.includes("K") ||
-          title.includes("corr") ||
-          title.includes("부식")
-        ) {
-          acc.corrosion += 1;
-        }
+          containsKeyword(["corr", "corrosion", "부식"]);
+
+        const hasScratch =
+          codes.includes("S") ||
+          containsKeyword(["scratch", "흠집", "찌그러짐", "dent"]);
+
+        if (hasExchange) acc.replacements += 1;
+        if (hasWeld) acc.welds += 1;
+        if (hasRepair) acc.repairs += 1;
+        if (hasCorrosion) acc.corrosion += 1;
+        if (hasScratch) acc.scratches += 1;
+
+        const hasPositive =
+          normalizedStatuses.some((status) => {
+            if (status.code && POSITIVE_STATUS_CODES.has(status.code)) {
+              return true;
+            }
+            return POSITIVE_STATUS_KEYWORDS.some((keyword) =>
+              status.title.includes(keyword),
+            );
+          }) ||
+          POSITIVE_STATUS_KEYWORDS.some((keyword) => title.includes(keyword));
 
         if (
-          codes.includes("S") ||
-          title.includes("scratch") ||
-          title.includes("흠집")
+          hasPositive &&
+          !hasExchange &&
+          !hasWeld &&
+          !hasRepair &&
+          !hasCorrosion &&
+          !hasScratch
         ) {
-          acc.scratches += 1;
+          acc.good += 1;
         }
 
         return acc;
       },
-      { replacements: 0, welds: 0, repairs: 0, corrosion: 0, scratches: 0 }
+      {
+        replacements: 0,
+        welds: 0,
+        repairs: 0,
+        corrosion: 0,
+        scratches: 0,
+        good: 0,
+      },
     );
   }, [inspectionData]);
 
@@ -589,6 +680,13 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                     Korrozion
                   </span>
                   <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.corrosion}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(142 76% 36% / 0.12)'}}>
+                  <span className="text-xs flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(142 76% 36%)'}}>O</span>
+                    Zona të paprekura
+                  </span>
+                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(142 76% 36%)', color: 'white'}}>{issueCount.good}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -655,6 +753,25 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             codes.includes('S') ||
                             lowTitles.some((t) => t.includes('scratch') || t.includes('흠집'));
 
+                            const hasPositive = statuses.some((status) => {
+                              const code = (status.code || "").toString().toUpperCase();
+                              if (POSITIVE_STATUS_CODES.has(code)) {
+                                return true;
+                              }
+                              const title = (status.title || "").toString().toLowerCase();
+                              return POSITIVE_STATUS_KEYWORDS.some((keyword) =>
+                                title.includes(keyword),
+                              );
+                            });
+
+                            const shouldShowOnlyPositive =
+                              hasPositive &&
+                              !hasExchange &&
+                              !hasWeld &&
+                              !hasRepair &&
+                              !hasCorrosion &&
+                              !hasScratch;
+
                             // Collect all markers to display
                             const markers: Array<{ char: string; color: string }> = [];
                             
@@ -663,62 +780,65 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
                             if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
                             if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
+                            if (shouldShowOnlyPositive) {
+                              markers.push({ char: 'O', color: 'hsl(142 76% 36%)' });
+                            }
 
-                              const n = markers.length;
-                              const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
-                              const spacing = markerSizing.spacing;
+                            const n = markers.length;
+                            const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
+                            const spacing = markerSizing.spacing;
 
-                              return markers.map((m, idx) => {
-                                const offset = (idx - (n - 1) / 2) * spacing;
-                                const cx = base.x + offset;
-                                const cy =
-                                  base.y +
-                                  (n > 2 ? (idx % 2 === 0 ? -markerSizing.verticalOffset : markerSizing.verticalOffset) : 0);
+                            return markers.map((m, idx) => {
+                              const offset = (idx - (n - 1) / 2) * spacing;
+                              const cx = base.x + offset;
+                              const cy =
+                                base.y +
+                                (n > 2 ? (idx % 2 === 0 ? -markerSizing.verticalOffset : markerSizing.verticalOffset) : 0);
 
-                                return (
-                                  <g key={`${part.id}-mrk-${idx}`}>
-                                    {/* Outer glow for better visibility */}
-                                    <circle
-                                      cx={cx}
-                                      cy={cy}
-                                      r={markerSizing.outerRadius}
-                                      fill={m.color}
-                                      fillOpacity={0.2}
-                                      filter="url(#glow)"
-                                    />
-                                    {/* Main marker */}
-                                    <circle
-                                      cx={cx}
-                                      cy={cy}
-                                      r={markerSizing.radius}
-                                      fill={m.color}
-                                      fillOpacity={0.45}
-                                      stroke={m.color}
-                                      strokeWidth={markerSizing.strokeWidth}
-                                      filter={isHovered || isSelected ? "url(#glow)" : undefined}
-                                      className="transition-all duration-200"
-                                    />
-                                    <text
-                                      x={cx}
-                                      y={cy}
-                                      textAnchor="middle"
-                                      dominantBaseline="central"
-                                      fontSize={markerSizing.fontSize}
-                                      fontWeight={800}
-                                      fill="white"
-                                      className="pointer-events-none select-none"
-                                      style={{
-                                        textShadow: "1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)",
-                                        paintOrder: "stroke fill",
-                                      }}
-                                      stroke={m.color}
-                                      strokeWidth="0.75"
-                                    >
-                                      {m.char}
-                                    </text>
-                                  </g>
-                                );
-                              });
+                              return (
+                                <g key={`${part.id}-mrk-${idx}`}>
+                                  {/* Outer glow for better visibility */}
+                                  <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={markerSizing.outerRadius}
+                                    fill={m.color}
+                                    fillOpacity={0.2}
+                                    filter="url(#glow)"
+                                  />
+                                  {/* Main marker */}
+                                  <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={markerSizing.radius}
+                                    fill={m.color}
+                                    fillOpacity={0.45}
+                                    stroke={m.color}
+                                    strokeWidth={markerSizing.strokeWidth}
+                                    filter={isHovered || isSelected ? "url(#glow)" : undefined}
+                                    className="transition-all duration-200"
+                                  />
+                                  <text
+                                    x={cx}
+                                    y={cy}
+                                    textAnchor="middle"
+                                    dominantBaseline="central"
+                                    fontSize={markerSizing.fontSize}
+                                    fontWeight={800}
+                                    fill="white"
+                                    className="pointer-events-none select-none"
+                                    style={{
+                                      textShadow: "1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)",
+                                      paintOrder: "stroke fill",
+                                    }}
+                                    stroke={m.color}
+                                    strokeWidth="0.75"
+                                  >
+                                    {m.char}
+                                  </text>
+                                </g>
+                              );
+                            });
                         })()}
                       </>
                     )}

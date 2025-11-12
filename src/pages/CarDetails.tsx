@@ -1137,6 +1137,7 @@ const CarDetails = memo(() => {
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [shouldRenderMap, setShouldRenderMap] = useState(false);
   const mapTargets = useRef<HTMLDivElement[]>([]);
+  const cacheHydratedRef = useRef(false);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
@@ -1171,6 +1172,7 @@ const CarDetails = memo(() => {
     setLiveDealerFetchedAt(null);
     setLiveDealerError(null);
     setLiveDealerContact(null);
+    cacheHydratedRef.current = false;
   }, [lot]);
 
   useEffect(() => {
@@ -1924,9 +1926,55 @@ const CarDetails = memo(() => {
     [getOptionName],
   );
 
+  const persistCarToSession = useCallback((targetLot: string, payload: unknown) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const serialized = JSON.stringify(payload);
+      sessionStorage.setItem(`car_${targetLot}`, serialized);
+      sessionStorage.setItem(`car_prefetch_${targetLot}`, serialized);
+    } catch (storageError) {
+      console.warn("Failed to persist car data in sessionStorage", storageError);
+    }
+  }, []);
+
   const hydrateFromCache = useCallback(async () => {
     if (!lot) {
       return null;
+    }
+
+    const restoreFromSession = (): CarDetails | null => {
+      if (typeof window === "undefined") {
+        return null;
+      }
+
+      const keys = [`car_${lot}`, `car_prefetch_${lot}`];
+      for (const key of keys) {
+        try {
+          const raw = sessionStorage.getItem(key);
+          if (!raw) {
+            continue;
+          }
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            return parsed as CarDetails;
+          }
+        } catch (sessionError) {
+          console.warn(`Failed to restore car data from ${key}`, sessionError);
+        }
+      }
+
+      return null;
+    };
+
+    const sessionCar = restoreFromSession();
+    if (sessionCar) {
+      setCar(sessionCar);
+      setLoading(false);
+      cacheHydratedRef.current = true;
+      return sessionCar;
     }
 
     try {
@@ -1948,12 +1996,8 @@ const CarDetails = memo(() => {
         if (details) {
           setCar(details);
           setLoading(false);
-          // Store in sessionStorage for page visibility restoration
-          try {
-            sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
-          } catch (storageError) {
-            console.warn("Failed to store in sessionStorage:", storageError);
-          }
+          cacheHydratedRef.current = true;
+          persistCarToSession(String(lot), details);
           return details;
         }
       }
@@ -1961,21 +2005,8 @@ const CarDetails = memo(() => {
       console.warn("Cache hydration failed", cacheError);
     }
 
-    // Try sessionStorage as backup
-    try {
-      const sessionData = sessionStorage.getItem(`car_${lot}`);
-      if (sessionData) {
-        const restoredCar = JSON.parse(sessionData);
-        setCar(restoredCar);
-        setLoading(false);
-        return restoredCar;
-      }
-    } catch (sessionError) {
-      console.warn("Failed to restore from sessionStorage:", sessionError);
-    }
-
     return null;
-  }, [buildCarDetails, lot]);
+  }, [buildCarDetails, lot, persistCarToSession]);
  
     const getFirstNonEmptyString = (...values: unknown[]): string | null => {
       for (const value of values) {
@@ -2216,15 +2247,12 @@ const CarDetails = memo(() => {
         }
 
         setCar(details);
+        cacheHydratedRef.current = true;
         if (!background) {
           setLoading(false);
         }
 
-        try {
-          sessionStorage.setItem(`car_${lot}`, JSON.stringify(details));
-        } catch (storageError) {
-          console.warn("Failed to store in sessionStorage:", storageError);
-        }
+        persistCarToSession(String(lot), details);
 
         trackCarView(lot, details);
       } catch (apiError) {
@@ -2238,9 +2266,11 @@ const CarDetails = memo(() => {
           const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
           if (details) {
             setCar(details);
+            cacheHydratedRef.current = true;
             if (!background) {
               setLoading(false);
             }
+            persistCarToSession(String(lot), details);
             return;
           }
         }
@@ -2288,6 +2318,7 @@ const CarDetails = memo(() => {
     hydrateFromCache,
     lot,
     navigate,
+    persistCarToSession,
     trackCarView,
   ]);
   const handleContactWhatsApp = useCallback(() => {
@@ -2316,8 +2347,50 @@ const CarDetails = memo(() => {
     const reportLot = car?.lot || lot;
     if (!reportLot) return;
 
+    if (typeof window !== "undefined") {
+      try {
+        const primaryImage =
+          (Array.isArray(car?.images) && car?.images.length > 0
+            ? car?.images[0]
+            : undefined) ?? car?.image;
+        const inferredTitle = [car?.year, car?.make, car?.model]
+          .filter((value) => value !== null && value !== undefined && value !== "")
+          .join(" ")
+          .trim();
+        const reportSummary = {
+          id: car?.id ?? String(reportLot),
+          lot: String(reportLot),
+          make: car?.make,
+          model: car?.model,
+          year: car?.year,
+          title:
+            typeof car?.title === "string" && car.title.trim()
+              ? car.title.trim()
+              : inferredTitle || undefined,
+          image: primaryImage,
+          priceEUR: car?.price,
+          mileageKm:
+            car?.odometer?.km ??
+            (typeof car?.mileage === "number" ? car.mileage : undefined),
+          vin: car?.vin,
+          fuel: car?.fuel,
+          insurance: car?.insurance_v2,
+          cachedAt: new Date().toISOString(),
+        };
+        sessionStorage.setItem(
+          `car_report_prefetch_${encodeURIComponent(String(reportLot))}`,
+          JSON.stringify(reportSummary),
+        );
+      } catch (storageError) {
+        console.warn(
+          "Failed to persist inspection report prefetch payload",
+          storageError,
+        );
+      }
+    }
+
     openCarReportInNewTab(reportLot);
-  }, [car?.lot, lot, impact]);
+  }, [car, lot, impact]);
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
