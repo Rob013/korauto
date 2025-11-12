@@ -30,14 +30,18 @@ interface InspectionDiagramPanelProps {
 
 const BASE_CANVAS_WIDTH = 640;
 const BASE_CANVAS_HEIGHT = 600;
-const DEFAULT_MARKER_SIZE = 9;
-const MIN_MARKER_DIAMETER = 5;
-const MAX_MARKER_DIAMETER = 12;
-const MARKER_FONT_MIN = 4;
-const MARKER_FONT_MAX = 6;
-const MARKER_VW_SCALE = 0.8;
+const DEFAULT_MARKER_SIZE = 8;
+const MIN_MARKER_DIAMETER = 4;
+const MAX_MARKER_DIAMETER = 10;
+const MARKER_FONT_MIN = 3.5;
+const MARKER_FONT_MAX = 5.5;
+const MIN_MARKER_SCALE = 0.45;
+const MAX_MARKER_SCALE = 1.1;
 const COLLISION_SPACING_MULTIPLIER = 1.05;
 const DIAGRAM_EDGE_PADDING = 16;
+
+const clampValue = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
 const replacementStatusCodes = new Set(["X", "N", "E", "T", "P", "Z", "B"]);
 const repairStatusCodes = new Set([
@@ -303,8 +307,14 @@ const aliasMatchers: Array<{ pattern: RegExp; key: string }> = [
   { pattern: /(front\s*)?door.*(right|\brh\b)/i, key: "front_right_door" },
   { pattern: /rear\s*door.*(left|\blh\b)/i, key: "rear_left_door" },
   { pattern: /rear\s*door.*(right|\brh\b)/i, key: "rear_right_door" },
-  { pattern: /(quarter\s*panel|quarter).*\b(left|lh)\b/i, key: "left_quarter_panel" },
-  { pattern: /(quarter\s*panel|quarter).*\b(right|rh)\b/i, key: "right_quarter_panel" },
+  {
+    pattern: /(quarter\s*panel|quarter).*\b(left|lh)\b/i,
+    key: "left_quarter_panel",
+  },
+  {
+    pattern: /(quarter\s*panel|quarter).*\b(right|rh)\b/i,
+    key: "right_quarter_panel",
+  },
   { pattern: /(front\s*)?fender.*(left|\blh\b)/i, key: "front_left_fender" },
   { pattern: /(front\s*)?fender.*(right|\brh\b)/i, key: "front_right_fender" },
   { pattern: /(좌|왼).*(앞|전).*(도어)/, key: "front_left_door" },
@@ -367,7 +377,10 @@ const normalizeForMatching = (input: string) => {
   normalized = normalized
     .replace(/(front|rear)(door|fender|quarter|bumper|panel|floor)/g, "$1 $2")
     .replace(/(left|right)(door|fender|quarter|sill|panel)/g, "$1 $2")
-    .replace(/(door|fender|quarter|bumper|panel|sill|wheel)(left|right)/g, "$1 $2");
+    .replace(
+      /(door|fender|quarter|bumper|panel|sill|wheel)(left|right)/g,
+      "$1 $2",
+    );
 
   normalized = normalized
     .replace(/[_-]/g, " ")
@@ -539,9 +552,9 @@ const mapInspectionToMarkers = (
     left_fender: { panel: "within", x: 186, y: 205 },
     fender_left: { panel: "within", x: 186, y: 205 },
 
-      front_left_door: { panel: "within", x: 214, y: 292, size: 12 },
-      front_door_left: { panel: "within", x: 214, y: 292, size: 12 },
-      door_front_left: { panel: "within", x: 214, y: 292, size: 12 },
+    front_left_door: { panel: "within", x: 214, y: 292, size: 12 },
+    front_door_left: { panel: "within", x: 214, y: 292, size: 12 },
+    door_front_left: { panel: "within", x: 214, y: 292, size: 12 },
 
     rear_left_door: { panel: "within", x: 178, y: 357 },
     rear_door_left: { panel: "within", x: 178, y: 357 },
@@ -566,8 +579,8 @@ const mapInspectionToMarkers = (
     right_fender: { panel: "within", x: 454, y: 205 },
     fender_right: { panel: "within", x: 454, y: 205 },
 
-      front_right_door: { panel: "within", x: 426, y: 292, size: 12 },
-      front_door_right: { panel: "within", x: 426, y: 292, size: 12 },
+    front_right_door: { panel: "within", x: 426, y: 292, size: 12 },
+    front_door_right: { panel: "within", x: 426, y: 292, size: 12 },
 
     rear_right_door: { panel: "within", x: 410, y: 343 },
     rear_door_right: { panel: "within", x: 410, y: 343 },
@@ -637,299 +650,290 @@ const mapInspectionToMarkers = (
     })),
   });
 
-    inspectionData.forEach((item, idx) => {
-      const typeTitleRaw = (item?.type?.title || "").toString();
-      const typeCodeRaw = (item?.type?.code || "").toString();
-      const statuses = collectStatusEntries(item);
-      const rawAttributes = (item as any)?.attributes;
-      const attributes = Array.isArray(rawAttributes)
-        ? rawAttributes
-        : rawAttributes !== undefined && rawAttributes !== null
-          ? [rawAttributes]
-          : [];
-        const attributeStrings = extractAttributeStrings(attributes);
-        const attributeVariants = attributeStrings.map((attr) => ({
-          raw: attr,
-          normalized: normalizeForMatching(attr),
-        }));
-        const normalizedAttributesForMatch = attributeVariants
-          .map(({ normalized }) => normalized)
-          .filter(Boolean);
-      const normalizedTitle = normalizeForMatching(typeTitleRaw);
-      const normalizedCode = normalizeForMatching(typeCodeRaw);
+  inspectionData.forEach((item, idx) => {
+    const typeTitleRaw = (item?.type?.title || "").toString();
+    const typeCodeRaw = (item?.type?.code || "").toString();
+    const statuses = collectStatusEntries(item);
+    const rawAttributes = (item as any)?.attributes;
+    const attributes = Array.isArray(rawAttributes)
+      ? rawAttributes
+      : rawAttributes !== undefined && rawAttributes !== null
+        ? [rawAttributes]
+        : [];
+    const attributeStrings = extractAttributeStrings(attributes);
+    const attributeVariants = attributeStrings.map((attr) => ({
+      raw: attr,
+      normalized: normalizeForMatching(attr),
+    }));
+    const normalizedAttributesForMatch = attributeVariants
+      .map(({ normalized }) => normalized)
+      .filter(Boolean);
+    const normalizedTitle = normalizeForMatching(typeTitleRaw);
+    const normalizedCode = normalizeForMatching(typeCodeRaw);
 
-      console.log(`📋 Po përpunohet elementi ${idx + 1}:`, {
-        title: typeTitleRaw,
-        code: typeCodeRaw,
-        statuses,
-        attributes,
-      });
+    console.log(`📋 Po përpunohet elementi ${idx + 1}:`, {
+      title: typeTitleRaw,
+      code: typeCodeRaw,
+      statuses,
+      attributes,
+    });
 
-      let markerType: "N" | "R" = "R";
-      let hasIssue = false;
-      let hasNonNeutralStatus = false;
+    let markerType: "N" | "R" = "R";
+    let hasIssue = false;
+    let hasNonNeutralStatus = false;
 
-      statuses.forEach((status) => {
-        const statusCode = (status.code || "").toString().trim().toUpperCase();
-          const rawStatusTitle = (status.title || status.code || "")
-            .toString()
-            .toLowerCase();
-          const normalizedStatusTitle = normalizeForMatching(
-            status.title || status.code || "",
-          );
-          const hasReplacementKeyword =
-            containsKeyword(rawStatusTitle, replacementKeywords) ||
-            containsKeyword(normalizedStatusTitle, replacementKeywords);
-          const hasRepairKeyword =
-            containsKeyword(rawStatusTitle, repairKeywords) ||
-            containsKeyword(normalizedStatusTitle, repairKeywords);
-          const hasNeutralKeyword =
-            containsKeyword(rawStatusTitle, neutralKeywords) ||
-            containsKeyword(normalizedStatusTitle, neutralKeywords);
+    statuses.forEach((status) => {
+      const statusCode = (status.code || "").toString().trim().toUpperCase();
+      const rawStatusTitle = (status.title || status.code || "")
+        .toString()
+        .toLowerCase();
+      const normalizedStatusTitle = normalizeForMatching(
+        status.title || status.code || "",
+      );
+      const hasReplacementKeyword =
+        containsKeyword(rawStatusTitle, replacementKeywords) ||
+        containsKeyword(normalizedStatusTitle, replacementKeywords);
+      const hasRepairKeyword =
+        containsKeyword(rawStatusTitle, repairKeywords) ||
+        containsKeyword(normalizedStatusTitle, repairKeywords);
+      const hasNeutralKeyword =
+        containsKeyword(rawStatusTitle, neutralKeywords) ||
+        containsKeyword(normalizedStatusTitle, neutralKeywords);
 
-        if (
-          replacementStatusCodes.has(statusCode) ||
-            hasReplacementKeyword
-        ) {
-          markerType = "N";
-          hasIssue = true;
-        } else if (
-          repairStatusCodes.has(statusCode) ||
-            hasRepairKeyword
-        ) {
-          if (markerType !== "N") markerType = "R";
-          hasIssue = true;
-        } else if (
-          (statusCode && !neutralStatusCodes.has(statusCode)) ||
-            ((!statusCode || statusCode === "") &&
-              (rawStatusTitle || normalizedStatusTitle) &&
-              !hasNeutralKeyword)
-        ) {
-          hasNonNeutralStatus = true;
-        }
-      });
-
-      if (!hasIssue && hasNonNeutralStatus) {
-        markerType = "R";
+      if (replacementStatusCodes.has(statusCode) || hasReplacementKeyword) {
+        markerType = "N";
         hasIssue = true;
+      } else if (repairStatusCodes.has(statusCode) || hasRepairKeyword) {
+        if (markerType !== "N") markerType = "R";
+        hasIssue = true;
+      } else if (
+        (statusCode && !neutralStatusCodes.has(statusCode)) ||
+        ((!statusCode || statusCode === "") &&
+          (rawStatusTitle || normalizedStatusTitle) &&
+          !hasNeutralKeyword)
+      ) {
+        hasNonNeutralStatus = true;
       }
+    });
 
-      if (!hasIssue && attributeStrings.length > 0) {
-          const attributeHasReplacement = attributeVariants.some(
-            ({ raw, normalized }) =>
-              containsKeyword(raw, replacementKeywords) ||
-              containsKeyword(normalized, replacementKeywords),
-          );
-          const attributeHasRepair = attributeVariants.some(
-            ({ raw, normalized }) =>
-              containsKeyword(raw, repairKeywords) ||
-              containsKeyword(normalized, repairKeywords),
-          );
+    if (!hasIssue && hasNonNeutralStatus) {
+      markerType = "R";
+      hasIssue = true;
+    }
 
-          if (attributeHasReplacement) {
-          markerType = "N";
-          hasIssue = true;
-          } else if (attributeHasRepair) {
-          if (!markerType) markerType = "R";
-          hasIssue = true;
-        }
-      }
-
-      const textualCandidates = [
-        typeTitleRaw,
-        typeCodeRaw,
-        (item as any)?.title,
-        (item as any)?.name,
-        (item as any)?.description,
-        (item as any)?.result,
-        (item as any)?.status,
-      ];
-
-      for (const candidate of textualCandidates) {
-        if (!candidate || typeof candidate !== "string") continue;
-          const normalizedCandidate = normalizeForMatching(candidate);
-          const rawCandidate = candidate.toString();
-          if (!normalizedCandidate && !rawCandidate) continue;
-
-          if (
-            containsKeyword(rawCandidate, replacementKeywords) ||
-            containsKeyword(normalizedCandidate, replacementKeywords)
-          ) {
-          markerType = "N";
-          hasIssue = true;
-          break;
-        }
-
-          if (
-            containsKeyword(rawCandidate, repairKeywords) ||
-            containsKeyword(normalizedCandidate, repairKeywords)
-          ) {
-          if (markerType !== "N") markerType = "R";
-          hasIssue = true;
-        }
-      }
-
-      const hasHighRank = attributes.some(
-        (attr: any) =>
-          typeof attr === "string" &&
-          (attr.includes("RANK_ONE") ||
-            attr.includes("RANK_TWO") ||
-            attr.includes("RANK_A") ||
-            attr.includes("RANK_B")),
+    if (!hasIssue && attributeStrings.length > 0) {
+      const attributeHasReplacement = attributeVariants.some(
+        ({ raw, normalized }) =>
+          containsKeyword(raw, replacementKeywords) ||
+          containsKeyword(normalized, replacementKeywords),
+      );
+      const attributeHasRepair = attributeVariants.some(
+        ({ raw, normalized }) =>
+          containsKeyword(raw, repairKeywords) ||
+          containsKeyword(normalized, repairKeywords),
       );
 
-      if (hasHighRank) {
+      if (attributeHasReplacement) {
+        markerType = "N";
         hasIssue = true;
-        if (statuses.length === 0) {
-          markerType = "N";
-        }
+      } else if (attributeHasRepair) {
+        if (!markerType) markerType = "R";
+        hasIssue = true;
+      }
+    }
+
+    const textualCandidates = [
+      typeTitleRaw,
+      typeCodeRaw,
+      (item as any)?.title,
+      (item as any)?.name,
+      (item as any)?.description,
+      (item as any)?.result,
+      (item as any)?.status,
+    ];
+
+    for (const candidate of textualCandidates) {
+      if (!candidate || typeof candidate !== "string") continue;
+      const normalizedCandidate = normalizeForMatching(candidate);
+      const rawCandidate = candidate.toString();
+      if (!normalizedCandidate && !rawCandidate) continue;
+
+      if (
+        containsKeyword(rawCandidate, replacementKeywords) ||
+        containsKeyword(normalizedCandidate, replacementKeywords)
+      ) {
+        markerType = "N";
+        hasIssue = true;
+        break;
       }
 
-      if (!hasIssue) {
-        console.log(
-          `⚠️ Skipping item ${idx + 1}: nuk u identifikua problem i raportuar`,
+      if (
+        containsKeyword(rawCandidate, repairKeywords) ||
+        containsKeyword(normalizedCandidate, repairKeywords)
+      ) {
+        if (markerType !== "N") markerType = "R";
+        hasIssue = true;
+      }
+    }
+
+    const hasHighRank = attributes.some(
+      (attr: any) =>
+        typeof attr === "string" &&
+        (attr.includes("RANK_ONE") ||
+          attr.includes("RANK_TWO") ||
+          attr.includes("RANK_A") ||
+          attr.includes("RANK_B")),
+    );
+
+    if (hasHighRank) {
+      hasIssue = true;
+      if (statuses.length === 0) {
+        markerType = "N";
+      }
+    }
+
+    if (!hasIssue) {
+      console.log(
+        `⚠️ Skipping item ${idx + 1}: nuk u identifikua problem i raportuar`,
+      );
+      return;
+    }
+
+    let bestMatch: string | null = null;
+    let bestScore = 0;
+
+    const aliasMatch =
+      findAliasMatch(typeTitleRaw) ||
+      findAliasMatch(typeCodeRaw) ||
+      findAliasMatch(normalizedTitle) ||
+      findAliasMatch(normalizedCode);
+
+    if (aliasMatch && positionMap[aliasMatch]) {
+      bestMatch = aliasMatch;
+      bestScore = 950;
+    }
+
+    if (!bestMatch) {
+      for (const partKey of Object.keys(positionMap)) {
+        const normalizedPartKey = normalizeForMatching(partKey);
+        const scoreFromTitle = computeTokenScore(
+          normalizedTitle,
+          normalizedPartKey,
         );
-        return;
-      }
-
-      let bestMatch: string | null = null;
-      let bestScore = 0;
-
-      const aliasMatch =
-        findAliasMatch(typeTitleRaw) ||
-        findAliasMatch(typeCodeRaw) ||
-        findAliasMatch(normalizedTitle) ||
-        findAliasMatch(normalizedCode);
-
-      if (aliasMatch && positionMap[aliasMatch]) {
-        bestMatch = aliasMatch;
-        bestScore = 950;
-      }
-
-      if (!bestMatch) {
-        for (const partKey of Object.keys(positionMap)) {
-          const normalizedPartKey = normalizeForMatching(partKey);
-          const scoreFromTitle = computeTokenScore(
-            normalizedTitle,
-            normalizedPartKey,
-          );
-          if (scoreFromTitle > bestScore) {
-            bestScore = scoreFromTitle;
-            bestMatch = partKey;
-          }
-
-          const scoreFromCode = computeTokenScore(
-            normalizedCode,
-            normalizedPartKey,
-          );
-          if (scoreFromCode > bestScore) {
-            bestScore = scoreFromCode;
-            bestMatch = partKey;
-          }
-
-          if (normalizedAttributesForMatch.length > 0) {
-            normalizedAttributesForMatch.forEach((attribute) => {
-              const scoreFromAttr = computeTokenScore(
-                attribute,
-                normalizedPartKey,
-              );
-              if (scoreFromAttr > bestScore) {
-                bestScore = scoreFromAttr;
-                bestMatch = partKey;
-              }
-            });
-          }
+        if (scoreFromTitle > bestScore) {
+          bestScore = scoreFromTitle;
+          bestMatch = partKey;
         }
-      }
 
-        if (bestMatch) {
-          const pos = positionMap[bestMatch];
-        const rawSize =
-          typeof pos.size === "number" ? pos.size : DEFAULT_MARKER_SIZE;
-        const nominalSize = Math.min(
-          Math.max(rawSize, MIN_MARKER_DIAMETER),
-          MAX_MARKER_DIAMETER,
+        const scoreFromCode = computeTokenScore(
+          normalizedCode,
+          normalizedPartKey,
         );
+        if (scoreFromCode > bestScore) {
+          bestScore = scoreFromCode;
+          bestMatch = partKey;
+        }
 
-        // Check for collision with existing markers and offset if needed
-        let finalX = pos.x;
-        let finalY = pos.y;
-        const collisionRadius = nominalSize * COLLISION_SPACING_MULTIPLIER;
-
-        const markersToCheck =
-          pos.panel === "within" ? withinMarkers : outMarkers;
-        let hasCollision = true;
-        let attempts = 0;
-        const maxAttempts = 10; // Try additional positions around the original
-
-        while (hasCollision && attempts < maxAttempts) {
-          hasCollision = false;
-
-          for (const existingMarker of markersToCheck) {
-            const distance = Math.sqrt(
-              Math.pow(existingMarker.x - finalX, 2) +
-                Math.pow(existingMarker.y - finalY, 2),
+        if (normalizedAttributesForMatch.length > 0) {
+          normalizedAttributesForMatch.forEach((attribute) => {
+            const scoreFromAttr = computeTokenScore(
+              attribute,
+              normalizedPartKey,
             );
-
-            if (distance < collisionRadius) {
-              hasCollision = true;
-              // Offset in a circular pattern
-              const angle = (attempts * Math.PI * 2) / maxAttempts;
-              finalX = pos.x + Math.cos(angle) * collisionRadius;
-              finalY = pos.y + Math.sin(angle) * collisionRadius;
-              break;
+            if (scoreFromAttr > bestScore) {
+              bestScore = scoreFromAttr;
+              bestMatch = partKey;
             }
-          }
-
-          attempts++;
+          });
         }
+      }
+    }
 
-          const fallbackLabel =
-            (typeTitleRaw && typeTitleRaw.trim()) ||
-            (typeCodeRaw && typeCodeRaw.trim()) ||
-            bestMatch;
+    if (bestMatch) {
+      const pos = positionMap[bestMatch];
+      const rawSize =
+        typeof pos.size === "number" ? pos.size : DEFAULT_MARKER_SIZE;
+      const nominalSize = Math.min(
+        Math.max(rawSize, MIN_MARKER_DIAMETER),
+        MAX_MARKER_DIAMETER,
+      );
 
-          let translatedLabel = getDiagramPartLabel(bestMatch, fallbackLabel);
+      // Check for collision with existing markers and offset if needed
+      let finalX = pos.x;
+      let finalY = pos.y;
+      const collisionRadius = nominalSize * COLLISION_SPACING_MULTIPLIER;
 
-          if (
-            translatedLabel === fallbackLabel &&
-            attributeStrings.length > 0
-          ) {
-            translatedLabel = getDiagramPartLabel(
-              attributeStrings[0],
-              fallbackLabel,
-            );
-          }
+      const markersToCheck =
+        pos.panel === "within" ? withinMarkers : outMarkers;
+      let hasCollision = true;
+      let attempts = 0;
+      const maxAttempts = 10; // Try additional positions around the original
 
-          const normalizedOriginal =
-            typeTitleRaw && typeTitleRaw.trim() ? typeTitleRaw.trim() : undefined;
+      while (hasCollision && attempts < maxAttempts) {
+        hasCollision = false;
 
-          const marker: DiagramMarker = {
-            x: finalX,
-            y: finalY,
-            type: markerType,
-            label: translatedLabel,
-            size: nominalSize,
-            originalLabel:
-              normalizedOriginal && normalizedOriginal !== translatedLabel
-                ? normalizedOriginal
-                : undefined,
-          };
-
-          console.log(
-            `✅ U vendos "${marker.label}" (nga "${typeTitleRaw || bestMatch}") → ${bestMatch} (${pos.panel}), tip: ${markerType}, pozicioni: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [ripozicionuar për të shmangur mbivendosjen]" : ""}`,
+        for (const existingMarker of markersToCheck) {
+          const distance = Math.sqrt(
+            Math.pow(existingMarker.x - finalX, 2) +
+              Math.pow(existingMarker.y - finalY, 2),
           );
 
-        if (pos.panel === "within") {
-          withinMarkers.push(marker);
-        } else {
-          outMarkers.push(marker);
+          if (distance < collisionRadius) {
+            hasCollision = true;
+            // Offset in a circular pattern
+            const angle = (attempts * Math.PI * 2) / maxAttempts;
+            finalX = pos.x + Math.cos(angle) * collisionRadius;
+            finalY = pos.y + Math.sin(angle) * collisionRadius;
+            break;
+          }
         }
-      } else {
-        console.warn(
-          `❌ Nuk u gjet pozicion i hartuar për: "${item?.type?.title}" (u kërkua sipas: ${normalizedTitle}, ${normalizedCode})`,
+
+        attempts++;
+      }
+
+      const fallbackLabel =
+        (typeTitleRaw && typeTitleRaw.trim()) ||
+        (typeCodeRaw && typeCodeRaw.trim()) ||
+        bestMatch;
+
+      let translatedLabel = getDiagramPartLabel(bestMatch, fallbackLabel);
+
+      if (translatedLabel === fallbackLabel && attributeStrings.length > 0) {
+        translatedLabel = getDiagramPartLabel(
+          attributeStrings[0],
+          fallbackLabel,
         );
       }
+
+      const normalizedOriginal =
+        typeTitleRaw && typeTitleRaw.trim() ? typeTitleRaw.trim() : undefined;
+
+      const marker: DiagramMarker = {
+        x: finalX,
+        y: finalY,
+        type: markerType,
+        label: translatedLabel,
+        size: nominalSize,
+        originalLabel:
+          normalizedOriginal && normalizedOriginal !== translatedLabel
+            ? normalizedOriginal
+            : undefined,
+      };
+
+      console.log(
+        `✅ U vendos "${marker.label}" (nga "${typeTitleRaw || bestMatch}") → ${bestMatch} (${pos.panel}), tip: ${markerType}, pozicioni: (${finalX}, ${finalY})${finalX !== pos.x || finalY !== pos.y ? " [ripozicionuar për të shmangur mbivendosjen]" : ""}`,
+      );
+
+      if (pos.panel === "within") {
+        withinMarkers.push(marker);
+      } else {
+        outMarkers.push(marker);
+      }
+    } else {
+      console.warn(
+        `❌ Nuk u gjet pozicion i hartuar për: "${item?.type?.title}" (u kërkua sipas: ${normalizedTitle}, ${normalizedCode})`,
+      );
+    }
   });
 
   console.log(`\n🎯 Shënimet përfundimtare të diagramit:`, {
@@ -946,21 +950,36 @@ const DiagramMarkerWithTooltip: React.FC<{
   marker: DiagramMarker;
   index: number;
   editMode: boolean;
+  diagramScale: number;
   onDrag?: (x: number, y: number) => void;
-}> = ({ marker, index, editMode, onDrag }) => {
+}> = ({ marker, index, editMode, diagramScale, onDrag }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-    const leftPercent = (marker.x / BASE_CANVAS_WIDTH) * 100;
-    const topPercent = (marker.y / BASE_CANVAS_HEIGHT) * 100;
-    const markerBaseSize = marker.size ?? DEFAULT_MARKER_SIZE;
-    const normalizedMarkerSize = Math.min(
-      Math.max(markerBaseSize, MIN_MARKER_DIAMETER),
-      MAX_MARKER_DIAMETER,
-    );
-      const markerSize = `clamp(${MIN_MARKER_DIAMETER}px, ${MARKER_VW_SCALE}vw, ${normalizedMarkerSize}px)`;
-      const markerFontSize = `clamp(${MARKER_FONT_MIN}px, 0.75vw, ${MARKER_FONT_MAX}px)`;
+  const leftPercent = (marker.x / BASE_CANVAS_WIDTH) * 100;
+  const topPercent = (marker.y / BASE_CANVAS_HEIGHT) * 100;
+  const markerBaseSize = marker.size ?? DEFAULT_MARKER_SIZE;
+  const normalizedMarkerSize = clampValue(
+    markerBaseSize,
+    MIN_MARKER_DIAMETER,
+    MAX_MARKER_DIAMETER,
+  );
+
+  const clampedScale = clampValue(
+    Number.isFinite(diagramScale) ? diagramScale : 1,
+    MIN_MARKER_SCALE,
+    MAX_MARKER_SCALE,
+  );
+
+  const scaledSize = normalizedMarkerSize * clampedScale;
+  const scaledMin = Math.max(MIN_MARKER_DIAMETER * clampedScale, 4);
+  const scaledMax = Math.max(MAX_MARKER_DIAMETER * clampedScale, scaledMin);
+  const markerSizePx = clampValue(scaledSize, scaledMin, scaledMax);
+
+  const fontMin = Math.max(MARKER_FONT_MIN * clampedScale, 3.2);
+  const fontMax = Math.max(MARKER_FONT_MAX * clampedScale, fontMin);
+  const markerFontSizePx = clampValue(markerSizePx * 0.55, fontMin, fontMax);
 
   const baseClasses =
     "absolute rounded-full flex items-center justify-center font-bold shadow-sm border pointer-events-auto transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
@@ -988,31 +1007,30 @@ const DiagramMarkerWithTooltip: React.FC<{
     }
   };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !editMode || !onDrag) return;
-      const parentElement =
-        buttonRef.current?.closest<HTMLDivElement>(".diagram-container");
-      if (!parentElement) return;
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || !editMode || !onDrag) return;
+    const parentElement =
+      buttonRef.current?.closest<HTMLDivElement>(".diagram-container");
+    if (!parentElement) return;
 
-      const rect = parentElement.getBoundingClientRect();
-      const x =
-        ((e.clientX - rect.left - dragOffset.x) / rect.width) *
-        BASE_CANVAS_WIDTH;
-      const y =
-        ((e.clientY - rect.top - dragOffset.y) / rect.height) *
-        BASE_CANVAS_HEIGHT;
+    const rect = parentElement.getBoundingClientRect();
+    const x =
+      ((e.clientX - rect.left - dragOffset.x) / rect.width) * BASE_CANVAS_WIDTH;
+    const y =
+      ((e.clientY - rect.top - dragOffset.y) / rect.height) *
+      BASE_CANVAS_HEIGHT;
 
-      const clampedX = Math.max(
-        DIAGRAM_EDGE_PADDING,
-        Math.min(BASE_CANVAS_WIDTH - DIAGRAM_EDGE_PADDING, x),
-      );
-      const clampedY = Math.max(
-        DIAGRAM_EDGE_PADDING,
-        Math.min(BASE_CANVAS_HEIGHT - DIAGRAM_EDGE_PADDING, y),
-      );
+    const clampedX = Math.max(
+      DIAGRAM_EDGE_PADDING,
+      Math.min(BASE_CANVAS_WIDTH - DIAGRAM_EDGE_PADDING, x),
+    );
+    const clampedY = Math.max(
+      DIAGRAM_EDGE_PADDING,
+      Math.min(BASE_CANVAS_HEIGHT - DIAGRAM_EDGE_PADDING, y),
+    );
 
-      onDrag(clampedX, clampedY);
-    };
+    onDrag(clampedX, clampedY);
+  };
 
   const handleMouseUp = () => {
     setIsDragging(false);
@@ -1032,18 +1050,18 @@ const DiagramMarkerWithTooltip: React.FC<{
   return (
     <Tooltip delayDuration={editMode ? 999999 : 0}>
       <TooltipTrigger asChild>
-          <button
-            type="button"
-            aria-label={`${marker.label} - ${marker.type === "N" ? "Zëvendësim" : "Riparim"}`}
+        <button
+          type="button"
+          aria-label={`${marker.label} - ${marker.type === "N" ? "Zëvendësim" : "Riparim"}`}
           ref={buttonRef}
           className={`${baseClasses} ${variantClasses} ${editModeClasses}`}
           style={{
             left: `${leftPercent}%`,
             top: `${topPercent}%`,
-            width: markerSize,
-            height: markerSize,
-            fontSize: markerFontSize,
-              transform: "translate(-50%, -50%)",
+            width: `${markerSizePx}px`,
+            height: `${markerSizePx}px`,
+            fontSize: `${markerFontSizePx}px`,
+            transform: "translate(-50%, -50%)",
           }}
           onMouseDown={handleMouseDown}
         >
@@ -1056,14 +1074,14 @@ const DiagramMarkerWithTooltip: React.FC<{
         className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs z-50"
       >
         <div className="font-semibold text-sm">{marker.label}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {marker.type === "N" ? "Ndërrim / zëvendësim" : "Riparim"}
-          </div>
-          {marker.originalLabel && marker.originalLabel !== marker.label && (
-            <div className="text-[10px] text-muted-foreground/80 mt-1">
-              {marker.originalLabel}
+        <div className="text-xs text-muted-foreground mt-1">
+          {marker.type === "N" ? "Ndërrim / zëvendësim" : "Riparim"}
         </div>
-          )}
+        {marker.originalLabel && marker.originalLabel !== marker.label && (
+          <div className="text-[10px] text-muted-foreground/80 mt-1">
+            {marker.originalLabel}
+          </div>
+        )}
       </TooltipContent>
     </Tooltip>
   );
@@ -1082,8 +1100,52 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
   const [editedMarkers, setEditedMarkers] = useState<
     Record<string, { x: number; y: number }>
   >({});
+  const withinDiagramRef = useRef<HTMLDivElement | null>(null);
+  const outDiagramRef = useRef<HTMLDivElement | null>(null);
+  const [withinScale, setWithinScale] = useState(1);
+  const [outScale, setOutScale] = useState(1);
 
   const { within, out } = mapInspectionToMarkers(outerInspectionData);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof ResizeObserver === "undefined"
+    ) {
+      return;
+    }
+
+    const observers: ResizeObserver[] = [];
+
+    const registerObserver = (
+      element: HTMLDivElement | null,
+      setter: React.Dispatch<React.SetStateAction<number>>,
+    ) => {
+      if (!element) return;
+
+      const updateScale = () => {
+        const width = element.offsetWidth || BASE_CANVAS_WIDTH;
+        const rawScale = width / BASE_CANVAS_WIDTH;
+        setter((prev) => (Math.abs(prev - rawScale) < 0.01 ? prev : rawScale));
+      };
+
+      updateScale();
+
+      const observer = new ResizeObserver(() => {
+        updateScale();
+      });
+
+      observer.observe(element);
+      observers.push(observer);
+    };
+
+    registerObserver(withinDiagramRef.current, setWithinScale);
+    registerObserver(outDiagramRef.current, setOutScale);
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, []);
 
   // Load custom positions from database
   useEffect(() => {
@@ -1092,11 +1154,11 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         .from("inspection_marker_positions")
         .select("*");
 
-        if (error) {
-          console.error(
-            "Gabim gjatë ngarkimit të pozicioneve të personalizuara:",
-            error,
-          );
+      if (error) {
+        console.error(
+          "Gabim gjatë ngarkimit të pozicioneve të personalizuara:",
+          error,
+        );
         return;
       }
 
@@ -1177,10 +1239,10 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         if (error) throw error;
       }
 
-        toast({
-          title: "Pozicionet u ruajtën",
-          description: `U përditësuan ${updates.length} pozicione shenjash`,
-        });
+      toast({
+        title: "Pozicionet u ruajtën",
+        description: `U përditësuan ${updates.length} pozicione shenjash`,
+      });
 
       setEditedMarkers({});
       setEditMode(false);
@@ -1204,13 +1266,13 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
         });
         setCustomPositions(positions);
       }
-      } catch (error) {
-        console.error("Gabim gjatë ruajtjes së pozicioneve:", error);
-        toast({
-          title: "Gabim",
-          description: "Pozicionet e shenjave nuk u ruajtën",
-          variant: "destructive",
-        });
+    } catch (error) {
+      console.error("Gabim gjatë ruajtjes së pozicioneve:", error);
+      toast({
+        title: "Gabim",
+        description: "Pozicionet e shenjave nuk u ruajtën",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1273,8 +1335,8 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
       {hasData && !hasAnyMarkers && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm">
           <p className="text-yellow-800 dark:text-yellow-200">
-            ℹ️ U morën {outerInspectionData.length} elemente, por nuk u gjet asnjë
-            shenjë për t’u vizualizuar. Kontrolloni konzolën për detaje.
+            ℹ️ U morën {outerInspectionData.length} elemente, por nuk u gjet
+            asnjë shenjë për t’u vizualizuar. Kontrolloni konzolën për detaje.
           </p>
         </div>
       )}
@@ -1297,12 +1359,15 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Within panel - interior/side view */}
         <div className="relative p-4 lg:border-r border-border bg-white dark:bg-muted/5">
-          <div className="relative mx-auto max-w-[640px]">
-              <img
-                src={carDiagramFront}
-                alt="Pamje anësore dhe e brendshme e makinës"
-                className="w-full h-auto"
-              />
+          <div
+            ref={withinDiagramRef}
+            className="relative mx-auto max-w-[640px]"
+          >
+            <img
+              src={carDiagramFront}
+              alt="Pamje anësore dhe e brendshme e makinës"
+              className="w-full h-auto"
+            />
             <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
                 {withinWithCustomPos.map((marker, idx) => (
@@ -1311,6 +1376,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
                     marker={marker}
                     index={idx}
                     editMode={editMode}
+                    diagramScale={withinScale}
                     onDrag={(x, y) => handleMarkerDrag(marker, "within", x, y)}
                   />
                 ))}
@@ -1321,12 +1387,12 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
 
         {/* Out panel - exterior/bottom view */}
         <div className="relative p-4 bg-white dark:bg-muted/5">
-          <div className="relative mx-auto max-w-[640px]">
-              <img
-                src={carDiagramBack}
-                alt="Pamje e jashtme dhe e poshtme e makinës"
-                className="w-full h-auto"
-              />
+          <div ref={outDiagramRef} className="relative mx-auto max-w-[640px]">
+            <img
+              src={carDiagramBack}
+              alt="Pamje e jashtme dhe e poshtme e makinës"
+              className="w-full h-auto"
+            />
             <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
               <TooltipProvider delayDuration={0}>
                 {outWithCustomPos.map((marker, idx) => (
@@ -1335,6 +1401,7 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
                     marker={marker}
                     index={idx}
                     editMode={editMode}
+                    diagramScale={outScale}
                     onDrag={(x, y) => handleMarkerDrag(marker, "out", x, y)}
                   />
                 ))}
@@ -1346,18 +1413,18 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
 
       {/* Legend */}
       <div className="px-4 py-3 border-t border-border bg-muted/10 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <div className="w-6 h-6 rounded-full bg-[#E53935] flex items-center justify-center text-white text-xs font-bold shadow-sm">
-              N
-            </div>
-            Ndërrim (zëvendësim)
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="w-6 h-6 rounded-full bg-[#E53935] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            N
           </div>
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <div className="w-6 h-6 rounded-full bg-[#D84315] flex items-center justify-center text-white text-xs font-bold shadow-sm">
-              R
-            </div>
-            Riparim
+          Ndërrim (zëvendësim)
+        </div>
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="w-6 h-6 rounded-full bg-[#D84315] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            R
           </div>
+          Riparim
+        </div>
       </div>
     </Card>
   );
