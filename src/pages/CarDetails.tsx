@@ -92,6 +92,10 @@ import { DealerInfoSection } from "@/components/DealerInfoSection";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
+import {
+  fetchEncarsVehicle,
+  type EncarsVehicleResponse,
+} from "@/services/encarApi";
 import { openCarReportInNewTab } from "@/utils/navigation";
 import { createPortal } from "react-dom";
 import {
@@ -1138,10 +1142,88 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
   const [isPortalReady, setIsPortalReady] = useState(false);
+  const [liveDealerContact, setLiveDealerContact] =
+    useState<EncarsVehicleResponse["contact"] | null>(null);
+  const [liveDealerLoading, setLiveDealerLoading] = useState(false);
+  const [liveDealerError, setLiveDealerError] = useState<string | null>(null);
+  const [liveDealerFetchedAt, setLiveDealerFetchedAt] = useState<string | null>(null);
+  const lastFetchedLotRef = useRef<string | null>(null);
+  const liveDealerAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
     setIsPortalReady(true);
     return () => setIsPortalReady(false);
   }, []);
+
+  useEffect(() => {
+    const cachedContact = (car as any)?.encarVehicle?.contact;
+    if (!cachedContact) {
+      return;
+    }
+    setLiveDealerContact((prev) =>
+      prev ? { ...cachedContact, ...prev } : cachedContact,
+    );
+  }, [car]);
+
+  useEffect(() => {
+    liveDealerAbortRef.current?.abort();
+    liveDealerAbortRef.current = null;
+    lastFetchedLotRef.current = null;
+    setLiveDealerFetchedAt(null);
+    setLiveDealerError(null);
+    setLiveDealerContact(null);
+  }, [lot]);
+
+  useEffect(() => {
+    if (adminLoading || !isAdmin || !lot) {
+      return;
+    }
+
+    if (lastFetchedLotRef.current === lot && liveDealerContact) {
+      return;
+    }
+
+    const controller = new AbortController();
+    liveDealerAbortRef.current?.abort();
+    liveDealerAbortRef.current = controller;
+    setLiveDealerLoading(true);
+    setLiveDealerError(null);
+
+    fetchEncarsVehicle(lot, ["CONTACT", "PARTNERSHIP"], {
+      signal: controller.signal,
+    })
+      .then((vehicle) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        const contact = vehicle?.contact ?? null;
+        setLiveDealerContact(contact);
+        lastFetchedLotRef.current = lot;
+        setLiveDealerFetchedAt(new Date().toISOString());
+        setLiveDealerError(null);
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        console.warn("Failed to fetch live dealer contact", error);
+        setLiveDealerError(
+          error instanceof Error
+            ? error.message
+            : "Dështoi marrja e adresës nga Encars API.",
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLiveDealerLoading(false);
+          liveDealerAbortRef.current = null;
+        }
+      });
+
+    return () => {
+      controller.abort();
+      liveDealerAbortRef.current = null;
+    };
+  }, [adminLoading, isAdmin, lot, liveDealerContact]);
 
   const usageHistoryList = useMemo<UsageHistoryEntry[]>(
     () => buildUsageHistoryList(car, formatDisplayDate),
@@ -3361,9 +3443,15 @@ const CarDetails = memo(() => {
 
                     {/* Dealer Information - Admin Only */}
                     {!adminLoading && isAdmin && (
-                      <div className="mt-6">
-                        <DealerInfoSection car={car} />
-                      </div>
+                        <div className="mt-6">
+                          <DealerInfoSection
+                            car={car}
+                            liveContact={liveDealerContact}
+                            isLiveLoading={liveDealerLoading}
+                            liveFetchedAt={liveDealerFetchedAt}
+                            error={liveDealerError}
+                          />
+                        </div>
                     )}
 
                     {/* Comprehensive Inspection Report */}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
+import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
 // TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
 // for consistent backend sorting
 import { CarWithRank } from "@/utils/chronologicalRanking";
@@ -261,6 +263,23 @@ const EncarCatalog = ({
     console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (including AuctionsAPI grid) (sort: ${sortBy || 'recently_added'})`);
     return sortedResults;
   }, [showAllCars, allCarsData, sortedAllCarsResults, sortBy, isGlobalSortingReady, shouldUseGlobalSorting, getCarsForCurrentPage, currentPage, globalSortingState.currentSortBy, isDefaultState, hasUserSelectedSort, sortedResults]);
+
+  const {
+    currentValue: smoothCarsToDisplay,
+    isTransitioning: isCarsTransitioning,
+  } = useSmoothListTransition(carsToDisplay, loading || isFilterLoading, {
+    holdDuringLoading: true,
+    transitionMs: 240,
+  });
+
+  const renderableCars = useMemo(
+    () =>
+      smoothCarsToDisplay.filter((car: CarWithRank | any) => {
+        const lot = car?.lots?.[0];
+        return lot?.buy_now && lot.buy_now > 0;
+      }),
+    [smoothCarsToDisplay],
+  );
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{
@@ -1364,19 +1383,17 @@ const EncarCatalog = ({
                   </div>
                 </div>}
               
-              <div
-                ref={containerRef}
-                className={`transition-all duration-300 ${
-                  viewMode === 'list'
-                    ? 'flex flex-col gap-2 sm:gap-3'
-                    : 'grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 px-1 sm:px-2'
-                } ${isFilterLoading ? 'opacity-50' : ''}`}
-              >
-                {carsToDisplay.filter(car => {
-              // Only show cars with buy_now pricing
-              const lot = car.lots?.[0];
-              return lot?.buy_now && lot.buy_now > 0;
-            }).map((car: CarWithRank | any) => {
+                <div
+                  ref={containerRef}
+                  className={cn(
+                    "transition-all duration-300 motion-safe:transition-opacity motion-reduce:transition-none",
+                    viewMode === "list"
+                      ? "flex flex-col gap-2 sm:gap-3"
+                      : "grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 px-1 sm:px-2",
+                    (isFilterLoading || loading || isCarsTransitioning) && "opacity-80",
+                  )}
+                >
+                  {renderableCars.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
               // Only use buy_now price, no fallbacks
               const usdPrice = lot?.buy_now;
@@ -1392,8 +1409,8 @@ const EncarCatalog = ({
               {/* Pagination Controls - replace Load More button */}
               {!showAllCars && totalPages > 1 && <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
-                  <div className="text-center text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages.toLocaleString()} • {carsToDisplay.length} cars shown
+                    <div className="text-center text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages.toLocaleString()} • {renderableCars.length} cars shown
                   </div>
                   
                   {/* Pagination Navigation */}
