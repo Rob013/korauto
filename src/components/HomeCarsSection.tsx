@@ -16,6 +16,8 @@ import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing, filterCarsWithRealPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
+import { cn } from "@/lib/utils";
+import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
 interface APIFilters {
   manufacturer_id?: string;
   model_id?: string;
@@ -287,6 +289,15 @@ const HomeCarsSection = memo(() => {
     return showAllCars ? carsToDisplay : carsToDisplay.slice(0, defaultDisplayCount);
   }, [showAllCars, carsToDisplay, defaultDisplayCount, hasFilters]);
 
+  const {
+    currentValue: smoothDisplayedCars,
+    isTransitioning: isShowcaseTransitioning,
+  } = useSmoothListTransition(displayedCars, loading, { transitionMs: 200 });
+
+  const hasRenderedCars = smoothDisplayedCars.length > 0;
+  const showInitialSkeleton = loading && !hasRenderedCars;
+  const showEmptyState = !loading && carsToDisplay.length === 0;
+
   // Preload first 6 car images for better initial loading performance
   useEffect(() => {
     const preloadImages = () => {
@@ -517,33 +528,89 @@ const HomeCarsSection = memo(() => {
         </div>
 
         {/* Car Cards */}
-        {loading ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 stagger-animation">
-            {[...Array(8)].map((_, i) => <div key={i} className="modern-card p-4 pulse-enhanced">
+        {showInitialSkeleton ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 stagger-animation">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="modern-card p-4 pulse-enhanced">
                 <div className="h-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-4"></div>
                 <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-2"></div>
                 <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded w-3/4"></div>
-              </div>)}
-          </div> : carsToDisplay.length === 0 ? <div className="text-center py-8 sm:py-12 px-4">
+              </div>
+            ))}
+          </div>
+        ) : showEmptyState ? (
+          <div className="text-center py-8 sm:py-12 px-4">
             <p className="text-base sm:text-lg text-muted-foreground mb-4">
               Nuk ka makina të disponueshme.
             </p>
-          </div> : <>
-            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container ${isInView ? 'stagger-animation' : ''}`}>
-              {displayedCars.map(car => {
-            const lot = car.lots?.[0];
-            const usdPrice = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
-            const price = usdPrice > 0 ? calculateFinalPriceEUR(usdPrice, exchangeRate.rate) : 0;
-            return <LazyCarCard key={car.id} id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} condition={car.condition?.replace("run_and_drives", "Good")} lot={car.lot_number || lot?.lot} title={car.title} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} />;
-          })}
+          </div>
+        ) : (
+          <>
+            <div
+              className={cn(
+                "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container",
+                isInView && "stagger-animation",
+                (loading || isShowcaseTransitioning) &&
+                  "opacity-80 transition-opacity duration-200 motion-reduce:transition-none",
+              )}
+            >
+              {smoothDisplayedCars.map((car) => {
+                const lot = car.lots?.[0];
+                const usdPrice = Number(
+                  lot?.buy_now ||
+                    lot?.final_bid ||
+                    lot?.price ||
+                    (car as any).buy_now ||
+                    (car as any).final_bid ||
+                    (car as any).price ||
+                    0,
+                );
+                const price =
+                  usdPrice > 0 ? calculateFinalPriceEUR(usdPrice, exchangeRate.rate) : 0;
+                return (
+                  <LazyCarCard
+                    key={car.id}
+                    id={car.id}
+                    make={car.manufacturer?.name || "Unknown"}
+                    model={car.model?.name || "Unknown"}
+                    year={car.year}
+                    price={price}
+                    image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
+                    vin={car.vin}
+                    mileage={
+                      lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined
+                    }
+                    transmission={car.transmission?.name}
+                    fuel={resolveFuelFromSources(car, lot) || undefined}
+                    color={car.color?.name}
+                    condition={car.condition?.replace("run_and_drives", "Good")}
+                    lot={car.lot_number || lot?.lot}
+                    title={car.title}
+                    status={Number(car.status || lot?.status || 1)}
+                    sale_status={car.sale_status || lot?.sale_status}
+                    final_price={car.final_price || lot?.final_price}
+                    insurance_v2={(lot as any)?.insurance_v2}
+                    details={(lot as any)?.details}
+                  />
+                );
+              })}
             </div>
 
             {/* Show More Button */}
             <div className="text-center mt-8">
-              {carsToDisplay.length > defaultDisplayCount && !showAllCars && <Button onClick={() => setShowAllCars(true)} variant="outline" size="lg" className="btn-enhanced bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3">
+              {carsToDisplay.length > defaultDisplayCount && !showAllCars && (
+                <Button
+                  onClick={() => setShowAllCars(true)}
+                  variant="outline"
+                  size="lg"
+                  className="btn-enhanced bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
+                >
                   Shiko të gjitha ({carsToDisplay.length} makina)
-                </Button>}
+                </Button>
+              )}
             </div>
-          </>}
+          </>
+        )}
       </div>
     </section>;
 });

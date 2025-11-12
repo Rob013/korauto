@@ -1,46 +1,87 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building2, User, Phone, Shield } from "lucide-react";
+import {
+  MapPin,
+  Building2,
+  User,
+  Phone,
+  Shield,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import type { EncarsVehicleResponse } from "@/services/encarApi";
 
 interface DealerInfoSectionProps {
   car: any;
+  liveContact?: EncarsVehicleResponse["contact"] | null;
+  isLiveLoading?: boolean;
+  liveFetchedAt?: string | null;
+  error?: string | null;
 }
 
 /**
  * Dealer information section - Only visible to administrators
  * Displays dealer contact and location details from API
  */
-export const DealerInfoSection = ({ car }: DealerInfoSectionProps) => {
+export const DealerInfoSection = ({
+  car,
+  liveContact,
+  isLiveLoading = false,
+  liveFetchedAt,
+  error,
+}: DealerInfoSectionProps) => {
+  const contact = liveContact ?? car?.encarVehicle?.contact ?? null;
+  const partnershipDealer = car?.encarVehicle?.partnership?.dealer ?? null;
+  const fallbackDealer = car?.details?.dealer ?? null;
+
   // Extract dealer info from various API sources
   const dealerInfo = {
-    name: car?.encarVehicle?.partnership?.dealer?.name || 
-          car?.encarVehicle?.partnership?.dealer?.firm?.name ||
-          car?.details?.dealer?.name || 
-          "Nuk ka informacion",
-    userId: car?.encarVehicle?.partnership?.dealer?.userId || 
-            car?.encarVehicle?.contact?.userId ||
-            car?.details?.dealer?.userId || 
-            null,
-    firmName: car?.encarVehicle?.partnership?.dealer?.firm?.name || 
-              car?.details?.dealer?.firm || 
-              null,
-    address: car?.encarVehicle?.contact?.address || 
-             car?.encarVehicle?.partnership?.dealer?.address ||
-             car?.details?.dealer?.address || 
-             "Nuk ka informacion për adresën",
-    phone: car?.encarVehicle?.contact?.no || 
-           car?.encarVehicle?.partnership?.dealer?.phone ||
-           car?.details?.dealer?.phone || 
-           null,
-    userType: car?.encarVehicle?.contact?.userType || 
-              car?.encarVehicle?.partnership?.dealer?.userType ||
-              null,
+    name:
+      partnershipDealer?.name ||
+      partnershipDealer?.firm?.name ||
+      fallbackDealer?.name ||
+      "Nuk ka informacion",
+    userId:
+      contact?.userId ||
+      partnershipDealer?.userId ||
+      fallbackDealer?.userId ||
+      null,
+    firmName:
+      partnershipDealer?.firm?.name || fallbackDealer?.firm || null,
+    address:
+      contact?.address ||
+      partnershipDealer?.address ||
+      fallbackDealer?.address ||
+      "Nuk ka informacion për adresën",
+    phone:
+      contact?.no ||
+      partnershipDealer?.phone ||
+      fallbackDealer?.phone ||
+      null,
+    userType:
+      contact?.userType ||
+      partnershipDealer?.userType ||
+      null,
   };
 
-  const hasValidInfo = dealerInfo.name !== "Nuk ka informacion" || 
-                       dealerInfo.address !== "Nuk ka informacion për adresën" ||
-                       dealerInfo.firmName ||
-                       dealerInfo.phone;
+  const hasValidInfo =
+    dealerInfo.name !== "Nuk ka informacion" ||
+    dealerInfo.address !== "Nuk ka informacion për adresën" ||
+    dealerInfo.firmName ||
+    dealerInfo.phone;
+
+  const liveUpdatedLabel = liveFetchedAt
+    ? (() => {
+        try {
+          const parsed = new Date(liveFetchedAt);
+          return Number.isNaN(parsed.getTime())
+            ? null
+            : parsed.toLocaleTimeString();
+        } catch {
+          return null;
+        }
+      })()
+    : null;
 
   if (!hasValidInfo) {
     return (
@@ -68,9 +109,21 @@ export const DealerInfoSection = ({ car }: DealerInfoSectionProps) => {
             <Shield className="h-5 w-5" />
             Informacione të Dealerët
           </CardTitle>
-          <Badge variant="secondary" className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100">
-            Vetëm Admin
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100">
+              Vetëm Admin
+            </Badge>
+            {isLiveLoading ? (
+              <span className="flex items-center gap-1 text-xs text-amber-900 dark:text-amber-200">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Duke u përditësuar
+              </span>
+            ) : liveContact ? (
+              <Badge variant="outline" className="border-amber-300 text-amber-900 dark:border-amber-700 dark:text-amber-100">
+                Encars Live
+              </Badge>
+            ) : null}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -122,7 +175,10 @@ export const DealerInfoSection = ({ car }: DealerInfoSectionProps) => {
             <p className="text-xs font-medium text-muted-foreground mb-0.5">
               Adresa
             </p>
-            <p className="text-sm font-semibold text-foreground break-words">
+            <p className="text-sm font-semibold text-foreground break-words flex items-center gap-2">
+              {isLiveLoading && (
+                <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+              )}
               {dealerInfo.address}
             </p>
           </div>
@@ -155,9 +211,20 @@ export const DealerInfoSection = ({ car }: DealerInfoSectionProps) => {
           </div>
         )}
 
-        <div className="pt-2 border-t border-amber-200/50 dark:border-amber-800/50">
+        <div className="pt-2 border-t border-amber-200/50 dark:border-amber-800/50 space-y-2">
+          {error && (
+            <div className="text-[11px] text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1">
+              Nuk u arrit të përditësohet nga Encars API: {error}
+            </div>
+          )}
+          {liveUpdatedLabel && !error && (
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-amber-500" />
+              Përditësuar nga Encars API në {liveUpdatedLabel}
+            </p>
+          )}
           <p className="text-[10px] text-muted-foreground italic">
-            ℹ️ Këto informacione janë të dukshme vetëm për administratorët dhe vijnë drejtpërdrejt nga API.
+            ℹ️ Këto informacione janë të dukshme vetëm për administratorët dhe përditësohen automatikisht nga Encars API kur janë të disponueshme.
           </p>
         </div>
       </CardContent>
