@@ -34,6 +34,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { localizeFuel } from "@/utils/fuel";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
+import { cn } from "@/lib/utils";
 interface CarCardProps {
   id: string;
   make: string;
@@ -416,14 +417,13 @@ const CarCard = ({
 
   return (
     <div
-      className="glass-card card-hover overflow-hidden cursor-pointer group touch-manipulation relative rounded-lg performance-card animation-120fps car-card-container"
+      className={cn(
+        "glass-card group/card soft-interaction overflow-hidden cursor-pointer touch-manipulation relative rounded-lg car-card-container"
+      )}
       onClick={handleCardClick}
       style={{
-        // Prevent layout shifts by setting fixed dimensions
-        minHeight: '360px',
-        aspectRatio: '280/360',
-        willChange: 'transform',
-        transform: 'translateZ(0)'
+        minHeight: "360px",
+        aspectRatio: "280/360",
       }}
     >
       <div className="car-image-wrapper">
@@ -431,16 +431,16 @@ const CarCard = ({
           <OptimizedImage
             src={image}
             alt={`${year} ${make} ${model}`}
-            className="car-image transition-transform duration-300 ease-out"
+            className="car-image transition-opacity duration-300 ease-out"
             width={280}
             priority={false}
             enableLazyLoad={true}
             enableProgressiveLoad={true}
           />
         ) : (
-          <div 
+          <div
             className="car-image flex items-center justify-center bg-muted"
-            style={{ aspectRatio: '280/192' }}
+            style={{ aspectRatio: "280/192" }}
           >
             <Car className="h-16 w-16 text-muted-foreground" />
           </div>
@@ -465,7 +465,7 @@ const CarCard = ({
         )}
       </div>
 
-      <div className="p-3 flex flex-col flex-1" style={{ minHeight: '168px' }}>
+      <div className="p-3 flex flex-col flex-1" style={{ minHeight: "168px" }}>
         <div className="mb-2">
           <h3 className="text-base font-semibold text-foreground line-clamp-1" style={{ minHeight: '1.5rem' }}>
             {year} {make} {model}

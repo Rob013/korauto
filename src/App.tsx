@@ -19,6 +19,9 @@ import PageTransition from "./components/PageTransition";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { lazyWithPreload, LazyComponentWithPreload } from "./utils/lazyWithPreload";
 import { useNavigationPrefetch } from "./hooks/useNavigationPrefetch";
+import { GlobalProgressProvider } from "./contexts/ProgressContext";
+import { TopLoadingBar } from "./components/TopLoadingBar";
+import { NavigationProgressListener } from "./components/NavigationProgressListener";
 
 // Lazy load all pages for better code splitting
 const Index = lazyWithPreload(() => import("./pages/Index"));
@@ -267,39 +270,43 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={renderWithTransition(Index)} />
-                <Route path="/catalog" element={renderWithTransition(Catalog)} />
-                <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
-                <Route path="/car/:id/gallery" element={renderWithTransition(CarGallery)} />
-                <Route path="/car/:id/report" element={renderWithTransition(CarInspectionReport)} />
-                <Route path="/admin" element={renderWithTransition(AdminDashboard)} />
-                <Route
-                  path="/admin/sync"
-                  element={renderWithTransition(AdminSyncDashboard, <AdminSyncSkeleton />)}
-                />
-                <Route path="/auth" element={renderWithTransition(AuthPage)} />
-                <Route path="/auth/confirm" element={renderWithTransition(EmailConfirmationPage)} />
-                <Route path="/account" element={renderWithTransition(MyAccount)} />
-                <Route path="/favorites" element={renderWithTransition(FavoritesPage)} />
-                <Route path="/inspections" element={renderWithTransition(InspectionServices)} />
-                <Route path="/warranty" element={renderWithTransition(Warranty)} />
-                <Route path="/contacts" element={renderWithTransition(Contacts)} />
-                <Route path="/garancioni" element={renderWithTransition(Warranty)} />
-                <Route path="/tracking" element={renderWithTransition(ShipmentTracking)} />
-                {/* Demo routes removed - no longer needed */}
-                <Route path="/performance" element={renderWithTransition(PerformanceDashboard)} />
-                <Route
-                  path="/cookie-management"
-                  element={renderWithTransition(CookieManagementDashboard)}
-                />
-                <Route path="/audit-test" element={renderWithTransition(AuditTestPage)} />
-                <Route path="/api-info-demo" element={renderWithTransition(ApiInfoDemo)} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={renderWithTransition(NotFound)} />
-              </Routes>
-            </BrowserRouter>
+              <GlobalProgressProvider>
+                <BrowserRouter>
+                  <NavigationProgressListener />
+                  <Routes>
+                    <Route path="/" element={renderWithTransition(Index)} />
+                    <Route path="/catalog" element={renderWithTransition(Catalog)} />
+                    <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
+                    <Route path="/car/:id/gallery" element={renderWithTransition(CarGallery)} />
+                    <Route path="/car/:id/report" element={renderWithTransition(CarInspectionReport)} />
+                    <Route path="/admin" element={renderWithTransition(AdminDashboard)} />
+                    <Route
+                      path="/admin/sync"
+                      element={renderWithTransition(AdminSyncDashboard, <AdminSyncSkeleton />)}
+                    />
+                    <Route path="/auth" element={renderWithTransition(AuthPage)} />
+                    <Route path="/auth/confirm" element={renderWithTransition(EmailConfirmationPage)} />
+                    <Route path="/account" element={renderWithTransition(MyAccount)} />
+                    <Route path="/favorites" element={renderWithTransition(FavoritesPage)} />
+                    <Route path="/inspections" element={renderWithTransition(InspectionServices)} />
+                    <Route path="/warranty" element={renderWithTransition(Warranty)} />
+                    <Route path="/contacts" element={renderWithTransition(Contacts)} />
+                    <Route path="/garancioni" element={renderWithTransition(Warranty)} />
+                    <Route path="/tracking" element={renderWithTransition(ShipmentTracking)} />
+                    {/* Demo routes removed - no longer needed */}
+                    <Route path="/performance" element={renderWithTransition(PerformanceDashboard)} />
+                    <Route
+                      path="/cookie-management"
+                      element={renderWithTransition(CookieManagementDashboard)}
+                    />
+                    <Route path="/audit-test" element={renderWithTransition(AuditTestPage)} />
+                    <Route path="/api-info-demo" element={renderWithTransition(ApiInfoDemo)} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={renderWithTransition(NotFound)} />
+                  </Routes>
+                </BrowserRouter>
+                <TopLoadingBar />
+              </GlobalProgressProvider>
             <InstallPrompt />
             <CacheUpdateNotification />
             <IOSEnhancer />
