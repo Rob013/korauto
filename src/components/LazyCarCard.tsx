@@ -136,6 +136,7 @@ const LazyCarCard = memo(({
   transmission,
   fuel,
   color,
+  condition,
   lot,
   title,
   status,
