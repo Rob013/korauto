@@ -1,51 +1,46 @@
 import * as React from "react";
+import { useViewportSize } from "./use-viewport";
 
-const MOBILE_BREAKPOINT = 768;
+const DEFAULT_BREAKPOINT = 768;
 
-const getIsMobile = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  return window.innerWidth < MOBILE_BREAKPOINT;
-};
+export function useIsMobile(breakpoint: number = DEFAULT_BREAKPOINT) {
+  const { width } = useViewportSize();
+  const [isMobile, setIsMobile] = React.useState<boolean>(() => width < breakpoint);
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean>(getIsMobile);
-
+  // Respond immediately to viewport width changes (handles zoom + orientation).
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
+    const next = width < breakpoint;
+    setIsMobile((prev) => (prev === next ? prev : next));
+  }, [width, breakpoint]);
 
-    const mediaQuery = window.matchMedia(
-      `(max-width: ${MOBILE_BREAKPOINT - 1}px)`,
-    );
-
-    const update = () => {
-      setIsMobile(getIsMobile());
-    };
-    const supportsAddEventListener =
-      typeof mediaQuery.addEventListener === "function";
-    const supportsAddListener = typeof mediaQuery.addListener === "function";
-
-    update();
-
-    if (supportsAddEventListener) {
-      mediaQuery.addEventListener("change", update);
-    } else if (supportsAddListener) {
-      mediaQuery.addListener(update);
+  // Keep a media-query listener as a safety net for browsers that do not update
+  // visual viewport metrics during zoom but do fire media query changes.
+  React.useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
     }
-    window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
 
-    return () => {
-      if (supportsAddEventListener) {
-        mediaQuery.removeEventListener("change", update);
-      } else if (supportsAddListener) {
-        mediaQuery.removeListener(update);
-      }
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
+    const mediaQuery = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+
+    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      const matches = "matches" in event ? event.matches : mediaQuery.matches;
+      setIsMobile((prev) => (prev === matches ? prev : matches));
     };
-  }, []);
+
+    handleChange(mediaQuery);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    if (typeof mediaQuery.addListener === "function") {
+      mediaQuery.addListener(handleChange);
+      return () => mediaQuery.removeListener(handleChange);
+    }
+
+    return undefined;
+  }, [breakpoint]);
 
   return isMobile;
 }
