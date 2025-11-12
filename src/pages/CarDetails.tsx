@@ -13,7 +13,6 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { trackPageView, trackCarView, trackFavorite } from "@/utils/analytics";
 import { calculateFinalPriceEUR } from "@/utils/carPricing";
 import { resolveFuelFromSources, localizeFuel } from "@/utils/fuel";
-import { useOptimizedCarDetails } from "@/hooks/useOptimizedCarDetails";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

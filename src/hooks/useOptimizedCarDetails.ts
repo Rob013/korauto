@@ -212,7 +212,7 @@ export const useOptimizedCarDetails = ({ carId, prefetch = true }: OptimizedCarD
 
     let cancelled = false;
     let idleId: number | null = null;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let timeoutId: number | null = null;
 
     loadCarDetails(carId).then((carData) => {
       if (!carData || cancelled) {
@@ -234,7 +234,7 @@ export const useOptimizedCarDetails = ({ carId, prefetch = true }: OptimizedCarD
         if (typeof idleCallback === 'function') {
           idleId = idleCallback(schedulePrefetch, { timeout: 2000 });
         } else {
-          timeoutId = window.setTimeout(schedulePrefetch, 1500);
+          timeoutId = window.setTimeout(schedulePrefetch, 1500) as unknown as number;
         }
       } else {
         schedulePrefetch();
