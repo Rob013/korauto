@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { lazy, Suspense, useEffect, ReactNode } from "react";
+import { Suspense, useEffect, ReactNode, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
@@ -17,31 +17,33 @@ import { useIsMobile } from "./hooks/use-mobile";
 import { IOSEnhancer } from "./components/IOSEnhancer";
 import PageTransition from "./components/PageTransition";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { lazyWithPreload, LazyComponentWithPreload } from "./utils/lazyWithPreload";
+import { useNavigationPrefetch } from "./hooks/useNavigationPrefetch";
 
 // Lazy load all pages for better code splitting
-const Index = lazy(() => import("./pages/Index"));
-const Catalog = lazy(() => import("./pages/Catalog"));
-const CarDetails = lazy(() => import("./pages/CarDetails"));
-const CarGallery = lazy(() => import("./pages/CarGallery"));
-const CarInspectionReport = lazy(() => import("./pages/CarInspectionReport"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const AuthPage = lazy(() => import("./pages/AuthPage"));
-const EmailConfirmationPage = lazy(() => import("./pages/EmailConfirmationPage"));
-const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
-const InspectionServices = lazy(() => import("./pages/InspectionServices"));
-const MyAccount = lazy(() => import("./pages/MyAccount"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Contacts = lazy(() => import("./pages/Contacts"));
-const ShipmentTracking = lazy(() => import("./pages/ShipmentTracking"));
+const Index = lazyWithPreload(() => import("./pages/Index"));
+const Catalog = lazyWithPreload(() => import("./pages/Catalog"));
+const CarDetails = lazyWithPreload(() => import("./pages/CarDetails"));
+const CarGallery = lazyWithPreload(() => import("./pages/CarGallery"));
+const CarInspectionReport = lazyWithPreload(() => import("./pages/CarInspectionReport"));
+const AdminDashboard = lazyWithPreload(() => import("./pages/AdminDashboard"));
+const AuthPage = lazyWithPreload(() => import("./pages/AuthPage"));
+const EmailConfirmationPage = lazyWithPreload(() => import("./pages/EmailConfirmationPage"));
+const FavoritesPage = lazyWithPreload(() => import("./pages/FavoritesPage"));
+const InspectionServices = lazyWithPreload(() => import("./pages/InspectionServices"));
+const MyAccount = lazyWithPreload(() => import("./pages/MyAccount"));
+const NotFound = lazyWithPreload(() => import("./pages/NotFound"));
+const Contacts = lazyWithPreload(() => import("./pages/Contacts"));
+const ShipmentTracking = lazyWithPreload(() => import("./pages/ShipmentTracking"));
 // Demo imports removed - no longer needed
-const PerformanceDashboard = lazy(() => import("./components/PerformanceDashboard"));
-const AuditTestPage = lazy(() => import("./pages/AuditTestPage"));
-const ApiInfoDemo = lazy(() => import("./components/ApiInfoDemo"));
-const Warranty = lazy(() => import("./pages/Warranty"));
+const PerformanceDashboard = lazyWithPreload(() => import("./components/PerformanceDashboard"));
+const AuditTestPage = lazyWithPreload(() => import("./pages/AuditTestPage"));
+const ApiInfoDemo = lazyWithPreload(() => import("./components/ApiInfoDemo"));
+const Warranty = lazyWithPreload(() => import("./pages/Warranty"));
 
 // Lazy load admin components for better code splitting
-const AdminSyncDashboard = lazy(() => import("./components/AdminSyncDashboard"));
-const CookieManagementDashboard = lazy(() => import("./components/CookieManagementDashboard"));
+const AdminSyncDashboard = lazyWithPreload(() => import("./components/AdminSyncDashboard"));
+const CookieManagementDashboard = lazyWithPreload(() => import("./components/CookieManagementDashboard"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background optimize-rendering">
@@ -88,7 +90,7 @@ const AdminSyncSkeleton = () => (
 );
 
 const renderWithTransition = (
-  Component: React.LazyExoticComponent<React.ComponentType<any>>,
+  Component: LazyComponentWithPreload,
   fallback: ReactNode = <PageSkeleton />
 ) => (
   <Suspense fallback={fallback}>
@@ -128,6 +130,63 @@ const queryClient = new QueryClient({
 const App = () => {
   // Initialize resource preloading for better performance
   const { preloadRouteResources } = useResourcePreloader();
+
+  const routePrefetchers = useMemo(
+    () => ({
+      '/': () => Index.preload?.(),
+      '/catalog': () => {
+        Catalog.preload?.();
+        preloadRouteResources('catalog');
+      },
+      '/catalog/*': () => {
+        Catalog.preload?.();
+        preloadRouteResources('catalog');
+      },
+      '/car/*': () => {
+        CarDetails.preload?.();
+        CarGallery.preload?.();
+        CarInspectionReport.preload?.();
+        preloadRouteResources('car-details');
+      },
+      '/favorites': () => FavoritesPage.preload?.(),
+      '/favorites/*': () => FavoritesPage.preload?.(),
+      '/inspections': () => InspectionServices.preload?.(),
+      '/contacts': () => Contacts.preload?.(),
+      '/tracking': () => {
+        ShipmentTracking.preload?.();
+        preloadRouteResources('tracking');
+      },
+      '/warranty': () => Warranty.preload?.(),
+      '/garancioni': () => Warranty.preload?.(),
+      '/account': () => MyAccount.preload?.(),
+      '/auth': () => {
+        AuthPage.preload?.();
+        preloadRouteResources('auth');
+      },
+      '/auth/confirm': () => EmailConfirmationPage.preload?.(),
+      '/admin': () => {
+        AdminDashboard.preload?.();
+        preloadRouteResources('admin');
+      },
+      '/admin/*': () => {
+        AdminDashboard.preload?.();
+        AdminSyncDashboard.preload?.();
+        CookieManagementDashboard.preload?.();
+        preloadRouteResources('admin');
+      },
+      '/performance': () => PerformanceDashboard.preload?.(),
+      '/cookie-management': () => CookieManagementDashboard.preload?.(),
+      '/audit-test': () => AuditTestPage.preload?.(),
+      '/api-info-demo': () => ApiInfoDemo.preload?.(),
+    }),
+    [preloadRouteResources]
+  );
+
+  useNavigationPrefetch(routePrefetchers, {
+    prefetchDelay: 100,
+    warmupDelay: 300,
+    disableOnSlowConnection: true,
+  });
 
   // Initialize frame rate optimization for 120fps support
   const { supportsHighRefreshRate, targetFPS, currentFPS } = useFrameRate();
