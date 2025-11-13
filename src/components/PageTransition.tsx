@@ -1,32 +1,38 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { LazyLoadErrorBoundary } from "./LazyLoadErrorBoundary";
+import { useGlobalProgress } from "@/contexts/ProgressContext";
 
 interface PageTransitionProps {
   children: ReactNode;
 }
 
 const PageTransition = ({ children }: PageTransitionProps) => {
+  const [isReady, setIsReady] = useState(false);
+  const { completeProgress } = useGlobalProgress();
+
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => setIsReady(true));
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  useEffect(() => {
+    if (isReady) {
+      completeProgress("navigation");
+    }
+  }, [isReady, completeProgress]);
+
   return (
     <LazyLoadErrorBoundary>
-      <div 
-        className="page-transition"
+      <div
+        className={cn("page-transition", isReady && "page-transition--ready")}
         style={{
-          /* Hardware acceleration */
-          transform: 'translate3d(0, 0, 0)',
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
-          
-          /* Smooth rendering */
-          WebkitFontSmoothing: 'antialiased',
-          MozOsxFontSmoothing: 'grayscale',
-          
-          /* Compositing optimization */
-          isolation: 'isolate',
-          contain: 'layout style paint',
-          
-          /* Smooth fade-in */
-          animation: 'fadeIn 0.2s ease-out',
-          animationFillMode: 'both'
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
+          isolation: "isolate",
+          contain: "layout style paint",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
         }}
       >
         {children}

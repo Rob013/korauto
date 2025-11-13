@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { EncarsVehicleResponse } from "@/services/encarApi";
+import { translateKoreanText } from "@/utils/koreanTranslation";
 
 interface DealerInfoSectionProps {
   car: any;
@@ -79,11 +80,13 @@ export const DealerInfoSection = ({
       })()
     : null;
 
-  if (!hasValidInfo) {
+    const translatedAddress = translateKoreanText(dealerInfo.address);
+
+    if (!hasValidInfo) {
     return (
-      <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30">
+        <Card className="glass-card border border-border/50 bg-card/80 dark:bg-card/60">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+            <CardTitle className="flex items-center gap-2 text-foreground">
             <Shield className="h-5 w-5" />
             Dealer Information (Admin Only)
           </CardTitle>
@@ -98,29 +101,29 @@ export const DealerInfoSection = ({
   }
 
   return (
-    <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:border-amber-800 dark:from-amber-950/50 dark:to-amber-900/30 shadow-lg">
+      <Card className="glass-card border border-border/50 bg-card/90 shadow-lg backdrop-blur-md">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
+            <CardTitle className="flex items-center gap-2 text-foreground">
             <Shield className="h-5 w-5" />
             Dealer Information
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge
-              variant="secondary"
-              className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100"
+                variant="outline"
+                className="text-xs font-medium"
             >
               Admin Only
             </Badge>
             {isLiveLoading ? (
-              <span className="flex items-center gap-1 text-xs text-amber-900 dark:text-amber-200">
-                <Loader2 className="h-3 w-3 animate-spin" />
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin text-primary" />
                 Updating
               </span>
             ) : liveContact ? (
               <Badge
-                variant="outline"
-                className="border-amber-300 text-amber-900 dark:border-amber-700 dark:text-amber-100"
+                  variant="secondary"
+                  className="text-xs font-semibold"
               >
                 Encars Live
               </Badge>
@@ -130,13 +133,13 @@ export const DealerInfoSection = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Dealer Name */}
-        {dealerInfo.name && dealerInfo.name !== NO_INFO_AVAILABLE && (
-          <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-900/40 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-md">
-              <User className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+          {dealerInfo.name && dealerInfo.name !== NO_INFO_AVAILABLE && (
+            <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
+              <div className="p-2 bg-primary/10 rounded-md">
+                <User className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                <p className="text-xs font-medium text-muted-foreground tracking-wide uppercase">
                 Dealer Name
               </p>
               <p className="text-sm font-semibold text-foreground break-words">
@@ -153,12 +156,12 @@ export const DealerInfoSection = ({
 
         {/* Firm Name */}
         {dealerInfo.firmName && (
-          <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-900/40 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-md">
-              <Building2 className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+            <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
+              <div className="p-2 bg-primary/10 rounded-md">
+                <Building2 className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Company
               </p>
               <p className="text-sm font-semibold text-foreground break-words">
@@ -169,31 +172,38 @@ export const DealerInfoSection = ({
         )}
 
         {/* Address */}
-        <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-900/40 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-          <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-md">
-            <MapPin className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+          <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
+            <div className="p-2 bg-primary/10 rounded-md">
+              <MapPin className="h-4 w-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-muted-foreground mb-0.5">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Address
             </p>
-            <p className="text-sm font-semibold text-foreground break-words flex items-center gap-2">
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold text-foreground break-words flex items-center gap-2">
               {isLiveLoading && (
-                <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
               )}
-              {dealerInfo.address}
-            </p>
+                {translatedAddress || dealerInfo.address}
+              </p>
+                {translatedAddress && translatedAddress !== dealerInfo.address && (
+                  <p className="text-xs text-muted-foreground break-words">
+                    {dealerInfo.address}
+                  </p>
+                )}
+              </div>
           </div>
         </div>
 
         {/* Phone */}
         {dealerInfo.phone && (
-          <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-900/40 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-md">
-              <Phone className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+            <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
+              <div className="p-2 bg-primary/10 rounded-md">
+                <Phone className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Phone
               </p>
               <p className="text-sm font-semibold text-foreground">
@@ -205,23 +215,23 @@ export const DealerInfoSection = ({
 
         {/* User Type Badge */}
         {dealerInfo.userType && (
-          <div className="flex items-center justify-between pt-2 border-t border-amber-200/50 dark:border-amber-800/50">
-            <p className="text-xs text-muted-foreground">User Type</p>
-            <Badge variant="outline" className="text-xs">
+            <div className="flex items-center justify-between pt-2 border-t border-border/40">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">User Type</p>
+              <Badge variant="outline" className="text-xs font-medium">
               {dealerInfo.userType}
             </Badge>
           </div>
         )}
 
-        <div className="pt-2 border-t border-amber-200/50 dark:border-amber-800/50 space-y-2">
+          <div className="pt-2 border-t border-border/40 space-y-2">
           {error && (
-            <div className="text-[11px] text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1">
+              <div className="text-[11px] text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1">
               Failed to update from Encars API: {error}
             </div>
           )}
           {liveUpdatedLabel && !error && (
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-amber-500" />
+                <Sparkles className="h-3 w-3 text-primary" />
               Updated from Encars API at {liveUpdatedLabel}
             </p>
           )}

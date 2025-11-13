@@ -35,6 +35,7 @@ import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
 import { resolveFuelFromSources } from "@/utils/fuel";
 import { fallbackCars } from "@/data/fallbackData";
+import { useAnimatedCount } from "@/hooks/useAnimatedCount";
 interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
@@ -109,7 +110,7 @@ const EncarCatalog = ({
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
-  const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
+    const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
 
@@ -912,18 +913,34 @@ const EncarCatalog = ({
   }, []); // Only run on mount
 
   // Live source totals (Encar/KBC) based on current filters
-  useEffect(() => {
+    const displayableGridCount = useMemo(() => {
+      if (!Array.isArray(gridCars)) {
+        return 0;
+      }
+      return gridCars.filter((c: any) => c?.lots?.[0]?.buy_now && c.lots[0].buy_now > 0).length;
+    }, [gridCars]);
+
+    const effectiveTotalCount = useMemo(() => {
+      const base = Number(totalCount || 0);
+      return Number.isFinite(base) ? base + displayableGridCount : displayableGridCount;
+    }, [totalCount, displayableGridCount]);
+
+    const animatedTotalCount = useAnimatedCount(effectiveTotalCount, {
+      duration: loading ? 900 : 600,
+    });
+
+    useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const { encar, kbc, all } = await fetchSourceCounts(filters);
         // Augment total with gridCars length when present
-        const extra = Array.isArray(gridCars) ? gridCars.filter((c: any) => c?.lots?.[0]?.buy_now && c.lots[0].buy_now > 0).length : 0;
+          const extra = displayableGridCount;
         if (!cancelled) setSourceCounts({ encar, kbc, all: (all || 0) + extra });
       } catch {}
     })();
-    return () => { cancelled = true; };
-  }, [filters, gridCars?.length]);
+      return () => { cancelled = true; };
+    }, [filters, displayableGridCount]);
 
   // Kick off fetching AuctionsAPI grid data once on mount (small number of pages for responsiveness)
   useEffect(() => {
@@ -1327,7 +1344,7 @@ const EncarCatalog = ({
                   </span>
                 ) : (
                   <>
-                    <span className="font-semibold text-foreground">{(Number(totalCount || 0) + (Array.isArray(gridCars) ? gridCars.filter((c:any)=>c?.lots?.[0]?.buy_now && c.lots[0].buy_now > 0).length : 0)).toLocaleString()}</span> vetura të disponueshme
+                  <span className="font-semibold text-foreground">{animatedTotalCount.toLocaleString()}</span> vetura të disponueshme
                   </>
                 )}
               </p>

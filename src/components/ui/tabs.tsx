@@ -1,9 +1,52 @@
-import * as React from "react"
-import * as TabsPrimitive from "@radix-ui/react-tabs"
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { useGlobalProgress } from "@/contexts/ProgressContext";
 
-const Tabs = TabsPrimitive.Root
+const Tabs = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>
+>(({ onValueChange, id, ...props }, ref) => {
+  const [isPending, startTransition] = React.useTransition();
+  const { startProgress, completeProgress } = useGlobalProgress();
+  const generatedId = React.useId();
+  const tabsProgressKey = React.useMemo(
+    () => `tabs-${id ?? generatedId}`,
+    [id, generatedId],
+  );
+
+  React.useEffect(() => {
+    if (!isPending) {
+      completeProgress(tabsProgressKey);
+    }
+  }, [isPending, completeProgress, tabsProgressKey]);
+
+  const handleValueChange = React.useCallback(
+    (value: string) => {
+      startProgress({
+        key: tabsProgressKey,
+        autoCompleteMs: 900,
+      });
+
+      startTransition(() => {
+        onValueChange?.(value);
+      });
+    },
+    [onValueChange, startProgress, tabsProgressKey],
+  );
+
+  return (
+    <TabsPrimitive.Root
+      ref={ref}
+      id={id}
+      onValueChange={handleValueChange}
+      data-tabs-pending={isPending ? "true" : "false"}
+      {...props}
+    />
+  );
+});
+Tabs.displayName = TabsPrimitive.Root.displayName;
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
@@ -42,8 +85,8 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 motion-reduce:transition-none data-[state=inactive]:pointer-events-none data-[state=inactive]:opacity-0 data-[state=inactive]:absolute data-[state=inactive]:-z-10 data-[state=inactive]:h-0 data-[state=inactive]:overflow-hidden data-[state=active]:opacity-100 data-[state=active]:relative data-[state=active]:z-0 tabs-content-animate",
+      className,
     )}
     {...props}
   />

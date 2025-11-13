@@ -11,6 +11,7 @@ import { getStatusBadgeConfig } from "@/utils/statusBadgeUtils";
 import { formatModelName } from "@/utils/modelNameFormatter";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
 import { localizeFuel } from "@/utils/fuel";
+import { cn } from "@/lib/utils";
 
 interface LazyCarCardProps {
   id: string;
@@ -479,156 +480,145 @@ const LazyCarCard = memo(({
   }
 
   // List mode layout
-  if (viewMode === 'list') {
-    return (
-      <div 
-        ref={cardRef}
-        className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-lg transition-all duration-300"
-        onClick={handleCardClick}
-        style={{
-          willChange: 'transform, opacity',
-          transform: 'translate3d(0, 0, 0)',
-          backfaceVisibility: 'hidden',
-          perspective: 1000,
-          WebkitTapHighlightColor: 'transparent'
-        }}
-      >
-        <div className="flex flex-row gap-1.5 p-1.5">
-          {/* Image Section - Very compact in list mode */}
-          <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded w-20 h-16 sm:w-24 sm:h-20">
-            {(sourceBadgeLabel || isClean || hasAccident) && (
-              <div className={badgeStyles.container}>
-                {sourceBadgeLabel && (
-                  <Badge variant="outline" className={`${badgeStyles.source}`}>
-                    {sourceBadgeLabel}
-                  </Badge>
-                )}
-                {isClean && (
-                  <div className={badgeStyles.clean}>
-                    <ShieldCheck className={isListView ? "h-2 w-2" : "h-3 w-3"} />
-                    <span>Clean</span>
-                  </div>
-                )}
-                {hasAccident && (
-                  <div className={badgeStyles.accident}>
-                    <AlertTriangle className={isListView ? "h-2 w-2" : "h-3 w-3"} />
-                    <span>Accident</span>
-                  </div>
-                )}
-              </div>
-            )}
-            {(image || (images && images.length > 0)) ? (
-              <img 
-                src={image || images?.[0]} 
-                alt={`${year} ${make} ${model}`} 
-                className={`w-full h-full object-cover transition-all duration-700 ease-out ${
-                  imageLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
-                onLoad={() => setImageLoaded(true)}
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg";
-                  setImageLoaded(true);
-                }}
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <Car className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
-            {lot && (
-              <div className="absolute bottom-0.5 right-0.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-1 py-0.5 rounded text-[8px] font-bold shadow-md backdrop-blur-sm">
-                {lot}
-              </div>
-            )}
-          </div>
-          
-          {/* Content Section - Ultra compact in list mode */}
-          <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5">
-            <div>
-              <h3 className="text-[11px] sm:text-xs font-bold text-foreground line-clamp-1 leading-tight">
-                {make} {formatModelName(model, make)}
-              </h3>
-              {title && title !== `${make} ${model}` && (
-                <p className="text-[9px] text-muted-foreground line-clamp-1 mb-0.5">{title}</p>
-              )}
-              
-              {/* Vehicle Info - Horizontal in list mode */}
-              <div className="flex flex-wrap gap-x-1.5 gap-y-0 text-[9px] mb-0.5">
-                {year && (
-                  <div className="flex items-center gap-0.5">
-                    <Car className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                    <span className="text-foreground">{year}</span>
-                  </div>
-                )}
-                {mileage && (
-                  <div className="flex items-center gap-0.5">
-                    <Gauge className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                    <span className="font-medium text-foreground">{mileage}</span>
-                  </div>
-                )}
-                  {fuelDisplay && (
-                  <div className="flex items-center gap-0.5">
-                    <Fuel className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                      <span className="text-foreground">{fuelDisplay}</span>
-                  </div>
-                )}
-                {transmission && (
-                  <div className="flex items-center gap-0.5">
-                    <Settings className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                    <span className="capitalize text-foreground">{transmission}</span>
-                  </div>
-                )}
-              </div>
-              
-            </div>
-            
-            {/* Pricing Section */}
-            <div className="flex items-end justify-between gap-1.5">
-              <div>
-                <div className="text-sm sm:text-base font-bold text-primary leading-tight">
-                  €{price.toLocaleString()}
-                </div>
-                <p className="text-[8px] text-muted-foreground leading-tight">
-                  port Durrës
-                </p>
-              </div>
-              <span className="text-[9px] text-muted-foreground flex-shrink-0 self-end">
-                KORAUTO
-              </span>
-            </div>
-          </div>
-          
-          {/* Favorite Button - Positioned in list mode */}
-          {user && (
-            <button
-              onClick={handleFavoriteToggle}
-              className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 backdrop-blur-sm rounded transition-all duration-200 z-10"
-            >
-              <Heart className={`h-2.5 w-2.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
-            </button>
+    if (viewMode === "list") {
+      return (
+        <div
+          ref={cardRef}
+          className={cn(
+            "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg soft-interaction",
+            "transition-transform duration-200"
           )}
+          onClick={handleCardClick}
+        >
+          <div className="flex flex-row gap-2 p-2">
+            <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-md w-20 h-16 sm:w-24 sm:h-20">
+              {(sourceBadgeLabel || isClean || hasAccident) && (
+                <div className={badgeStyles.container}>
+                  {sourceBadgeLabel && (
+                    <Badge variant="outline" className={badgeStyles.source}>
+                      {sourceBadgeLabel}
+                    </Badge>
+                  )}
+                  {isClean && (
+                    <div className={badgeStyles.clean}>
+                      <ShieldCheck className="h-2 w-2" />
+                      <span>Clean</span>
+                    </div>
+                  )}
+                  {hasAccident && (
+                    <div className={badgeStyles.accident}>
+                      <AlertTriangle className="h-2 w-2" />
+                      <span>Accident</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {image || (images && images.length > 0) ? (
+                <img
+                  src={image || images?.[0]}
+                  alt={`${year} ${make} ${model}`}
+                  className={cn(
+                    "h-full w-full object-cover transition-opacity duration-300 ease-out",
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  )}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.svg";
+                    setImageLoaded(true);
+                  }}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-muted">
+                  <Car className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )}
+              {lot && (
+                <div className="absolute bottom-1 right-1 rounded text-[8px] font-bold bg-gradient-to-r from-primary to-primary/80 px-1 py-0.5 text-primary-foreground shadow-md backdrop-blur-sm">
+                  {lot}
+                </div>
+              )}
+              {user && (
+                <button
+                  onClick={handleFavoriteToggle}
+                  className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white shadow transition-all duration-200 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart
+                    className={cn(
+                      "h-3 w-3",
+                      isFavorite ? "fill-red-500 text-red-500" : "text-white"
+                    )}
+                  />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-1 flex-col justify-between gap-1 py-1">
+              <div className="min-w-0 space-y-1">
+                <h3 className="text-xs font-semibold leading-tight text-foreground line-clamp-1">
+                  {make} {formatModelName(model, make)}
+                </h3>
+                {title && title !== `${make} ${model}` && (
+                  <p className="text-[11px] text-muted-foreground line-clamp-1">{title}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                  {year && (
+                    <span className="flex items-center gap-1 text-foreground">
+                      <Car className="h-3 w-3 text-muted-foreground" />
+                      {year}
+                    </span>
+                  )}
+                  {mileage && (
+                    <span className="flex items-center gap-1 text-foreground">
+                      <Gauge className="h-3 w-3 text-muted-foreground" />
+                      {mileage}
+                    </span>
+                  )}
+                  {fuelDisplay && (
+                    <span className="flex items-center gap-1 text-foreground">
+                      <Fuel className="h-3 w-3 text-muted-foreground" />
+                      {fuelDisplay}
+                    </span>
+                  )}
+                  {transmission && (
+                    <span className="flex items-center gap-1 text-foreground">
+                      <Settings className="h-3 w-3 text-muted-foreground" />
+                      {transmission}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-end justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-primary">
+                    €{price.toLocaleString()}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    port Durrës
+                  </p>
+                </div>
+                <span className="text-[10px] font-medium text-muted-foreground">KORAUTO</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   // Grid mode layout (default)
-  return (
-    <div 
-      ref={cardRef}
-      className="glass-card overflow-hidden cursor-pointer group touch-manipulation rounded-xl transition-all duration-500 mobile-card-compact compact-modern-card car-card-container"
-      onClick={handleCardClick}
-      style={{
-        willChange: 'transform, opacity',
-        transform: 'translate3d(0, 0, 0)',
-        backfaceVisibility: 'hidden',
-        perspective: 1000,
-        WebkitTapHighlightColor: 'transparent'
-      }}
-    >
-      {/* Image Section - Standard 4:3 aspect ratio like encar.com */}
-  <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
+    return (
+      <div
+        ref={cardRef}
+        className={cn(
+          "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-xl soft-interaction",
+          "mobile-card-compact compact-modern-card car-card-container"
+        )}
+        onClick={handleCardClick}
+      >
+        <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
     {(sourceBadgeLabel || isClean || hasAccident) && (
       <div className={badgeStyles.container}>
         {sourceBadgeLabel && (
@@ -655,20 +645,16 @@ const LazyCarCard = memo(({
           <img 
             src={image || images?.[0]} 
             alt={`${year} ${make} ${model}`} 
-            className={`w-full h-full object-cover transition-all duration-700 ease-out ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+              className={cn(
+                "h-full w-full object-cover transition-opacity duration-300 ease-out",
+                imageLoaded ? "opacity-100" : "opacity-0"
+              )}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               e.currentTarget.src = "/placeholder.svg";
               setImageLoaded(true);
             }}
             loading="lazy"
-            style={{
-              willChange: 'transform, opacity',
-              transform: 'translate3d(0, 0, 0)',
-              backfaceVisibility: 'hidden'
-            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
@@ -687,7 +673,8 @@ const LazyCarCard = memo(({
         {user && (
           <button
             onClick={handleFavoriteToggle}
-            className="absolute top-1 left-1 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 transition-all duration-200 z-10"
+              className="absolute top-2 left-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm opacity-0 transition-opacity duration-200 group-hover/card:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
@@ -740,7 +727,7 @@ const LazyCarCard = memo(({
               <span className="card-price text-lg font-bold text-primary">
                 €{price.toLocaleString()}
               </span>
-              <span className="text-xs text-muted-foreground text-right flex-shrink-0">
+                <span className="text-xs font-medium text-muted-foreground text-right flex-shrink-0">
                 KORAUTO
               </span>
             </div>
