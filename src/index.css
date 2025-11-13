@@ -464,7 +464,7 @@ html.theme-transitioning *::after {
   #smartsupp-widget-container,
   .smartsupp-widget-container {
     right: 1rem !important;
-    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
