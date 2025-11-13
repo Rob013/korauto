@@ -88,7 +88,6 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { DealerInfoSection } from "@/components/DealerInfoSection";
 import { fallbackCars } from "@/data/fallbackData";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
@@ -112,6 +111,12 @@ import "@/styles/carDetailsOptimizations.css";
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
     default: module.ImageZoom,
+  })),
+);
+
+const DealerInfoSection = lazy(() =>
+  import("@/components/DealerInfoSection").then((module) => ({
+    default: module.DealerInfoSection,
   })),
 );
 
@@ -1310,7 +1315,6 @@ const CarDetails = memo(() => {
     useState<EncarsVehicleResponse["contact"] | null>(null);
   const [liveDealerLoading, setLiveDealerLoading] = useState(false);
   const [liveDealerError, setLiveDealerError] = useState<string | null>(null);
-  const [liveDealerFetchedAt, setLiveDealerFetchedAt] = useState<string | null>(null);
   const lastFetchedLotRef = useRef<string | null>(null);
   const liveDealerAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -1364,7 +1368,6 @@ const CarDetails = memo(() => {
     liveDealerAbortRef.current?.abort();
     liveDealerAbortRef.current = null;
     lastFetchedLotRef.current = null;
-    setLiveDealerFetchedAt(null);
     setLiveDealerError(null);
     setLiveDealerContact(null);
     cacheHydratedRef.current = false;
@@ -1395,7 +1398,6 @@ const CarDetails = memo(() => {
         const contact = vehicle?.contact ?? null;
         setLiveDealerContact(contact);
         lastFetchedLotRef.current = lot;
-        setLiveDealerFetchedAt(new Date().toISOString());
         setLiveDealerError(null);
       })
       .catch((error) => {
@@ -3985,15 +3987,28 @@ const CarDetails = memo(() => {
 
                     {/* Dealer Information - Admin Only */}
                     {!adminLoading && isAdmin && (
+                      <Suspense
+                        fallback={
+                          <div className="mt-6">
+                            <Card className="glass-card border border-dashed border-border/60 bg-card/40">
+                              <CardContent className="flex flex-col gap-3 p-4">
+                                <div className="h-4 w-40 animate-pulse rounded bg-muted/50" />
+                                <div className="h-3 w-full animate-pulse rounded bg-muted/40" />
+                                <div className="h-3 w-3/4 animate-pulse rounded bg-muted/40" />
+                              </CardContent>
+                            </Card>
+                          </div>
+                        }
+                      >
                         <div className="mt-6">
                           <DealerInfoSection
                             car={car}
                             liveContact={liveDealerContact}
                             isLiveLoading={liveDealerLoading}
-                            liveFetchedAt={liveDealerFetchedAt}
                             error={liveDealerError}
                           />
                         </div>
+                      </Suspense>
                     )}
 
                     {/* Comprehensive Inspection Report */}
@@ -4227,12 +4242,13 @@ const CarDetails = memo(() => {
                 </div>
               </div>
               <Button
-                variant="outline"
                 size="lg"
-                className="h-12 w-12 flex-shrink-0 rounded-xl border-primary/40 text-primary"
+                aria-label="Thirr Korauto"
+                className="flex h-12 min-w-[140px] flex-shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-left text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-colors hover:bg-primary/90 focus-visible:ring-offset-background dark:shadow-primary/20"
                 onClick={handlePhoneCall}
               >
                 <Phone className="h-5 w-5" />
+                <span className="leading-tight">+383 48 181 116</span>
               </Button>
               <Button
                 size="lg"

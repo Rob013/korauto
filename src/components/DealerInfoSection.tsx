@@ -1,14 +1,7 @@
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  MapPin,
-  Building2,
-  User,
-  Phone,
-  Shield,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
+import { MapPin, Building2, User, Phone, Shield, Loader2 } from "lucide-react";
 import type { EncarsVehicleResponse } from "@/services/encarApi";
 import { translateKoreanText } from "@/utils/koreanTranslation";
 
@@ -16,7 +9,6 @@ interface DealerInfoSectionProps {
   car: any;
   liveContact?: EncarsVehicleResponse["contact"] | null;
   isLiveLoading?: boolean;
-  liveFetchedAt?: string | null;
   error?: string | null;
 }
 
@@ -24,11 +16,10 @@ interface DealerInfoSectionProps {
  * Dealer information section - Only visible to administrators
  * Displays dealer contact and location details from API
  */
-export const DealerInfoSection = ({
+const DealerInfoSectionComponent = ({
   car,
   liveContact,
   isLiveLoading = false,
-  liveFetchedAt,
   error,
 }: DealerInfoSectionProps) => {
   const contact = liveContact ?? car?.encarVehicle?.contact ?? null;
@@ -67,26 +58,15 @@ export const DealerInfoSection = ({
     dealerInfo.firmName ||
     dealerInfo.phone;
 
-  const liveUpdatedLabel = liveFetchedAt
-    ? (() => {
-        try {
-          const parsed = new Date(liveFetchedAt);
-          return Number.isNaN(parsed.getTime())
-            ? null
-            : parsed.toLocaleTimeString();
-        } catch {
-          return null;
-        }
-      })()
-    : null;
+  const { translatedText: translatedAddress } = translateKoreanText(
+    dealerInfo.address,
+  );
 
-    const translatedAddress = translateKoreanText(dealerInfo.address);
-
-    if (!hasValidInfo) {
+  if (!hasValidInfo) {
     return (
-        <Card className="glass-card border border-border/50 bg-card/80 dark:bg-card/60">
+      <Card className="glass-card border border-border/50 bg-card/80 dark:bg-card/60">
         <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <Shield className="h-5 w-5" />
             Dealer Information (Admin Only)
           </CardTitle>
@@ -101,30 +81,24 @@ export const DealerInfoSection = ({
   }
 
   return (
-      <Card className="glass-card border border-border/50 bg-card/90 shadow-lg backdrop-blur-md">
+    <Card className="glass-card border border-border/50 bg-card/90 shadow-lg backdrop-blur-md">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-foreground">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <Shield className="h-5 w-5" />
             Dealer Information
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Badge
-                variant="outline"
-                className="text-xs font-medium"
-            >
+            <Badge variant="outline" className="text-xs font-medium">
               Admin Only
             </Badge>
             {isLiveLoading ? (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin text-primary" />
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin text-primary" />
                 Updating
               </span>
             ) : liveContact ? (
-              <Badge
-                  variant="secondary"
-                  className="text-xs font-semibold"
-              >
+              <Badge variant="secondary" className="text-xs font-semibold">
                 Encars Live
               </Badge>
             ) : null}
@@ -132,21 +106,20 @@ export const DealerInfoSection = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Dealer Name */}
-          {dealerInfo.name && dealerInfo.name !== NO_INFO_AVAILABLE && (
-            <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
-              <div className="p-2 bg-primary/10 rounded-md">
-                <User className="h-4 w-4 text-primary" />
+        {dealerInfo.name && dealerInfo.name !== NO_INFO_AVAILABLE && (
+          <div className="flex items-start gap-4 rounded-lg border border-border/40 bg-background/60 p-3 dark:bg-background/40">
+            <div className="rounded-md bg-primary/10 p-2">
+              <User className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground tracking-wide uppercase">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Dealer Name
               </p>
-              <p className="text-sm font-semibold text-foreground break-words">
+              <p className="break-words text-sm font-semibold text-foreground">
                 {dealerInfo.name}
               </p>
               {dealerInfo.userId && (
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="mt-1 text-xs text-muted-foreground">
                   ID: {dealerInfo.userId}
                 </p>
               )}
@@ -154,56 +127,53 @@ export const DealerInfoSection = ({
           </div>
         )}
 
-        {/* Firm Name */}
         {dealerInfo.firmName && (
-            <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
-              <div className="p-2 bg-primary/10 rounded-md">
-                <Building2 className="h-4 w-4 text-primary" />
+          <div className="flex items-start gap-4 rounded-lg border border-border/40 bg-background/60 p-3 dark:bg-background/40">
+            <div className="rounded-md bg-primary/10 p-2">
+              <Building2 className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Company
               </p>
-              <p className="text-sm font-semibold text-foreground break-words">
+              <p className="break-words text-sm font-semibold text-foreground">
                 {dealerInfo.firmName}
               </p>
             </div>
           </div>
         )}
 
-        {/* Address */}
-          <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
-            <div className="p-2 bg-primary/10 rounded-md">
-              <MapPin className="h-4 w-4 text-primary" />
+        <div className="flex items-start gap-4 rounded-lg border border-border/40 bg-background/60 p-3 dark:bg-background/40">
+          <div className="rounded-md bg-primary/10 p-2">
+            <MapPin className="h-4 w-4 text-primary" />
           </div>
-          <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Address
             </p>
-              <div className="space-y-1.5">
-                <p className="text-sm font-semibold text-foreground break-words flex items-center gap-2">
-              {isLiveLoading && (
+            <div className="space-y-1.5">
+              <p className="flex items-center gap-2 break-words text-sm font-semibold text-foreground">
+                {isLiveLoading && (
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              )}
+                )}
                 {translatedAddress || dealerInfo.address}
               </p>
-                {translatedAddress && translatedAddress !== dealerInfo.address && (
-                  <p className="text-xs text-muted-foreground break-words">
-                    {dealerInfo.address}
-                  </p>
-                )}
-              </div>
+              {translatedAddress && translatedAddress !== dealerInfo.address && (
+                <p className="break-words text-xs text-muted-foreground">
+                  {dealerInfo.address}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Phone */}
         {dealerInfo.phone && (
-            <div className="flex items-start gap-4 p-3 bg-background/60 dark:bg-background/40 rounded-lg border border-border/40">
-              <div className="p-2 bg-primary/10 rounded-md">
-                <Phone className="h-4 w-4 text-primary" />
+          <div className="flex items-start gap-4 rounded-lg border border-border/40 bg-background/60 p-3 dark:bg-background/40">
+            <div className="rounded-md bg-primary/10 p-2">
+              <Phone className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Phone
               </p>
               <p className="text-sm font-semibold text-foreground">
@@ -213,34 +183,27 @@ export const DealerInfoSection = ({
           </div>
         )}
 
-        {/* User Type Badge */}
         {dealerInfo.userType && (
-            <div className="flex items-center justify-between pt-2 border-t border-border/40">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">User Type</p>
-              <Badge variant="outline" className="text-xs font-medium">
+          <div className="flex items-center justify-between border-t border-border/40 pt-2">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">User Type</p>
+            <Badge variant="outline" className="text-xs font-medium">
               {dealerInfo.userType}
             </Badge>
           </div>
         )}
 
-          <div className="pt-2 border-t border-border/40 space-y-2">
-          {error && (
-              <div className="text-[11px] text-destructive bg-destructive/10 border border-destructive/30 rounded-md px-2 py-1">
+        {error && (
+          <div className="space-y-2 border-t border-border/40 pt-2">
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
               Failed to update from Encars API: {error}
             </div>
-          )}
-          {liveUpdatedLabel && !error && (
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-primary" />
-              Updated from Encars API at {liveUpdatedLabel}
-            </p>
-          )}
-          <p className="text-[10px] text-muted-foreground italic">
-            ℹ️ This information is visible only to administrators and is
-            automatically updated from the Encars API when available.
-          </p>
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 };
+
+export const DealerInfoSection = memo(DealerInfoSectionComponent);
+
+DealerInfoSection.displayName = "DealerInfoSection";
