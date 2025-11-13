@@ -43,6 +43,7 @@ import {
   generateYearPresets,
   isStrictFilterMode
 } from '@/utils/catalog-filter';
+import { mergeFilterUpdates, areFiltersEqual } from '@/utils/filterState';
 import { sortBrandsWithPriority } from '@/utils/brandOrdering';
 import { formatModelName } from '@/utils/modelNameFormatter';
 
@@ -176,23 +177,60 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Track if strict filtering mode is enabled - using utility
   const isStrictMode = useMemo(() => isStrictFilterMode(filters), [filters]);
 
+  const applyFiltersIfChanged = useCallback((updates: Partial<APIFilters>) => {
+    const nextFilters = mergeFilterUpdates(filters, updates);
+
+    if (areFiltersEqual(filters, nextFilters)) {
+      return false;
+    }
+
+    startLoadingWithDelay();
+    onFiltersChange(nextFilters);
+    return true;
+  }, [filters, onFiltersChange, startLoadingWithDelay]);
+
+  useEffect(() => {
+    stopLoading();
+  }, [filters, stopLoading]);
+
+  useEffect(() => () => stopLoading(), [stopLoading]);
+
   const updateFilter = useCallback((key: string, value: string) => {
     const actualValue = value === 'all' || value === 'any' ? undefined : value;
 
-    // Instant response - no loading delays
     if (key === 'manufacturer_id') {
-      // Reset model, grade, and engine when manufacturer changes
-      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined, engine_spec: undefined });
-      onManufacturerChange?.(actualValue || '');
-    } else if (key === 'model_id') {
-      // Reset grade and engine when model changes
-      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined, engine_spec: undefined });
-      onModelChange?.(actualValue || '');
-    } else {
-      const updatedFilters = { ...filters, [key]: actualValue };
-      onFiltersChange(updatedFilters);
+      const changed = applyFiltersIfChanged({
+        manufacturer_id: actualValue,
+        model_id: undefined,
+        generation_id: undefined,
+        grade_iaai: undefined,
+        engine_spec: undefined,
+        trim_level: undefined
+      });
+
+      if (changed) {
+        onManufacturerChange?.(actualValue || '');
+      }
+      return;
     }
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
+
+    if (key === 'model_id') {
+      const changed = applyFiltersIfChanged({
+        model_id: actualValue,
+        generation_id: undefined,
+        grade_iaai: undefined,
+        engine_spec: undefined,
+        trim_level: undefined
+      });
+
+      if (changed) {
+        onModelChange?.(actualValue || '');
+      }
+      return;
+    }
+
+    applyFiltersIfChanged({ [key]: actualValue } as Partial<APIFilters>);
+  }, [applyFiltersIfChanged, onManufacturerChange, onModelChange]);
 
   const handleSearchClick = useCallback(() => {
     if (onSearchCars) {
@@ -209,13 +247,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [onSearchCars, isHomepage, filters]);
 
   const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
-    const updatedFilters = {
-      ...filters,
+    applyFiltersIfChanged({
       from_year: preset.from.toString(),
       to_year: preset.to.toString()
-    };
-    onFiltersChange(updatedFilters);
-  }, [filters, onFiltersChange]);
+    });
+  }, [applyFiltersIfChanged]);
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const years = useMemo(() => generateYearRange(currentYear), [currentYear]);
@@ -469,26 +505,18 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     };
 
     const applyYearRange = () => {
-      const nextFilters: APIFilters = { ...filters };
-      if (pendingYearRange.from) {
-        nextFilters.from_year = pendingYearRange.from;
-      } else {
-        delete nextFilters.from_year;
-      }
-      if (pendingYearRange.to) {
-        nextFilters.to_year = pendingYearRange.to;
-      } else {
-        delete nextFilters.to_year;
-      }
-      onFiltersChange(nextFilters);
+      applyFiltersIfChanged({
+        from_year: pendingYearRange.from || undefined,
+        to_year: pendingYearRange.to || undefined
+      });
       closeDrawer();
     };
 
     const clearYearRange = () => {
-      const nextFilters: APIFilters = { ...filters };
-      delete nextFilters.from_year;
-      delete nextFilters.to_year;
-      onFiltersChange(nextFilters);
+      applyFiltersIfChanged({
+        from_year: undefined,
+        to_year: undefined
+      });
       setPendingYearRange({ from: '', to: '' });
       closeDrawer();
     };
@@ -1457,8 +1485,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         variant="outline"
                         size="sm"
                         className="h-7 px-2 text-xs text-muted-foreground"
-                        onClick={() => onFiltersChange({
-                          ...filters,
+                        onClick={() => applyFiltersIfChanged({
                           from_year: undefined,
                           to_year: undefined
                         })}

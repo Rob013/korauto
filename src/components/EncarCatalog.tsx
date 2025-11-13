@@ -21,6 +21,7 @@ import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
 import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce, extractUniqueEngineSpecs, matchesEngineFilter } from "@/utils/catalog-filter";
+import { areFiltersEqual } from "@/utils/filterState";
 import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -484,32 +485,35 @@ const EncarCatalog = ({
 
   // Apply filters instantly without debouncing
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
-      // Reset sorting to neutral whenever filters change
+      if (areFiltersEqual(filters, newFilters)) {
+        return;
+      }
+
       setHasUserSelectedSort(false);
       setSortBy("");
 
-      // Update UI immediately for instant response
       setFilters(newFilters);
-
-      // Reset "Show All" mode when filters change
       setShowAllCars(false);
       setAllCarsData([]);
-
-      // Clear global sorting when filters change
       clearGlobalSorting();
 
-      // Apply filters immediately - no debouncing - fetch from ALL sources
       const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
-      fetchCars(1, filtersWithPagination, true);
+
+      setIsFilterLoading(true);
+      try {
+        await fetchCars(1, filtersWithPagination, true);
+      } catch (error) {
+        console.error('❌ Failed to apply filters:', error);
+      } finally {
+        setIsFilterLoading(false);
+      }
+
       setCurrentPage(1);
 
-      // Update URL
       const searchParams = filtersToURLParams(newFilters);
       searchParams.set('page', '1');
       setSearchParams(searchParams);
-      
-      setIsFilterLoading(false);
-    }, [fetchCars, setSearchParams, clearGlobalSorting]);
+    }, [filters, setHasUserSelectedSort, setSortBy, setFilters, setShowAllCars, setAllCarsData, clearGlobalSorting, addPaginationToFilters, setIsFilterLoading, fetchCars, setCurrentPage, filtersToURLParams, setSearchParams]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
