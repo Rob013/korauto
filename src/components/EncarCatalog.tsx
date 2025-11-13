@@ -59,19 +59,20 @@ const EncarCatalog = ({
     setTotalCount,
     // ✅ Import setTotalCount for optimized filtering
     hasMorePages,
-    fetchCars,
-    fetchAllCars,
-    // ✅ Import new function for global sorting
-    filters,
-    setFilters,
-    fetchManufacturers,
-    fetchModels,
-    fetchGenerations,
-    fetchAllGenerationsForManufacturer,
-    // ✅ Import new function
-    fetchFilterCounts,
-    fetchGrades,
-    fetchTrimLevels,
+      fetchCars,
+      fetchAllCars,
+      // ✅ Import new function for global sorting
+      filters,
+      setFilters,
+      fetchManufacturers,
+      fetchModels,
+      fetchGenerations,
+      fetchAllGenerationsForManufacturer,
+      // ✅ Import new function
+      fetchFilterCounts,
+      fetchGrades,
+      fetchTrimLevels,
+      fetchEngineVariants,
     loadMore,
     refreshInventory,
     clearCarsCache
@@ -144,14 +145,16 @@ const EncarCatalog = ({
   const scrollLockRef = useRef({
     body: '',
     html: '',
-    touch: ''
+    touch: '',
+    htmlTouch: ''
   });
 
   useEffect(() => {
     scrollLockRef.current = {
       body: document.body.style.overflow,
       html: document.documentElement.style.overflow,
-      touch: document.body.style.touchAction
+      touch: document.body.style.touchAction,
+      htmlTouch: document.documentElement.style.touchAction
     };
   }, []);
 
@@ -160,30 +163,34 @@ const EncarCatalog = ({
     if (!isMobile) setShowFilters(true);else setShowFilters(false);
   }, [isMobile]);
 
-  useEffect(() => {
-    if (!isMobile) {
-      document.body.style.overflow = scrollLockRef.current.body;
-      document.documentElement.style.overflow = scrollLockRef.current.html;
-      document.body.style.touchAction = scrollLockRef.current.touch;
-      return;
-    }
+    useEffect(() => {
+      if (!isMobile) {
+        document.body.style.overflow = scrollLockRef.current.body;
+        document.documentElement.style.overflow = scrollLockRef.current.html;
+        document.body.style.touchAction = scrollLockRef.current.touch;
+        document.documentElement.style.touchAction = scrollLockRef.current.htmlTouch;
+        return;
+      }
 
-    if (showFilters) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-    } else {
-      document.body.style.overflow = scrollLockRef.current.body;
-      document.documentElement.style.overflow = scrollLockRef.current.html;
-      document.body.style.touchAction = scrollLockRef.current.touch;
-    }
+      if (showFilters) {
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.touchAction = 'pan-x pan-y';
+        document.documentElement.style.touchAction = 'pan-x pan-y';
+      } else {
+        document.body.style.overflow = scrollLockRef.current.body;
+        document.documentElement.style.overflow = scrollLockRef.current.html;
+        document.body.style.touchAction = scrollLockRef.current.touch;
+        document.documentElement.style.touchAction = scrollLockRef.current.htmlTouch;
+      }
 
-    return () => {
-      document.body.style.overflow = scrollLockRef.current.body;
-      document.documentElement.style.overflow = scrollLockRef.current.html;
-      document.body.style.touchAction = scrollLockRef.current.touch;
-    };
-  }, [showFilters, isMobile]);
+      return () => {
+        document.body.style.overflow = scrollLockRef.current.body;
+        document.documentElement.style.overflow = scrollLockRef.current.html;
+        document.body.style.touchAction = scrollLockRef.current.touch;
+        document.documentElement.style.touchAction = scrollLockRef.current.htmlTouch;
+      };
+    }, [showFilters, isMobile]);
 
   useEffect(() => {
     refreshInventory(60);
@@ -220,13 +227,48 @@ const EncarCatalog = ({
     return filterCarsWithBuyNowPricing(engineFiltered);
   }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
 
-  // Extract engine variants from filtered cars for the dropdown
-  const engineVariants = useMemo(() => {
-    if (!filters?.model_id || filteredCars.length === 0) {
-      return [];
-    }
-    return extractUniqueEngineSpecs(filteredCars);
-  }, [filteredCars, filters?.model_id]);
+  // Engine variant options sourced from API
+  const [engineVariants, setEngineVariants] = useState<Array<{ value: string; label: string; count: number }>>([]);
+  const [engineVariantsLoading, setEngineVariantsLoading] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadEngineVariants = async () => {
+      if (!filters?.manufacturer_id && !filters?.model_id) {
+        if (isActive) {
+          setEngineVariants([]);
+        }
+        return;
+      }
+
+      setEngineVariantsLoading(true);
+      try {
+        const variants = await fetchEngineVariants(
+          filters?.manufacturer_id,
+          filters?.model_id,
+          filters?.generation_id
+        );
+        if (isActive) {
+          setEngineVariants(Array.isArray(variants) ? variants : []);
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch engine variants:", err);
+        if (isActive) {
+          setEngineVariants([]);
+        }
+      } finally {
+        if (isActive) {
+          setEngineVariantsLoading(false);
+        }
+      }
+    };
+
+    loadEngineVariants();
+    return () => {
+      isActive = false;
+    };
+  }, [fetchEngineVariants, filters?.manufacturer_id, filters?.model_id, filters?.generation_id]);
 
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -1236,11 +1278,12 @@ const EncarCatalog = ({
         
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : 'pb-6 pr-2'}`}>
             <div className={`${isMobile ? 'p-3' : 'p-4 space-y-4'}`}>
-            <EncarStyleFilter 
+              <EncarStyleFilter 
               filters={filters} 
               manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
               models={models} 
               engineVariants={engineVariants}
+                engineVariantsLoading={engineVariantsLoading}
               filterCounts={filterCounts} 
               loadingCounts={loadingCounts} 
               onFiltersChange={handleFiltersChange} 

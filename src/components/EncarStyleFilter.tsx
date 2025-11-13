@@ -90,6 +90,7 @@ interface EncarStyleFilterProps {
   manufacturers: Manufacturer[];
   models?: Model[];
   engineVariants?: Array<{ value: string; label: string; count: number }>;
+  engineVariantsLoading?: boolean;
   filterCounts?: FilterCounts;
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
@@ -130,7 +131,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(
     filters,
     manufacturers,
     models = [],
-    engineVariants = [],
+      engineVariants = [],
+      engineVariantsLoading = false,
     filterCounts,
     loadingCounts = false,
     onFiltersChange,
@@ -1105,7 +1107,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(
                       Zgjidhni fillimisht modelin.
                     </div>
                   )}
-                  {filters.model_id && !hasEngines && (
+                    {filters.model_id && engineVariantsLoading && (
+                      <div className="px-2 py-3 text-xs text-muted-foreground flex items-center gap-2">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Po ngarkohen motorët...
+                      </div>
+                    )}
+                    {filters.model_id && !engineVariantsLoading && !hasEngines && (
                     <div className="px-2 py-3 text-xs text-muted-foreground">
                       Nuk u gjetën motorë për këtë model.
                     </div>
@@ -1468,7 +1476,13 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(
                       : "Zgjidhni modelin fillimisht"
                   }
                   onClick={() => setActiveMobileDrawer("engine")}
-                  disabled={!filters.model_id}
+                    disabled={!filters.model_id}
+                    loading={!!filters.model_id && engineVariantsLoading}
+                    hint={
+                      filters.model_id && engineVariantsLoading
+                        ? "Po ngarkohen motorët"
+                        : undefined
+                    }
                 />
                 <FilterListItem
                   icon={<Settings className="h-4 w-4" />}
