@@ -6,6 +6,12 @@ import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 import { getBrandLogo } from '@/data/brandLogos';
 import { extractUniqueEngineSpecs } from '@/utils/catalog-filter';
+import {
+  fallbackCars as fallbackCarData,
+  fallbackGenerations as fallbackGenerationData,
+  fallbackManufacturers as fallbackManufacturerData,
+  fallbackModels as fallbackModelData,
+} from "@/data/fallbackData";
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -26,28 +32,177 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
+const normalizeString = (value?: string | number | null) =>
+  (value ?? "")
+    .toString()
+    .toLowerCase()
+    .trim();
+
 // Create fallback car data for testing when API is not available
-export const createFallbackCars = (_filters: any = {}): any[] => {
-  console.warn("createFallbackCars called after mock data removal – returning empty array.");
-  return [];
+export const createFallbackCars = (filters: any = {}): any[] => {
+  const manufacturerFilter = filters?.manufacturer_id;
+  if (
+    manufacturerFilter &&
+    manufacturerFilter !== "all" &&
+    manufacturerFilter !== "" &&
+    manufacturerFilter !== undefined &&
+    manufacturerFilter !== null
+  ) {
+    return [];
+  }
+
+  const gradeFilter = normalizeString(filters?.grade_iaai);
+  const transmissionFilter = normalizeString(filters?.transmission);
+  const fuelFilter = normalizeString(filters?.fuel_type);
+  const colorFilter = normalizeString(filters?.color);
+  const searchTerm = normalizeString(filters?.search);
+
+  const priceFrom = filters?.buy_now_price_from ? Number(filters.buy_now_price_from) : undefined;
+  const priceTo = filters?.buy_now_price_to ? Number(filters.buy_now_price_to) : undefined;
+  const mileageFrom = filters?.odometer_from_km ? Number(filters.odometer_from_km) : undefined;
+  const mileageTo = filters?.odometer_to_km ? Number(filters.odometer_to_km) : undefined;
+  const yearFrom = filters?.from_year ? Number(filters.from_year) : undefined;
+  const yearTo = filters?.to_year ? Number(filters.to_year) : undefined;
+  const seatsFilter = filters?.seats_count ? Number(filters.seats_count) : undefined;
+
+  return fallbackCarData.filter((car) => {
+    const lot = car.lots?.[0];
+    if (!lot?.buy_now) {
+      return false;
+    }
+
+    if (yearFrom && car.year < yearFrom) {
+      return false;
+    }
+    if (yearTo && car.year > yearTo) {
+      return false;
+    }
+
+    if (priceFrom && lot.buy_now < priceFrom) {
+      return false;
+    }
+    if (priceTo && lot.buy_now > priceTo) {
+      return false;
+    }
+
+    const mileage = lot.odometer?.km ?? 0;
+    if (mileageFrom && mileage < mileageFrom) {
+      return false;
+    }
+    if (mileageTo && mileage > mileageTo) {
+      return false;
+    }
+
+    if (seatsFilter && lot.details?.seats_count !== seatsFilter) {
+      return false;
+    }
+
+    if (gradeFilter && gradeFilter !== "all") {
+      const lotGrade = normalizeString(lot.grade_iaai);
+      if (!lotGrade.includes(gradeFilter)) {
+        return false;
+      }
+    }
+
+    if (transmissionFilter) {
+      const carTransmission = normalizeString(car.transmission?.name);
+      if (carTransmission !== transmissionFilter) {
+        return false;
+      }
+    }
+
+    if (fuelFilter) {
+      const carFuel = normalizeString(car.fuel_type || car.engine?.name);
+      if (!carFuel.includes(fuelFilter)) {
+        return false;
+      }
+    }
+
+    if (colorFilter) {
+      const carColor = normalizeString(car.color?.name);
+      if (carColor !== colorFilter) {
+        return false;
+      }
+    }
+
+    if (searchTerm) {
+      const haystack = [
+        car.title,
+        car.manufacturer?.name,
+        car.model?.name,
+        car.vin,
+        car.lot_number,
+      ]
+        .map(normalizeString)
+        .join(" ");
+
+      if (!haystack.includes(searchTerm)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 };
 
 // Create fallback generation data for testing when API is not available
-export const createFallbackGenerations = (_manufacturerName: string): Generation[] => {
-  console.warn("createFallbackGenerations called after mock data removal – returning empty array.");
-  return [];
+export const createFallbackGenerations = (manufacturerName: string): Generation[] => {
+  if (!manufacturerName) {
+    return [];
+  }
+
+  const manufacturer = fallbackManufacturerData.find(
+    (entry) => normalizeString(entry.name) === normalizeString(manufacturerName),
+  );
+
+  if (!manufacturer) {
+    return [];
+  }
+
+  return fallbackGenerationData
+    .filter((generation) => generation.manufacturer_id === manufacturer.id)
+    .map((generation) => ({
+      id: generation.id,
+      name: generation.name,
+      cars_qty: generation.cars_qty,
+      car_count: generation.cars_qty,
+      from_year: generation.from_year,
+      to_year: generation.to_year,
+      manufacturer_id: generation.manufacturer_id,
+      model_id: generation.model_id,
+    }));
 };
 
 // Create fallback model data for testing when API is not available
-export const createFallbackModels = (_manufacturerName: string): Model[] => {
-  console.warn("createFallbackModels called after mock data removal – returning empty array.");
-  return [];
+export const createFallbackModels = (manufacturerName: string): Model[] => {
+  if (!manufacturerName) {
+    return [];
+  }
+
+  const manufacturer = fallbackManufacturerData.find(
+    (entry) => normalizeString(entry.name) === normalizeString(manufacturerName),
+  );
+
+  if (!manufacturer) {
+    return [];
+  }
+
+  return fallbackModelData
+    .filter((model) => model.manufacturer_id === manufacturer.id)
+    .map((model) => ({
+      id: model.id,
+      name: model.name,
+      car_count: model.cars_qty,
+      cars_qty: model.cars_qty,
+    }));
 };
 
 // Create fallback manufacturer data without logos
 export const createFallbackManufacturers = () => {
-  console.warn("createFallbackManufacturers called after mock data removal – returning empty array.");
-  return [];
+  return fallbackManufacturerData.map((manufacturer) => ({
+    ...manufacturer,
+    car_count: manufacturer.cars_qty,
+  }));
 };
 
 

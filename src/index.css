@@ -659,6 +659,31 @@ body.car-details-page .smartsupp-widget-container {
       transition: var(--transition-smooth);
     }
 
+    .mobile-filter-panel {
+      background-color: hsl(var(--background));
+      pointer-events: auto;
+      max-height: 100dvh;
+      touch-action: pan-y;
+    }
+
+    .mobile-filter-content {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+    }
+
+    .safe-area-inset-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    }
+
+    .safe-area-inset-left {
+      padding-left: max(env(safe-area-inset-left), 0px);
+    }
+
+    .safe-area-inset-right {
+      padding-right: max(env(safe-area-inset-right), 0px);
+    }
+
     .soft-interaction {
       transition: transform 220ms var(--motion-easing-standard), box-shadow 220ms var(--motion-easing-standard), border-color 220ms var(--motion-easing-standard);
     }
