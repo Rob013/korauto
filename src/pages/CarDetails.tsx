@@ -2651,12 +2651,12 @@ const CarDetails = memo(() => {
     });
   }, [toast, impact]);
 
-  const handleOpenInspectionReport = useCallback(() => {
-    impact("light");
-    const reportLot = car?.lot || lot;
-    if (!reportLot) return;
+  const prepareInspectionReportPrefetch = useCallback(
+    (reportLot: string | number) => {
+      if (typeof window === "undefined") {
+        return;
+      }
 
-    if (typeof window !== "undefined") {
       try {
         const primaryImage =
           (Array.isArray(car?.images) && car?.images.length > 0
@@ -2696,10 +2696,18 @@ const CarDetails = memo(() => {
           storageError,
         );
       }
-    }
+    },
+    [car],
+  );
 
+  const handleOpenInspectionReport = useCallback(() => {
+    impact("light");
+    const reportLot = car?.lot || lot;
+    if (!reportLot) return;
+
+    prepareInspectionReportPrefetch(reportLot);
     openCarReportInNewTab(reportLot);
-  }, [car, lot, impact]);
+  }, [car?.lot, impact, lot, prepareInspectionReportPrefetch]);
 
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
@@ -2985,17 +2993,13 @@ const CarDetails = memo(() => {
 
   const handleScrollToHistory = useCallback(() => {
     impact("light");
-    setShowDetailedInfo(true);
-    setHasAutoExpanded(true);
-    if (typeof window !== "undefined") {
-      window.requestAnimationFrame(() => {
-        historySectionRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      });
-    }
-  }, [impact]);
+    const reportLot = car?.lot || lot;
+    if (!reportLot) return;
+
+    prepareInspectionReportPrefetch(reportLot);
+    const encodedLot = encodeURIComponent(String(reportLot));
+    navigate(`/car/${encodedLot}/report`);
+  }, [car?.lot, impact, lot, navigate, prepareInspectionReportPrefetch]);
 
     // Preload important images
     useImagePreload(car?.image ?? prefetchedSummary?.image);
