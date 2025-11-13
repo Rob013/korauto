@@ -105,6 +105,9 @@ import {
   type UsageHistoryEntry,
 } from "@/utils/encarUsage";
 import { getFallbackOptionName } from "@/data/koreaOptionFallbacks";
+import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
+import { OptimizedCarImage } from "@/components/OptimizedCarImage";
+import "@/styles/carDetailsOptimizations.css";
 
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
@@ -2880,6 +2883,12 @@ const CarDetails = memo(() => {
 
     // Preload important images
     useImagePreload(car?.image ?? prefetchedSummary?.image);
+    
+    // Show skeleton loader when loading without any cached data
+    if (loading && !car && !prefetchedSummary) {
+      return <CarDetailsSkeleton />;
+    }
+    
     if (loading && !car) {
       if (prefetchedSummary) {
         const summaryTitleParts = [
@@ -2909,7 +2918,7 @@ const CarDetails = memo(() => {
             : undefined;
 
         return (
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background animate-fade-in">
             <div className="container-responsive py-6 max-w-[1600px] space-y-6">
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -3026,27 +3035,7 @@ const CarDetails = memo(() => {
         );
       }
 
-      return (
-        <div className="min-h-screen bg-background">
-          <div className="container-responsive py-8">
-            <div className="space-y-6">
-              <div className="h-8 w-32 rounded-lg bg-muted/50" />
-              <div className="h-64 rounded-xl bg-muted/50" />
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="space-y-4">
-                  <div className="h-6 w-3/4 rounded-lg bg-muted/50" />
-                  <div className="h-4 w-1/2 rounded-lg bg-muted/50" />
-                  <div className="h-32 rounded-xl bg-muted/50" />
-                </div>
-                <div className="space-y-4">
-                  <div className="h-6 w-1/2 rounded-lg bg-muted/50" />
-                  <div className="h-24 rounded-xl bg-muted/50" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+      return <CarDetailsSkeleton />;
     }
   if (error || !car) {
     return (
@@ -3075,7 +3064,7 @@ const CarDetails = memo(() => {
     );
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
       <div className="container-responsive py-6 max-w-[1600px]">
         {/* Header with Actions - Modern Layout with animations */}
         <div className="flex flex-col gap-3 mb-6">
@@ -3142,17 +3131,16 @@ const CarDetails = memo(() => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
           <div
-            className="space-y-6 animate-fade-in"
-            style={{ animationDelay: "100ms" }}
+            className="space-y-6 animate-fade-in-up stagger-1"
           >
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
-              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1">
+              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
                 <CardContent className="p-0">
                   <div
                     ref={imageContainerRef}
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none car-image-container"
                     onClick={handleImageZoomOpen}
                     role="button"
                     tabIndex={0}
@@ -3163,24 +3151,14 @@ const CarDetails = memo(() => {
                     }}
                     aria-label="Hap imazhin e makinës në modal me zoom"
                   >
-                    {/* Main Image with improved loading states */}
+                    {/* Main Image with optimized loading */}
                     {images.length > 0 ? (
-                      <img
+                      <OptimizedCarImage
                         src={images[selectedImageIndex]}
                         alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
-                          setIsPlaceholderImage(true);
-                        }}
-                        onLoad={(e) => {
-                          if (
-                            !e.currentTarget.src.includes("/placeholder.svg")
-                          ) {
-                            setIsPlaceholderImage(false);
-                          }
-                        }}
-                        loading="lazy"
+                        className="w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105"
+                        aspectRatio="aspect-[4/3]"
+                        priority={selectedImageIndex === 0}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -3262,13 +3240,6 @@ const CarDetails = memo(() => {
                     >
                       <Expand className="h-4 w-4 text-white" />
                     </button>
-
-                    {/* Loading indicator */}
-                    {isPlaceholderImage && (
-                      <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>

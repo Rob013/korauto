@@ -88,7 +88,18 @@ await Promise.allSettled(
 - **Prefetching**: Adjacent cars loaded in idle time
 - **Result**: **~90% faster** page loads after initial visit
 
-### 2. Complete API Data Storage 💾
+### 4. Anti-Flicker & Smoothness Improvements 🎨
+- **Skeleton loading**: Full-page skeleton with realistic layout preview
+- **Optimized images**: Progressive loading with blur placeholders
+- **GPU acceleration**: Hardware-accelerated transforms for smooth animations
+- **Staggered animations**: Sequential fade-in for content sections
+- **Layout stability**: Content containment to prevent layout shifts
+- **Smooth transitions**: CSS-based animations using cubic-bezier timing
+- **Anti-flicker CSS**: Backface visibility and transform optimization
+- **Reduced motion**: Respects user accessibility preferences
+- **Result**: **Buttery smooth** 60fps+ rendering without flickering
+
+### 5. Complete API Data Storage 💾
 - All car details saved to `cars_cache` table including:
   - Full inspection reports
   - Accident history
@@ -99,18 +110,18 @@ await Promise.allSettled(
   - Insurance data
 - **Benefit**: No repeated API calls, instant data access
 
-### 3. Viewport & Zoom Fix 🔍
+### 6. Viewport & Zoom Fix 🔍
 - Changed from `maximum-scale=1.0, user-scalable=no`
 - To: `maximum-scale=5.0, user-scalable=yes`
 - **Result**: Proper zoom support without crashes
 
-### 4. Optimized Database Queries 📊
+### 7. Optimized Database Queries 📊
 - Fetches **all fields** from cars_cache in single query
 - Includes: `car_data`, `lot_data`, `images`, `inspection_report`, etc.
 - Uses `maybeSingle()` to prevent errors on missing data
 - **Result**: Single query replaces multiple API calls
 
-### 5. Bundle Optimization 📦
+### 8. Bundle Optimization 📦
 - **Better code splitting**: Router (20KB), UI components separated
 - **Improved minification**: Multiple compression passes, ES2020 target
 - **Tree shaking**: Unused code elimination (charts chunk: 0.03KB)

@@ -1,0 +1,96 @@
+/* Car Details Page Performance Optimizations */
+
+/* Prevent layout shift during image loading */
+.car-image-container {
+  contain: layout style paint;
+  content-visibility: auto;
+}
+
+/* Smooth fade-in for content sections */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* Staggered animation delays for content sections */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+/* Prevent flickering during state updates */
+.anti-flicker {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth transitions for interactive elements */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent content jump during loading */
+.content-placeholder {
+  min-height: 100vh;
+}
+
+/* Hardware acceleration for smoother animations */
+.gpu-accelerate {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* Optimize thumbnail grid rendering */
+.thumbnail-grid {
+  contain: layout;
+  content-visibility: auto;
+}
+
+/* Smooth image transitions */
+.image-transition {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* Prevent cumulative layout shift */
+.prevent-cls {
+  contain: layout style;
+}
+
+/* Optimize button hover effects */
+.optimized-button {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  will-change: transform;
+}
+
+.optimized-button:hover {
+  transform: scale(1.02);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
