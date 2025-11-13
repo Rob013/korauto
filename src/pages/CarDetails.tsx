@@ -3545,9 +3545,15 @@ const CarDetails = memo(() => {
                   variant="outline"
                   size="sm"
                   onClick={handleScrollToHistory}
-                  className="ml-auto"
+                  className="ml-auto flex items-center gap-2"
                 >
-                  Historia
+                  <span>Historia</span>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] font-semibold uppercase tracking-wide"
+                  >
+                    {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                  </Badge>
                 </Button>
               </div>
             )}
