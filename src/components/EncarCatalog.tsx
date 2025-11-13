@@ -1357,7 +1357,7 @@ const EncarCatalog = ({
             </div>}
 
           {/* Loading State - Only for initial load, not for filters */}
-          {loading && cars.length === 0 || isRestoringState ? <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-fade-in">
+          {loading && cars.length === 0 || isRestoringState ? <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <LoadingLogo size="lg" />
             </div> : null}
 
@@ -1387,7 +1387,7 @@ const EncarCatalog = ({
             </div>}
 
           {/* Filter Loading State - Only when no cars and not in main loading */}
-          {isFilterLoading && cars.length === 0 && !loading && !isRestoringState && <div className="flex items-center justify-center py-12 animate-fade-in">
+          {isFilterLoading && cars.length === 0 && !loading && !isRestoringState && <div className="flex items-center justify-center py-12">
               <LoadingLogo size="lg" />
             </div>}
 

@@ -563,6 +563,163 @@ interface CarDetails {
   lots?: any[];
 }
 
+interface PrefetchedCarSummary {
+  id?: string;
+  lot?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  price?: number;
+  image?: string;
+  images?: string[];
+  mileageLabel?: string;
+  transmission?: string;
+  fuel?: string;
+  color?: string;
+  condition?: string;
+  title?: string;
+  vin?: string;
+  status?: number;
+  sale_status?: string;
+  final_price?: number;
+  insurance_v2?: any;
+  source?: string;
+  cachedAt?: string;
+}
+
+const extractPrefetchedCarSummary = (
+  raw: unknown,
+): PrefetchedCarSummary | null => {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const data = raw as Record<string, any>;
+  const rawLot =
+    data.lot ??
+    data.lot_number ??
+    data.lotNumber ??
+    data.lotNo ??
+    data.details?.lot ??
+    data.details?.lot_number;
+
+  const imagesCandidate = (() => {
+    if (Array.isArray(data.images)) {
+      return data.images;
+    }
+    if (Array.isArray(data.images?.normal)) {
+      return data.images.normal;
+    }
+    if (Array.isArray(data.images?.big)) {
+      return data.images.big;
+    }
+    return undefined;
+  })();
+
+  const normalizeString = (value: unknown): string | undefined => {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+    return undefined;
+  };
+
+  const normalizeNumber = (value: unknown): number | undefined => {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return undefined;
+  };
+
+  const normalizeYear = (value: unknown): number | undefined => {
+    const numeric = normalizeNumber(value);
+    if (typeof numeric === "number" && numeric > 1900 && numeric < 2100) {
+      return Math.round(numeric);
+    }
+    return undefined;
+  };
+
+  const normalizeMileageLabel = (): string | undefined => {
+    if (typeof data.mileageLabel === "string") {
+      return data.mileageLabel;
+    }
+    if (typeof data.mileage === "number") {
+      return `${data.mileage.toLocaleString()} km`;
+    }
+    const odometerKm = data.odometer?.km ?? data.lots?.[0]?.odometer?.km;
+    if (typeof odometerKm === "number") {
+      return `${odometerKm.toLocaleString()} km`;
+    }
+    return undefined;
+  };
+
+  const image =
+    normalizeString(data.image) ||
+    (Array.isArray(imagesCandidate) && imagesCandidate[0]
+      ? normalizeString(imagesCandidate[0])
+      : undefined);
+
+  return {
+    id: normalizeString(data.id) ?? (rawLot ? String(rawLot) : undefined),
+    lot: rawLot ? String(rawLot) : undefined,
+    make:
+      normalizeString(data.make) ??
+      normalizeString(data.manufacturer?.name) ??
+      normalizeString(data.details?.make),
+    model:
+      normalizeString(data.model) ??
+      normalizeString(data.model_name) ??
+      normalizeString(data.model?.name) ??
+      normalizeString(data.details?.model),
+    year:
+      normalizeYear(data.year) ??
+      normalizeYear(data.model_year) ??
+      normalizeYear(data.details?.year),
+    price:
+      normalizeNumber(data.price) ??
+      normalizeNumber(data.final_price) ??
+      normalizeNumber(data.buy_now),
+    image,
+    images: Array.isArray(imagesCandidate)
+      ? imagesCandidate
+          .map((item) => normalizeString(item))
+          .filter((item): item is string => Boolean(item))
+      : undefined,
+    mileageLabel: normalizeMileageLabel(),
+    transmission:
+      normalizeString(data.transmission) ??
+      normalizeString(data.transmission?.name),
+    fuel:
+      normalizeString(data.fuel) ??
+      normalizeString(data.fuel?.name) ??
+      normalizeString(data.fuel_type),
+    color:
+      normalizeString(data.color) ??
+      normalizeString(data.color?.name) ??
+      normalizeString(data.exterior_color),
+    condition:
+      normalizeString(data.condition) ??
+      normalizeString(data.condition?.name),
+    title: normalizeString(data.title),
+    vin: normalizeString(data.vin),
+    status: normalizeNumber(data.status),
+    sale_status: normalizeString(data.sale_status),
+    final_price: normalizeNumber(data.final_price),
+    insurance_v2: data.insurance_v2,
+    source:
+      normalizeString(data.source) ??
+      normalizeString(data.source_label) ??
+      normalizeString(data.domain?.name) ??
+      normalizeString(data.domain_name),
+    cachedAt: normalizeString(data.cachedAt),
+  };
+};
+
 // Equipment Options Section Component with Show More functionality
 interface EquipmentOptionsProps {
   options: {
@@ -1131,6 +1288,8 @@ const CarDetails = memo(() => {
   const { getOptionName } = useKoreaOptions();
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
   const [car, setCar] = useState<CarDetails | null>(null);
+  const [prefetchedSummary, setPrefetchedSummary] =
+    useState<PrefetchedCarSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -1150,6 +1309,38 @@ const CarDetails = memo(() => {
   const [liveDealerFetchedAt, setLiveDealerFetchedAt] = useState<string | null>(null);
   const lastFetchedLotRef = useRef<string | null>(null);
   const liveDealerAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined" || !lot) {
+      setPrefetchedSummary(null);
+      return;
+    }
+
+    const normalizedLot = String(lot);
+    const encodedLot = encodeURIComponent(normalizedLot);
+    const keys = [
+      `car_prefetch_${encodedLot}`,
+      encodedLot !== normalizedLot ? `car_prefetch_${normalizedLot}` : null,
+    ].filter(Boolean) as string[];
+
+    for (const key of keys) {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) {
+          continue;
+        }
+        const parsed = JSON.parse(raw);
+        const summary = extractPrefetchedCarSummary(parsed);
+        if (summary) {
+          setPrefetchedSummary(summary);
+          return;
+        }
+      } catch (parseError) {
+        console.warn("Failed to parse prefetched car summary", parseError);
+      }
+    }
+
+    setPrefetchedSummary(null);
+  }, [lot]);
   useEffect(() => {
     setIsPortalReady(true);
     return () => setIsPortalReady(false);
@@ -1926,19 +2117,50 @@ const CarDetails = memo(() => {
     [getOptionName],
   );
 
-  const persistCarToSession = useCallback((targetLot: string, payload: unknown) => {
-    if (typeof window === "undefined") {
-      return;
-    }
+  const persistCarToSession = useCallback(
+    (targetLot: string, payload: unknown) => {
+      if (typeof window === "undefined") {
+        return;
+      }
 
-    try {
-      const serialized = JSON.stringify(payload);
-      sessionStorage.setItem(`car_${targetLot}`, serialized);
-      sessionStorage.setItem(`car_prefetch_${targetLot}`, serialized);
-    } catch (storageError) {
-      console.warn("Failed to persist car data in sessionStorage", storageError);
-    }
-  }, []);
+      const normalizedLot = String(targetLot);
+      const encodedLot = encodeURIComponent(normalizedLot);
+
+      try {
+        const serialized = JSON.stringify(payload);
+        sessionStorage.setItem(`car_${encodedLot}`, serialized);
+        if (encodedLot !== normalizedLot) {
+          sessionStorage.setItem(`car_${normalizedLot}`, serialized);
+        }
+      } catch (storageError) {
+        console.warn("Failed to persist car data in sessionStorage", storageError);
+      }
+
+      try {
+        const summary = extractPrefetchedCarSummary(payload);
+        if (summary) {
+          const summarySerialized = JSON.stringify(summary);
+          sessionStorage.setItem(
+            `car_prefetch_${encodedLot}`,
+            summarySerialized,
+          );
+          if (encodedLot !== normalizedLot) {
+            sessionStorage.setItem(
+              `car_prefetch_${normalizedLot}`,
+              summarySerialized,
+            );
+          }
+          setPrefetchedSummary(summary);
+        }
+      } catch (summaryError) {
+        console.warn(
+          "Failed to persist car summary in sessionStorage",
+          summaryError,
+        );
+      }
+    },
+    [setPrefetchedSummary],
+  );
 
   const hydrateFromCache = useCallback(async () => {
     if (!lot) {
@@ -1950,7 +2172,13 @@ const CarDetails = memo(() => {
         return null;
       }
 
-      const keys = [`car_${lot}`, `car_prefetch_${lot}`];
+      const normalizedLot = String(lot);
+      const encodedLot = encodeURIComponent(normalizedLot);
+      const keys = [
+        `car_${encodedLot}`,
+        encodedLot !== normalizedLot ? `car_${normalizedLot}` : null,
+      ].filter(Boolean) as string[];
+
       for (const key of keys) {
         try {
           const raw = sessionStorage.getItem(key);
@@ -1959,6 +2187,10 @@ const CarDetails = memo(() => {
           }
           const parsed = JSON.parse(raw);
           if (parsed && typeof parsed === "object") {
+            const summary = extractPrefetchedCarSummary(parsed);
+            if (summary) {
+              setPrefetchedSummary(summary);
+            }
             return parsed as CarDetails;
           }
         } catch (sessionError) {
@@ -2006,7 +2238,7 @@ const CarDetails = memo(() => {
     }
 
     return null;
-  }, [buildCarDetails, lot, persistCarToSession]);
+  }, [buildCarDetails, lot, persistCarToSession, setPrefetchedSummary]);
  
     const getFirstNonEmptyString = (...values: unknown[]): string | null => {
       for (const value of values) {
@@ -2169,11 +2401,37 @@ const CarDetails = memo(() => {
           );
         }
 
-        const data = await response.json();
-        if (!isMounted) return;
+          const data = await response.json();
+          if (!isMounted) return;
 
           const apiPayload = data?.data ?? data;
           const initialLotData = selectLotForSource(apiPayload, lot);
+
+          let appliedDetails: CarDetails | null = null;
+          let hasTrackedView = false;
+
+          const applyDetails = (
+            nextDetails: CarDetails,
+            shouldTrackView: boolean,
+          ) => {
+            appliedDetails = nextDetails;
+            setCar(nextDetails);
+            cacheHydratedRef.current = true;
+            persistCarToSession(String(lot), nextDetails);
+            if (!background && shouldTrackView && !hasTrackedView) {
+              trackCarView(lot, nextDetails);
+              hasTrackedView = true;
+            }
+          };
+
+          const baselineDetails = buildCarDetails(apiPayload, initialLotData);
+          if (baselineDetails) {
+            applyDetails(baselineDetails, true);
+            if (!background) {
+              setLoading(false);
+            }
+          }
+
           let detailedCarData: any = null;
           let detailedLotData: any = null;
 
@@ -2229,32 +2487,30 @@ const CarDetails = memo(() => {
           if (detailedCarData && apiPayload && detailedCarData !== apiPayload) {
             additionalFuelSources.push(apiPayload);
           }
-          if (initialLotData && primaryLotData !== initialLotData) {
+          if (initialLotData && primaryLotData && primaryLotData !== initialLotData) {
             additionalFuelSources.push(initialLotData);
           }
 
-          const details = buildCarDetails(
+          const enhancedDetails = buildCarDetails(
             primaryCarData,
             primaryLotData,
             additionalFuelSources,
           );
 
-        if (!details) {
-          if (!background) {
-            navigate("/catalog");
+          if (enhancedDetails) {
+            if (enhancedDetails !== appliedDetails) {
+              applyDetails(enhancedDetails, !hasTrackedView);
+            }
+            if (!baselineDetails && !background) {
+              setLoading(false);
+            }
+          } else if (!baselineDetails) {
+            if (!background) {
+              setLoading(false);
+              navigate("/catalog");
+            }
+            return;
           }
-          return;
-        }
-
-        setCar(details);
-        cacheHydratedRef.current = true;
-        if (!background) {
-          setLoading(false);
-        }
-
-        persistCarToSession(String(lot), details);
-
-        trackCarView(lot, details);
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (!isMounted) return;
@@ -2607,31 +2863,176 @@ const CarDetails = memo(() => {
     [handleGalleryClick],
   );
 
-  // Preload important images
-  useImagePreload(car?.image);
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container-responsive py-8">
-          <div className="space-y-6 animate-fade-in">
-            <div className="h-8 bg-muted/50 rounded-lg w-32 animate-pulse"></div>
-            <div className="h-64 bg-muted/50 rounded-xl animate-pulse"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="h-6 bg-muted/50 rounded-lg w-3/4 animate-pulse"></div>
-                <div className="h-4 bg-muted/50 rounded-lg w-1/2 animate-pulse"></div>
-                <div className="h-32 bg-muted/50 rounded-xl animate-pulse"></div>
+    // Preload important images
+    useImagePreload(car?.image ?? prefetchedSummary?.image);
+    if (loading && !car) {
+      if (prefetchedSummary) {
+        const summaryTitleParts = [
+          prefetchedSummary.year,
+          prefetchedSummary.make,
+          prefetchedSummary.model,
+        ].filter(Boolean);
+        const summaryTitle =
+          summaryTitleParts.length > 0
+            ? summaryTitleParts.join(" ")
+            : prefetchedSummary.title ?? "Makina";
+        const summaryFuel = prefetchedSummary.fuel
+          ? localizeFuel(prefetchedSummary.fuel, "sq") ?? prefetchedSummary.fuel
+          : undefined;
+        const summaryTransmission = prefetchedSummary.transmission
+          ? translateTransmission(prefetchedSummary.transmission)
+          : undefined;
+        const summaryColor = prefetchedSummary.color
+          ? translateColor(prefetchedSummary.color)
+          : undefined;
+        const summaryMileage =
+          prefetchedSummary.mileageLabel ??
+          undefined;
+        const formattedPrice =
+          typeof prefetchedSummary.price === "number"
+            ? `€${prefetchedSummary.price.toLocaleString()}`
+            : undefined;
+
+        return (
+          <div className="min-h-screen bg-background">
+            <div className="container-responsive py-6 max-w-[1600px] space-y-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (pageState && pageState.url) {
+                      navigate(pageState.url);
+                    } else {
+                      goBack();
+                    }
+                  }}
+                  className="h-9 px-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Kthehu te Makinat
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/")}
+                  className="h-9 px-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Kryefaqja
+                </Button>
               </div>
-              <div className="space-y-4">
-                <div className="h-6 bg-muted/50 rounded-lg w-1/2 animate-pulse"></div>
-                <div className="h-24 bg-muted/50 rounded-xl animate-pulse"></div>
+
+              <div className="grid gap-6 lg:grid-cols-5">
+                <div className="lg:col-span-3">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-card">
+                    {prefetchedSummary.image ? (
+                      <img
+                        src={prefetchedSummary.image}
+                        alt={summaryTitle || "Makina"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                        Po përgatitet imazhi i makinës…
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="lg:col-span-2 space-y-4">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Po ngarkohet raporti i plotë
+                    </p>
+                    <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground">
+                      {summaryTitle}
+                    </h1>
+                    {prefetchedSummary.title &&
+                      prefetchedSummary.title !== summaryTitle && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {prefetchedSummary.title}
+                        </p>
+                      )}
+                    {prefetchedSummary.lot && (
+                      <p className="mt-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        Lot #{prefetchedSummary.lot}
+                      </p>
+                    )}
+                  </div>
+
+                    <div className="space-y-3">
+                      {formattedPrice && (
+                        <div className="text-2xl font-semibold text-primary">
+                          {formattedPrice}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+                        {summaryMileage && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Kilometrazhi
+                            </span>
+                            <span>{summaryMileage}</span>
+                          </div>
+                        )}
+                        {summaryFuel && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Karburanti
+                            </span>
+                            <span>{summaryFuel}</span>
+                          </div>
+                        )}
+                        {summaryTransmission && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Transmisioni
+                            </span>
+                            <span>{summaryTransmission}</span>
+                          </div>
+                        )}
+                        {summaryColor && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Ngjyra
+                            </span>
+                            <span>{summaryColor}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  <div className="rounded-lg border border-border bg-card p-4 text-sm leading-relaxed text-muted-foreground">
+                    Po sjellim informacionin e detajuar nga partnerët tanë.
+                    Kjo zakonisht merr më pak se një sekondë.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-background">
+          <div className="container-responsive py-8">
+            <div className="space-y-6">
+              <div className="h-8 w-32 rounded-lg bg-muted/50" />
+              <div className="h-64 rounded-xl bg-muted/50" />
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="space-y-4">
+                  <div className="h-6 w-3/4 rounded-lg bg-muted/50" />
+                  <div className="h-4 w-1/2 rounded-lg bg-muted/50" />
+                  <div className="h-32 rounded-xl bg-muted/50" />
+                </div>
+                <div className="space-y-4">
+                  <div className="h-6 w-1/2 rounded-lg bg-muted/50" />
+                  <div className="h-24 rounded-xl bg-muted/50" />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
   if (error || !car) {
     return (
       <div className="min-h-screen bg-background animate-fade-in">

@@ -203,42 +203,48 @@ const LazyCarCard = memo(({
       return;
     }
 
-    try {
-      const key = `car_prefetch_${encodeURIComponent(String(storageKeySource))}`;
-      const normalizedImages = Array.isArray(images)
-        ? images.filter(Boolean).slice(0, 12)
-        : image
-          ? [image]
-          : [];
+      try {
+        const storageKey = String(storageKeySource);
+        const encodedKey = `car_prefetch_${encodeURIComponent(storageKey)}`;
+        const rawKey = `car_prefetch_${storageKey}`;
+        const normalizedImages = Array.isArray(images)
+          ? images.filter(Boolean).slice(0, 12)
+          : image
+            ? [image]
+            : [];
 
-      const summary = {
-        id: String(id),
-        lot: lot ? String(lot) : undefined,
-        make,
-        model,
-        year,
-        price,
-        image: normalizedImages[0],
-        images: normalizedImages,
-        vin,
-        mileageLabel: mileage,
-        transmission,
-        fuel,
-        color,
-        condition,
-        title,
-        status,
-        sale_status,
-        final_price,
-        insurance_v2,
-        source,
-        cachedAt: new Date().toISOString(),
-      };
+        const summary = {
+          id: String(id),
+          lot: lot ? String(lot) : undefined,
+          make,
+          model,
+          year,
+          price,
+          image: normalizedImages[0],
+          images: normalizedImages,
+          vin,
+          mileageLabel: mileage,
+          transmission,
+          fuel,
+          color,
+          condition,
+          title,
+          status,
+          sale_status,
+          final_price,
+          insurance_v2,
+          source,
+          cachedAt: new Date().toISOString(),
+        };
 
-      sessionStorage.setItem(key, JSON.stringify(summary));
-    } catch (storageError) {
-      console.warn("Failed to cache car summary before navigation", storageError);
-    }
+        const serialized = JSON.stringify(summary);
+        sessionStorage.setItem(encodedKey, serialized);
+        if (encodedKey !== rawKey) {
+          sessionStorage.setItem(rawKey, serialized);
+        }
+      } catch (storageError) {
+        console.warn("Failed to cache car summary before navigation", storageError);
+      }
   }, [
     id,
     lot,
@@ -454,22 +460,20 @@ const LazyCarCard = memo(({
   // Don't render content until intersection
   if (!isIntersecting) {
     return (
-      <div 
-        ref={cardRef}
-        className="glass-card rounded-lg overflow-hidden h-96"
+        <div 
+          ref={cardRef}
+          className="glass-card rounded-lg overflow-hidden h-96"
         style={{
           willChange: 'contents',
           containIntrinsicSize: '280px 360px'
         }}
       >
-          <div className="animate-pulse">
             <div className="h-72 bg-muted" />
             <div className="p-2 space-y-1">
               <div className="h-4 bg-muted rounded w-3/4" />
               <div className="h-3 bg-muted rounded w-1/2" />
               <div className="h-5 bg-muted rounded w-2/3" />
             </div>
-          </div>
       </div>
     );
   }
@@ -485,7 +489,7 @@ const LazyCarCard = memo(({
         <div
           ref={cardRef}
           className={cn(
-            "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg soft-interaction",
+              "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg",
             "transition-transform duration-200"
           )}
           onClick={handleCardClick}
@@ -613,7 +617,7 @@ const LazyCarCard = memo(({
       <div
         ref={cardRef}
         className={cn(
-          "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-xl soft-interaction",
+            "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-xl",
           "mobile-card-compact compact-modern-card car-card-container"
         )}
         onClick={handleCardClick}
