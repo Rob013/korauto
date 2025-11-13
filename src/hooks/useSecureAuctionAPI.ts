@@ -5,6 +5,7 @@ import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSo
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 import { getBrandLogo } from '@/data/brandLogos';
+import { extractUniqueEngineSpecs } from '@/utils/catalog-filter';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -333,10 +334,16 @@ export const useSecureAuctionAPI = () => {
   const [filters, setFilters] = useState<APIFilters>({});
   const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
   const [trimLevelsCache, setTrimLevelsCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
+  const [engineVariantsCache, setEngineVariantsCache] = useState<{ [key: string]: { value: string; label: string; count: number }[] }>({});
   const [isPrimingCache, setIsPrimingCache] = useState(false);
   const [cachePrimed, setCachePrimed] = useState(false);
   const prefetchedCarIdsRef = useRef<Set<string>>(new Set());
   const carsCacheRef = useRef<Map<string, { cars: Car[]; totalCount: number; hasMorePages: boolean; timestamp: number }>>(new Map());
+  const engineVariantsCacheRef = useRef(engineVariantsCache);
+
+  useEffect(() => {
+    engineVariantsCacheRef.current = engineVariantsCache;
+  }, [engineVariantsCache]);
 
   const prefetchCarDetails = useCallback(async (carsToCache: Car[]) => {
     if (!Array.isArray(carsToCache) || carsToCache.length === 0) {
@@ -1957,6 +1964,127 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+  const fetchEngineVariants = useCallback(async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count: number }[]> => {
+    const cacheKey = `engine_${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
+
+    if (!manufacturerId && !modelId) {
+      return [];
+    }
+
+    const cached = engineVariantsCacheRef.current[cacheKey];
+    if (cached) {
+      return cached;
+    }
+
+    const normalizeEngineVariant = (input?: string | null) => {
+      if (!input || typeof input !== 'string') return null;
+      const cleaned = input.replace(/\s+/g, ' ').trim();
+      if (!cleaned) return null;
+
+      if (/^(unknown|n\/a|none|null|undefined)$/i.test(cleaned)) return null;
+      if (/^[A-Z]{2,4}$/.test(cleaned)) return null;
+      if (/^\d+(\.\d+)?$/.test(cleaned)) return null;
+
+      return cleaned.replace(/\b(tdi|tfsi|fsi|tsi|cdi|cgi|amg|gti|rs|gt|gts|d|i|e|phev|ev|hybrid|diesel|petrol)\b/gi, (match) => match.toUpperCase());
+    };
+
+    try {
+      const filters: any = { per_page: '200' };
+      if (manufacturerId) filters.manufacturer_id = manufacturerId;
+      if (modelId) filters.model_id = modelId;
+      if (generationId) filters.generation_id = generationId;
+
+      const data = await makeSecureAPICall('cars', filters);
+      const cars = Array.isArray(data?.data) ? data.data : [];
+
+      if (cars.length === 0) {
+        setEngineVariantsCache((prev) => {
+          const next = { ...prev, [cacheKey]: [] };
+          engineVariantsCacheRef.current = next;
+          return next;
+        });
+        return [];
+      }
+
+      const variantsMap = new Map<string, { label: string; count: number }>();
+
+      const recordVariant = (raw?: string | null, weight = 1) => {
+        const normalized = normalizeEngineVariant(raw);
+        if (!normalized) return;
+        const key = normalized.toLowerCase();
+        const existing = variantsMap.get(key);
+        if (existing) {
+          existing.count += weight;
+          if (normalized.length > existing.label.length) {
+            existing.label = normalized;
+          }
+        } else {
+          variantsMap.set(key, { label: normalized, count: weight });
+        }
+      };
+
+      extractUniqueEngineSpecs(cars).forEach(({ value, label, count }) => {
+        const normalized = normalizeEngineVariant(value);
+        if (!normalized) return;
+        const key = normalized.toLowerCase();
+        const existing = variantsMap.get(key);
+        if (existing) {
+          existing.count += count;
+          if (label && label.length > existing.label.length) {
+            existing.label = label;
+          }
+        } else {
+          variantsMap.set(key, { label: label || normalized, count });
+        }
+      });
+
+      cars.forEach((car: any) => {
+        recordVariant(car?.engine?.name);
+        if (car?.lots && Array.isArray(car.lots)) {
+          car.lots.forEach((lot: any) => {
+            recordVariant(lot?.details?.badge);
+            recordVariant(lot?.details?.comment);
+            recordVariant(lot?.grade_iaai);
+            if (typeof lot?.details?.description_en === 'string') {
+              recordVariant(lot.details.description_en, 0.5);
+            }
+          });
+        }
+
+        if (typeof car?.title === 'string') {
+          recordVariant(car.title, 0.5);
+        }
+      });
+
+      const variants = Array.from(variantsMap.values())
+        .map(({ label, count }) => ({
+          value: label,
+          label,
+          count: Math.max(1, Math.round(count))
+        }))
+        .sort((a, b) => {
+          if (b.count !== a.count) return b.count - a.count;
+          return a.label.localeCompare(b.label);
+        });
+
+      setEngineVariantsCache((prev) => {
+        const next = { ...prev, [cacheKey]: variants };
+        engineVariantsCacheRef.current = next;
+        return next;
+      });
+
+      return variants;
+    } catch (err) {
+      console.error("❌ Error fetching engine variants:", err);
+      setEngineVariantsCache((prev) => {
+        const next = { ...prev, [cacheKey]: [] };
+        engineVariantsCacheRef.current = next;
+        return next;
+      });
+      return [];
+    }
+  }, [makeSecureAPICall]);
+
   const loadMore = async () => {
     if (!hasMorePages || loading) return;
 
@@ -1983,34 +2111,35 @@ export const useSecureAuctionAPI = () => {
       return { success: false, error };
     }
   }, [clearCarsCache]);
-  return {
-    cars,
-    setCars, // ✅ Export setCars so it can be used in components
-    loading,
-    error,
-    currentPage,
-    totalCount,
-    setTotalCount, // ✅ Export setTotalCount for optimized filtering
-    hasMorePages,
-    fetchCars,
-    fetchAllCars, // ✅ Export new function for global sorting
-    filters,
-    setFilters,
-    fetchManufacturers,
-    fetchModels,
-    fetchGenerations,
-    fetchAllGenerationsForManufacturer, // ✅ Export new function
-    getCategoryCount, // ✅ Export new function for real-time counts
-    fetchCarById,
-    fetchCarCounts,
-    fetchFilterCounts,
-    fetchKoreaDuplicates,
-    fetchGrades,
-    fetchTrimLevels,
-    loadMore,
-    refreshInventory,
-    clearCarsCache,
-  };
+    return {
+      cars,
+      setCars, // ✅ Export setCars so it can be used in components
+      loading,
+      error,
+      currentPage,
+      totalCount,
+      setTotalCount, // ✅ Export setTotalCount for optimized filtering
+      hasMorePages,
+      fetchCars,
+      fetchAllCars, // ✅ Export new function for global sorting
+      filters,
+      setFilters,
+      fetchManufacturers,
+      fetchModels,
+      fetchGenerations,
+      fetchAllGenerationsForManufacturer, // ✅ Export new function
+      getCategoryCount, // ✅ Export new function for real-time counts
+      fetchCarById,
+      fetchCarCounts,
+      fetchFilterCounts,
+      fetchKoreaDuplicates,
+      fetchGrades,
+      fetchTrimLevels,
+      fetchEngineVariants,
+      loadMore,
+      refreshInventory,
+      clearCarsCache,
+    };
 };
 
 export const fetchSourceCounts = async (baseFilters: any = {}) => {
