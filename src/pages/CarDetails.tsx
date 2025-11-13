@@ -1300,6 +1300,7 @@ const CarDetails = memo(() => {
   const [shouldRenderMap, setShouldRenderMap] = useState(false);
   const mapTargets = useRef<HTMLDivElement[]>([]);
   const cacheHydratedRef = useRef(false);
+  const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
@@ -2579,15 +2580,35 @@ const CarDetails = memo(() => {
       }
 
       const cachePromise = hydrateFromCache();
-      const apiPromise = fetchFromApi();
 
-      const cachedData = await cachePromise;
-      if (cachedData) {
+      let shouldBackgroundRefresh = false;
+
+      const quickCacheResult = await Promise.race([
+        cachePromise
+          .then((data) => {
+            if (data) {
+              shouldBackgroundRefresh = true;
+            }
+            return data;
+          })
+          .catch(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 200)),
+      ]);
+
+      const apiPromise = fetchFromApi({
+        background: shouldBackgroundRefresh,
+      });
+
+      cachePromise.catch((error) => {
+        console.warn("Cache hydration failed", error);
+      });
+
+      if (!quickCacheResult) {
+        await apiPromise;
+      } else {
         apiPromise.catch((error) => {
           console.warn("Background refresh failed", error);
         });
-      } else {
-        await apiPromise;
       }
     };
 
@@ -2961,6 +2982,20 @@ const CarDetails = memo(() => {
     },
     [handleGalleryClick],
   );
+
+  const handleScrollToHistory = useCallback(() => {
+    impact("light");
+    setShowDetailedInfo(true);
+    setHasAutoExpanded(true);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        historySectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
+  }, [impact]);
 
     // Preload important images
     useImagePreload(car?.image ?? prefetchedSummary?.image);
@@ -3497,10 +3532,19 @@ const CarDetails = memo(() => {
             </Card>
 
             {resolvedMainTitle && (
-              <div className="px-1">
+              <div className="px-1 flex flex-wrap items-center gap-3 justify-between">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                   {resolvedMainTitle}
                 </h1>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleScrollToHistory}
+                  className="ml-auto"
+                >
+                  Historia
+                </Button>
               </div>
             )}
 
@@ -3812,7 +3856,10 @@ const CarDetails = memo(() => {
                   <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-top-2 duration-300">
                     {/* Insurance & Safety Report - Mobile Optimized */}
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
-                      <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section">
+                      <div
+                        ref={historySectionRef}
+                        className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
+                      >
                         <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                           <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
                           Raporti i Sigurisë dhe Sigurimit
