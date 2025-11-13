@@ -582,6 +582,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(
       );
     };
 
+    const handleResetFilters = useCallback(() => {
+      onClearFilters();
+      setPendingYearRange({ from: "", to: "" });
+      setActiveMobileDrawer(null);
+    }, [onClearFilters]);
+
     // Compact mode for sidebar
     if (compact) {
       const yearSummary =
@@ -1423,7 +1429,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(
 
       return (
         <div className="flex h-full flex-col bg-background">
-          <div className="flex-1 overflow-y-auto space-y-4 px-3 pb-32 pt-4">
+          <div className="flex-1 overflow-y-auto space-y-4 px-3 pb-6 pt-4">
             <div className="rounded-3xl border border-border/60 bg-card/70 px-4 py-4 shadow-sm backdrop-blur">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Kërkimi i makinës
@@ -1612,32 +1618,29 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(
               toPlaceholder="Deri"
               unit="€"
             />
-          </div>
 
-          <div className="sticky bottom-0 left-0 right-0 border-t border-border/60 bg-background/95 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3 backdrop-blur">
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 h-11 rounded-full font-semibold"
-                onClick={() => {
-                  onClearFilters();
-                  setPendingYearRange({ from: "", to: "" });
-                }}
-              >
-                Reset
-              </Button>
-              <Button
-                type="button"
-                className="flex-1 h-11 rounded-full bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
-                onClick={() => {
-                  handleSearchClick();
-                  onCloseFilter?.();
-                }}
-              >
-                <Search className="mr-2 h-4 w-4" />
-                {isHomepage ? "Kërko makinat" : "Shfaq rezultatet"}
-              </Button>
+            <div className="mt-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 h-11 rounded-full font-semibold"
+                  onClick={handleResetFilters}
+                >
+                  Reset
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 h-11 rounded-full bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+                  onClick={() => {
+                    handleSearchClick();
+                    onCloseFilter?.();
+                  }}
+                >
+                  <Search className="mr-2 h-4 w-4" />
+                  {isHomepage ? "Kërko makinat" : "Shfaq rezultatet"}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -1672,7 +1675,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={onClearFilters}
+                onClick={handleResetFilters}
                 disabled={isLoading}
                 className="text-xs"
               >
