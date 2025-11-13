@@ -56,7 +56,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn('relative w-full h-full group cursor-pointer', className)}
+      className={cn('relative w-full h-full group cursor-pointer car-gallery-swipe-region', className)}
     >
       {/* Main Image */}
       <img

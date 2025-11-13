@@ -37,16 +37,34 @@ body {
   /* Start visible to prevent flicker */
   opacity: 1 !important;
   visibility: visible !important;
-  
+
   /* Prevent overscroll bounce */
   overscroll-behavior-y: contain;
   overscroll-behavior-x: none;
-  
+
+  /* Prevent horizontal document scroll while keeping interactive regions scoped */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+
   /* Prevent tap highlight flash */
   -webkit-tap-highlight-color: transparent;
-  
+
   /* Smooth font rendering */
   text-rendering: optimizeLegibility;
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.car-gallery-swipe-region {
+  touch-action: pan-x pan-y !important;
+  -ms-touch-action: pan-x pan-y !important;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Remove tap highlight on all interactive elements */

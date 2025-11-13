@@ -3218,7 +3218,7 @@ const CarDetails = memo(() => {
                 <CardContent className="p-0">
                   <div
                     ref={imageContainerRef}
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none car-image-container"
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none car-image-container car-gallery-swipe-region"
                     onClick={handleImageZoomOpen}
                     role="button"
                     tabIndex={0}
@@ -3374,7 +3374,7 @@ const CarDetails = memo(() => {
               <CardContent className="p-0">
                 <div
                   ref={imageContainerRef}
-                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
+                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none car-gallery-swipe-region"
                   onClick={handleImageZoomOpen}
                   role="button"
                   tabIndex={0}
