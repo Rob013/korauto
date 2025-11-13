@@ -3506,7 +3506,7 @@ const CarDetails = memo(() => {
 
               {resolvedMainTitle && (
                 <>
-                  <div className="px-1 flex flex-wrap items-center gap-3 justify-between lg:hidden">
+                    <div className="px-1 flex flex-wrap items-center gap-2 justify-between lg:hidden">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                       {resolvedMainTitle}
                     </h1>
@@ -3526,7 +3526,7 @@ const CarDetails = memo(() => {
                       </Badge>
                     </Button>
                   </div>
-                  <div className="hidden lg:flex flex-col gap-3 px-1">
+                    <div className="hidden lg:flex flex-col gap-2 px-1">
                     <div className="flex items-end justify-between gap-6">
                       <div className="flex flex-col gap-1">
                         <h1 className="text-3xl xl:text-4xl font-bold tracking-tight text-foreground">
@@ -3571,8 +3571,8 @@ const CarDetails = memo(() => {
               className="border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in"
               style={{ animationDelay: "400ms" }}
             >
-              <CardContent className="p-3 md:p-6">
-                <div className="flex flex-col gap-2 md:gap-4 mb-3 md:mb-6">
+                <CardContent className="p-3 md:p-6">
+                  <div className="flex flex-col gap-1.5 md:gap-3 mb-2 md:mb-4">
                   <h3 className="text-base md:text-xl font-bold flex items-center text-foreground">
                     <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg mr-2 md:mr-3">
                       <Settings className="h-4 w-4 md:h-6 md:w-6 text-primary" />
@@ -4056,24 +4056,16 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
           </div>
-
-          {/* Right Column - Enhanced Contact Card */}
-          <div className="space-y-4">
-            {/* Enhanced Contact & Inspection Card */}
-            <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
-              <CardContent className="flex flex-col gap-4 p-4">
-                <div className="space-y-1 text-left sm:text-center">
-                  {resolvedMainTitle && (
-                    <h2 className="text-base font-semibold leading-tight text-foreground">
-                      {resolvedMainTitle}
-                    </h2>
-                  )}
-                </div>
-                <Separator />
-
-                <h3 className="text-lg font-bold text-center text-foreground">
-                  Kontakt & Inspektim
-                </h3>
+  
+            {/* Right Column - Enhanced Contact Card */}
+            <div className="space-y-4">
+              {/* Enhanced Contact & Inspection Card */}
+              <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
+                <CardContent className="flex flex-col gap-4 p-4">
+                  <h3 className="text-lg font-bold text-center text-foreground">
+                    Kontakt & Inspektim
+                  </h3>
+                  <Separator />
 
                 {/* Enhanced Contact Buttons */}
                 <div className="mb-4 space-y-3">

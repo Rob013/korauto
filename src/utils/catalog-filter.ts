@@ -474,15 +474,26 @@ export const generateYearRange = (currentYear?: number): number[] => {
  */
 export const generateYearPresets = (currentYear?: number) => {
   const year = currentYear || new Date().getFullYear();
-  return [
-    { label: '2022+', from: 2022, to: year + 2 },
-    { label: '2020+', from: 2020, to: 2022 },
-    { label: '2018+', from: 2018, to: 2020 },
-    { label: '2016+', from: 2016, to: 2018 },
-    { label: '2010+', from: 2010, to: year + 2 },
-    { label: '2005+', from: 2005, to: year + 2 },
-    { label: '2000+', from: 2000, to: year + 2 },
+  const presets = [
+    { from: year, span: 2 },
+    { from: year - 1, span: 2 },
+    { from: year - 3, span: 2 },
+    { from: year - 5, span: 2 },
+    { from: year - 7, span: 2 },
+    { from: year - 10, span: 3 },
   ];
+
+  return presets
+    .map(({ from, span }) => ({
+      from,
+      to: Math.min(from + span, year + 2),
+    }))
+    .filter(({ from }) => from >= 2012)
+    .map(({ from, to }) => ({
+      label: `${from}+`,
+      from,
+      to,
+    }));
 };
 
 /**
