@@ -115,6 +115,16 @@ const ImageZoom = lazy(() =>
   })),
 );
 
+const API_BASE_URL = "https://auctionsapi.com/api";
+const API_KEY = "d00985c77981fe8d26be16735f932ed1";
+const KBC_DOMAINS = [
+  "kbchachacha",
+  "kbchacha",
+  "kb_chachacha",
+  "kbc",
+  "kbcchachacha",
+];
+
 // Fallback mapping moved to data/koreaOptionFallbacks.ts
 
 const normalizeText = (value: string) =>
@@ -1821,17 +1831,7 @@ const CarDetails = memo(() => {
         setHasAutoExpanded(true);
       }
     }
-  }, [car, hasAutoExpanded]);
-  const API_BASE_URL = "https://auctionsapi.com/api";
-  const API_KEY = "d00985c77981fe8d26be16735f932ed1";
-  const KBC_DOMAINS = [
-    "kbchachacha",
-    "kbchacha",
-    "kb_chachacha",
-    "kbc",
-    "kbcchachacha",
-  ];
-
+    }, [car, hasAutoExpanded]);
     const buildCarDetails = useCallback(
       (
         carData: any,
