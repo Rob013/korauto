@@ -29,7 +29,7 @@ interface InspectionDiagramPanelProps {
 }
 
 const BASE_CANVAS_WIDTH = 640;
-const BASE_CANVAS_HEIGHT = 600;
+const BASE_CANVAS_HEIGHT = 606;
 const DEFAULT_MARKER_SIZE = 8;
 const MIN_MARKER_DIAMETER = 4;
 const MAX_MARKER_DIAMETER = 10;

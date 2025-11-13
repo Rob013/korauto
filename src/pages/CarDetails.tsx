@@ -95,7 +95,6 @@ import {
   fetchEncarsVehicle,
   type EncarsVehicleResponse,
 } from "@/services/encarApi";
-import { openCarReportInNewTab } from "@/utils/navigation";
 import { createPortal } from "react-dom";
 import {
   buildUsageHighlights,
@@ -1767,43 +1766,9 @@ const CarDetails = memo(() => {
     return false;
   }, [car]);
 
-  const accidentSeverity = useMemo<"none" | "minor" | "severe">(() => {
-    if (accidentCount === 0) {
-      return "none";
-    }
-    return hasMainFrameworkAccident ? "severe" : "minor";
-  }, [accidentCount, hasMainFrameworkAccident]);
-
-  const accidentStyle = useMemo(() => {
-    if (accidentSeverity === "severe") {
-      return {
-        button:
-          "border-destructive/40 text-destructive hover:border-destructive hover:shadow-2xl hover:shadow-destructive/20",
-        overlay: "from-destructive/0 to-destructive/10",
-        badge: "bg-destructive/20 text-destructive ring-2 ring-destructive/20",
-        icon: "",
-      };
-    }
-
-    if (accidentSeverity === "minor") {
-      return {
-        button:
-          "border-border/70 text-foreground hover:border-primary hover:text-primary hover:shadow-xl hover:shadow-primary/10",
-        overlay: "from-primary/0 to-primary/5",
-        badge: "bg-muted text-foreground ring-1 ring-border/60",
-        icon: "",
-      };
-    }
-
-    return {
-      button:
-        "border-emerald-500/40 text-emerald-600 hover:border-emerald-500 hover:bg-emerald-500 hover:text-white hover:shadow-2xl hover:shadow-emerald-500/20",
-      overlay: "from-emerald-500/0 to-emerald-500/10",
-      badge:
-        "bg-emerald-500/20 text-emerald-600 ring-2 ring-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400",
-      icon: "",
-    };
-  }, [accidentSeverity]);
+  const historyButtonVariant = hasMainFrameworkAccident
+    ? "destructive"
+    : "outline";
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -2702,15 +2667,6 @@ const CarDetails = memo(() => {
     [car],
   );
 
-  const handleOpenInspectionReport = useCallback(() => {
-    impact("light");
-    const reportLot = car?.lot || lot;
-    if (!reportLot) return;
-
-    prepareInspectionReportPrefetch(reportLot);
-    openCarReportInNewTab(reportLot);
-  }, [car?.lot, impact, lot, prepareInspectionReportPrefetch]);
-
   // Memoize images array for performance - compute before early returns (limit to 20 for gallery)
   const images = useMemo(() => {
     if (car?.images?.length) {
@@ -3544,15 +3500,15 @@ const CarDetails = memo(() => {
                 </h1>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={historyButtonVariant}
                   size="sm"
                   onClick={handleScrollToHistory}
-                  className="ml-auto flex items-center gap-2"
+                  className={`ml-auto flex items-center gap-2 transition-colors ${hasMainFrameworkAccident ? "shadow-sm" : ""}`}
                 >
                   <span>Historia</span>
                   <Badge
                     variant="secondary"
-                    className="text-[10px] font-semibold uppercase tracking-wide"
+                    className={`text-[10px] font-semibold uppercase tracking-wide ${hasMainFrameworkAccident ? "bg-destructive text-destructive-foreground" : ""}`}
                   >
                     {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
                   </Badge>
@@ -3600,9 +3556,9 @@ const CarDetails = memo(() => {
                     <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
                       {(() => {
                         // Build full model specification with all available variant/trim info from API
-                        let fullModel = car.model || "";
+                        let fullModel = (car.model || "").trim();
                         const parts: string[] = [];
-                        // Try to get grade from various sources
+
                         const grade =
                           car.grade_iaai ||
                           car.details?.grade?.name ||
@@ -3615,7 +3571,6 @@ const CarDetails = memo(() => {
                           parts.push(grade);
                         }
 
-                        // Try to get variant/trim info
                         const variant =
                           car.details?.variant?.name || car.details?.variant;
                         if (
@@ -3644,7 +3599,6 @@ const CarDetails = memo(() => {
                           parts.push(trim);
                         }
 
-                        // Add engine info
                         const engineName = car.engine?.name || car.engine;
                         const engineStr =
                           typeof engineName === "string" ? engineName : "";
@@ -3656,12 +3610,11 @@ const CarDetails = memo(() => {
                             .includes(engineStr.toLowerCase())
                         ) {
                           const engineInfo = engineStr.trim();
-                          if (engineInfo && engineInfo.length > 0) {
+                          if (engineInfo) {
                             parts.push(engineInfo);
                           }
                         }
 
-                        // Add drive type (Quattro, xDrive, 4WD, etc.)
                         const driveType =
                           car.drive_wheel?.name || car.drive_wheel;
                         const driveStr =
@@ -3677,17 +3630,54 @@ const CarDetails = memo(() => {
                             .includes(driveStr.toLowerCase())
                         ) {
                           const driveInfo = driveStr.trim();
-                          if (driveInfo && driveInfo.length > 0) {
+                          if (driveInfo) {
                             parts.push(driveInfo);
                           }
                         }
 
-                        // Combine model with all parts
-                        const result =
-                          parts.length > 0
-                            ? `${fullModel} ${parts.join(" ")}`
-                            : fullModel;
-                        return result;
+                        if (parts.length > 0) {
+                          fullModel = [fullModel, parts.join(" ")]
+                            .filter(Boolean)
+                            .join(" ")
+                            .trim();
+                        }
+
+                        const cleanedSecondary = (() => {
+                          if (!resolvedSecondaryTitle) {
+                            return "";
+                          }
+                          let detail = resolvedSecondaryTitle.trim();
+                          const stripLeading = (value?: string | number | null) => {
+                            if (!value && value !== 0) return;
+                            const text = String(value).trim();
+                            if (!text) return;
+                            const pattern = new RegExp(`^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\s*`, "i");
+                            detail = detail.replace(pattern, "").trim();
+                          };
+                          stripLeading(resolvedMainTitle);
+                          stripLeading(car.year);
+                          stripLeading(car.make);
+                          return detail.replace(/^[-•]+\s*/u, "").trim();
+                        })();
+
+                        const normalizedModel = fullModel.trim().toLowerCase();
+                        if (cleanedSecondary) {
+                          const normalizedSecondary = cleanedSecondary
+                            .replace(/\s+/g, " ")
+                            .trim();
+                          const baseModel = (car.model || "").trim().toLowerCase();
+                          if (
+                            !normalizedModel ||
+                            normalizedModel === baseModel ||
+                            /\b5er\b/.test(normalizedModel) ||
+                            normalizedSecondary.toLowerCase().includes("(f10)")
+                          ) {
+                            return normalizedSecondary;
+                          }
+                        }
+
+                        const fallback = cleanedSecondary || car.title || "";
+                        return fullModel || fallback || "-";
                       })()}
                     </span>
                   </div>
@@ -4029,42 +4019,7 @@ const CarDetails = memo(() => {
                       {resolvedMainTitle}
                     </h2>
                   )}
-                  {resolvedSecondaryTitle && (
-                    <p className="text-sm text-muted-foreground leading-snug">
-                      {resolvedSecondaryTitle}
-                    </p>
-                  )}
                 </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleOpenInspectionReport}
-                  disabled={!car?.lot && !lot}
-                  className={`group relative mb-4 w-full h-12 rounded-xl border-2 ${accidentStyle.button} overflow-hidden transition-all duration-300`}
-                >
-                  <span
-                    className={`absolute inset-0 bg-gradient-to-br ${accidentStyle.overlay} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                  ></span>
-                  <span className="relative flex items-center justify-between w-full">
-                    <span className="flex items-center gap-2.5">
-                      <Shield className="h-4 w-4" />
-                      <span className="text-sm font-semibold">
-                        Historia e Sigurimit
-                      </span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Badge
-                        variant="secondary"
-                        className={`text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
-                      >
-                        {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
-                      </Badge>
-                      <ChevronRight className="h-4 w-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5" />
-                    </span>
-                  </span>
-                </Button>
-
                 <Separator />
 
                 <h3 className="text-lg font-bold text-center text-foreground">
