@@ -162,6 +162,7 @@ const LazyCarCard = memo(({
   );
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isIntersecting, setIsIntersecting] = useState(false);
+  const [hasAnimatedIn, setHasAnimatedIn] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Simplified logic: trust the database filtering, only hide in clear edge cases
@@ -309,6 +310,12 @@ const LazyCarCard = memo(({
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (isIntersecting) {
+      setHasAnimatedIn(true);
+    }
+  }, [isIntersecting]);
 
     const normalizedSource = typeof source === 'string' ? source : '';
     const sourceBadgeLabel = normalizedSource
@@ -460,21 +467,21 @@ const LazyCarCard = memo(({
   // Don't render content until intersection
   if (!isIntersecting) {
     return (
-        <div 
+        <div
           ref={cardRef}
-          className="glass-card rounded-lg overflow-hidden h-96"
-        style={{
-          willChange: 'contents',
-          containIntrinsicSize: '280px 360px'
-        }}
-      >
-            <div className="h-72 bg-muted" />
-            <div className="p-2 space-y-1">
-              <div className="h-4 bg-muted rounded w-3/4" />
-              <div className="h-3 bg-muted rounded w-1/2" />
-              <div className="h-5 bg-muted rounded w-2/3" />
-            </div>
-      </div>
+          className="glass-card rounded-lg overflow-hidden h-96 animate-pulse"
+          style={{
+            willChange: 'contents',
+            containIntrinsicSize: '280px 360px'
+          }}
+        >
+          <div className="h-72 bg-muted" />
+          <div className="p-2 space-y-1">
+            <div className="h-4 bg-muted/80 rounded w-3/4" />
+            <div className="h-3 bg-muted/80 rounded w-1/2" />
+            <div className="h-5 bg-muted/80 rounded w-2/3" />
+          </div>
+        </div>
     );
   }
 
@@ -489,8 +496,10 @@ const LazyCarCard = memo(({
         <div
           ref={cardRef}
           className={cn(
-              "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg",
-            "transition-transform duration-200"
+            "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg",
+            "transition-transform duration-300 ease-emphasized will-change-transform",
+            hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500 motion-safe:ease-emphasized",
+            "hover:-translate-y-0.5 hover:shadow-lg"
           )}
           onClick={handleCardClick}
         >
@@ -617,8 +626,11 @@ const LazyCarCard = memo(({
       <div
         ref={cardRef}
         className={cn(
-            "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-xl",
-          "mobile-card-compact compact-modern-card car-card-container"
+          "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-xl",
+          "mobile-card-compact compact-modern-card car-card-container",
+          "transition-transform duration-400 ease-emphasized will-change-transform",
+          hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-4 motion-safe:duration-500 motion-safe:ease-emphasized",
+          "hover:-translate-y-1 hover:shadow-xl"
         )}
         onClick={handleCardClick}
       >
