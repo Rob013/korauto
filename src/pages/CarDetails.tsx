@@ -1314,6 +1314,17 @@ const CarDetails = memo(() => {
     useState<EncarsVehicleResponse["contact"] | null>(null);
   const [liveDealerLoading, setLiveDealerLoading] = useState(false);
   const [liveDealerError, setLiveDealerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document.body.classList.add("car-details-page");
+    return () => {
+      document.body.classList.remove("car-details-page");
+    };
+  }, []);
   const lastFetchedLotRef = useRef<string | null>(null);
   const liveDealerAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -4189,28 +4200,25 @@ const CarDetails = memo(() => {
           <div className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
             <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-muted-foreground line-clamp-1">
-                  {car.year} {car.make} {car.model}
-                </div>
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-2xl font-bold text-foreground leading-tight">
                   €{car.price.toLocaleString()}
                 </div>
               </div>
               <Button
                 size="default"
                 aria-label="Thirr Korauto"
-                className="flex h-10 min-w-[124px] flex-shrink-0 items-center gap-2 rounded-xl bg-primary px-3 text-left text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-colors hover:bg-primary/90 focus-visible:ring-offset-background dark:shadow-primary/20"
+                className="flex h-9 min-w-[112px] flex-shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 text-left text-[0.8125rem] font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-colors hover:bg-primary/90 focus-visible:ring-offset-background dark:shadow-primary/20"
                 onClick={handlePhoneCall}
               >
-                <Phone className="h-5 w-5" />
+                <Phone className="h-4 w-4" />
                 <span className="leading-tight">+383 48 181 116</span>
               </Button>
               <Button
                 size="default"
-                className="h-10 flex-shrink-0 rounded-xl bg-green-600 px-3 text-sm font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
+                className="h-9 flex-shrink-0 rounded-xl bg-green-600 px-3 text-[0.8125rem] font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
                 onClick={handleContactWhatsApp}
               >
-                <MessageCircle className="mr-2 h-5 w-5" />
+                <MessageCircle className="mr-1.5 h-4 w-4" />
                 WhatsApp
               </Button>
             </div>
