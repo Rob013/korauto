@@ -2701,34 +2701,68 @@ const CarDetails = memo(() => {
       .trim();
   }, [car]);
 
-    const secondaryTitle = useMemo(() => {
-      if (!car) {
-        return "";
+  const secondaryTitle = useMemo(() => {
+    const sanitizePart = (value: string) =>
+      value
+        .replace(/\s*•\s*$/u, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (!car) {
+      return "";
+    }
+
+    const rawParts = [
+      typeof car.title === "string" ? car.title.trim() : "",
+      typeof car.details?.variant === "string" ? car.details.variant.trim() : "",
+      typeof car.details?.trim === "string" ? car.details.trim.trim() : "",
+      typeof car.details?.grade === "string" ? car.details.grade.trim() : "",
+    ]
+      .map((part) => (part ? sanitizePart(part) : ""))
+      .filter(Boolean);
+
+    const uniqueParts: string[] = [];
+
+    rawParts.forEach((part) => {
+      const normalized = part.toLowerCase();
+      if (!normalized) {
+        return;
       }
 
-      const rawParts = [
-        typeof car.title === "string" ? car.title.trim() : "",
-        typeof car.details?.variant === "string" ? car.details.variant.trim() : "",
-        typeof car.details?.trim === "string" ? car.details.trim.trim() : "",
-        typeof car.details?.grade === "string" ? car.details.grade.trim() : "",
-      ].filter(Boolean);
+      let shouldAdd = true;
 
-      const uniqueParts: string[] = [];
-      const seen = new Set<string>();
-      rawParts.forEach((part) => {
-        const normalized = part.toLowerCase();
-        if (!seen.has(normalized)) {
-          seen.add(normalized);
-          uniqueParts.push(part);
+      for (let index = 0; index < uniqueParts.length; index += 1) {
+        const existing = uniqueParts[index];
+        const existingNormalized = existing.toLowerCase();
+
+        if (existingNormalized === normalized) {
+          shouldAdd = false;
+          break;
         }
-      });
 
-      if (uniqueParts.length > 0) {
-        return uniqueParts.join(" • ");
+        if (existingNormalized.includes(normalized)) {
+          shouldAdd = false;
+          break;
+        }
+
+        if (normalized.includes(existingNormalized)) {
+          uniqueParts[index] = part;
+          shouldAdd = false;
+          break;
+        }
       }
 
-      return mainTitle;
-    }, [car, mainTitle]);
+      if (shouldAdd) {
+        uniqueParts.push(part);
+      }
+    });
+
+    if (uniqueParts.length > 0) {
+      return sanitizePart(uniqueParts.join(" • "));
+    }
+
+    return sanitizePart(mainTitle);
+  }, [car, mainTitle]);
 
       const summaryTitleFallback = useMemo(() => {
         if (!prefetchedSummary) {
@@ -2762,29 +2796,6 @@ const CarDetails = memo(() => {
         }
         return "";
       }, [prefetchedSummary?.title, resolvedMainTitle, secondaryTitle]);
-
-      const resolvedPrice = useMemo(() => {
-        if (typeof car?.price === "number" && Number.isFinite(car.price)) {
-          return car.price;
-        }
-        if (
-          typeof prefetchedSummary?.price === "number" &&
-          Number.isFinite(prefetchedSummary.price)
-        ) {
-          return prefetchedSummary.price;
-        }
-        return null;
-      }, [car?.price, prefetchedSummary?.price]);
-
-      const resolvedLot = useMemo(() => {
-        if (car?.lot) {
-          return car.lot;
-        }
-        if (prefetchedSummary?.lot) {
-          return String(prefetchedSummary.lot);
-        }
-        return null;
-      }, [car?.lot, prefetchedSummary?.lot]);
 
     const fuelDisplay = useMemo(() => {
       if (!car) {
@@ -3485,6 +3496,14 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
+            {resolvedMainTitle && (
+              <div className="px-1">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  {resolvedMainTitle}
+                </h1>
+              </div>
+            )}
+
             {/* Vehicle Specifications - Compact Mobile Card */}
             <Card
               id="specifications"
@@ -3928,164 +3947,142 @@ const CarDetails = memo(() => {
           </div>
 
           {/* Right Column - Enhanced Contact Card */}
-            <div className="space-y-4">
-              {/* Enhanced Contact & Inspection Card */}
-              <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
-                <CardContent className="p-4">
-                  <div className="mb-4 space-y-2 text-center">
-                    {resolvedMainTitle && (
-                      <h2 className="text-base font-semibold text-foreground leading-tight">
-                        {resolvedMainTitle}
-                      </h2>
-                    )}
-                    {resolvedSecondaryTitle && (
-                      <p className="text-xs text-muted-foreground leading-snug">
-                        {resolvedSecondaryTitle}
-                      </p>
-                    )}
-                    {resolvedLot && (
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Lot #{resolvedLot}
-                      </p>
-                    )}
-                    {resolvedPrice !== null && (
-                      <div className="text-2xl font-bold text-primary">
-                        €{resolvedPrice.toLocaleString()}
-                      </div>
-                    )}
-                    {resolvedPrice !== null && (
-                      <p className="text-xs text-muted-foreground font-medium">
-                        +350€ deri në Prishtinë
-                      </p>
-                    )}
-                  </div>
+          <div className="space-y-4">
+            {/* Enhanced Contact & Inspection Card */}
+            <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
+              <CardContent className="flex flex-col gap-4 p-4">
+                <div className="space-y-1 text-left sm:text-center">
+                  {resolvedMainTitle && (
+                    <h2 className="text-base font-semibold leading-tight text-foreground">
+                      {resolvedMainTitle}
+                    </h2>
+                  )}
+                  {resolvedSecondaryTitle && (
+                    <p className="text-sm text-muted-foreground leading-snug">
+                      {resolvedSecondaryTitle}
+                    </p>
+                  )}
+                </div>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleOpenInspectionReport}
-                    disabled={!car?.lot && !lot}
-                    className={`group relative mb-4 w-full h-12 rounded-xl border-2 ${accidentStyle.button} overflow-hidden transition-all duration-300`}
-                  >
-                    <span
-                      className={`absolute inset-0 bg-gradient-to-br ${accidentStyle.overlay} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                    ></span>
-                    <span className="relative flex items-center justify-between w-full">
-                      <span className="flex items-center gap-2.5">
-                        <Shield className="h-4 w-4" />
-                        <span className="text-sm font-semibold">
-                          Historia e Sigurimit
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Badge
-                          variant="secondary"
-                          className={`text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
-                        >
-                          {accidentCount === 0
-                            ? "Pa aksidente"
-                            : `${accidentCount}`}
-                        </Badge>
-                        <ChevronRight className="h-4 w-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleOpenInspectionReport}
+                  disabled={!car?.lot && !lot}
+                  className={`group relative mb-4 w-full h-12 rounded-xl border-2 ${accidentStyle.button} overflow-hidden transition-all duration-300`}
+                >
+                  <span
+                    className={`absolute inset-0 bg-gradient-to-br ${accidentStyle.overlay} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                  ></span>
+                  <span className="relative flex items-center justify-between w-full">
+                    <span className="flex items-center gap-2.5">
+                      <Shield className="h-4 w-4" />
+                      <span className="text-sm font-semibold">
+                        Historia e Sigurimit
                       </span>
                     </span>
+                    <span className="flex items-center gap-1.5">
+                      <Badge
+                        variant="secondary"
+                        className={`text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
+                      >
+                        {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                      </Badge>
+                      <ChevronRight className="h-4 w-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5" />
+                    </span>
+                  </span>
+                </Button>
+
+                <Separator />
+
+                <h3 className="text-lg font-bold text-center text-foreground">
+                  Kontakt & Inspektim
+                </h3>
+
+                {/* Enhanced Contact Buttons */}
+                <div className="mb-4 space-y-3">
+                  <Button
+                    onClick={handleContactWhatsApp}
+                    className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    WhatsApp
                   </Button>
 
-                  <Separator className="my-4" />
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={handlePhoneCall}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    +383 48 181 116
+                  </Button>
 
-                  <h3 className="text-lg font-bold mb-4 text-center text-foreground">
-                    Kontakt & Inspektim
-                  </h3>
+                  {/* Instagram */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
+                    onClick={() =>
+                      window.open("https://www.instagram.com/korauto.ks/", "_blank")
+                    }
+                  >
+                    <Instagram className="h-4 w-4 mr-2" />
+                    Instagram
+                  </Button>
 
-                  {/* Enhanced Contact Buttons */}
-                    <div className="space-y-3 mb-4">
-                      <Button
-                        onClick={handleContactWhatsApp}
-                        className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        WhatsApp
-                      </Button>
+                  {/* Facebook */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
+                    onClick={() =>
+                      window.open(
+                        "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
+                        "_blank",
+                      )
+                    }
+                  >
+                    <Facebook className="h-4 w-4 mr-2" />
+                    Facebook
+                  </Button>
 
-                      <Button
-                        variant="outline"
-                        className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                        onClick={handlePhoneCall}
-                      >
-                        <Phone className="h-4 w-4 mr-2" />
-                        +383 48 181 116
-                      </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => window.open("mailto:info@korauto.com", "_self")}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    info@korauto.com
+                  </Button>
+                </div>
 
-                      {/* Instagram */}
-                      <Button
-                        variant="outline"
-                        className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
-                        onClick={() =>
-                          window.open(
-                            "https://www.instagram.com/korauto.ks/",
-                            "_blank",
-                          )
-                        }
-                      >
-                        <Instagram className="h-4 w-4 mr-2" />
-                        Instagram
-                      </Button>
+                {/* Enhanced Additional Buttons */}
+                <div className="border-t border-border pt-4 space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => navigate("/garancioni")}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Mëso më shumë për garancionin
+                  </Button>
+                </div>
 
-                      {/* Facebook */}
-                      <Button
-                        variant="outline"
-                        className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
-                        onClick={() =>
-                          window.open(
-                            "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
-                            "_blank",
-                          )
-                        }
-                      >
-                        <Facebook className="h-4 w-4 mr-2" />
-                        Facebook
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                        onClick={() =>
-                          window.open("mailto:info@korauto.com", "_self")
-                        }
-                      >
-                        <Mail className="h-4 w-4 mr-2" />
-                        info@korauto.com
-                      </Button>
-                    </div>
-
-                  {/* Enhanced Additional Buttons */}
-                  <div className="border-t border-border pt-4 space-y-3">
-                    <Button
-                      variant="outline"
-                      className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                      onClick={() => navigate("/garancioni")}
+                {/* Enhanced Location */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-start gap-3 text-muted-foreground">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <a
+                      href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm hover:text-primary transition-colors cursor-pointer leading-relaxed"
                     >
-                      <Shield className="h-4 w-4 mr-2" />
-                      Mëso më shumë për garancionin
-                    </Button>
+                      Rr. Ilaz Kodra 70, Prishtinë, Kosovo
+                    </a>
                   </div>
-
-                  {/* Enhanced Location */}
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="flex items-start gap-3 text-muted-foreground">
-                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <a
-                        href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm hover:text-primary transition-colors cursor-pointer leading-relaxed"
-                      >
-                        Rr. Ilaz Kodra 70, Prishtinë, Kosovo
-                      </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Desktop map - small widget under Kontakt & Inspektim */}
             <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl">
