@@ -1201,11 +1201,11 @@ const EncarCatalog = ({
   }, []);
   return <div className="flex min-h-screen bg-background">
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
-      <div ref={filterPanelRef} data-filter-panel className={`
+        <div ref={filterPanelRef} data-filter-panel className={`
         fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${!showFilters && 'lg:block hidden'}
-        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform'}
+          ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform lg:flex lg:flex-col lg:max-h-[calc(100vh-2rem)] lg:overflow-hidden'}
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
           <div className="flex items-center justify-center gap-4 sm:justify-between">
@@ -1234,8 +1234,8 @@ const EncarCatalog = ({
           </div>
         </div>
         
-        <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
-          <div className={`${isMobile ? 'p-3' : ''}`}>
+          <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : 'pb-6 pr-2'}`}>
+            <div className={`${isMobile ? 'p-3' : 'p-4 space-y-4'}`}>
             <EncarStyleFilter 
               filters={filters} 
               manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 

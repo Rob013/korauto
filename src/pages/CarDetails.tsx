@@ -3504,28 +3504,66 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {resolvedMainTitle && (
-              <div className="px-1 flex flex-wrap items-center gap-3 justify-between">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                  {resolvedMainTitle}
-                </h1>
-                <Button
-                  type="button"
-                  variant={historyButtonVariant}
-                  size="sm"
-                  onClick={handleScrollToHistory}
-                  className={`ml-auto flex items-center gap-2 transition-colors ${hasMainFrameworkAccident ? "shadow-sm" : ""}`}
-                >
-                  <span>Historia</span>
-                  <Badge
-                    variant="secondary"
-                    className={`text-[10px] font-semibold uppercase tracking-wide ${hasMainFrameworkAccident ? "bg-destructive text-destructive-foreground" : ""}`}
-                  >
-                    {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
-                  </Badge>
-                </Button>
-              </div>
-            )}
+              {resolvedMainTitle && (
+                <>
+                  <div className="px-1 flex flex-wrap items-center gap-3 justify-between lg:hidden">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                      {resolvedMainTitle}
+                    </h1>
+                    <Button
+                      type="button"
+                      variant={historyButtonVariant}
+                      size="sm"
+                      onClick={handleScrollToHistory}
+                      className={`ml-auto flex items-center gap-2 transition-colors ${hasMainFrameworkAccident ? "shadow-sm" : ""}`}
+                    >
+                      <span>Historia</span>
+                      <Badge
+                        variant="secondary"
+                        className={`text-[10px] font-semibold uppercase tracking-wide ${hasMainFrameworkAccident ? "bg-destructive text-destructive-foreground" : ""}`}
+                      >
+                        {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                      </Badge>
+                    </Button>
+                  </div>
+                  <div className="hidden lg:flex flex-col gap-3 px-1">
+                    <div className="flex items-end justify-between gap-6">
+                      <div className="flex flex-col gap-1">
+                        <h1 className="text-3xl xl:text-4xl font-bold tracking-tight text-foreground">
+                          {resolvedMainTitle}
+                        </h1>
+                        {resolvedSecondaryTitle && (
+                          <p className="text-lg text-muted-foreground leading-snug">
+                            {resolvedSecondaryTitle}
+                          </p>
+                        )}
+                      </div>
+                      {typeof car?.price === "number" && car.price > 0 && (
+                        <div className="text-4xl font-semibold text-primary leading-tight whitespace-nowrap">
+                          €{car.price.toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <Button
+                        type="button"
+                        variant={historyButtonVariant}
+                        size="sm"
+                        onClick={handleScrollToHistory}
+                        className={`flex items-center gap-2 transition-colors ${hasMainFrameworkAccident ? "shadow-sm" : ""}`}
+                      >
+                        <span>Historia</span>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] font-semibold uppercase tracking-wide ${hasMainFrameworkAccident ? "bg-destructive text-destructive-foreground" : ""}`}
+                        >
+                          {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                        </Badge>
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
 
             {/* Vehicle Specifications - Compact Mobile Card */}
             <Card
