@@ -1,6 +1,6 @@
 //@ts-nocheck
 import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from "react";
-import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
 import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSold } from "@/services/carCache";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
@@ -795,145 +795,104 @@ export const useSecureAuctionAPI = () => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
 
-      try {
-        const { data: cachedManufacturers, error: cachedError } = await supabase
-          .from('manufacturers')
-          .select('id,name,car_count,logo_url,is_active')
-          .eq('is_active', true)
-          .order('car_count', { ascending: false })
-          .limit(500);
-
-        if (!cachedError && cachedManufacturers && cachedManufacturers.length > 0) {
-          const normalizedManufacturers = cachedManufacturers.map((manufacturer: any) => {
-            const parsedId = Number.parseInt(String(manufacturer.id), 10);
-            const normalizedId = Number.isFinite(parsedId) ? parsedId : manufacturer.id;
-            const logoUrl = manufacturer.logo_url || getBrandLogo(manufacturer.name);
-            return {
-              id: normalizedId,
-              name: manufacturer.name,
-              cars_qty: manufacturer.car_count || 0,
-              car_count: manufacturer.car_count || 0,
-              image: logoUrl || undefined
-            };
-          });
-
-          console.log(`☁️ Using ${normalizedManufacturers.length} cached manufacturers from Lovable Cloud`);
-          return normalizedManufacturers;
-        }
-
-        if (cachedError) {
-          console.warn('⚠️ Failed to load cached manufacturers:', cachedError);
-        }
-      } catch (cacheError) {
-        console.warn('⚠️ Manufacturer cache lookup failed:', cacheError);
-      }
-
-      // Try to get manufacturers from cache or API
-      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" },
-        () => makeSecureAPICall("manufacturers/cars", {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
+      const data = await getCachedApiCall(
+        "manufacturers/cars",
+        { per_page: "1000", simple_paginate: "0" },
+        () =>
+          makeSecureAPICall("manufacturers/cars", {
+            per_page: "1000",
+            simple_paginate: "0",
+          }),
       );
 
-      let manufacturers = data.data || [];
+      const rawManufacturers = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
 
-      // If we got manufacturers from API, normalize them
-      if (manufacturers.length > 0) {
-        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
-        manufacturers = manufacturers.map(manufacturer => ({
-          id: manufacturer.id,
-          name: manufacturer.name,
-          cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
-          car_count: manufacturer.car_count || manufacturer.cars_qty || 0,
-          image: manufacturer.image || getBrandLogo(manufacturer.name)
-        }));
-      } else {
-        // No manufacturers from API, use fallback data
-        console.log(`⚠️ No manufacturers from API, using fallback data`);
-        manufacturers = createFallbackManufacturers();
+      const normalizedManufacturers = rawManufacturers
+        .filter((manufacturer: any) => manufacturer && manufacturer.id && manufacturer.name)
+        .map((manufacturer: any) => {
+          const parsedId = Number.parseInt(String(manufacturer.id), 10);
+          const normalizedId = Number.isFinite(parsedId) ? parsedId : manufacturer.id;
+          const carsCount = Number(manufacturer.car_count ?? manufacturer.cars_qty ?? 0);
+          const image = manufacturer.image || getBrandLogo(manufacturer.name);
+
+          return {
+            id: normalizedId,
+            name: manufacturer.name,
+            cars_qty: carsCount,
+            car_count: carsCount,
+            image: image || undefined,
+          };
+        })
+        .sort((a: any, b: any) => (b.cars_qty ?? 0) - (a.cars_qty ?? 0));
+
+      if (normalizedManufacturers.length === 0) {
+        console.warn("⚠️ No manufacturers returned from API, falling back to static data");
+        return createFallbackManufacturers();
       }
-      
-      console.log(`🏷️ Retrieved manufacturers:`, 
-        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
-      
-      return manufacturers;
+
+      console.log(
+        `🏷️ Retrieved manufacturers:`,
+        normalizedManufacturers.slice(0, 5).map((m: any) => `${m.name} (${m.cars_qty || 0} cars)`),
+      );
+
+      return normalizedManufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
-      console.log(`🔄 Using fallback manufacturer data`);
-      
-      // Return fallback data when API fails
       return createFallbackManufacturers();
     }
   };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      try {
-        const { data: cachedModels, error: cachedError } = await supabase
-          .from('car_models')
-          .select('id,name,car_count,is_active')
-          .eq('manufacturer_id', manufacturerId)
-          .eq('is_active', true)
-          .order('name', { ascending: true })
-          .limit(1000);
+      const data = await getCachedApiCall(
+        `models/${manufacturerId}/cars`,
+        { per_page: "1000", simple_paginate: "0" },
+        () =>
+          makeSecureAPICall(`models/${manufacturerId}/cars`, {
+            per_page: "1000",
+            simple_paginate: "0",
+          }),
+      );
 
-        if (!cachedError && cachedModels && cachedModels.length > 0) {
-          const normalizedModels = cachedModels.map((model: any) => {
-            const idSegments = String(model.id).split('-');
-            const rawId = idSegments[idSegments.length - 1];
-            return {
-              id: Number.parseInt(rawId, 10) || rawId,
-              name: model.name,
-              cars_qty: model.car_count || 0,
-              car_count: model.car_count || 0
-            };
-          });
+      const rawModels = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
 
-          console.log(`☁️ Using ${normalizedModels.length} cached models for manufacturer ${manufacturerId}`);
-          return normalizedModels;
-        }
+      const filteredModels = rawModels.filter((model: any) => {
+        if (!model || !model.id || !model.name) return false;
+        const modelManufacturerId =
+          model.manufacturer_id ?? model.manufacturer?.id ?? model.manufacturerId;
+        return String(modelManufacturerId ?? "") === manufacturerId;
+      });
 
-        if (cachedError) {
-          console.warn('[fetchModels] Failed to load cached models:', cachedError);
-        }
-      } catch (cacheError) {
-        console.warn('[fetchModels] Model cache lookup failed:', cacheError);
+      const normalizedModels = filteredModels
+        .map((model: any) => {
+          const parsedId = Number.parseInt(String(model.id), 10);
+          const normalizedId = Number.isFinite(parsedId) ? parsedId : model.id;
+          const carsCount = Number(model.car_count ?? model.cars_qty ?? 0);
+          return {
+            id: normalizedId,
+            name: model.name,
+            cars_qty: carsCount,
+            car_count: carsCount,
+          };
+        })
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+      if (normalizedModels.length === 0) {
+        console.warn(`⚠️ No models returned from API for manufacturer ${manufacturerId}`);
+        return [];
       }
 
-      // Use cached API call for models
-      const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
-        () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
-          per_page: "1000",
-          simple_paginate: "0"
-        })
-      );
-      
-      let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
-
-      // Filter models by manufacturer_id (in case API returns extra)
-      fallbackModels = fallbackModels.filter((m: any) =>
-        m.manufacturer_id?.toString() === manufacturerId ||
-        m.manufacturer?.id?.toString() === manufacturerId
-      );
-
-      fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
-      return fallbackModels;
+      return normalizedModels;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
-      console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
-      
-      // Use fallback model data based on manufacturer name - more efficient approach
-      try {
-        const manufacturers = await fetchManufacturers();
-        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
-        if (manufacturer) {
-          return createFallbackModels(manufacturer.name);
-        }
-      } catch (fallbackErr) {
-        console.error("Error creating fallback models:", fallbackErr);
-      }
-      
       return [];
     }
   };
@@ -942,56 +901,53 @@ export const useSecureAuctionAPI = () => {
     try {
       console.log(`🔍 Fetching generations for model ID: ${modelId}`);
 
-      try {
-        let query = supabase
-          .from('car_grades')
-          .select('id,name,car_count,manufacturer_id,model_id,is_active')
-          .eq('is_active', true)
-          .order('name', { ascending: true })
-          .limit(300);
-
-        if (manufacturerId) {
-          query = query.eq('manufacturer_id', manufacturerId).eq('model_id', `${manufacturerId}-${modelId}`);
-        } else {
-          query = query.like('model_id', `%-${modelId}`);
-        }
-
-        const { data: cachedGenerations, error: cachedError } = await query;
-
-        if (!cachedError && cachedGenerations && cachedGenerations.length > 0) {
-          const normalizedGenerations = cachedGenerations.map((generation: any) => {
-            const idSegments = String(generation.id).split('-');
-            const rawId = idSegments[idSegments.length - 1];
-            const parsedId = Number.parseInt(rawId, 10) || rawId;
-            const parsedModelId = Number.parseInt(String(generation.model_id?.split('-').pop() ?? modelId), 10) || modelId;
-            const parsedManufacturerId = Number.parseInt(String(generation.manufacturer_id ?? manufacturerId ?? ''), 10) || undefined;
-            return {
-              id: parsedId,
-              name: generation.name,
-              car_count: generation.car_count || 0,
-              cars_qty: generation.car_count || 0,
-              manufacturer_id: parsedManufacturerId,
-              model_id: parsedModelId
-            };
-          });
-
-          console.log(`☁️ Using ${normalizedGenerations.length} cached generations from Lovable Cloud`);
-          return normalizedGenerations;
-        }
-
-        if (cachedError) {
-          console.warn('[fetchGenerations] Failed to load cached generations:', cachedError);
-        }
-      } catch (cacheError) {
-        console.warn('[fetchGenerations] Generation cache lookup failed:', cacheError);
-      }
-
       // First try to fetch generations from a dedicated endpoint
       let generationsFromAPI: Generation[] = [];
       try {
         const generationResponse = await makeSecureAPICall(`generations/${modelId}`, {});
-        if (generationResponse.data && Array.isArray(generationResponse.data)) {
-          generationsFromAPI = generationResponse.data.filter(g => g && g.id && g.name);
+        const rawGenerations = Array.isArray(generationResponse?.data)
+          ? generationResponse.data
+          : Array.isArray(generationResponse)
+          ? generationResponse
+          : [];
+
+        generationsFromAPI = rawGenerations
+          .filter((generation: any) => generation && generation.id && generation.name)
+          .map((generation: any) => {
+            const parsedId = Number.parseInt(String(generation.id), 10);
+            const normalizedId = Number.isFinite(parsedId) ? parsedId : generation.id;
+            const parsedModelId =
+              Number.parseInt(String(generation.model_id ?? modelId), 10) ||
+              Number.parseInt(modelId, 10) ||
+              modelId;
+            const parsedManufacturerId = (() => {
+              if (generation.manufacturer_id) {
+                const parsed = Number.parseInt(String(generation.manufacturer_id), 10);
+                if (Number.isFinite(parsed)) {
+                  return parsed;
+                }
+              }
+              if (manufacturerId) {
+                const parsed = Number.parseInt(manufacturerId, 10);
+                return Number.isFinite(parsed) ? parsed : undefined;
+              }
+              return undefined;
+            })();
+            const carsCount = Number(generation.car_count ?? generation.cars_qty ?? 0);
+
+            return {
+              id: normalizedId,
+              name: generation.name,
+              car_count: carsCount,
+              cars_qty: carsCount,
+              manufacturer_id: parsedManufacturerId,
+              model_id: parsedModelId,
+              from_year: generation.from_year,
+              to_year: generation.to_year,
+            };
+          });
+
+        if (generationsFromAPI.length > 0) {
           console.log(`🎯 Found ${generationsFromAPI.length} generations from dedicated API endpoint`);
         }
       } catch (err) {
