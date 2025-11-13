@@ -193,6 +193,27 @@ const EncarCatalog = ({
     }, [showFilters, isMobile]);
 
   useEffect(() => {
+    const panel = filterPanelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    if (!isMobile) {
+      panel.style.removeProperty('visibility');
+      panel.style.removeProperty('pointer-events');
+      return;
+    }
+
+    if (showFilters) {
+      panel.style.visibility = 'visible';
+      panel.style.pointerEvents = 'auto';
+    } else {
+      panel.style.visibility = 'hidden';
+      panel.style.pointerEvents = 'none';
+    }
+  }, [showFilters, isMobile]);
+
+  useEffect(() => {
     refreshInventory(60);
   }, [refreshInventory]);
 
@@ -400,6 +421,7 @@ const EncarCatalog = ({
   // Refs for swipe gesture detection
   const mainContentRef = useRef<HTMLDivElement>(null);
   const filterPanelRef = useRef<HTMLDivElement>(null);
+  const defaultFetchAttemptedRef = useRef(false);
 
   // SIMPLIFIED: More efficient scroll position saving
   const saveScrollPosition = useCallback(() => {
@@ -483,24 +505,6 @@ const EncarCatalog = ({
     } else {
       setHasExplicitlyClosed(true);
       console.log("Closing filters, set explicit close flag");
-    }
-
-    // Use a single shorter timeout for DOM sync if needed (mobile only)
-    if (isMobile) {
-      setTimeout(() => {
-        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
-        if (filterPanel) {
-          if (newShowState) {
-            filterPanel.style.transform = 'translateX(0)';
-            filterPanel.style.visibility = 'visible';
-            console.log("Mobile: Synced filter panel to show");
-          } else {
-            filterPanel.style.transform = 'translateX(-100%)';
-            filterPanel.style.visibility = 'hidden';
-            console.log("Mobile: Synced filter panel to hide");
-          }
-        }
-      }, 50); // Reduced from 100ms to 50ms to reduce race conditions
     }
   }, 250),
   // 250ms debounce to prevent rapid clicking
@@ -887,6 +891,7 @@ const EncarCatalog = ({
   useEffect(() => {
     const loadInitialData = async () => {
       setIsRestoringState(true);
+      defaultFetchAttemptedRef.current = true;
 
       // Check if we're coming from homepage filter
       const fromHomepage = searchParams.get('fromHomepage');
@@ -952,6 +957,7 @@ const EncarCatalog = ({
         await fetchCars(urlCurrentPage, initialFilters, true);
       } catch (error) {
         console.error('Error loading initial data:', error);
+        defaultFetchAttemptedRef.current = false;
       } finally {
         setIsRestoringState(false);
       }
@@ -996,6 +1002,40 @@ const EncarCatalog = ({
     };
     loadInitialData();
   }, []); // Only run on mount
+
+  useEffect(() => {
+    if (Array.isArray(cars) && cars.length > 0) {
+      defaultFetchAttemptedRef.current = true;
+      return;
+    }
+
+    if (loading || isRestoringState) {
+      return;
+    }
+
+    const hasActiveFilters = Object.entries(filters || {}).some(([key, value]) => {
+      if (key === 'page' || key === 'per_page') {
+        return false;
+      }
+      return value !== undefined && value !== null && value !== '';
+    });
+
+    if (hasActiveFilters) {
+      defaultFetchAttemptedRef.current = true;
+      return;
+    }
+
+    if (defaultFetchAttemptedRef.current) {
+      return;
+    }
+
+    const defaultFilters = addPaginationToFilters({}, 200, 1);
+    defaultFetchAttemptedRef.current = true;
+    fetchCars(1, defaultFilters, true).catch(error => {
+      console.error('Failed to load default catalog cars:', error);
+      defaultFetchAttemptedRef.current = false;
+    });
+  }, [cars, filters, loading, isRestoringState, fetchCars]);
 
   // Live source totals (Encar/KBC) based on current filters
     const displayableGridCount = useMemo(() => {
@@ -1316,15 +1356,6 @@ const EncarCatalog = ({
             }
 
             // Additional CSS force close as backup
-            if (isMobile) {
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
-            }
           }} onCloseFilter={() => {
             console.log("Close filter called, isMobile:", isMobile);
             // Close the filter panel on mobile only; keep open on desktop
@@ -1333,16 +1364,6 @@ const EncarCatalog = ({
               setHasExplicitlyClosed(true);
             }
 
-            // Additional CSS force close as backup
-            if (isMobile) {
-              setTimeout(() => {
-                const filterPanel = document.querySelector('[data-filter-panel]');
-                if (filterPanel) {
-                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                  (filterPanel as HTMLElement).style.visibility = 'hidden';
-                }
-              }, 100);
-            }
           }} />
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
