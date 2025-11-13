@@ -41,7 +41,7 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="animate-fade-in container-responsive py-4 sm:py-6 lg:py-8">
+      <main className="container-responsive py-4 sm:py-6 lg:py-8">
         <EncarCatalog highlightCarId={highlightCarId} />
       </main>
       <Suspense fallback={<FooterSkeleton />}>
