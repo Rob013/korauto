@@ -39,7 +39,7 @@ const Catalog = () => {
   }, [highlightCarId]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Header />
       <main className="container-responsive py-4 sm:py-6 lg:py-8">
         <EncarCatalog highlightCarId={highlightCarId} />
