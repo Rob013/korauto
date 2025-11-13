@@ -125,7 +125,7 @@ export const useNavigationPrefetch = (
       if ('requestIdleCallback' in window) {
         (window as any).requestIdleCallback(execute, { timeout: warmupDelay });
       } else {
-        window.setTimeout(execute, warmupDelay);
+        (window as any).setTimeout(execute, warmupDelay);
       }
     };
 

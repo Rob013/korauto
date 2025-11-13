@@ -179,15 +179,15 @@ export const syncCarDataToCache = async (carData: any): Promise<boolean> => {
 };
 
 /**
- * Batch sync multiple cars to cache
+ * Batch sync multiple cars to cache (parallel processing)
  */
 export const batchSyncCarsToCache = async (cars: any[]): Promise<number> => {
-  let successCount = 0;
-
-  for (const car of cars) {
-    const success = await syncCarDataToCache(car);
-    if (success) successCount++;
-  }
-
-  return successCount;
+  const results = await Promise.allSettled(
+    cars.map(car => syncCarDataToCache(car))
+  );
+  
+  return results.filter(
+    (result): result is PromiseFulfilledResult<boolean> => 
+      result.status === 'fulfilled' && result.value === true
+  ).length;
 };

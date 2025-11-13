@@ -2212,7 +2212,22 @@ const CarDetails = memo(() => {
     try {
       const { data, error } = await supabase
         .from("cars_cache")
-        .select("*")
+        .select(`
+          *,
+          car_data,
+          lot_data,
+          images,
+          high_res_images,
+          inspection_report,
+          features,
+          original_api_data,
+          accident_history,
+          damage_primary,
+          damage_secondary,
+          service_history,
+          warranty_info,
+          previous_owners
+        `)
         .or(`lot_number.eq.${lot},api_id.eq.${lot}`)
         .maybeSingle();
 
@@ -2372,7 +2387,7 @@ const CarDetails = memo(() => {
       }
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // Reduced to 8s for faster timeout
 
         let response: Response;
         try {
@@ -2449,7 +2464,7 @@ const CarDetails = memo(() => {
             const detailController = new AbortController();
             const detailTimeoutId = setTimeout(
               () => detailController.abort(),
-              10000,
+              6000, // Reduced to 6s for faster detail fetch
             );
             try {
               const detailResponse = await fetch(

@@ -136,7 +136,7 @@ const App = () => {
 
   const routePrefetchers = useMemo(
     () => ({
-      '/': () => Index.preload?.(),
+      '/': () => { Index.preload?.(); },
       '/catalog': () => {
         Catalog.preload?.();
         preloadRouteResources('catalog');
@@ -151,22 +151,22 @@ const App = () => {
         CarInspectionReport.preload?.();
         preloadRouteResources('car-details');
       },
-      '/favorites': () => FavoritesPage.preload?.(),
-      '/favorites/*': () => FavoritesPage.preload?.(),
-      '/inspections': () => InspectionServices.preload?.(),
-      '/contacts': () => Contacts.preload?.(),
+      '/favorites': () => { FavoritesPage.preload?.(); },
+      '/favorites/*': () => { FavoritesPage.preload?.(); },
+      '/inspections': () => { InspectionServices.preload?.(); },
+      '/contacts': () => { Contacts.preload?.(); },
       '/tracking': () => {
         ShipmentTracking.preload?.();
         preloadRouteResources('tracking');
       },
-      '/warranty': () => Warranty.preload?.(),
-      '/garancioni': () => Warranty.preload?.(),
-      '/account': () => MyAccount.preload?.(),
+      '/warranty': () => { Warranty.preload?.(); },
+      '/garancioni': () => { Warranty.preload?.(); },
+      '/account': () => { MyAccount.preload?.(); },
       '/auth': () => {
         AuthPage.preload?.();
         preloadRouteResources('auth');
       },
-      '/auth/confirm': () => EmailConfirmationPage.preload?.(),
+      '/auth/confirm': () => { EmailConfirmationPage.preload?.(); },
       '/admin': () => {
         AdminDashboard.preload?.();
         preloadRouteResources('admin');
@@ -177,10 +177,10 @@ const App = () => {
         CookieManagementDashboard.preload?.();
         preloadRouteResources('admin');
       },
-      '/performance': () => PerformanceDashboard.preload?.(),
-      '/cookie-management': () => CookieManagementDashboard.preload?.(),
-      '/audit-test': () => AuditTestPage.preload?.(),
-      '/api-info-demo': () => ApiInfoDemo.preload?.(),
+      '/performance': () => { PerformanceDashboard.preload?.(); },
+      '/cookie-management': () => { CookieManagementDashboard.preload?.(); },
+      '/audit-test': () => { AuditTestPage.preload?.(); },
+      '/api-info-demo': () => { ApiInfoDemo.preload?.(); },
     }),
     [preloadRouteResources]
   );
