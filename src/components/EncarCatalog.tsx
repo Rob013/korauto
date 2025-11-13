@@ -17,10 +17,9 @@ import { AISearchBar } from "@/components/AISearchBar";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useResourcePreloader } from "@/hooks/useResourcePreloader";
-import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
-import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce, extractUniqueEngineSpecs, matchesEngineFilter } from "@/utils/catalog-filter";
+import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, extractUniqueEngineSpecs, matchesEngineFilter } from "@/utils/catalog-filter";
 import { areFiltersEqual } from "@/utils/filterState";
 import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
@@ -33,7 +32,7 @@ import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
 // for consistent backend sorting
 import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
-import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
+import { calculateFinalPriceEUR, filterCarsWithRealPricing, hasRealPricing, getBestAvailablePriceUSD } from "@/utils/carPricing";
 import { resolveFuelFromSources } from "@/utils/fuel";
 import { fallbackCars } from "@/data/fallbackData";
 import { useAnimatedCount } from "@/hooks/useAnimatedCount";
@@ -223,8 +222,8 @@ const EncarCatalog = ({
       ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec))
       : gradeFiltered;
     
-    // Filter to show only cars with real buy_now pricing data
-    return filterCarsWithBuyNowPricing(engineFiltered);
+    // Filter to show only cars that have reliable pricing data
+    return filterCarsWithRealPricing(engineFiltered);
   }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
 
   // Engine variant options sourced from API
@@ -276,10 +275,9 @@ const EncarCatalog = ({
   const mergedCars = useMemo(() => {
     const result = [...(filterOutTestCars(error && cars.length === 0 ? fallbackCars : cars) || [])];
     if (Array.isArray(gridCars) && gridCars.length > 0) {
-      // Include only cars with buy_now price to match existing rule
+      // Include only cars with reliable pricing data
       gridCars.forEach((c: any) => {
-        const lot = c?.lots?.[0];
-        if (lot?.buy_now && lot.buy_now > 0) {
+        if (hasRealPricing(c)) {
           result.push(c);
         }
       });
@@ -292,15 +290,15 @@ const EncarCatalog = ({
     const gradeFiltered = applyGradeFilter(mergedCars, filters?.grade_iaai) || [];
     const engineSpec = (filters as any)?.engine_spec;
     const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
-    return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec]);
+      return filterCarsWithRealPricing(engineFiltered);
+    }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec]);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
-    return mergedFilteredCars.map(car => {
-      // Calculate EUR price using current exchange rate
-      const priceUSD = Number(car.lots?.[0]?.buy_now || car.buy_now || 0);
-      const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
+      return mergedFilteredCars.map(car => {
+        // Calculate EUR price using current exchange rate and best available USD source
+        const priceUSD = getBestAvailablePriceUSD(car);
+        const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
       return {
         ...car,
         price_eur: priceEUR,
@@ -355,11 +353,7 @@ const EncarCatalog = ({
   });
 
   const renderableCars = useMemo(
-    () =>
-      smoothCarsToDisplay.filter((car: CarWithRank | any) => {
-        const lot = car?.lots?.[0];
-        return lot?.buy_now && lot.buy_now > 0;
-      }),
+    () => smoothCarsToDisplay.filter((car: CarWithRank | any) => hasRealPricing(car)),
     [smoothCarsToDisplay],
   );
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -465,18 +459,15 @@ const EncarCatalog = ({
     localStorage.setItem('catalog-view-mode', newViewMode);
   }, [viewMode]);
 
-  // Debounced filter toggle to prevent rapid clicking issues
-  const handleFilterToggle = useCallback(debounce((e: React.MouseEvent) => {
-    // Prevent event bubbling and ensure click is processed
+  // Filter toggle handler for mobile and desktop
+  const handleFilterToggle = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("Filter toggle clicked, current showFilters:", showFilters, "isMobile:", isMobile);
     const newShowState = !showFilters;
 
-    // Update state
     setShowFilters(newShowState);
 
-    // Update explicit close tracking
     if (newShowState) {
       setHasExplicitlyClosed(false);
       console.log("Opening filters, reset explicit close flag");
@@ -485,7 +476,6 @@ const EncarCatalog = ({
       console.log("Closing filters, set explicit close flag");
     }
 
-    // Use a single shorter timeout for DOM sync if needed (mobile only)
     if (isMobile) {
       setTimeout(() => {
         const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
@@ -500,11 +490,9 @@ const EncarCatalog = ({
             console.log("Mobile: Synced filter panel to hide");
           }
         }
-      }, 50); // Reduced from 100ms to 50ms to reduce race conditions
+      }, 50);
     }
-  }, 250),
-  // 250ms debounce to prevent rapid clicking
-  [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]);
+  }, [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]);
 
   // Set up swipe gestures for main content (swipe right to show filters)
   useSwipeGesture(mainContentRef, {
@@ -999,11 +987,11 @@ const EncarCatalog = ({
 
   // Live source totals (Encar/KBC) based on current filters
     const displayableGridCount = useMemo(() => {
-      if (!Array.isArray(gridCars)) {
-        return 0;
-      }
-      return gridCars.filter((c: any) => c?.lots?.[0]?.buy_now && c.lots[0].buy_now > 0).length;
-    }, [gridCars]);
+    if (!Array.isArray(gridCars)) {
+      return 0;
+    }
+    return gridCars.filter((c: any) => hasRealPricing(c)).length;
+  }, [gridCars]);
 
     const effectiveTotalCount = useMemo(() => {
       const base = Number(totalCount || 0);
@@ -1497,10 +1485,9 @@ const EncarCatalog = ({
                   )}
                 >
                   {renderableCars.map((car: CarWithRank | any) => {
-              const lot = car.lots?.[0];
-              // Only use buy_now price, no fallbacks
-              const usdPrice = lot?.buy_now;
-              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+                const lot = car.lots?.[0];
+                const usdPrice = getBestAvailablePriceUSD(car);
+                const price = usdPrice > 0 ? calculateFinalPriceEUR(usdPrice, exchangeRate.rate) : 0;
               const lotNumber = car.lot_number || lot?.lot || "";
                 return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
                         <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined

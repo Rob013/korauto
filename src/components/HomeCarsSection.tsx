@@ -14,7 +14,7 @@ import { ArrowUpDown } from "lucide-react";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
-import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing, filterCarsWithRealPricing } from "@/utils/carPricing";
+import { calculateFinalPriceEUR, filterCarsWithRealPricing } from "@/utils/carPricing";
 import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 import { cn } from "@/lib/utils";
 import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";

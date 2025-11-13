@@ -333,6 +333,7 @@ const LazyCarCard = memo(({
   const hasAccident = hasAccidentData && insurance_v2.accidentCnt > 0;
   
   const isListView = viewMode === 'list';
+  const priceLabel = price > 0 ? `€${price.toLocaleString()}` : "Çmimi sipas kërkesë";
   const badgeStyles = isListView
     ? {
         container: 'absolute top-0.5 left-0.5 z-10 flex flex-col gap-1',
@@ -604,11 +605,11 @@ const LazyCarCard = memo(({
                 </div>
               </div>
 
-              <div className="flex items-end justify-between gap-2">
-                <div>
-                  <div className="text-sm font-semibold text-primary">
-                    €{price.toLocaleString()}
-                  </div>
+                <div className="flex items-end justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold text-primary">
+                      {priceLabel}
+                    </div>
                   <p className="text-[10px] text-muted-foreground leading-tight">
                     port Durrës
                   </p>
@@ -739,10 +740,10 @@ const LazyCarCard = memo(({
         {/* Pricing Section - Better aligned */}
         <div className="mt-auto">
           <div className="space-y-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="card-price text-lg font-bold text-primary">
-                €{price.toLocaleString()}
-              </span>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="card-price text-lg font-bold text-primary">
+                  {priceLabel}
+                </span>
                 <span className="text-xs font-medium text-muted-foreground text-right flex-shrink-0">
                 KORAUTO
               </span>
