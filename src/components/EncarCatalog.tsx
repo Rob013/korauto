@@ -21,7 +21,6 @@ import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
 import { APIFilters, extractGradesFromTitle, applyGradeFilter, matchesGradeFilter, normalizeFilters, filtersToURLParams, isYearRangeChange, addPaginationToFilters, debounce as catalogDebounce, extractUniqueEngineSpecs, matchesEngineFilter } from "@/utils/catalog-filter";
-import { areFiltersEqual } from "@/utils/filterState";
 import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
@@ -59,20 +58,19 @@ const EncarCatalog = ({
     setTotalCount,
     // ✅ Import setTotalCount for optimized filtering
     hasMorePages,
-      fetchCars,
-      fetchAllCars,
-      // ✅ Import new function for global sorting
-      filters,
-      setFilters,
-      fetchManufacturers,
-      fetchModels,
-      fetchGenerations,
-      fetchAllGenerationsForManufacturer,
-      // ✅ Import new function
-      fetchFilterCounts,
-      fetchGrades,
-      fetchTrimLevels,
-      fetchEngineVariants,
+    fetchCars,
+    fetchAllCars,
+    // ✅ Import new function for global sorting
+    filters,
+    setFilters,
+    fetchManufacturers,
+    fetchModels,
+    fetchGenerations,
+    fetchAllGenerationsForManufacturer,
+    // ✅ Import new function
+    fetchFilterCounts,
+    fetchGrades,
+    fetchTrimLevels,
     loadMore,
     refreshInventory,
     clearCarsCache
@@ -142,76 +140,11 @@ const EncarCatalog = ({
   // Use ref for tracking fetch progress to avoid triggering re-renders
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
-  const scrollLockRef = useRef({
-    body: '',
-    html: '',
-    touch: '',
-    htmlTouch: ''
-  });
-
-  useEffect(() => {
-    scrollLockRef.current = {
-      body: document.body.style.overflow,
-      html: document.documentElement.style.overflow,
-      touch: document.body.style.touchAction,
-      htmlTouch: document.documentElement.style.touchAction
-    };
-  }, []);
 
   // Ensure filters are always open on desktop
   useEffect(() => {
     if (!isMobile) setShowFilters(true);else setShowFilters(false);
   }, [isMobile]);
-
-    useEffect(() => {
-      if (!isMobile) {
-        document.body.style.overflow = scrollLockRef.current.body;
-        document.documentElement.style.overflow = scrollLockRef.current.html;
-        document.body.style.touchAction = scrollLockRef.current.touch;
-        document.documentElement.style.touchAction = scrollLockRef.current.htmlTouch;
-        return;
-      }
-
-      if (showFilters) {
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        document.body.style.touchAction = 'pan-x pan-y';
-        document.documentElement.style.touchAction = 'pan-x pan-y';
-      } else {
-        document.body.style.overflow = scrollLockRef.current.body;
-        document.documentElement.style.overflow = scrollLockRef.current.html;
-        document.body.style.touchAction = scrollLockRef.current.touch;
-        document.documentElement.style.touchAction = scrollLockRef.current.htmlTouch;
-      }
-
-      return () => {
-        document.body.style.overflow = scrollLockRef.current.body;
-        document.documentElement.style.overflow = scrollLockRef.current.html;
-        document.body.style.touchAction = scrollLockRef.current.touch;
-        document.documentElement.style.touchAction = scrollLockRef.current.htmlTouch;
-      };
-    }, [showFilters, isMobile]);
-
-  useEffect(() => {
-    const panel = filterPanelRef.current;
-    if (!panel) {
-      return;
-    }
-
-    if (!isMobile) {
-      panel.style.removeProperty('visibility');
-      panel.style.removeProperty('pointer-events');
-      return;
-    }
-
-    if (showFilters) {
-      panel.style.visibility = 'visible';
-      panel.style.pointerEvents = 'auto';
-    } else {
-      panel.style.visibility = 'hidden';
-      panel.style.pointerEvents = 'none';
-    }
-  }, [showFilters, isMobile]);
 
   useEffect(() => {
     refreshInventory(60);
@@ -248,48 +181,13 @@ const EncarCatalog = ({
     return filterCarsWithBuyNowPricing(engineFiltered);
   }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
 
-  // Engine variant options sourced from API
-  const [engineVariants, setEngineVariants] = useState<Array<{ value: string; label: string; count: number }>>([]);
-  const [engineVariantsLoading, setEngineVariantsLoading] = useState(false);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const loadEngineVariants = async () => {
-      if (!filters?.manufacturer_id && !filters?.model_id) {
-        if (isActive) {
-          setEngineVariants([]);
-        }
-        return;
-      }
-
-      setEngineVariantsLoading(true);
-      try {
-        const variants = await fetchEngineVariants(
-          filters?.manufacturer_id,
-          filters?.model_id,
-          filters?.generation_id
-        );
-        if (isActive) {
-          setEngineVariants(Array.isArray(variants) ? variants : []);
-        }
-      } catch (err) {
-        console.error("❌ Failed to fetch engine variants:", err);
-        if (isActive) {
-          setEngineVariants([]);
-        }
-      } finally {
-        if (isActive) {
-          setEngineVariantsLoading(false);
-        }
-      }
-    };
-
-    loadEngineVariants();
-    return () => {
-      isActive = false;
-    };
-  }, [fetchEngineVariants, filters?.manufacturer_id, filters?.model_id, filters?.generation_id]);
+  // Extract engine variants from filtered cars for the dropdown
+  const engineVariants = useMemo(() => {
+    if (!filters?.model_id || filteredCars.length === 0) {
+      return [];
+    }
+    return extractUniqueEngineSpecs(filteredCars);
+  }, [filteredCars, filters?.model_id]);
 
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -421,7 +319,6 @@ const EncarCatalog = ({
   // Refs for swipe gesture detection
   const mainContentRef = useRef<HTMLDivElement>(null);
   const filterPanelRef = useRef<HTMLDivElement>(null);
-  const defaultFetchAttemptedRef = useRef(false);
 
   // SIMPLIFIED: More efficient scroll position saving
   const saveScrollPosition = useCallback(() => {
@@ -506,6 +403,24 @@ const EncarCatalog = ({
       setHasExplicitlyClosed(true);
       console.log("Closing filters, set explicit close flag");
     }
+
+    // Use a single shorter timeout for DOM sync if needed (mobile only)
+    if (isMobile) {
+      setTimeout(() => {
+        const filterPanel = document.querySelector('[data-filter-panel]') as HTMLElement;
+        if (filterPanel) {
+          if (newShowState) {
+            filterPanel.style.transform = 'translateX(0)';
+            filterPanel.style.visibility = 'visible';
+            console.log("Mobile: Synced filter panel to show");
+          } else {
+            filterPanel.style.transform = 'translateX(-100%)';
+            filterPanel.style.visibility = 'hidden';
+            console.log("Mobile: Synced filter panel to hide");
+          }
+        }
+      }, 50); // Reduced from 100ms to 50ms to reduce race conditions
+    }
   }, 250),
   // 250ms debounce to prevent rapid clicking
   [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]);
@@ -569,35 +484,32 @@ const EncarCatalog = ({
 
   // Apply filters instantly without debouncing
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
-      if (areFiltersEqual(filters, newFilters)) {
-        return;
-      }
-
+      // Reset sorting to neutral whenever filters change
       setHasUserSelectedSort(false);
       setSortBy("");
 
+      // Update UI immediately for instant response
       setFilters(newFilters);
+
+      // Reset "Show All" mode when filters change
       setShowAllCars(false);
       setAllCarsData([]);
+
+      // Clear global sorting when filters change
       clearGlobalSorting();
 
+      // Apply filters immediately - no debouncing - fetch from ALL sources
       const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
-
-      setIsFilterLoading(true);
-      try {
-        await fetchCars(1, filtersWithPagination, true);
-      } catch (error) {
-        console.error('❌ Failed to apply filters:', error);
-      } finally {
-        setIsFilterLoading(false);
-      }
-
+      fetchCars(1, filtersWithPagination, true);
       setCurrentPage(1);
 
+      // Update URL
       const searchParams = filtersToURLParams(newFilters);
       searchParams.set('page', '1');
       setSearchParams(searchParams);
-    }, [filters, setHasUserSelectedSort, setSortBy, setFilters, setShowAllCars, setAllCarsData, clearGlobalSorting, addPaginationToFilters, setIsFilterLoading, fetchCars, setCurrentPage, filtersToURLParams, setSearchParams]);
+      
+      setIsFilterLoading(false);
+    }, [fetchCars, setSearchParams, clearGlobalSorting]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -848,8 +760,7 @@ const EncarCatalog = ({
 
       // Fetch generations in background (non-blocking)
       if (modelId) {
-        const manufacturerId = newFilters.manufacturer_id;
-        fetchGenerations(modelId, manufacturerId).then(generationData => setGenerations(generationData)).catch(err => console.warn('Failed to load generations:', err));
+        fetchGenerations(modelId).then(generationData => setGenerations(generationData)).catch(err => console.warn('Failed to load generations:', err));
       }
 
       // Update URL after successful data fetch
@@ -891,7 +802,6 @@ const EncarCatalog = ({
   useEffect(() => {
     const loadInitialData = async () => {
       setIsRestoringState(true);
-      defaultFetchAttemptedRef.current = true;
 
       // Check if we're coming from homepage filter
       const fromHomepage = searchParams.get('fromHomepage');
@@ -940,7 +850,7 @@ const EncarCatalog = ({
           const modelsData = await fetchModels(urlFilters.manufacturer_id);
           setModels(modelsData);
           if (urlFilters.model_id) {
-            const generationsData = await fetchGenerations(urlFilters.model_id, urlFilters.manufacturer_id || undefined);
+            const generationsData = await fetchGenerations(urlFilters.model_id);
             setGenerations(generationsData);
           }
         }
@@ -957,7 +867,6 @@ const EncarCatalog = ({
         await fetchCars(urlCurrentPage, initialFilters, true);
       } catch (error) {
         console.error('Error loading initial data:', error);
-        defaultFetchAttemptedRef.current = false;
       } finally {
         setIsRestoringState(false);
       }
@@ -1002,40 +911,6 @@ const EncarCatalog = ({
     };
     loadInitialData();
   }, []); // Only run on mount
-
-  useEffect(() => {
-    if (Array.isArray(cars) && cars.length > 0) {
-      defaultFetchAttemptedRef.current = true;
-      return;
-    }
-
-    if (loading || isRestoringState) {
-      return;
-    }
-
-    const hasActiveFilters = Object.entries(filters || {}).some(([key, value]) => {
-      if (key === 'page' || key === 'per_page') {
-        return false;
-      }
-      return value !== undefined && value !== null && value !== '';
-    });
-
-    if (hasActiveFilters) {
-      defaultFetchAttemptedRef.current = true;
-      return;
-    }
-
-    if (defaultFetchAttemptedRef.current) {
-      return;
-    }
-
-    const defaultFilters = addPaginationToFilters({}, 200, 1);
-    defaultFetchAttemptedRef.current = true;
-    fetchCars(1, defaultFilters, true).catch(error => {
-      console.error('Failed to load default catalog cars:', error);
-      defaultFetchAttemptedRef.current = false;
-    });
-  }, [cars, filters, loading, isRestoringState, fetchCars]);
 
   // Live source totals (Encar/KBC) based on current filters
     const displayableGridCount = useMemo(() => {
@@ -1283,11 +1158,11 @@ const EncarCatalog = ({
   }, []);
   return <div className="flex min-h-screen bg-background">
       {/* Collapsible Filter Sidebar - Optimized for mobile */}
-        <div ref={filterPanelRef} data-filter-panel className={`
-        fixed lg:sticky lg:top-4 lg:self-start z-50 glass-card transition-transform duration-300 ease-in-out
+      <div ref={filterPanelRef} data-filter-panel className={`
+        fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${!showFilters && 'lg:block hidden'}
-          ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col pointer-events-auto' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform lg:flex lg:flex-col lg:max-h-[calc(100vh-2rem)] lg:overflow-hidden'}
+        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform'}
       `}>
         <div className={`${isMobile ? 'mobile-filter-compact filter-header bg-primary text-primary-foreground safe-area-inset-top' : 'p-4 border-b flex-shrink-0 bg-card'}`}>
           <div className="flex items-center justify-center gap-4 sm:justify-between">
@@ -1316,14 +1191,13 @@ const EncarCatalog = ({
           </div>
         </div>
         
-          <div className={`flex-1 overflow-y-auto ${isMobile ? 'mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right pb-24' : 'pb-6 pr-2'}`}>
-            <div className={`${isMobile ? 'p-3' : 'p-4 space-y-4'}`}>
-              <EncarStyleFilter 
+        <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
+          <div className={`${isMobile ? 'p-3' : ''}`}>
+            <EncarStyleFilter 
               filters={filters} 
               manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
               models={models} 
               engineVariants={engineVariants}
-                engineVariantsLoading={engineVariantsLoading}
               filterCounts={filterCounts} 
               loadingCounts={loadingCounts} 
               onFiltersChange={handleFiltersChange} 
@@ -1356,6 +1230,15 @@ const EncarCatalog = ({
             }
 
             // Additional CSS force close as backup
+            if (isMobile) {
+              setTimeout(() => {
+                const filterPanel = document.querySelector('[data-filter-panel]');
+                if (filterPanel) {
+                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                  (filterPanel as HTMLElement).style.visibility = 'hidden';
+                }
+              }, 100);
+            }
           }} onCloseFilter={() => {
             console.log("Close filter called, isMobile:", isMobile);
             // Close the filter panel on mobile only; keep open on desktop
@@ -1364,6 +1247,16 @@ const EncarCatalog = ({
               setHasExplicitlyClosed(true);
             }
 
+            // Additional CSS force close as backup
+            if (isMobile) {
+              setTimeout(() => {
+                const filterPanel = document.querySelector('[data-filter-panel]');
+                if (filterPanel) {
+                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                  (filterPanel as HTMLElement).style.visibility = 'hidden';
+                }
+              }, 100);
+            }
           }} />
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}

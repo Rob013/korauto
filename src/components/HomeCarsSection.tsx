@@ -466,8 +466,8 @@ const HomeCarsSection = memo(() => {
         return;
       }
 
-      const activeManufacturerId = pendingFilters.manufacturer_id || filters.manufacturer_id;
-      const generationsData = await fetchGenerations(modelId, activeManufacturerId || undefined);
+      // Fetch from API
+      const generationsData = await fetchGenerations(modelId);
       setGenerations(generationsData);
 
       // Update cache

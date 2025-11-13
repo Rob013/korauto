@@ -221,27 +221,13 @@ const AdaptiveSelectItem: React.FC<AdaptiveSelectItemProps> = ({
   isSelected,
   className
 }) => {
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onSelect(value);
-    }
-  };
-
   return (
     <div
-      role="option"
-      tabIndex={-1}
-      aria-selected={isSelected}
       className={cn(
         "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className
       )}
-      onPointerDown={(event) => {
-        event.preventDefault();
-        onSelect(value);
-      }}
-      onKeyDown={handleKeyDown}
+      onClick={() => onSelect(value)}
     >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
         {isSelected && <Check className="h-4 w-4" />}

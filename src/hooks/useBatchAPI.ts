@@ -176,12 +176,10 @@ export const useCarDataBatch = () => {
     });
   }, [batchRequest]);
 
-  const fetchGenerations = useCallback((modelId: string, manufacturerId?: string) => {
-    const cacheKey = manufacturerId ? `generations-${manufacturerId}-${modelId}` : `generations-${modelId}`;
-    return batchRequest(cacheKey, async () => {
+  const fetchGenerations = useCallback((modelId: string) => {
+    return batchRequest(`generations-${modelId}`, async () => {
       // Your generations API call here
-      const manufacturerParam = manufacturerId ? `&manufacturer_id=${manufacturerId}` : '';
-      const response = await fetch(`/api/generations?model_id=${modelId}${manufacturerParam}`);
+      const response = await fetch(`/api/generations?model_id=${modelId}`);
       return response.json();
     });
   }, [batchRequest]);

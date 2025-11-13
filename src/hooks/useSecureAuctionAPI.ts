@@ -1,17 +1,10 @@
 //@ts-nocheck
 import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from "react";
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
 import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSold } from "@/services/carCache";
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 import { getBrandLogo } from '@/data/brandLogos';
-import { extractUniqueEngineSpecs } from '@/utils/catalog-filter';
-import {
-  fallbackCars as fallbackCarData,
-  fallbackGenerations as fallbackGenerationData,
-  fallbackManufacturers as fallbackManufacturerData,
-  fallbackModels as fallbackModelData,
-} from "@/data/fallbackData";
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -32,177 +25,28 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
-const normalizeString = (value?: string | number | null) =>
-  (value ?? "")
-    .toString()
-    .toLowerCase()
-    .trim();
-
 // Create fallback car data for testing when API is not available
-export const createFallbackCars = (filters: any = {}): any[] => {
-  const manufacturerFilter = filters?.manufacturer_id;
-  if (
-    manufacturerFilter &&
-    manufacturerFilter !== "all" &&
-    manufacturerFilter !== "" &&
-    manufacturerFilter !== undefined &&
-    manufacturerFilter !== null
-  ) {
-    return [];
-  }
-
-  const gradeFilter = normalizeString(filters?.grade_iaai);
-  const transmissionFilter = normalizeString(filters?.transmission);
-  const fuelFilter = normalizeString(filters?.fuel_type);
-  const colorFilter = normalizeString(filters?.color);
-  const searchTerm = normalizeString(filters?.search);
-
-  const priceFrom = filters?.buy_now_price_from ? Number(filters.buy_now_price_from) : undefined;
-  const priceTo = filters?.buy_now_price_to ? Number(filters.buy_now_price_to) : undefined;
-  const mileageFrom = filters?.odometer_from_km ? Number(filters.odometer_from_km) : undefined;
-  const mileageTo = filters?.odometer_to_km ? Number(filters.odometer_to_km) : undefined;
-  const yearFrom = filters?.from_year ? Number(filters.from_year) : undefined;
-  const yearTo = filters?.to_year ? Number(filters.to_year) : undefined;
-  const seatsFilter = filters?.seats_count ? Number(filters.seats_count) : undefined;
-
-  return fallbackCarData.filter((car) => {
-    const lot = car.lots?.[0];
-    if (!lot?.buy_now) {
-      return false;
-    }
-
-    if (yearFrom && car.year < yearFrom) {
-      return false;
-    }
-    if (yearTo && car.year > yearTo) {
-      return false;
-    }
-
-    if (priceFrom && lot.buy_now < priceFrom) {
-      return false;
-    }
-    if (priceTo && lot.buy_now > priceTo) {
-      return false;
-    }
-
-    const mileage = lot.odometer?.km ?? 0;
-    if (mileageFrom && mileage < mileageFrom) {
-      return false;
-    }
-    if (mileageTo && mileage > mileageTo) {
-      return false;
-    }
-
-    if (seatsFilter && lot.details?.seats_count !== seatsFilter) {
-      return false;
-    }
-
-    if (gradeFilter && gradeFilter !== "all") {
-      const lotGrade = normalizeString(lot.grade_iaai);
-      if (!lotGrade.includes(gradeFilter)) {
-        return false;
-      }
-    }
-
-    if (transmissionFilter) {
-      const carTransmission = normalizeString(car.transmission?.name);
-      if (carTransmission !== transmissionFilter) {
-        return false;
-      }
-    }
-
-    if (fuelFilter) {
-      const carFuel = normalizeString(car.fuel_type || car.engine?.name);
-      if (!carFuel.includes(fuelFilter)) {
-        return false;
-      }
-    }
-
-    if (colorFilter) {
-      const carColor = normalizeString(car.color?.name);
-      if (carColor !== colorFilter) {
-        return false;
-      }
-    }
-
-    if (searchTerm) {
-      const haystack = [
-        car.title,
-        car.manufacturer?.name,
-        car.model?.name,
-        car.vin,
-        car.lot_number,
-      ]
-        .map(normalizeString)
-        .join(" ");
-
-      if (!haystack.includes(searchTerm)) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+export const createFallbackCars = (_filters: any = {}): any[] => {
+  console.warn("createFallbackCars called after mock data removal – returning empty array.");
+  return [];
 };
 
 // Create fallback generation data for testing when API is not available
-export const createFallbackGenerations = (manufacturerName: string): Generation[] => {
-  if (!manufacturerName) {
-    return [];
-  }
-
-  const manufacturer = fallbackManufacturerData.find(
-    (entry) => normalizeString(entry.name) === normalizeString(manufacturerName),
-  );
-
-  if (!manufacturer) {
-    return [];
-  }
-
-  return fallbackGenerationData
-    .filter((generation) => generation.manufacturer_id === manufacturer.id)
-    .map((generation) => ({
-      id: generation.id,
-      name: generation.name,
-      cars_qty: generation.cars_qty,
-      car_count: generation.cars_qty,
-      from_year: generation.from_year,
-      to_year: generation.to_year,
-      manufacturer_id: generation.manufacturer_id,
-      model_id: generation.model_id,
-    }));
+export const createFallbackGenerations = (_manufacturerName: string): Generation[] => {
+  console.warn("createFallbackGenerations called after mock data removal – returning empty array.");
+  return [];
 };
 
 // Create fallback model data for testing when API is not available
-export const createFallbackModels = (manufacturerName: string): Model[] => {
-  if (!manufacturerName) {
-    return [];
-  }
-
-  const manufacturer = fallbackManufacturerData.find(
-    (entry) => normalizeString(entry.name) === normalizeString(manufacturerName),
-  );
-
-  if (!manufacturer) {
-    return [];
-  }
-
-  return fallbackModelData
-    .filter((model) => model.manufacturer_id === manufacturer.id)
-    .map((model) => ({
-      id: model.id,
-      name: model.name,
-      car_count: model.cars_qty,
-      cars_qty: model.cars_qty,
-    }));
+export const createFallbackModels = (_manufacturerName: string): Model[] => {
+  console.warn("createFallbackModels called after mock data removal – returning empty array.");
+  return [];
 };
 
 // Create fallback manufacturer data without logos
 export const createFallbackManufacturers = () => {
-  return fallbackManufacturerData.map((manufacturer) => ({
-    ...manufacturer,
-    car_count: manufacturer.cars_qty,
-  }));
+  console.warn("createFallbackManufacturers called after mock data removal – returning empty array.");
+  return [];
 };
 
 
@@ -489,16 +333,10 @@ export const useSecureAuctionAPI = () => {
   const [filters, setFilters] = useState<APIFilters>({});
   const [gradesCache, setGradesCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
   const [trimLevelsCache, setTrimLevelsCache] = useState<{ [key: string]: { value: string; label: string; count?: number }[] }>({});
-  const [engineVariantsCache, setEngineVariantsCache] = useState<{ [key: string]: { value: string; label: string; count: number }[] }>({});
   const [isPrimingCache, setIsPrimingCache] = useState(false);
   const [cachePrimed, setCachePrimed] = useState(false);
   const prefetchedCarIdsRef = useRef<Set<string>>(new Set());
   const carsCacheRef = useRef<Map<string, { cars: Car[]; totalCount: number; hasMorePages: boolean; timestamp: number }>>(new Map());
-  const engineVariantsCacheRef = useRef(engineVariantsCache);
-
-  useEffect(() => {
-    engineVariantsCacheRef.current = engineVariantsCache;
-  }, [engineVariantsCache]);
 
   const prefetchCarDetails = useCallback(async (carsToCache: Car[]) => {
     if (!Array.isArray(carsToCache) || carsToCache.length === 0) {
@@ -956,160 +794,95 @@ export const useSecureAuctionAPI = () => {
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
-
-      const data = await getCachedApiCall(
-        "manufacturers/cars",
-        { per_page: "1000", simple_paginate: "0" },
-        () =>
-          makeSecureAPICall("manufacturers/cars", {
-            per_page: "1000",
-            simple_paginate: "0",
-          }),
-      );
-
-      const rawManufacturers = Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-        ? data
-        : [];
-
-      const normalizedManufacturers = rawManufacturers
-        .filter((manufacturer: any) => manufacturer && manufacturer.id && manufacturer.name)
-        .map((manufacturer: any) => {
-          const parsedId = Number.parseInt(String(manufacturer.id), 10);
-          const normalizedId = Number.isFinite(parsedId) ? parsedId : manufacturer.id;
-          const carsCount = Number(manufacturer.car_count ?? manufacturer.cars_qty ?? 0);
-          const image = manufacturer.image || getBrandLogo(manufacturer.name);
-
-          return {
-            id: normalizedId,
-            name: manufacturer.name,
-            cars_qty: carsCount,
-            car_count: carsCount,
-            image: image || undefined,
-          };
+      
+      // Try to get manufacturers from cache or API
+      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
+        () => makeSecureAPICall("manufacturers/cars", {
+          per_page: "1000",
+          simple_paginate: "0"
         })
-        .sort((a: any, b: any) => (b.cars_qty ?? 0) - (a.cars_qty ?? 0));
-
-      if (normalizedManufacturers.length === 0) {
-        console.warn("⚠️ No manufacturers returned from API, falling back to static data");
-        return createFallbackManufacturers();
-      }
-
-      console.log(
-        `🏷️ Retrieved manufacturers:`,
-        normalizedManufacturers.slice(0, 5).map((m: any) => `${m.name} (${m.cars_qty || 0} cars)`),
       );
-
-      return normalizedManufacturers;
+      
+      let manufacturers = data.data || [];
+      
+      // If we got manufacturers from API, normalize them
+      if (manufacturers.length > 0) {
+        console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
+        manufacturers = manufacturers.map(manufacturer => ({
+          id: manufacturer.id,
+          name: manufacturer.name,
+          cars_qty: manufacturer.cars_qty || manufacturer.car_count || 0,
+          car_count: manufacturer.car_count || manufacturer.cars_qty || 0,
+          image: manufacturer.image || getBrandLogo(manufacturer.name)
+        }));
+      } else {
+        // No manufacturers from API, use fallback data
+        console.log(`⚠️ No manufacturers from API, using fallback data`);
+        manufacturers = createFallbackManufacturers();
+      }
+      
+      console.log(`🏷️ Retrieved manufacturers:`, 
+        manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
+      
+      return manufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
+      console.log(`🔄 Using fallback manufacturer data`);
+      
+      // Return fallback data when API fails
       return createFallbackManufacturers();
     }
   };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
-      const data = await getCachedApiCall(
-        `models/${manufacturerId}/cars`,
-        { per_page: "1000", simple_paginate: "0" },
-        () =>
-          makeSecureAPICall(`models/${manufacturerId}/cars`, {
-            per_page: "1000",
-            simple_paginate: "0",
-          }),
+      // Use cached API call for models
+      const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
+        () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
+          per_page: "1000",
+          simple_paginate: "0"
+        })
+      );
+      
+      let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
+
+      // Filter models by manufacturer_id (in case API returns extra)
+      fallbackModels = fallbackModels.filter((m: any) =>
+        m.manufacturer_id?.toString() === manufacturerId ||
+        m.manufacturer?.id?.toString() === manufacturerId
       );
 
-      const rawModels = Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-        ? data
-        : [];
-
-      const filteredModels = rawModels.filter((model: any) => {
-        if (!model || !model.id || !model.name) return false;
-        const modelManufacturerId =
-          model.manufacturer_id ?? model.manufacturer?.id ?? model.manufacturerId;
-        return String(modelManufacturerId ?? "") === manufacturerId;
-      });
-
-      const normalizedModels = filteredModels
-        .map((model: any) => {
-          const parsedId = Number.parseInt(String(model.id), 10);
-          const normalizedId = Number.isFinite(parsedId) ? parsedId : model.id;
-          const carsCount = Number(model.car_count ?? model.cars_qty ?? 0);
-          return {
-            id: normalizedId,
-            name: model.name,
-            cars_qty: carsCount,
-            car_count: carsCount,
-          };
-        })
-        .sort((a: any, b: any) => a.name.localeCompare(b.name));
-
-      if (normalizedModels.length === 0) {
-        console.warn(`⚠️ No models returned from API for manufacturer ${manufacturerId}`);
-        return [];
-      }
-
-      return normalizedModels;
+      fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
+      return fallbackModels;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
+      console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
+      
+      // Use fallback model data based on manufacturer name - more efficient approach
+      try {
+        const manufacturers = await fetchManufacturers();
+        const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
+        if (manufacturer) {
+          return createFallbackModels(manufacturer.name);
+        }
+      } catch (fallbackErr) {
+        console.error("Error creating fallback models:", fallbackErr);
+      }
+      
       return [];
     }
   };
 
-  const fetchGenerations = async (modelId: string, manufacturerId?: string): Promise<Generation[]> => {
+  const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
       console.log(`🔍 Fetching generations for model ID: ${modelId}`);
-
+      
       // First try to fetch generations from a dedicated endpoint
       let generationsFromAPI: Generation[] = [];
       try {
         const generationResponse = await makeSecureAPICall(`generations/${modelId}`, {});
-        const rawGenerations = Array.isArray(generationResponse?.data)
-          ? generationResponse.data
-          : Array.isArray(generationResponse)
-          ? generationResponse
-          : [];
-
-        generationsFromAPI = rawGenerations
-          .filter((generation: any) => generation && generation.id && generation.name)
-          .map((generation: any) => {
-            const parsedId = Number.parseInt(String(generation.id), 10);
-            const normalizedId = Number.isFinite(parsedId) ? parsedId : generation.id;
-            const parsedModelId =
-              Number.parseInt(String(generation.model_id ?? modelId), 10) ||
-              Number.parseInt(modelId, 10) ||
-              modelId;
-            const parsedManufacturerId = (() => {
-              if (generation.manufacturer_id) {
-                const parsed = Number.parseInt(String(generation.manufacturer_id), 10);
-                if (Number.isFinite(parsed)) {
-                  return parsed;
-                }
-              }
-              if (manufacturerId) {
-                const parsed = Number.parseInt(manufacturerId, 10);
-                return Number.isFinite(parsed) ? parsed : undefined;
-              }
-              return undefined;
-            })();
-            const carsCount = Number(generation.car_count ?? generation.cars_qty ?? 0);
-
-            return {
-              id: normalizedId,
-              name: generation.name,
-              car_count: carsCount,
-              cars_qty: carsCount,
-              manufacturer_id: parsedManufacturerId,
-              model_id: parsedModelId,
-              from_year: generation.from_year,
-              to_year: generation.to_year,
-            };
-          });
-
-        if (generationsFromAPI.length > 0) {
+        if (generationResponse.data && Array.isArray(generationResponse.data)) {
+          generationsFromAPI = generationResponse.data.filter(g => g && g.id && g.name);
           console.log(`🎯 Found ${generationsFromAPI.length} generations from dedicated API endpoint`);
         }
       } catch (err) {
@@ -1148,27 +921,26 @@ export const useSecureAuctionAPI = () => {
       // If no model-specific generations found, return a minimal fallback
       if (generations.length === 0) {
         console.log(`⚠️ No specific generations found for model ${modelId}, using generic fallback`);
-          const parsedManufacturerId = manufacturerId ? Number.parseInt(manufacturerId, 10) || undefined : undefined;
-          generations = [
-            {
-              id: parseInt(modelId) * 1000 + 1,
-              name: '1st Generation',
-              from_year: 2010,
-              to_year: 2018,
-              cars_qty: 10,
-              manufacturer_id: parsedManufacturerId,
-              model_id: modelIdNum
-            },
-            {
-              id: parseInt(modelId) * 1000 + 2,
-              name: '2nd Generation',
-              from_year: 2018,
-              to_year: 2024,
-              cars_qty: 15,
-              manufacturer_id: parsedManufacturerId,
-              model_id: modelIdNum
-            }
-          ];
+        generations = [
+          { 
+            id: parseInt(modelId) * 1000 + 1, 
+            name: '1st Generation', 
+            from_year: 2010, 
+            to_year: 2018, 
+            cars_qty: 10, 
+            manufacturer_id: undefined, 
+            model_id: modelIdNum 
+          },
+          { 
+            id: parseInt(modelId) * 1000 + 2, 
+            name: '2nd Generation', 
+            from_year: 2018, 
+            to_year: 2024, 
+            cars_qty: 15, 
+            manufacturer_id: undefined, 
+            model_id: modelIdNum 
+          }
+        ];
       }
       
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
@@ -1182,25 +954,24 @@ export const useSecureAuctionAPI = () => {
       
       // Return a minimal set of fallback generations to avoid empty state
       const modelIdNum = parseInt(modelId);
-      const parsedManufacturerId = manufacturerId ? Number.parseInt(manufacturerId, 10) || undefined : undefined;
       return [
-        {
-          id: modelIdNum * 1000 + 1,
-          name: '1st Generation',
-          from_year: 2010,
-          to_year: 2018,
-          cars_qty: 5,
-          manufacturer_id: parsedManufacturerId,
-          model_id: modelIdNum
+        { 
+          id: modelIdNum * 1000 + 1, 
+          name: '1st Generation', 
+          from_year: 2010, 
+          to_year: 2018, 
+          cars_qty: 5, 
+          manufacturer_id: undefined, 
+          model_id: modelIdNum 
         },
-        {
-          id: modelIdNum * 1000 + 2,
-          name: '2nd Generation',
-          from_year: 2018,
-          to_year: 2024,
-          cars_qty: 8,
-          manufacturer_id: parsedManufacturerId,
-          model_id: modelIdNum
+        { 
+          id: modelIdNum * 1000 + 2, 
+          name: '2nd Generation', 
+          from_year: 2018, 
+          to_year: 2024, 
+          cars_qty: 8, 
+          manufacturer_id: undefined, 
+          model_id: modelIdNum 
         }
       ];
     }
@@ -1961,7 +1732,7 @@ export const useSecureAuctionAPI = () => {
       // Fetch generations for each model
       for (const model of models) {
         try {
-          const modelGenerations = await fetchGenerations(model.id.toString(), manufacturerId);
+          const modelGenerations = await fetchGenerations(model.id.toString());
           modelGenerations.forEach(gen => {
             if (!generationMap.has(gen.id)) {
               generationMap.set(gen.id, gen);
@@ -2119,127 +1890,6 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchEngineVariants = useCallback(async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count: number }[]> => {
-    const cacheKey = `engine_${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
-
-    if (!manufacturerId && !modelId) {
-      return [];
-    }
-
-    const cached = engineVariantsCacheRef.current[cacheKey];
-    if (cached) {
-      return cached;
-    }
-
-    const normalizeEngineVariant = (input?: string | null) => {
-      if (!input || typeof input !== 'string') return null;
-      const cleaned = input.replace(/\s+/g, ' ').trim();
-      if (!cleaned) return null;
-
-      if (/^(unknown|n\/a|none|null|undefined)$/i.test(cleaned)) return null;
-      if (/^[A-Z]{2,4}$/.test(cleaned)) return null;
-      if (/^\d+(\.\d+)?$/.test(cleaned)) return null;
-
-      return cleaned.replace(/\b(tdi|tfsi|fsi|tsi|cdi|cgi|amg|gti|rs|gt|gts|d|i|e|phev|ev|hybrid|diesel|petrol)\b/gi, (match) => match.toUpperCase());
-    };
-
-    try {
-      const filters: any = { per_page: '200' };
-      if (manufacturerId) filters.manufacturer_id = manufacturerId;
-      if (modelId) filters.model_id = modelId;
-      if (generationId) filters.generation_id = generationId;
-
-      const data = await makeSecureAPICall('cars', filters);
-      const cars = Array.isArray(data?.data) ? data.data : [];
-
-      if (cars.length === 0) {
-        setEngineVariantsCache((prev) => {
-          const next = { ...prev, [cacheKey]: [] };
-          engineVariantsCacheRef.current = next;
-          return next;
-        });
-        return [];
-      }
-
-      const variantsMap = new Map<string, { label: string; count: number }>();
-
-      const recordVariant = (raw?: string | null, weight = 1) => {
-        const normalized = normalizeEngineVariant(raw);
-        if (!normalized) return;
-        const key = normalized.toLowerCase();
-        const existing = variantsMap.get(key);
-        if (existing) {
-          existing.count += weight;
-          if (normalized.length > existing.label.length) {
-            existing.label = normalized;
-          }
-        } else {
-          variantsMap.set(key, { label: normalized, count: weight });
-        }
-      };
-
-      extractUniqueEngineSpecs(cars).forEach(({ value, label, count }) => {
-        const normalized = normalizeEngineVariant(value);
-        if (!normalized) return;
-        const key = normalized.toLowerCase();
-        const existing = variantsMap.get(key);
-        if (existing) {
-          existing.count += count;
-          if (label && label.length > existing.label.length) {
-            existing.label = label;
-          }
-        } else {
-          variantsMap.set(key, { label: label || normalized, count });
-        }
-      });
-
-      cars.forEach((car: any) => {
-        recordVariant(car?.engine?.name);
-        if (car?.lots && Array.isArray(car.lots)) {
-          car.lots.forEach((lot: any) => {
-            recordVariant(lot?.details?.badge);
-            recordVariant(lot?.details?.comment);
-            recordVariant(lot?.grade_iaai);
-            if (typeof lot?.details?.description_en === 'string') {
-              recordVariant(lot.details.description_en, 0.5);
-            }
-          });
-        }
-
-        if (typeof car?.title === 'string') {
-          recordVariant(car.title, 0.5);
-        }
-      });
-
-      const variants = Array.from(variantsMap.values())
-        .map(({ label, count }) => ({
-          value: label,
-          label,
-          count: Math.max(1, Math.round(count))
-        }))
-        .sort((a, b) => {
-          if (b.count !== a.count) return b.count - a.count;
-          return a.label.localeCompare(b.label);
-        });
-
-      setEngineVariantsCache((prev) => {
-        const next = { ...prev, [cacheKey]: variants };
-        engineVariantsCacheRef.current = next;
-        return next;
-      });
-
-      return variants;
-    } catch (err) {
-      console.error("❌ Error fetching engine variants:", err);
-      setEngineVariantsCache((prev) => {
-        const next = { ...prev, [cacheKey]: [] };
-        engineVariantsCacheRef.current = next;
-        return next;
-      });
-      return [];
-    }
-  }, [makeSecureAPICall]);
-
   const loadMore = async () => {
     if (!hasMorePages || loading) return;
 
@@ -2266,35 +1916,34 @@ export const useSecureAuctionAPI = () => {
       return { success: false, error };
     }
   }, [clearCarsCache]);
-    return {
-      cars,
-      setCars, // ✅ Export setCars so it can be used in components
-      loading,
-      error,
-      currentPage,
-      totalCount,
-      setTotalCount, // ✅ Export setTotalCount for optimized filtering
-      hasMorePages,
-      fetchCars,
-      fetchAllCars, // ✅ Export new function for global sorting
-      filters,
-      setFilters,
-      fetchManufacturers,
-      fetchModels,
-      fetchGenerations,
-      fetchAllGenerationsForManufacturer, // ✅ Export new function
-      getCategoryCount, // ✅ Export new function for real-time counts
-      fetchCarById,
-      fetchCarCounts,
-      fetchFilterCounts,
-      fetchKoreaDuplicates,
-      fetchGrades,
-      fetchTrimLevels,
-      fetchEngineVariants,
-      loadMore,
-      refreshInventory,
-      clearCarsCache,
-    };
+  return {
+    cars,
+    setCars, // ✅ Export setCars so it can be used in components
+    loading,
+    error,
+    currentPage,
+    totalCount,
+    setTotalCount, // ✅ Export setTotalCount for optimized filtering
+    hasMorePages,
+    fetchCars,
+    fetchAllCars, // ✅ Export new function for global sorting
+    filters,
+    setFilters,
+    fetchManufacturers,
+    fetchModels,
+    fetchGenerations,
+    fetchAllGenerationsForManufacturer, // ✅ Export new function
+    getCategoryCount, // ✅ Export new function for real-time counts
+    fetchCarById,
+    fetchCarCounts,
+    fetchFilterCounts,
+    fetchKoreaDuplicates,
+    fetchGrades,
+    fetchTrimLevels,
+    loadMore,
+    refreshInventory,
+    clearCarsCache,
+  };
 };
 
 export const fetchSourceCounts = async (baseFilters: any = {}) => {

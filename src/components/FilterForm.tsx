@@ -8,7 +8,7 @@ import { AISearchBar } from "./AISearchBar";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useGenerations } from "@/hooks/useFiltersData";
+import { useGrades } from "@/hooks/useFiltersData";
 import {
   APIFilters,
   sortManufacturers,
@@ -82,20 +82,18 @@ const FilterForm = memo<FilterFormProps>(({
   const [modelLoading, setModelLoading] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
   
-  // Use the generations hook for fetching cached Lovable data with API fallback
-  const { data: generationsData, isLoading: isLoadingGenerations } = useGenerations(
-    filters.model_id,
-    filters.manufacturer_id
-  );
-
-  const generations = useMemo(() => {
-    if (!generationsData || !Array.isArray(generationsData)) return [];
-    return generationsData.map((generation: any) => ({
-      value: generation.id,
-      label: generation.name,
-      count: generation.car_count
+  // Use the grades hook for fetching grades
+  const { data: gradesData, isLoading: isLoadingGrades } = useGrades(filters.model_id);
+  
+  // Map grades data to the format expected by the select
+  const grades = useMemo(() => {
+    if (!gradesData || !Array.isArray(gradesData)) return [];
+    return gradesData.map((grade: any) => ({
+      value: grade.id,
+      label: grade.name,
+      count: grade.car_count
     }));
-  }, [generationsData]);
+  }, [gradesData]);
 
 
   const updateFilter = useCallback((key: string, value: string) => {
@@ -105,11 +103,11 @@ const FilterForm = memo<FilterFormProps>(({
     // Handle cascading filters - instant response, no loading state
     if (key === 'manufacturer_id') {
       // Reset model, grade, and engine when manufacturer changes
-      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, generation_id: undefined, engine_spec: undefined });
+      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined, engine_spec: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
       // Reset grade and engine when model changes
-      onFiltersChange({ ...filters, model_id: actualValue, generation_id: undefined, engine_spec: undefined });
+      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined, engine_spec: undefined });
       onModelChange?.(actualValue || '');
     } else {
       // For other filters, use the standard filter change handler
@@ -188,7 +186,7 @@ const FilterForm = memo<FilterFormProps>(({
     return getFallbackGrades(manufacturerId);
   }, []);
 
-  // Generations are now fetched automatically via useGenerations hook
+  // Grades are now fetched automatically via useGrades hook
 
   // Debounced fetch trim levels when manufacturer or model changes
   useEffect(() => {
@@ -469,20 +467,21 @@ const FilterForm = memo<FilterFormProps>(({
             <div className="space-y-1">
               <Label htmlFor="generation" className="text-xs font-medium">Gjenerata</Label>
               <AdaptiveSelect
-                value={filters.generation_id || 'all'}
-                onValueChange={(value) => updateFilter('generation_id', value)}
-                disabled={!filters.model_id || isLoading || isLoadingGenerations}
-                placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGenerations ? "Po ngarkon..." : "Të gjitha Gjeneratat"}
+                value={filters.grade_iaai || 'all'}
+                onValueChange={(value) => updateFilter('grade_iaai', value)}
+                disabled={!filters.model_id || isLoading || isLoadingGrades}
+                placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGrades ? "Po ngarkon..." : "Të gjitha Gjeneratat"}
                 className="h-8 text-xs sm:text-sm"
                 options={[
                   { value: 'all', label: 'Të gjitha Gjeneratat' },
-                  ...(generations.length === 0 && isLoadingGenerations ?
+                  ...(grades.length === 0 && isLoadingGrades ?
                     [{ value: 'loading', label: 'Po ngarkon...', disabled: true }] :
-                    generations.length === 0 && filters.model_id ?
-                    [{ value: 'no-generations', label: 'Nuk u gjetën gjenerata', disabled: true }] :
-                    generations.map((generation) => ({
-                      value: generation.value,
-                      label: `${generation.label}${generation.count ? ` (${generation.count})` : ''}`
+                    grades.length === 0 && filters.model_id ?
+                    [{ value: 'no-grades', label: 'Nuk u gjetën gjenerata', disabled: true }] :
+                    grades.map((grade) => ({
+                      value: grade.value,
+                      label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`,
+                      disabled: grade.value.startsWith('separator-')
                     }))
                   )
                 ]}
