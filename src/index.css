@@ -454,6 +454,20 @@ html.theme-transitioning *::after {
   }
 }
 
+/* Ensure Smartsupp chat widget stays above floating UI elements */
+#smartsupp-widget-container,
+.smartsupp-widget-container {
+  z-index: 99999 !important;
+}
+
+@media (max-width: 768px) {
+  #smartsupp-widget-container,
+  .smartsupp-widget-container {
+    right: 1rem !important;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

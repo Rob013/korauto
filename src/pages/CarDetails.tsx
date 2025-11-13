@@ -4192,22 +4192,22 @@ const CarDetails = memo(() => {
                 <div className="text-xs font-medium text-muted-foreground line-clamp-1">
                   {car.year} {car.make} {car.model}
                 </div>
-                <div className="text-lg font-bold text-foreground">
+                <div className="text-2xl font-bold text-foreground">
                   €{car.price.toLocaleString()}
                 </div>
               </div>
               <Button
-                size="lg"
+                size="default"
                 aria-label="Thirr Korauto"
-                className="flex h-12 min-w-[140px] flex-shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-left text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-colors hover:bg-primary/90 focus-visible:ring-offset-background dark:shadow-primary/20"
+                className="flex h-10 min-w-[124px] flex-shrink-0 items-center gap-2 rounded-xl bg-primary px-3 text-left text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-colors hover:bg-primary/90 focus-visible:ring-offset-background dark:shadow-primary/20"
                 onClick={handlePhoneCall}
               >
                 <Phone className="h-5 w-5" />
                 <span className="leading-tight">+383 48 181 116</span>
               </Button>
               <Button
-                size="lg"
-                className="h-12 flex-shrink-0 rounded-xl bg-green-600 px-4 text-sm font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
+                size="default"
+                className="h-10 flex-shrink-0 rounded-xl bg-green-600 px-3 text-sm font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
                 onClick={handleContactWhatsApp}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
