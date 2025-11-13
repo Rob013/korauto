@@ -35,7 +35,7 @@ import {
   Check
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
-import { useGrades } from "@/hooks/useFiltersData";
+import { useGenerations } from "@/hooks/useFiltersData";
 import {
   APIFilters,
   sortManufacturers,
@@ -46,6 +46,7 @@ import {
 import { mergeFilterUpdates, areFiltersEqual } from '@/utils/filterState';
 import { sortBrandsWithPriority } from '@/utils/brandOrdering';
 import { formatModelName } from '@/utils/modelNameFormatter';
+import { getBrandLogo } from '@/data/brandLogos';
 
 interface Manufacturer {
   id: number;
@@ -131,18 +132,20 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [activeMobileDrawer, setActiveMobileDrawer] = useState<MobileDrawerType | null>(null);
   const [pendingYearRange, setPendingYearRange] = useState<{ from: string; to: string }>({ from: '', to: '' });
   
-  // Use the grades hook for fetching grades
-  const { data: gradesData, isLoading: isLoadingGrades } = useGrades(filters.model_id);
-  
-  // Map grades data to the format expected by the select
-  const grades = useMemo(() => {
-    if (!gradesData || !Array.isArray(gradesData)) return [];
-    return gradesData.map((grade: any) => ({
-      value: grade.id,
-      label: grade.name,
-      count: grade.car_count
+  // Load generations from Supabase/Lovable cache with API fallback
+  const { data: generationsData, isLoading: isLoadingGenerations } = useGenerations(
+    filters.model_id,
+    filters.manufacturer_id
+  );
+
+  const generations = useMemo(() => {
+    if (!generationsData || !Array.isArray(generationsData)) return [];
+    return generationsData.map((generation: any) => ({
+      value: generation.id,
+      label: generation.name,
+      count: generation.car_count
     }));
-  }, [gradesData]);
+  }, [generationsData]);
 
   // Show loading only if the update actually takes longer than a threshold to avoid flicker.
   const startLoadingWithDelay = useCallback((delayMs: number = 180) => {
@@ -275,7 +278,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   const manufacturerOptions = useMemo(() => {
     const options = prioritizedManufacturers.map((manufacturer: Manufacturer) => {
-      const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
+      const fallbackLogo = getBrandLogo(manufacturer.name) || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
+      const logoUrl = manufacturer.image || fallbackLogo;
       return {
         value: manufacturer.id.toString(),
         label: (
@@ -356,9 +360,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     return found?.label;
   }, [normalizedModels, filters.model_id]);
 
-  const selectedGrade = useMemo(
-    () => grades.find(grade => grade.value?.toString() === filters.grade_iaai),
-    [grades, filters.grade_iaai]
+  const selectedGeneration = useMemo(
+    () => generations.find(generation => generation.value?.toString() === filters.generation_id),
+    [generations, filters.generation_id]
   );
 
   const selectedEngine = useMemo(
@@ -573,7 +577,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       count,
       selected,
       onClick,
-      disabled
+      disabled,
+      icon
     }: {
       label: string;
       description?: string;
@@ -581,6 +586,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       selected?: boolean;
       onClick: () => void;
       disabled?: boolean;
+      icon?: string;
     }) => (
       <button
         type="button"
@@ -590,9 +596,24 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           disabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-muted/60 active:scale-[0.995]'
         } ${selected ? 'bg-muted/60' : ''}`}
       >
-        <div className="flex flex-col">
-          <span className={`text-sm font-medium ${selected ? 'text-primary' : ''}`}>{label}</span>
-          {description && <span className="text-xs text-muted-foreground">{description}</span>}
+        <div className="flex items-center gap-3">
+          {icon && (
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-background shadow-inner ring-1 ring-border/60">
+              <img
+                src={icon}
+                alt={label}
+                className="h-6 w-6 object-contain"
+                loading="lazy"
+                onError={(event) => {
+                  event.currentTarget.style.display = 'none';
+                }}
+              />
+            </span>
+          )}
+          <div className="flex flex-col">
+            <span className={`text-sm font-medium ${selected ? 'text-primary' : ''}`}>{label}</span>
+            {description && <span className="text-xs text-muted-foreground">{description}</span>}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {typeof count === 'number' && (
@@ -730,6 +751,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         label={manufacturer.name}
                         count={getCount(manufacturerCounts, manufacturer.id) ?? manufacturer.cars_qty ?? manufacturer.car_count}
                         selected={filters.manufacturer_id === manufacturer.id.toString()}
+                        icon={manufacturer.image || getBrandLogo(manufacturer.name) || undefined}
                         onClick={() => {
                           updateFilter('manufacturer_id', manufacturer.id.toString());
                           closeDrawer();
@@ -749,6 +771,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         label={manufacturer.name}
                         count={getCount(manufacturerCounts, manufacturer.id) ?? manufacturer.cars_qty ?? manufacturer.car_count}
                         selected={filters.manufacturer_id === manufacturer.id.toString()}
+                        icon={manufacturer.image || getBrandLogo(manufacturer.name) || undefined}
                         onClick={() => {
                           updateFilter('manufacturer_id', manufacturer.id.toString());
                           closeDrawer();
@@ -833,26 +856,26 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <div className="space-y-1 pb-4">
                 <OptionRow
                   label="Të gjitha gjeneratat"
-                  selected={!filters.grade_iaai}
+                  selected={!filters.generation_id}
                   onClick={() => {
-                    updateFilter('grade_iaai', 'all');
+                    updateFilter('generation_id', 'all');
                     closeDrawer();
                   }}
                 />
-                {isLoadingGrades && (
+                {isLoadingGenerations && (
                   <div className="px-2 py-3 text-xs text-muted-foreground">Po ngarkohen gjeneratat…</div>
                 )}
-                {!isLoadingGrades && grades.length === 0 && (
+                {!isLoadingGenerations && generations.length === 0 && (
                   <div className="px-2 py-3 text-xs text-muted-foreground">Nuk ka gjenerata të disponueshme.</div>
                 )}
-                {grades.map(grade => (
+                {generations.map(generation => (
                   <OptionRow
-                    key={grade.value}
-                    label={grade.label}
-                    count={grade.count}
-                    selected={filters.grade_iaai === grade.value?.toString()}
+                    key={generation.value}
+                    label={generation.label}
+                    count={generation.count}
+                    selected={filters.generation_id === generation.value?.toString()}
                     onClick={() => {
-                      updateFilter('grade_iaai', grade.value?.toString() || 'all');
+                      updateFilter('generation_id', generation.value?.toString() || 'all');
                       closeDrawer();
                     }}
                   />
@@ -1176,12 +1199,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <FilterListItem
                 icon={<Cog className="h-4 w-4" />}
                 label="Gjenerata"
-                value={selectedGrade?.label}
+                value={selectedGeneration?.label}
                 placeholder={filters.model_id ? 'Zgjidhni gjeneratën' : 'Zgjidhni modelin fillimisht'}
                 onClick={() => setActiveMobileDrawer('grade')}
                 disabled={!filters.model_id}
-                loading={isLoadingGrades}
-                hint={isLoadingGrades ? 'Po ngarkohen opsionet' : undefined}
+                loading={isLoadingGenerations}
+                hint={isLoadingGenerations ? 'Po ngarkohen opsionet' : undefined}
               />
               <FilterListItem
                 icon={<Settings className="h-4 w-4" />}
@@ -1199,6 +1222,42 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 onClick={() => setActiveMobileDrawer('trim')}
                 disabled={!filters.model_id}
               />
+              <div className="pt-3">
+                <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Vitet e shpejta
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {yearRangePresets.map((preset) => {
+                    const isActive = filters.from_year === preset.from.toString() && filters.to_year === preset.to.toString();
+                    return (
+                      <Button
+                        key={`fast-year-${preset.label}`}
+                        type="button"
+                        size="sm"
+                        variant={isActive ? 'default' : 'outline'}
+                        className="h-7 rounded-full px-2 text-[11px]"
+                        onClick={() => handleYearRangePreset(preset)}
+                      >
+                        {preset.label}
+                      </Button>
+                    );
+                  })}
+                  {(filters.from_year || filters.to_year) && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 rounded-full px-2 text-[11px] text-muted-foreground"
+                      onClick={() => applyFiltersIfChanged({
+                        from_year: undefined,
+                        to_year: undefined
+                      })}
+                    >
+                      Reseto
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1525,23 +1584,23 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </div>
               </div>
 
-                 <div className="space-y-2">
-                   <Label className="text-sm font-medium flex items-center gap-2">
-                     <Cog className="h-3 w-3" />
-                     Grada/Motori
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.grade_iaai || 'all'}
-                     onValueChange={(value) => updateFilter('grade_iaai', value)}
-                     disabled={!filters.model_id || isLoadingGrades}
-                     placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"}
-                     options={[
-                       ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha gradat' }] : []),
-                       ...grades.map((grade) => ({ value: grade.value, label: grade.label }))
-                     ]}
-                     forceNative
-                   />
-               </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Cog className="h-3 w-3" />
+                    Gjenerata
+                  </Label>
+                  <AdaptiveSelect
+                    value={filters.generation_id || 'all'}
+                    onValueChange={(value) => updateFilter('generation_id', value)}
+                    disabled={!filters.model_id || isLoadingGenerations}
+                    placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGenerations ? "Po ngarkon..." : "Zgjidhni gjeneratën"}
+                    options={[
+                      ...(!(isStrictMode && filters.generation_id) ? [{ value: 'all', label: 'Të gjitha gjeneratat' }] : []),
+                      ...generations.map((generation) => ({ value: generation.value, label: generation.label }))
+                    ]}
+                    forceNative
+                  />
+                </div>
             </div>
 
             {/* Color, Fuel, Transmission, Body Type */}
