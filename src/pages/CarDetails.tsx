@@ -2165,46 +2165,46 @@ const CarDetails = memo(() => {
     [setPrefetchedSummary],
   );
 
+  const restoreCarFromSession = useCallback((): CarDetails | null => {
+    if (typeof window === "undefined" || !lot) {
+      return null;
+    }
+
+    const normalizedLot = String(lot);
+    const encodedLot = encodeURIComponent(normalizedLot);
+    const keys = [
+      `car_${encodedLot}`,
+      encodedLot !== normalizedLot ? `car_${normalizedLot}` : null,
+    ].filter(Boolean) as string[];
+
+    for (const key of keys) {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) {
+          continue;
+        }
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          const summary = extractPrefetchedCarSummary(parsed);
+          if (summary) {
+            setPrefetchedSummary(summary);
+          }
+          return parsed as CarDetails;
+        }
+      } catch (sessionError) {
+        console.warn(`Failed to restore car data from ${key}`, sessionError);
+      }
+    }
+
+    return null;
+  }, [lot, setPrefetchedSummary]);
+
   const hydrateFromCache = useCallback(async () => {
     if (!lot) {
       return null;
     }
 
-    const restoreFromSession = (): CarDetails | null => {
-      if (typeof window === "undefined") {
-        return null;
-      }
-
-      const normalizedLot = String(lot);
-      const encodedLot = encodeURIComponent(normalizedLot);
-      const keys = [
-        `car_${encodedLot}`,
-        encodedLot !== normalizedLot ? `car_${normalizedLot}` : null,
-      ].filter(Boolean) as string[];
-
-      for (const key of keys) {
-        try {
-          const raw = sessionStorage.getItem(key);
-          if (!raw) {
-            continue;
-          }
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === "object") {
-            const summary = extractPrefetchedCarSummary(parsed);
-            if (summary) {
-              setPrefetchedSummary(summary);
-            }
-            return parsed as CarDetails;
-          }
-        } catch (sessionError) {
-          console.warn(`Failed to restore car data from ${key}`, sessionError);
-        }
-      }
-
-      return null;
-    };
-
-    const sessionCar = restoreFromSession();
+    const sessionCar = restoreCarFromSession();
     if (sessionCar) {
       setCar(sessionCar);
       setLoading(false);
@@ -2256,7 +2256,7 @@ const CarDetails = memo(() => {
     }
 
     return null;
-  }, [buildCarDetails, lot, persistCarToSession, setPrefetchedSummary]);
+  }, [buildCarDetails, lot, persistCarToSession, restoreCarFromSession]);
  
     const getFirstNonEmptyString = (...values: unknown[]): string | null => {
       for (const value of values) {
@@ -2567,14 +2567,27 @@ const CarDetails = memo(() => {
     };
 
     const loadCar = async () => {
-      const cachedData = await hydrateFromCache();
-      // Only fetch from API if cache didn't provide data
-      if (!cachedData) {
-        await fetchFromApi();
-      } else {
+      const sessionData = restoreCarFromSession();
+      if (sessionData) {
+        setCar(sessionData);
+        setLoading(false);
+        cacheHydratedRef.current = true;
         fetchFromApi({ background: true }).catch((error) => {
           console.warn("Background refresh failed", error);
         });
+        return;
+      }
+
+      const cachePromise = hydrateFromCache();
+      const apiPromise = fetchFromApi();
+
+      const cachedData = await cachePromise;
+      if (cachedData) {
+        apiPromise.catch((error) => {
+          console.warn("Background refresh failed", error);
+        });
+      } else {
+        await apiPromise;
       }
     };
 
@@ -2584,17 +2597,18 @@ const CarDetails = memo(() => {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    API_BASE_URL,
-    API_KEY,
-    buildCarDetails,
-    fallbackCars,
-    hydrateFromCache,
-    lot,
-    navigate,
-    persistCarToSession,
-    trackCarView,
-  ]);
+    }, [
+      API_BASE_URL,
+      API_KEY,
+      buildCarDetails,
+      fallbackCars,
+      hydrateFromCache,
+      lot,
+      navigate,
+      persistCarToSession,
+      restoreCarFromSession,
+      trackCarView,
+    ]);
   const handleContactWhatsApp = useCallback(() => {
     impact("light");
     const currentUrl = window.location.href;
@@ -2715,6 +2729,62 @@ const CarDetails = memo(() => {
 
       return mainTitle;
     }, [car, mainTitle]);
+
+      const summaryTitleFallback = useMemo(() => {
+        if (!prefetchedSummary) {
+          return "";
+        }
+        const parts = [
+          prefetchedSummary.year,
+          prefetchedSummary.make,
+          prefetchedSummary.model,
+        ].filter(Boolean);
+        if (parts.length > 0) {
+          return parts.join(" ").trim();
+        }
+        return prefetchedSummary.title ?? "";
+      }, [prefetchedSummary]);
+
+      const resolvedMainTitle = useMemo(() => {
+        if (mainTitle) {
+          return mainTitle;
+        }
+        return summaryTitleFallback;
+      }, [mainTitle, summaryTitleFallback]);
+
+      const resolvedSecondaryTitle = useMemo(() => {
+        if (secondaryTitle && secondaryTitle !== resolvedMainTitle) {
+          return secondaryTitle;
+        }
+        const summaryTitle = prefetchedSummary?.title?.trim() ?? "";
+        if (summaryTitle && summaryTitle !== resolvedMainTitle) {
+          return summaryTitle;
+        }
+        return "";
+      }, [prefetchedSummary?.title, resolvedMainTitle, secondaryTitle]);
+
+      const resolvedPrice = useMemo(() => {
+        if (typeof car?.price === "number" && Number.isFinite(car.price)) {
+          return car.price;
+        }
+        if (
+          typeof prefetchedSummary?.price === "number" &&
+          Number.isFinite(prefetchedSummary.price)
+        ) {
+          return prefetchedSummary.price;
+        }
+        return null;
+      }, [car?.price, prefetchedSummary?.price]);
+
+      const resolvedLot = useMemo(() => {
+        if (car?.lot) {
+          return car.lot;
+        }
+        if (prefetchedSummary?.lot) {
+          return String(prefetchedSummary.lot);
+        }
+        return null;
+      }, [car?.lot, prefetchedSummary?.lot]);
 
     const fuelDisplay = useMemo(() => {
       if (!car) {
@@ -3415,70 +3485,6 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {/* Car Title with Price - Compact mobile design */}
-            <div
-              className="animate-fade-in"
-              style={{ animationDelay: "200ms" }}
-            >
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0 space-y-0.5">
-                  <h1 className="text-lg md:text-2xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight">
-                    {mainTitle}
-                  </h1>
-                  {secondaryTitle && (
-                    <p className="text-sm md:text-base text-muted-foreground font-medium leading-tight line-clamp-2">
-                      {secondaryTitle}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                    €{car.price.toLocaleString()}
-                  </div>
-                    <div className="text-xs text-muted-foreground font-medium">
-                      +350€ deri në Prishtinë
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleOpenInspectionReport}
-                      className="mt-2 inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-primary hover:text-primary/80 hover:underline focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-                      disabled={!car?.lot && !lot}
-                    >
-                      <Shield className="h-3 w-3 md:h-4 md:w-4" />
-                      <span>Historia e Sigurimit</span>
-                      <Badge
-                        variant="secondary"
-                        className={`ml-0.5 text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
-                      >
-                        {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
-                      </Badge>
-                      <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
-                    </button>
-                </div>
-              </div>
-
-              {/* Action Buttons - Modernized Layout */}
-              <div className="flex flex-wrap gap-3 mt-4 mb-5">
-                <div className="flex-1 min-w-[200px]">
-                  <Button
-                    onClick={handleContactWhatsApp}
-                    size="lg"
-                    variant="outline"
-                    className="group relative w-full h-14 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 text-green-600 hover:border-green-500 hover:bg-green-500 hover:text-white hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-0.5 px-5 font-semibold transition-all duration-300 overflow-hidden"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                    <span className="relative flex items-center justify-between w-full">
-                      <span className="flex items-center gap-2.5">
-                        <MessageCircle className="h-5 w-5" />
-                        <span className="text-sm">WhatsApp</span>
-                      </span>
-                      <ChevronRight className="h-5 w-5 opacity-60 group-hover:translate-x-1 group-hover:opacity-100 transition-all duration-300" />
-                    </span>
-                  </Button>
-                </div>
-              </div>
-            </div>
-
             {/* Vehicle Specifications - Compact Mobile Card */}
             <Card
               id="specifications"
@@ -3922,103 +3928,164 @@ const CarDetails = memo(() => {
           </div>
 
           {/* Right Column - Enhanced Contact Card */}
-          <div className="space-y-4">
-            {/* Enhanced Contact & Inspection Card */}
-            <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
-              <CardContent className="p-4">
-                <h3 className="text-lg font-bold mb-4 text-center text-foreground">
-                  Kontakt & Inspektim
-                </h3>
-
-                {/* Enhanced Contact Buttons */}
-                  <div className="space-y-3 mb-4">
-                    <Button
-                      onClick={handleContactWhatsApp}
-                      className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      WhatsApp
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                      onClick={handlePhoneCall}
-                    >
-                      <Phone className="h-4 w-4 mr-2" />
-                      +383 48 181 116
-                    </Button>
-
-                    {/* Instagram */}
-                    <Button
-                      variant="outline"
-                      className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
-                      onClick={() =>
-                        window.open(
-                          "https://www.instagram.com/korauto.ks/",
-                          "_blank",
-                        )
-                      }
-                    >
-                      <Instagram className="h-4 w-4 mr-2" />
-                      Instagram
-                    </Button>
-
-                    {/* Facebook */}
-                    <Button
-                      variant="outline"
-                      className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
-                      onClick={() =>
-                        window.open(
-                          "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
-                          "_blank",
-                        )
-                      }
-                    >
-                      <Facebook className="h-4 w-4 mr-2" />
-                      Facebook
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                      onClick={() =>
-                        window.open("mailto:info@korauto.com", "_self")
-                      }
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      info@korauto.com
-                    </Button>
+            <div className="space-y-4">
+              {/* Enhanced Contact & Inspection Card */}
+              <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
+                <CardContent className="p-4">
+                  <div className="mb-4 space-y-2 text-center">
+                    {resolvedMainTitle && (
+                      <h2 className="text-base font-semibold text-foreground leading-tight">
+                        {resolvedMainTitle}
+                      </h2>
+                    )}
+                    {resolvedSecondaryTitle && (
+                      <p className="text-xs text-muted-foreground leading-snug">
+                        {resolvedSecondaryTitle}
+                      </p>
+                    )}
+                    {resolvedLot && (
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Lot #{resolvedLot}
+                      </p>
+                    )}
+                    {resolvedPrice !== null && (
+                      <div className="text-2xl font-bold text-primary">
+                        €{resolvedPrice.toLocaleString()}
+                      </div>
+                    )}
+                    {resolvedPrice !== null && (
+                      <p className="text-xs text-muted-foreground font-medium">
+                        +350€ deri në Prishtinë
+                      </p>
+                    )}
                   </div>
 
-                {/* Enhanced Additional Buttons */}
-                <div className="border-t border-border pt-4 space-y-3">
                   <Button
+                    type="button"
                     variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={() => navigate("/garancioni")}
+                    onClick={handleOpenInspectionReport}
+                    disabled={!car?.lot && !lot}
+                    className={`group relative mb-4 w-full h-12 rounded-xl border-2 ${accidentStyle.button} overflow-hidden transition-all duration-300`}
                   >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Mëso më shumë për garancionin
+                    <span
+                      className={`absolute inset-0 bg-gradient-to-br ${accidentStyle.overlay} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                    ></span>
+                    <span className="relative flex items-center justify-between w-full">
+                      <span className="flex items-center gap-2.5">
+                        <Shield className="h-4 w-4" />
+                        <span className="text-sm font-semibold">
+                          Historia e Sigurimit
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] font-semibold uppercase tracking-wide ${accidentStyle.badge}`}
+                        >
+                          {accidentCount === 0
+                            ? "Pa aksidente"
+                            : `${accidentCount}`}
+                        </Badge>
+                        <ChevronRight className="h-4 w-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5" />
+                      </span>
+                    </span>
                   </Button>
-                </div>
 
-                {/* Enhanced Location */}
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex items-start gap-3 text-muted-foreground">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <a
-                      href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm hover:text-primary transition-colors cursor-pointer leading-relaxed"
+                  <Separator className="my-4" />
+
+                  <h3 className="text-lg font-bold mb-4 text-center text-foreground">
+                    Kontakt & Inspektim
+                  </h3>
+
+                  {/* Enhanced Contact Buttons */}
+                    <div className="space-y-3 mb-4">
+                      <Button
+                        onClick={handleContactWhatsApp}
+                        className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        WhatsApp
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                        onClick={handlePhoneCall}
+                      >
+                        <Phone className="h-4 w-4 mr-2" />
+                        +383 48 181 116
+                      </Button>
+
+                      {/* Instagram */}
+                      <Button
+                        variant="outline"
+                        className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
+                        onClick={() =>
+                          window.open(
+                            "https://www.instagram.com/korauto.ks/",
+                            "_blank",
+                          )
+                        }
+                      >
+                        <Instagram className="h-4 w-4 mr-2" />
+                        Instagram
+                      </Button>
+
+                      {/* Facebook */}
+                      <Button
+                        variant="outline"
+                        className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
+                        onClick={() =>
+                          window.open(
+                            "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
+                            "_blank",
+                          )
+                        }
+                      >
+                        <Facebook className="h-4 w-4 mr-2" />
+                        Facebook
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                        onClick={() =>
+                          window.open("mailto:info@korauto.com", "_self")
+                        }
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        info@korauto.com
+                      </Button>
+                    </div>
+
+                  {/* Enhanced Additional Buttons */}
+                  <div className="border-t border-border pt-4 space-y-3">
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() => navigate("/garancioni")}
                     >
-                      Rr. Ilaz Kodra 70, Prishtinë, Kosovo
-                    </a>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Mëso më shumë për garancionin
+                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+
+                  {/* Enhanced Location */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex items-start gap-3 text-muted-foreground">
+                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <a
+                        href="https://maps.google.com/?q=KORAUTO,Rr.+Ilaz+Kodra+70,Prishtinë,Kosovo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm hover:text-primary transition-colors cursor-pointer leading-relaxed"
+                      >
+                        Rr. Ilaz Kodra 70, Prishtinë, Kosovo
+                      </a>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
             {/* Desktop map - small widget under Kontakt & Inspektim */}
             <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl">
