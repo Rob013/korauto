@@ -37,22 +37,51 @@ export const useModels = (manufacturerId?: string) => {
   });
 };
 
-export const useGrades = (modelId?: string) => {
+export const useGenerations = (modelId?: string, manufacturerId?: string) => {
   return useQuery({
-    queryKey: ['grades', modelId],
+    queryKey: ['generations', modelId, manufacturerId],
     queryFn: async () => {
       if (!modelId) return [];
-      
+
+      const compositeModelId = manufacturerId ? `${manufacturerId}-${modelId}` : undefined;
+      try {
+        let query = supabase
+          .from('car_grades')
+          .select('id,name,car_count,model_id')
+          .eq('is_active', true);
+
+        if (compositeModelId) {
+          query = query.eq('model_id', compositeModelId);
+        } else {
+          query = query.like('model_id', `%-${modelId}`);
+        }
+
+        const { data: cachedGenerations, error: cachedError } = await query.order('name', { ascending: true });
+
+        if (!cachedError && Array.isArray(cachedGenerations) && cachedGenerations.length > 0) {
+          return cachedGenerations.map((generation: any) => {
+            const idSegments = String(generation.id).split('-');
+            const rawId = idSegments[idSegments.length - 1];
+            return {
+              id: rawId,
+              name: generation.name,
+              car_count: generation.car_count || 0,
+            };
+          });
+        }
+      } catch (cachedErr) {
+        console.warn('[useGenerations] Failed to load cached generations:', cachedErr);
+      }
+
       const { data, error } = await supabase.functions.invoke('secure-cars-api', {
         body: {
           endpoint: `generations/${modelId}`,
           filters: {}
         }
       });
-      
+
       if (error) throw error;
-      
-      // Map API response to expected format
+
       const generations = data?.data || [];
       return generations.map((g: any) => ({
         id: String(g.id),

@@ -794,17 +794,50 @@ export const useSecureAuctionAPI = () => {
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
-      
+
+      try {
+        const { data: cachedManufacturers, error: cachedError } = await supabase
+          .from('manufacturers')
+          .select('id,name,car_count,logo_url,is_active')
+          .eq('is_active', true)
+          .order('car_count', { ascending: false })
+          .limit(500);
+
+        if (!cachedError && cachedManufacturers && cachedManufacturers.length > 0) {
+          const normalizedManufacturers = cachedManufacturers.map((manufacturer: any) => {
+            const parsedId = Number.parseInt(String(manufacturer.id), 10);
+            const normalizedId = Number.isFinite(parsedId) ? parsedId : manufacturer.id;
+            const logoUrl = manufacturer.logo_url || getBrandLogo(manufacturer.name);
+            return {
+              id: normalizedId,
+              name: manufacturer.name,
+              cars_qty: manufacturer.car_count || 0,
+              car_count: manufacturer.car_count || 0,
+              image: logoUrl || undefined
+            };
+          });
+
+          console.log(`☁️ Using ${normalizedManufacturers.length} cached manufacturers from Lovable Cloud`);
+          return normalizedManufacturers;
+        }
+
+        if (cachedError) {
+          console.warn('⚠️ Failed to load cached manufacturers:', cachedError);
+        }
+      } catch (cacheError) {
+        console.warn('⚠️ Manufacturer cache lookup failed:', cacheError);
+      }
+
       // Try to get manufacturers from cache or API
-      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
+      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" },
         () => makeSecureAPICall("manufacturers/cars", {
           per_page: "1000",
           simple_paginate: "0"
         })
       );
-      
+
       let manufacturers = data.data || [];
-      
+
       // If we got manufacturers from API, normalize them
       if (manufacturers.length > 0) {
         console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
@@ -836,6 +869,38 @@ export const useSecureAuctionAPI = () => {
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
     try {
+      try {
+        const { data: cachedModels, error: cachedError } = await supabase
+          .from('car_models')
+          .select('id,name,car_count,is_active')
+          .eq('manufacturer_id', manufacturerId)
+          .eq('is_active', true)
+          .order('name', { ascending: true })
+          .limit(1000);
+
+        if (!cachedError && cachedModels && cachedModels.length > 0) {
+          const normalizedModels = cachedModels.map((model: any) => {
+            const idSegments = String(model.id).split('-');
+            const rawId = idSegments[idSegments.length - 1];
+            return {
+              id: Number.parseInt(rawId, 10) || rawId,
+              name: model.name,
+              cars_qty: model.car_count || 0,
+              car_count: model.car_count || 0
+            };
+          });
+
+          console.log(`☁️ Using ${normalizedModels.length} cached models for manufacturer ${manufacturerId}`);
+          return normalizedModels;
+        }
+
+        if (cachedError) {
+          console.warn('[fetchModels] Failed to load cached models:', cachedError);
+        }
+      } catch (cacheError) {
+        console.warn('[fetchModels] Model cache lookup failed:', cacheError);
+      }
+
       // Use cached API call for models
       const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
         () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
@@ -873,10 +938,54 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
-  const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
+  const fetchGenerations = async (modelId: string, manufacturerId?: string): Promise<Generation[]> => {
     try {
       console.log(`🔍 Fetching generations for model ID: ${modelId}`);
-      
+
+      try {
+        let query = supabase
+          .from('car_grades')
+          .select('id,name,car_count,manufacturer_id,model_id,is_active')
+          .eq('is_active', true)
+          .order('name', { ascending: true })
+          .limit(300);
+
+        if (manufacturerId) {
+          query = query.eq('manufacturer_id', manufacturerId).eq('model_id', `${manufacturerId}-${modelId}`);
+        } else {
+          query = query.like('model_id', `%-${modelId}`);
+        }
+
+        const { data: cachedGenerations, error: cachedError } = await query;
+
+        if (!cachedError && cachedGenerations && cachedGenerations.length > 0) {
+          const normalizedGenerations = cachedGenerations.map((generation: any) => {
+            const idSegments = String(generation.id).split('-');
+            const rawId = idSegments[idSegments.length - 1];
+            const parsedId = Number.parseInt(rawId, 10) || rawId;
+            const parsedModelId = Number.parseInt(String(generation.model_id?.split('-').pop() ?? modelId), 10) || modelId;
+            const parsedManufacturerId = Number.parseInt(String(generation.manufacturer_id ?? manufacturerId ?? ''), 10) || undefined;
+            return {
+              id: parsedId,
+              name: generation.name,
+              car_count: generation.car_count || 0,
+              cars_qty: generation.car_count || 0,
+              manufacturer_id: parsedManufacturerId,
+              model_id: parsedModelId
+            };
+          });
+
+          console.log(`☁️ Using ${normalizedGenerations.length} cached generations from Lovable Cloud`);
+          return normalizedGenerations;
+        }
+
+        if (cachedError) {
+          console.warn('[fetchGenerations] Failed to load cached generations:', cachedError);
+        }
+      } catch (cacheError) {
+        console.warn('[fetchGenerations] Generation cache lookup failed:', cacheError);
+      }
+
       // First try to fetch generations from a dedicated endpoint
       let generationsFromAPI: Generation[] = [];
       try {
@@ -921,26 +1030,27 @@ export const useSecureAuctionAPI = () => {
       // If no model-specific generations found, return a minimal fallback
       if (generations.length === 0) {
         console.log(`⚠️ No specific generations found for model ${modelId}, using generic fallback`);
-        generations = [
-          { 
-            id: parseInt(modelId) * 1000 + 1, 
-            name: '1st Generation', 
-            from_year: 2010, 
-            to_year: 2018, 
-            cars_qty: 10, 
-            manufacturer_id: undefined, 
-            model_id: modelIdNum 
-          },
-          { 
-            id: parseInt(modelId) * 1000 + 2, 
-            name: '2nd Generation', 
-            from_year: 2018, 
-            to_year: 2024, 
-            cars_qty: 15, 
-            manufacturer_id: undefined, 
-            model_id: modelIdNum 
-          }
-        ];
+          const parsedManufacturerId = manufacturerId ? Number.parseInt(manufacturerId, 10) || undefined : undefined;
+          generations = [
+            {
+              id: parseInt(modelId) * 1000 + 1,
+              name: '1st Generation',
+              from_year: 2010,
+              to_year: 2018,
+              cars_qty: 10,
+              manufacturer_id: parsedManufacturerId,
+              model_id: modelIdNum
+            },
+            {
+              id: parseInt(modelId) * 1000 + 2,
+              name: '2nd Generation',
+              from_year: 2018,
+              to_year: 2024,
+              cars_qty: 15,
+              manufacturer_id: parsedManufacturerId,
+              model_id: modelIdNum
+            }
+          ];
       }
       
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
@@ -954,24 +1064,25 @@ export const useSecureAuctionAPI = () => {
       
       // Return a minimal set of fallback generations to avoid empty state
       const modelIdNum = parseInt(modelId);
+      const parsedManufacturerId = manufacturerId ? Number.parseInt(manufacturerId, 10) || undefined : undefined;
       return [
-        { 
-          id: modelIdNum * 1000 + 1, 
-          name: '1st Generation', 
-          from_year: 2010, 
-          to_year: 2018, 
-          cars_qty: 5, 
-          manufacturer_id: undefined, 
-          model_id: modelIdNum 
+        {
+          id: modelIdNum * 1000 + 1,
+          name: '1st Generation',
+          from_year: 2010,
+          to_year: 2018,
+          cars_qty: 5,
+          manufacturer_id: parsedManufacturerId,
+          model_id: modelIdNum
         },
-        { 
-          id: modelIdNum * 1000 + 2, 
-          name: '2nd Generation', 
-          from_year: 2018, 
-          to_year: 2024, 
-          cars_qty: 8, 
-          manufacturer_id: undefined, 
-          model_id: modelIdNum 
+        {
+          id: modelIdNum * 1000 + 2,
+          name: '2nd Generation',
+          from_year: 2018,
+          to_year: 2024,
+          cars_qty: 8,
+          manufacturer_id: parsedManufacturerId,
+          model_id: modelIdNum
         }
       ];
     }
@@ -1732,7 +1843,7 @@ export const useSecureAuctionAPI = () => {
       // Fetch generations for each model
       for (const model of models) {
         try {
-          const modelGenerations = await fetchGenerations(model.id.toString());
+          const modelGenerations = await fetchGenerations(model.id.toString(), manufacturerId);
           modelGenerations.forEach(gen => {
             if (!generationMap.has(gen.id)) {
               generationMap.set(gen.id, gen);

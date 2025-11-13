@@ -141,11 +141,49 @@ const EncarCatalog = ({
   // Use ref for tracking fetch progress to avoid triggering re-renders
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
+  const scrollLockRef = useRef({
+    body: '',
+    html: '',
+    touch: ''
+  });
+
+  useEffect(() => {
+    scrollLockRef.current = {
+      body: document.body.style.overflow,
+      html: document.documentElement.style.overflow,
+      touch: document.body.style.touchAction
+    };
+  }, []);
 
   // Ensure filters are always open on desktop
   useEffect(() => {
     if (!isMobile) setShowFilters(true);else setShowFilters(false);
   }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      document.body.style.overflow = scrollLockRef.current.body;
+      document.documentElement.style.overflow = scrollLockRef.current.html;
+      document.body.style.touchAction = scrollLockRef.current.touch;
+      return;
+    }
+
+    if (showFilters) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = scrollLockRef.current.body;
+      document.documentElement.style.overflow = scrollLockRef.current.html;
+      document.body.style.touchAction = scrollLockRef.current.touch;
+    }
+
+    return () => {
+      document.body.style.overflow = scrollLockRef.current.body;
+      document.documentElement.style.overflow = scrollLockRef.current.html;
+      document.body.style.touchAction = scrollLockRef.current.touch;
+    };
+  }, [showFilters, isMobile]);
 
   useEffect(() => {
     refreshInventory(60);
@@ -764,7 +802,8 @@ const EncarCatalog = ({
 
       // Fetch generations in background (non-blocking)
       if (modelId) {
-        fetchGenerations(modelId).then(generationData => setGenerations(generationData)).catch(err => console.warn('Failed to load generations:', err));
+        const manufacturerId = newFilters.manufacturer_id;
+        fetchGenerations(modelId, manufacturerId).then(generationData => setGenerations(generationData)).catch(err => console.warn('Failed to load generations:', err));
       }
 
       // Update URL after successful data fetch
@@ -854,7 +893,7 @@ const EncarCatalog = ({
           const modelsData = await fetchModels(urlFilters.manufacturer_id);
           setModels(modelsData);
           if (urlFilters.model_id) {
-            const generationsData = await fetchGenerations(urlFilters.model_id);
+            const generationsData = await fetchGenerations(urlFilters.model_id, urlFilters.manufacturer_id || undefined);
             setGenerations(generationsData);
           }
         }
