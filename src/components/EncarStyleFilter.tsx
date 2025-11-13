@@ -5,13 +5,23 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle
+} from "@/components/ui/drawer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Filter, 
   X, 
   Loader2, 
-  Search, 
-  ChevronDown, 
+  Search,
+  ChevronDown,
   ChevronUp,
+  ChevronRight,
   Car,
   Calendar,
   Palette,
@@ -21,7 +31,8 @@ import {
   DollarSign,
   Cog,
   Gauge,
-  Users
+  Users,
+  Check
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
 import { useGrades } from "@/hooks/useFiltersData";
@@ -80,7 +91,20 @@ interface EncarStyleFilterProps {
   onCloseFilter?: () => void;
 }
 
-const EncarStyleFilter = memo<EncarStyleFilterProps>(({
+type MobileDrawerType =
+  | 'manufacturer'
+  | 'model'
+  | 'grade'
+  | 'engine'
+  | 'trim'
+  | 'year'
+  | 'color'
+  | 'fuel'
+  | 'transmission'
+  | 'body'
+  | 'seats';
+
+const EncarStyleFilter = memo<EncarStyleFilterProps>(({ 
   filters,
   manufacturers,
   models = [],
@@ -103,6 +127,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadingTimerRef = useRef<number | null>(null);
+  const [activeMobileDrawer, setActiveMobileDrawer] = useState<MobileDrawerType | null>(null);
+  const [pendingYearRange, setPendingYearRange] = useState<{ from: string; to: string }>({ from: '', to: '' });
   
   // Use the grades hook for fetching grades
   const { data: gradesData, isLoading: isLoadingGrades } = useGrades(filters.model_id);
@@ -137,6 +163,15 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, []);
   
   const [expandedSections, setExpandedSections] = useState<string[]>(compact ? ['basic'] : ['basic', 'advanced']);
+
+  useEffect(() => {
+    if (activeMobileDrawer === 'year') {
+      setPendingYearRange({
+        from: filters.from_year || '',
+        to: filters.to_year || ''
+      });
+    }
+  }, [activeMobileDrawer, filters.from_year, filters.to_year]);
 
   // Track if strict filtering mode is enabled - using utility
   const isStrictMode = useMemo(() => isStrictFilterMode(filters), [filters]);
@@ -243,6 +278,129 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     return manufacturerOptions;
   }, [isStrictMode, filters.manufacturer_id, manufacturerOptions]);
 
+  const manufacturerCounts = filterCounts?.manufacturers ?? {};
+  const modelCounts = filterCounts?.models ?? {};
+  const colorCounts = filterCounts?.colors ?? {};
+  const fuelCounts = filterCounts?.fuelTypes ?? {};
+  const transmissionCounts = filterCounts?.transmissions ?? {};
+
+  const selectedManufacturer = useMemo(
+    () => manufacturers.find(manufacturer => manufacturer.id.toString() === filters.manufacturer_id),
+    [manufacturers, filters.manufacturer_id]
+  );
+
+  const selectedModel = useMemo(
+    () => models.find(model => model.id.toString() === filters.model_id),
+    [models, filters.model_id]
+  );
+
+  const normalizedModels = useMemo(() => {
+    const manufacturerName = selectedManufacturer?.name;
+    return models.map(model => ({
+      id: model.id.toString(),
+      label: formatModelName(model.name, manufacturerName),
+      rawName: model.name,
+      count: model.cars_qty || model.car_count || 0
+    }));
+  }, [models, selectedManufacturer?.name]);
+
+  const popularModels = useMemo(() => {
+    return [...normalizedModels]
+      .filter(model => model.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [normalizedModels]);
+
+  const alphabeticalModels = useMemo(() => {
+    return [...normalizedModels].sort((a, b) => a.label.localeCompare(b.label));
+  }, [normalizedModels]);
+
+  const selectedModelLabel = useMemo(() => {
+    const found = normalizedModels.find(model => model.id === filters.model_id);
+    return found?.label;
+  }, [normalizedModels, filters.model_id]);
+
+  const selectedGrade = useMemo(
+    () => grades.find(grade => grade.value?.toString() === filters.grade_iaai),
+    [grades, filters.grade_iaai]
+  );
+
+  const selectedEngine = useMemo(
+    () => engineVariants.find(engine => engine.value?.toString() === (filters as any).engine_spec),
+    [engineVariants, filters]
+  );
+
+  const selectedTrim = useMemo(
+    () => trimLevels.find(trim => trim.value?.toString() === filters.trim_level),
+    [trimLevels, filters.trim_level]
+  );
+
+  const colorEntries = useMemo(
+    () =>
+      Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+        id: id.toString(),
+        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+      })),
+    []
+  );
+
+  const fuelEntries = useMemo(
+    () =>
+      Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+        id: id.toString(),
+        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+      })),
+    []
+  );
+
+  const transmissionEntries = useMemo(
+    () =>
+      Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+        id: id.toString(),
+        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+      })),
+    []
+  );
+
+  const bodyTypeEntries = useMemo(
+    () =>
+      Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+        id: id.toString(),
+        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+      })),
+    []
+  );
+
+  const seatEntries = useMemo(
+    () => [2, 4, 5, 6, 7, 8].map(seats => ({ id: seats.toString(), label: `${seats} ulëse` })),
+    []
+  );
+
+  const selectedColor = useMemo(
+    () => colorEntries.find(color => color.id === (filters.color || '')),
+    [colorEntries, filters.color]
+  );
+
+  const selectedFuel = useMemo(
+    () => fuelEntries.find(fuel => fuel.id === (filters.fuel_type || '')),
+    [fuelEntries, filters.fuel_type]
+  );
+
+  const selectedTransmission = useMemo(
+    () => transmissionEntries.find(option => option.id === (filters.transmission || '')),
+    [transmissionEntries, filters.transmission]
+  );
+
+  const selectedBodyType = useMemo(
+    () => bodyTypeEntries.find(option => option.id === (filters.body_type || '')),
+    [bodyTypeEntries, filters.body_type]
+  );
+
+  const selectedSeats = useMemo(
+    () => seatEntries.find(option => option.id === (filters.seats_count || '')),
+    [seatEntries, filters.seats_count]
+  );
+
   // Grades are now fetched automatically via useGrades hook
 
   useEffect(() => {
@@ -272,373 +430,864 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Compact mode for sidebar
   if (compact) {
-    return (
-      <Card className="glass-panel border-0 rounded-xl p-6 sm:p-8 space-y-4 w-full max-w-md mx-auto shadow-lg">
-        <div className="space-y-2">
-          <div className="space-y-1 filter-section">
-          <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-            <Car className="h-2.5 w-2.5" />
-            Marka
-          </Label>
-          <div className="h-4">
-            <span
-              className={`inline-flex items-center gap-1 text-[10px] text-muted-foreground transition-opacity duration-200 ${loadingCounts ? 'opacity-100' : 'opacity-0 invisible'}`}
-            >
-              <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Po përditësohen numrat
+    const yearSummary = filters.from_year && filters.to_year
+      ? `${filters.from_year} - ${filters.to_year}`
+      : filters.from_year
+      ? `Nga ${filters.from_year}`
+      : filters.to_year
+      ? `Deri ${filters.to_year}`
+      : '';
+
+    const mileageFromValue = (filters as any).odometer_from_km || (filters as any).mileage_from || '';
+    const mileageToValue = (filters as any).odometer_to_km || (filters as any).mileage_to || '';
+
+    const priceFromValue = filters.buy_now_price_from || '';
+    const priceToValue = filters.buy_now_price_to || '';
+
+    const closeDrawer = () => setActiveMobileDrawer(null);
+    const getCount = (counts: Record<string, number>, id?: string | number) => {
+      if (id === undefined || id === null) return undefined;
+      return counts[id as any] ?? counts[id.toString()];
+    };
+
+    const allManufacturersCount = typeof (filterCounts?.manufacturers as any)?.all === 'number'
+      ? (filterCounts?.manufacturers as any).all
+      : undefined;
+
+    const handleYearValueChange = (key: 'from' | 'to', value: string) => {
+      setPendingYearRange(prev => ({
+        ...prev,
+        [key]: value === 'all' ? '' : value
+      }));
+    };
+
+    const isYearOptionSelected = (currentValue: string, optionValue: string) => {
+      if (!currentValue) {
+        return optionValue === 'all';
+      }
+      return currentValue === optionValue;
+    };
+
+    const applyYearRange = () => {
+      const nextFilters: APIFilters = { ...filters };
+      if (pendingYearRange.from) {
+        nextFilters.from_year = pendingYearRange.from;
+      } else {
+        delete nextFilters.from_year;
+      }
+      if (pendingYearRange.to) {
+        nextFilters.to_year = pendingYearRange.to;
+      } else {
+        delete nextFilters.to_year;
+      }
+      onFiltersChange(nextFilters);
+      closeDrawer();
+    };
+
+    const clearYearRange = () => {
+      const nextFilters: APIFilters = { ...filters };
+      delete nextFilters.from_year;
+      delete nextFilters.to_year;
+      onFiltersChange(nextFilters);
+      setPendingYearRange({ from: '', to: '' });
+      closeDrawer();
+    };
+
+    const FilterListItem = ({
+      icon,
+      label,
+      value,
+      placeholder,
+      hint,
+      onClick,
+      disabled,
+      loading
+    }: {
+      icon: React.ReactNode;
+      label: string;
+      value?: string;
+      placeholder: string;
+      hint?: string;
+      onClick?: () => void;
+      disabled?: boolean;
+      loading?: boolean;
+    }) => (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`flex w-full items-center justify-between gap-3 py-3 transition ${
+          disabled ? 'cursor-not-allowed opacity-50' : 'active:scale-[0.99]'
+        }`}
+      >
+        <div className="flex items-center gap-3 text-left">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-inner">
+            {icon}
+          </span>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold leading-tight">{label}</span>
+            <span className={`text-xs leading-tight ${value ? 'text-foreground' : 'text-muted-foreground'}`}>
+              {value || placeholder}
             </span>
+            {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
           </div>
-          <AdaptiveSelect
-            value={filters.manufacturer_id || 'all'}
-            onValueChange={(value) => updateFilter('manufacturer_id', value)}
-            placeholder="Zgjidhni markën"
-            className="filter-control h-8 text-xs"
-            options={manufacturerSelectOptions}
-            forceNative
-          />
         </div>
-
-        <div className="space-y-1 filter-section">
-          <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-            <Settings className="h-2.5 w-2.5" />
-            Modeli
-          </Label>
-          <AdaptiveSelect
-            value={filters.model_id || 'all'}
-            onValueChange={(value) => updateFilter('model_id', value)}
-            disabled={!filters.manufacturer_id}
-            placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
-            className="filter-control h-8 text-xs"
-            options={[
-              ...(!(isStrictMode && filters.model_id)
-                ? [{ value: 'all', label: 'Të gjithë modelet' }]
-                : []),
-              ...models
-                .filter(model => model.cars_qty && model.cars_qty > 0)
-                .map(model => {
-                  const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
-                  const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
-                  return {
-                    value: model.id.toString(),
-                    label: `${formattedModelName} (${model.cars_qty})`
-                  };
-                })
-            ]}
-            forceNative
-          />
+        <div className="flex items-center gap-2">
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </div>
+      </button>
+    );
 
-          {/* Year presets */}
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs text-muted-foreground flex items-center gap-1">
-              Gamë vjetëshe: 
-              <span className="text-xs text-primary bg-primary/10 px-1 rounded">⚡</span>
-            </Label>
-            <div className="year-buttons flex flex-wrap gap-1">
-              {yearRangePresets.slice(0, 4).map((preset) => (
-                <Button
-                  key={preset.label}
-                  type="button"
-                  variant={
-                    filters.from_year === preset.from.toString() && 
-                    filters.to_year === preset.to.toString() 
-                      ? "default" 
-                      : "outline"
-                  }
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                  onClick={() => handleYearRangePreset(preset)}
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Year range dropdowns */}
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Calendar className="h-2.5 w-2.5" />
-              Gamë Vjetëshe
-            </Label>
-            <div className="grid grid-cols-2 gap-1.5">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Nga</Label>
-                <AdaptiveSelect
-                  value={filters.from_year || 'all'}
-                  onValueChange={(value) => updateFilter('from_year', value)}
-                  className="filter-control h-8 text-xs"
-                  placeholder="Të gjithë vitet"
-                  options={yearOptions}
-                  forceNative
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Deri</Label>
-                <AdaptiveSelect
-                  value={filters.to_year || 'all'}
-                  onValueChange={(value) => updateFilter('to_year', value)}
-                  className="filter-control h-8 text-xs"
-                  placeholder="Të gjithë vitet"
-                  options={yearOptions}
-                  forceNative
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Mileage */}
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Gauge className="h-2.5 w-2.5" />
-              Kilometrazha (KM)
-            </Label>
-            <div className="grid grid-cols-2 gap-1.5">
-              <Input
-                type="number"
-                placeholder="Nga"
-                value={(filters as any).odometer_from_km || (filters as any).mileage_from || ''}
-                onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                className="filter-control h-8 text-xs"
-              />
-              <Input
-                type="number"
-                placeholder="Deri"
-                value={(filters as any).odometer_to_km || (filters as any).mileage_to || ''}
-                onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                className="filter-control h-8 text-xs"
-              />
-            </div>
-          </div>
-
-          {/* Price */}
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <DollarSign className="h-2.5 w-2.5" />
-              Çmimi (EUR)
-            </Label>
-            <div className="grid grid-cols-2 gap-1.5">
-              <Input
-                type="number"
-                placeholder="Nga"
-                value={filters.buy_now_price_from || ''}
-                onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                className="filter-control h-8 text-xs"
-              />
-              <Input
-                type="number"
-                placeholder="Deri"
-                value={filters.buy_now_price_to || ''}
-                onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                className="filter-control h-8 text-xs"
-              />
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => toggleSection('more')}
-            className="w-full justify-between text-xs h-7"
-          >
-            Më Shumë Filtra
-            {expandedSections.includes('more') ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </Button>
-
-          {expandedSections.includes('more') && (
-            <div className="space-y-2 pt-2 border-t">
-              <div className="space-y-2">
-                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                    <Cog className="h-2.5 w-2.5" />
-                    Gjenerata
-                  </Label>
-                  <AdaptiveSelect
-                    value={filters.grade_iaai || 'all'}
-                    onValueChange={(value) => updateFilter('grade_iaai', value)}
-                    disabled={!filters.model_id || isLoadingGrades}
-                    placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gjeneratën"}
-                    className="filter-control h-8 text-xs"
-                    options={[
-                      ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha gjeneratat' }] : []),
-                      ...grades.map((grade) => ({
-                        value: grade.value,
-                        label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}`
-                      }))
-                    ]}
-                    forceNative
-                  />
-                </div>
-
-                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                    <Settings className="h-2.5 w-2.5" />
-                    Motori
-                  </Label>
-                  <AdaptiveSelect
-                    value={(filters as any).engine_spec || 'all'}
-                    onValueChange={(value) => updateFilter('engine_spec', value)}
-                    disabled={!filters.model_id}
-                    placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : "Zgjidhni motorin"}
-                    className="filter-control h-8 text-xs"
-                    options={[
-                      ...(!(isStrictMode && (filters as any).engine_spec) ? [{ value: 'all', label: 'Të gjithë motorët' }] : []),
-                      ...(engineVariants && engineVariants.length > 0
-                        ? engineVariants.map((engine) => ({ value: engine.value, label: engine.label }))
-                        : filters.model_id
-                        ? [{ value: 'no-engines', label: 'Nuk u gjetën motorë', disabled: true }]
-                        : [{ value: 'loading', label: 'Zgjidhni modelin së pari', disabled: true }])
-                    ]}
-                    forceNative
-                  />
-                </div>
-
-                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                    <Settings className="h-2.5 w-2.5" />
-                    Niveli i Trim
-                  </Label>
-                  <AdaptiveSelect
-                    value={filters.trim_level || 'all'}
-                    onValueChange={(value) => updateFilter('trim_level', value)}
-                    disabled={!filters.model_id}
-                    placeholder="Zgjidhni trim level"
-                    className="filter-control h-8 text-xs"
-                    options={[
-                      ...(!(isStrictMode && filters.trim_level) ? [{ value: 'all', label: 'Të gjithë nivelet' }] : []),
-                      ...trimLevels.map((trim) => ({ value: trim.value, label: trim.label }))
-                    ]}
-                    forceNative
-                  />
-                </div>
-
-                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Palette className="h-2.5 w-2.5" />
-                     Ngjyra
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.color || 'all'}
-                     onValueChange={(value) => updateFilter('color', value)}
-                     placeholder="Çdo ngjyrë"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       ...(!(isStrictMode && filters.color) ? [{ value: 'all', label: 'Çdo ngjyrë' }] : []),
-                       ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                       }))
-                     ]}
-                     forceNative
-                   />
-                 </div>
-
-                 <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Fuel className="h-2.5 w-2.5" />
-                     Lloji i karburantit
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.fuel_type || 'all'}
-                     onValueChange={(value) => updateFilter('fuel_type', value)}
-                     placeholder="Çdo lloj"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       ...(!(isStrictMode && filters.fuel_type) ? [{ value: 'all', label: 'Çdo lloj' }] : []),
-                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                       }))
-                     ]}
-                     forceNative
-                   />
-                 </div>
-
-                 <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Settings className="h-2.5 w-2.5" />
-                     Transmisioni
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.transmission || 'all'}
-                     onValueChange={(value) => updateFilter('transmission', value)}
-                     placeholder="Çdo transmision"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       ...(!(isStrictMode && filters.transmission) ? [{ value: 'all', label: 'Çdo transmision' }] : []),
-                       ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                       }))
-                     ]}
-                     forceNative
-                   />
-                 </div>
-
-                  <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                      <Car className="h-2.5 w-2.5" />
-                      Lloji i trupit
-                    </Label>
-                    <AdaptiveSelect
-                      value={filters.body_type || 'all'}
-                      onValueChange={(value) => updateFilter('body_type', value)}
-                      placeholder="Çdo lloj"
-                      className="filter-control h-8 text-xs"
-                      options={[
-                        ...(!(isStrictMode && filters.body_type) ? [{ value: 'all', label: 'Çdo lloj' }] : []),
-                        ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
-                          value: id.toString(),
-                          label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                        }))
-                      ]}
-                      forceNative
-                    />
-                  </div>
-
-                  <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                      <Users className="h-2.5 w-2.5" />
-                      Numri i ulëseve
-                    </Label>
-                    <AdaptiveSelect
-                      value={filters.seats_count || 'all'}
-                      onValueChange={(value) => updateFilter('seats_count', value)}
-                      placeholder="Çdo numër"
-                      className="filter-control h-8 text-xs"
-                      options={[
-                        ...(!(isStrictMode && filters.seats_count) ? [{ value: 'all', label: 'Çdo numër' }] : []),
-                        ...[2, 4, 5, 6, 7, 8].map((seats) => ({
-                          value: seats.toString(),
-                          label: `${seats} ulëse`
-                        }))
-                      ]}
-                      forceNative
-                    />
-                  </div>
-              </div>
-            </div>
+    const OptionRow = ({
+      label,
+      description,
+      count,
+      selected,
+      onClick,
+      disabled
+    }: {
+      label: string;
+      description?: string;
+      count?: number;
+      selected?: boolean;
+      onClick: () => void;
+      disabled?: boolean;
+    }) => (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={`flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
+          disabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-muted/60 active:scale-[0.995]'
+        } ${selected ? 'bg-muted/60' : ''}`}
+      >
+        <div className="flex flex-col">
+          <span className={`text-sm font-medium ${selected ? 'text-primary' : ''}`}>{label}</span>
+          {description && <span className="text-xs text-muted-foreground">{description}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          {typeof count === 'number' && (
+            <span className="text-xs font-medium text-muted-foreground">{count.toLocaleString('en-US')}</span>
           )}
+          {selected && <Check className="h-4 w-4 text-primary" />}
+        </div>
+      </button>
+    );
+
+    const RangeInputCard = ({
+      icon,
+      label,
+      fromKey,
+      toKey,
+      fromValue,
+      toValue,
+      fromPlaceholder,
+      toPlaceholder,
+      unit
+    }: {
+      icon: React.ReactNode;
+      label: string;
+      fromKey: string;
+      toKey: string;
+      fromValue?: string;
+      toValue?: string;
+      fromPlaceholder?: string;
+      toPlaceholder?: string;
+      unit?: string;
+    }) => (
+      <div className="rounded-3xl border border-border/60 bg-card/70 px-4 py-4 shadow-sm backdrop-blur">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-inner">
+              {icon}
+            </span>
+            <span className="text-sm font-semibold">{label}</span>
+          </div>
+          <span className="text-[11px] font-medium uppercase tracking-wide text-primary">Fut vlerat</span>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-[11px] font-medium uppercase text-muted-foreground">Nga</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                min={0}
+                placeholder={fromPlaceholder}
+                value={fromValue || ''}
+                onChange={(e) => updateFilter(fromKey, e.target.value)}
+                className="h-11 rounded-2xl border border-border/70 bg-background/80 px-4 text-sm font-semibold"
+              />
+              {unit && (
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {unit}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] font-medium uppercase text-muted-foreground">Deri</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                min={0}
+                placeholder={toPlaceholder}
+                value={toValue || ''}
+                onChange={(e) => updateFilter(toKey, e.target.value)}
+                className="h-11 rounded-2xl border border-border/70 bg-background/80 px-4 text-sm font-semibold"
+              />
+              {unit && (
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {unit}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderDrawerHeader = (title: string) => (
+      <DrawerHeader className="border-b px-4 pt-6 pb-3">
+        <div className="flex items-center justify-between">
+          <DrawerTitle className="text-base font-semibold">{title}</DrawerTitle>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerClose>
+        </div>
+      </DrawerHeader>
+    );
+
+    const renderDrawerContent = () => {
+      if (!activeMobileDrawer) return null;
+
+      if (activeMobileDrawer === 'manufacturer') {
+        const highlighted = prioritizedManufacturerCount > 0
+          ? prioritizedManufacturers.slice(0, prioritizedManufacturerCount)
+          : prioritizedManufacturers;
+        const remaining = prioritizedManufacturerCount > 0
+          ? prioritizedManufacturers.slice(prioritizedManufacturerCount)
+          : [];
+
+        return (
+          <>
+            {renderDrawerHeader('Zgjidh markën')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-4 pb-4">
+                <div className="space-y-1">
+                  <OptionRow
+                    label="Të gjitha markat"
+                    count={allManufacturersCount}
+                    selected={!filters.manufacturer_id}
+                    onClick={() => {
+                      updateFilter('manufacturer_id', 'all');
+                      closeDrawer();
+                    }}
+                  />
+                </div>
+                {highlighted.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Markat më të kërkuara
+                    </p>
+                    {highlighted.map(manufacturer => (
+                      <OptionRow
+                        key={manufacturer.id}
+                        label={manufacturer.name}
+                        count={getCount(manufacturerCounts, manufacturer.id) ?? manufacturer.cars_qty ?? manufacturer.car_count}
+                        selected={filters.manufacturer_id === manufacturer.id.toString()}
+                        onClick={() => {
+                          updateFilter('manufacturer_id', manufacturer.id.toString());
+                          closeDrawer();
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                {remaining.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Markat tjera
+                    </p>
+                    {remaining.map(manufacturer => (
+                      <OptionRow
+                        key={manufacturer.id}
+                        label={manufacturer.name}
+                        count={getCount(manufacturerCounts, manufacturer.id) ?? manufacturer.cars_qty ?? manufacturer.car_count}
+                        selected={filters.manufacturer_id === manufacturer.id.toString()}
+                        onClick={() => {
+                          updateFilter('manufacturer_id', manufacturer.id.toString());
+                          closeDrawer();
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'model') {
+        return (
+          <>
+            {renderDrawerHeader('Zgjidh modelin')}
+            {!filters.manufacturer_id ? (
+              <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+                Zgjidhni një markë për të parë modelet përkatëse.
+              </div>
+            ) : (
+              <ScrollArea className="max-h-[70vh] px-3 py-4">
+                <div className="space-y-4 pb-4">
+                  <OptionRow
+                    label="Të gjithë modelet"
+                    selected={!filters.model_id}
+                    onClick={() => {
+                      updateFilter('model_id', 'all');
+                      closeDrawer();
+                    }}
+                  />
+                  {popularModels.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Modelet e preferuara
+                      </p>
+                      {popularModels.map(model => (
+                        <OptionRow
+                          key={`popular-${model.id}`}
+                          label={model.label}
+                          count={getCount(modelCounts, model.id) ?? model.count}
+                          selected={filters.model_id === model.id}
+                          onClick={() => {
+                            updateFilter('model_id', model.id);
+                            closeDrawer();
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Sipas alfabetit
+                    </p>
+                    {alphabeticalModels.map(model => (
+                      <OptionRow
+                        key={`alphabet-${model.id}`}
+                        label={model.label}
+                        count={getCount(modelCounts, model.id) ?? model.count}
+                        selected={filters.model_id === model.id}
+                        onClick={() => {
+                          updateFilter('model_id', model.id);
+                          closeDrawer();
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'grade') {
+        return (
+          <>
+            {renderDrawerHeader('Zgjidh gjeneratën')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Të gjitha gjeneratat"
+                  selected={!filters.grade_iaai}
+                  onClick={() => {
+                    updateFilter('grade_iaai', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {isLoadingGrades && (
+                  <div className="px-2 py-3 text-xs text-muted-foreground">Po ngarkohen gjeneratat…</div>
+                )}
+                {!isLoadingGrades && grades.length === 0 && (
+                  <div className="px-2 py-3 text-xs text-muted-foreground">Nuk ka gjenerata të disponueshme.</div>
+                )}
+                {grades.map(grade => (
+                  <OptionRow
+                    key={grade.value}
+                    label={grade.label}
+                    count={grade.count}
+                    selected={filters.grade_iaai === grade.value?.toString()}
+                    onClick={() => {
+                      updateFilter('grade_iaai', grade.value?.toString() || 'all');
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'engine') {
+        const hasEngines = engineVariants && engineVariants.length > 0;
+        return (
+          <>
+            {renderDrawerHeader('Zgjidh motorin')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Të gjithë motorët"
+                  selected={!(filters as any).engine_spec}
+                  onClick={() => {
+                    updateFilter('engine_spec', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {!filters.model_id && (
+                  <div className="px-2 py-3 text-xs text-muted-foreground">Zgjidhni fillimisht modelin.</div>
+                )}
+                {filters.model_id && !hasEngines && (
+                  <div className="px-2 py-3 text-xs text-muted-foreground">Nuk u gjetën motorë për këtë model.</div>
+                )}
+                {hasEngines && engineVariants.map(engine => (
+                  <OptionRow
+                    key={engine.value}
+                    label={engine.label}
+                    count={engine.count}
+                    selected={(filters as any).engine_spec === engine.value?.toString()}
+                    onClick={() => {
+                      updateFilter('engine_spec', engine.value?.toString() || 'all');
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'trim') {
+        return (
+          <>
+            {renderDrawerHeader('Zgjidh trim level')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Të gjithë nivelet"
+                  selected={!filters.trim_level}
+                  onClick={() => {
+                    updateFilter('trim_level', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {!filters.model_id && (
+                  <div className="px-2 py-3 text-xs text-muted-foreground">Zgjidhni fillimisht modelin.</div>
+                )}
+                {filters.model_id && trimLevels.length === 0 && (
+                  <div className="px-2 py-3 text-xs text-muted-foreground">Nuk ka trim levels të disponueshme.</div>
+                )}
+                {trimLevels.map(trim => (
+                  <OptionRow
+                    key={trim.value}
+                    label={trim.label}
+                    count={trim.count}
+                    selected={filters.trim_level === trim.value?.toString()}
+                    onClick={() => {
+                      updateFilter('trim_level', trim.value?.toString() || 'all');
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'color') {
+        return (
+          <>
+            {renderDrawerHeader('Zgjidh ngjyrën')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Çdo ngjyrë"
+                  selected={!filters.color}
+                  onClick={() => {
+                    updateFilter('color', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {colorEntries.map(color => (
+                  <OptionRow
+                    key={color.id}
+                    label={color.label}
+                    count={getCount(colorCounts, color.id)}
+                    selected={filters.color === color.id}
+                    onClick={() => {
+                      updateFilter('color', color.id);
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'fuel') {
+        return (
+          <>
+            {renderDrawerHeader('Lloji i karburantit')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Çdo lloj"
+                  selected={!filters.fuel_type}
+                  onClick={() => {
+                    updateFilter('fuel_type', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {fuelEntries.map(fuel => (
+                  <OptionRow
+                    key={fuel.id}
+                    label={fuel.label}
+                    count={getCount(fuelCounts, fuel.id)}
+                    selected={filters.fuel_type === fuel.id}
+                    onClick={() => {
+                      updateFilter('fuel_type', fuel.id);
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'transmission') {
+        return (
+          <>
+            {renderDrawerHeader('Transmisioni')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Çdo transmision"
+                  selected={!filters.transmission}
+                  onClick={() => {
+                    updateFilter('transmission', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {transmissionEntries.map(transmission => (
+                  <OptionRow
+                    key={transmission.id}
+                    label={transmission.label}
+                    count={getCount(transmissionCounts, transmission.id)}
+                    selected={filters.transmission === transmission.id}
+                    onClick={() => {
+                      updateFilter('transmission', transmission.id);
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'body') {
+        return (
+          <>
+            {renderDrawerHeader('Lloji i trupit')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Çdo lloj"
+                  selected={!filters.body_type}
+                  onClick={() => {
+                    updateFilter('body_type', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {bodyTypeEntries.map(body => (
+                  <OptionRow
+                    key={body.id}
+                    label={body.label}
+                    selected={filters.body_type === body.id}
+                    onClick={() => {
+                      updateFilter('body_type', body.id);
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'seats') {
+        return (
+          <>
+            {renderDrawerHeader('Numri i ulëseve')}
+            <ScrollArea className="max-h-[70vh] px-3 py-4">
+              <div className="space-y-1 pb-4">
+                <OptionRow
+                  label="Çdo numër"
+                  selected={!filters.seats_count}
+                  onClick={() => {
+                    updateFilter('seats_count', 'all');
+                    closeDrawer();
+                  }}
+                />
+                {seatEntries.map(seat => (
+                  <OptionRow
+                    key={seat.id}
+                    label={seat.label}
+                    selected={filters.seats_count === seat.id}
+                    onClick={() => {
+                      updateFilter('seats_count', seat.id);
+                      closeDrawer();
+                    }}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        );
+      }
+
+      if (activeMobileDrawer === 'year') {
+        return (
+          <>
+            {renderDrawerHeader('Viti i prodhimit')}
+            <div className="px-4 py-4">
+              <p className="text-xs text-muted-foreground">Zgjidhni gamën e vitit për makinat që kërkoni.</p>
+              <div className="mt-4 flex gap-4">
+                <div className="flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Nga</p>
+                  <div className="mt-2 max-h-[240px] space-y-1 overflow-y-auto pr-2">
+                    {yearOptions.map(option => (
+                      <OptionRow
+                        key={`from-${option.value}`}
+                        label={option.label}
+                        selected={isYearOptionSelected(pendingYearRange.from, option.value)}
+                        onClick={() => handleYearValueChange('from', option.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Deri</p>
+                  <div className="mt-2 max-h-[240px] space-y-1 overflow-y-auto pr-2">
+                    {yearOptions.map(option => (
+                      <OptionRow
+                        key={`to-${option.value}`}
+                        label={option.label}
+                        selected={isYearOptionSelected(pendingYearRange.to, option.value)}
+                        onClick={() => handleYearValueChange('to', option.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DrawerFooter className="border-t bg-background/80">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" className="flex-1 rounded-full" onClick={clearYearRange}>
+                  Pastro
+                </Button>
+                <Button className="flex-1 rounded-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={applyYearRange}>
+                  Ruaj
+                </Button>
+              </div>
+            </DrawerFooter>
+          </>
+        );
+      }
+
+      return null;
+    };
+
+    return (
+      <div className="flex h-full flex-col bg-background">
+        <div className="flex-1 overflow-y-auto space-y-4 px-3 pb-32 pt-4">
+          <div className="rounded-3xl border border-border/60 bg-card/70 px-4 py-4 shadow-sm backdrop-blur">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Kërkimi i makinës</p>
+            <div className="mt-2 divide-y divide-border/60">
+              <FilterListItem
+                icon={<Car className="h-4 w-4" />}
+                label="Marka"
+                value={selectedManufacturer?.name}
+                placeholder="Të gjitha markat"
+                onClick={() => setActiveMobileDrawer('manufacturer')}
+                loading={loadingCounts}
+                hint={loadingCounts ? 'Po përditësohen numrat' : undefined}
+              />
+              <FilterListItem
+                icon={<Settings className="h-4 w-4" />}
+                label="Modeli"
+                value={selectedModelLabel || selectedModel?.name}
+                placeholder={filters.manufacturer_id ? 'Zgjidhni modelin' : 'Zgjidhni markën fillimisht'}
+                onClick={() => setActiveMobileDrawer('model')}
+                disabled={!filters.manufacturer_id}
+              />
+              <FilterListItem
+                icon={<Cog className="h-4 w-4" />}
+                label="Gjenerata"
+                value={selectedGrade?.label}
+                placeholder={filters.model_id ? 'Zgjidhni gjeneratën' : 'Zgjidhni modelin fillimisht'}
+                onClick={() => setActiveMobileDrawer('grade')}
+                disabled={!filters.model_id}
+                loading={isLoadingGrades}
+                hint={isLoadingGrades ? 'Po ngarkohen opsionet' : undefined}
+              />
+              <FilterListItem
+                icon={<Settings className="h-4 w-4" />}
+                label="Motori"
+                value={selectedEngine?.label}
+                placeholder={filters.model_id ? 'Çdo motor' : 'Zgjidhni modelin fillimisht'}
+                onClick={() => setActiveMobileDrawer('engine')}
+                disabled={!filters.model_id}
+              />
+              <FilterListItem
+                icon={<Settings className="h-4 w-4" />}
+                label="Trim level"
+                value={selectedTrim?.label}
+                placeholder={filters.model_id ? 'Çdo nivel' : 'Zgjidhni modelin fillimisht'}
+                onClick={() => setActiveMobileDrawer('trim')}
+                disabled={!filters.model_id}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border/60 bg-card/70 px-4 py-4 shadow-sm backdrop-blur">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Specifikat</p>
+            <div className="mt-2 divide-y divide-border/60">
+              <FilterListItem
+                icon={<Calendar className="h-4 w-4" />}
+                label="Viti i prodhimit"
+                value={yearSummary || undefined}
+                placeholder="Të gjitha vitet"
+                onClick={() => setActiveMobileDrawer('year')}
+              />
+              <FilterListItem
+                icon={<Palette className="h-4 w-4" />}
+                label="Ngjyra"
+                value={selectedColor?.label}
+                placeholder="Çdo ngjyrë"
+                onClick={() => setActiveMobileDrawer('color')}
+              />
+              <FilterListItem
+                icon={<Fuel className="h-4 w-4" />}
+                label="Karburanti"
+                value={selectedFuel?.label}
+                placeholder="Çdo lloj"
+                onClick={() => setActiveMobileDrawer('fuel')}
+              />
+              <FilterListItem
+                icon={<Settings className="h-4 w-4" />}
+                label="Transmisioni"
+                value={selectedTransmission?.label}
+                placeholder="Çdo transmision"
+                onClick={() => setActiveMobileDrawer('transmission')}
+              />
+              <FilterListItem
+                icon={<Car className="h-4 w-4" />}
+                label="Lloji i trupit"
+                value={selectedBodyType?.label}
+                placeholder="Çdo lloj"
+                onClick={() => setActiveMobileDrawer('body')}
+              />
+              <FilterListItem
+                icon={<Users className="h-4 w-4" />}
+                label="Numri i ulëseve"
+                value={selectedSeats?.label}
+                placeholder="Çdo numër"
+                onClick={() => setActiveMobileDrawer('seats')}
+              />
+            </div>
+          </div>
+
+          <RangeInputCard
+            icon={<Gauge className="h-4 w-4" />}
+            label="Kilometrazha (KM)"
+            fromKey="odometer_from_km"
+            toKey="odometer_to_km"
+            fromValue={mileageFromValue}
+            toValue={mileageToValue}
+            fromPlaceholder="Nga"
+            toPlaceholder="Deri"
+            unit="km"
+          />
+
+          <RangeInputCard
+            icon={<DollarSign className="h-4 w-4" />}
+            label="Çmimi (EUR)"
+            fromKey="buy_now_price_from"
+            toKey="buy_now_price_to"
+            fromValue={priceFromValue}
+            toValue={priceToValue}
+            fromPlaceholder="Nga"
+            toPlaceholder="Deri"
+            unit="€"
+          />
         </div>
 
-        <div className="flex flex-col gap-2 pt-2 border-t">
-          <Button
-            type="button"
-            onClick={() => {
-              handleSearchClick();
-              // Close filter panel on mobile
-              if (onCloseFilter) {
-                onCloseFilter();
-              }
-            }}
-            disabled={isLoading}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            size="lg"
-          >
-            <Search className="h-5 w-5 mr-2" />
-            {isHomepage ? 'Kërko Makinat' : 'Apliko Filtrat'}
-          </Button>
+        <div className="sticky bottom-0 left-0 right-0 border-t border-border/60 bg-background/95 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3 backdrop-blur">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 h-11 rounded-full font-semibold"
+              onClick={() => {
+                onClearFilters();
+                setPendingYearRange({ from: '', to: '' });
+              }}
+            >
+              Reset
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 h-11 rounded-full bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+              onClick={() => {
+                handleSearchClick();
+                onCloseFilter?.();
+              }}
+            >
+              <Search className="mr-2 h-4 w-4" />
+              {isHomepage ? 'Kërko makinat' : 'Shfaq rezultatet'}
+            </Button>
+          </div>
         </div>
-      </Card>
+
+        <Drawer
+          open={!!activeMobileDrawer}
+          onOpenChange={(open) => {
+            if (!open) {
+              closeDrawer();
+            }
+          }}
+          shouldScaleBackground={false}
+        >
+          <DrawerContent className="bg-background">
+            {renderDrawerContent()}
+          </DrawerContent>
+        </Drawer>
+      </div>
     );
   }
 
