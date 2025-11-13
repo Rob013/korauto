@@ -27,6 +27,7 @@ import {
   translateUsageText,
   type UsageHistoryEntry,
 } from "@/utils/encarUsage";
+import { translateKoreanText } from "@/utils/koreanTranslation";
 import type {
   EncarsInspectionResponse,
   EncarsRecordOpenResponse,
@@ -659,7 +660,17 @@ const translateStatusValue = (value: unknown) => {
     }
   }
 
-  return value;
+  const usageTranslation = translateUsageText(normalizedRaw).trim();
+  if (usageTranslation && usageTranslation !== normalizedRaw) {
+    return usageTranslation;
+  }
+
+  const koreanTranslation = translateKoreanText(normalizedRaw).trim();
+  if (koreanTranslation && koreanTranslation !== normalizedRaw) {
+    return koreanTranslation;
+  }
+
+  return normalizedRaw;
 };
 
 const translateAccidentSummaryValue = (value: unknown) => {
@@ -675,7 +686,40 @@ const translateAccidentSummaryValue = (value: unknown) => {
   for (const { pattern, translation } of accidentValueRegexTranslations) {
     if (pattern.test(normalized)) return translation;
   }
-  return value;
+  const usageTranslation = translateUsageText(normalized).trim();
+  if (usageTranslation && usageTranslation !== normalized) {
+    return usageTranslation;
+  }
+
+  const koreanTranslation = translateKoreanText(normalized).trim();
+  if (koreanTranslation && koreanTranslation !== normalized) {
+    return koreanTranslation;
+  }
+
+  return normalized;
+};
+
+const translateGeneralText = (input?: string | null) => {
+  if (input === null || input === undefined) {
+    return "";
+  }
+
+  const text = input.toString().trim();
+  if (!text) {
+    return "";
+  }
+
+  const usageTranslation = translateUsageText(text).trim();
+  if (usageTranslation && usageTranslation !== text) {
+    return usageTranslation;
+  }
+
+  const koreanTranslation = translateKoreanText(text).trim();
+  if (koreanTranslation && koreanTranslation !== text) {
+    return koreanTranslation;
+  }
+
+  return text;
 };
 
 const hasMeaningfulStatusValue = (value: unknown) => {
@@ -3198,36 +3242,42 @@ const accidentSummaryEntries = useMemo(
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {car.maintenanceHistory.map((record: any, index: number) => (
-                    <Card
-                      key={index}
-                      className="border border-border/60 bg-muted/40"
-                    >
-                      <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
-                        <div className="flex flex-wrap justify-between gap-2">
-                          <div className="font-semibold text-foreground">
-                            {record.service_type ||
-                              record.type ||
-                              "Shërbim i përgjithshëm"}
+                  {car.maintenanceHistory.map((record: any, index: number) => {
+                    const serviceType =
+                      translateGeneralText(record.service_type) ||
+                      translateGeneralText(record.type) ||
+                      "Shërbim i përgjithshëm";
+                    const description = translateGeneralText(record.description);
+
+                    return (
+                      <Card
+                        key={index}
+                        className="border border-border/60 bg-muted/40"
+                      >
+                        <CardContent className="pt-4 space-y-2 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <div className="font-semibold text-foreground">
+                              {serviceType}
+                            </div>
+                            {record.date && (
+                              <Badge variant="outline" className="text-xs">
+                                {record.date}
+                              </Badge>
+                            )}
                           </div>
-                          {record.date && (
-                            <Badge variant="outline" className="text-xs">
-                              {record.date}
-                            </Badge>
+                          {description && <p>{description}</p>}
+                          {record.mileage && (
+                            <p className="text-xs">
+                              Kilometrazh:{" "}
+                              <span className="font-medium">
+                                {record.mileage}
+                              </span>
+                            </p>
                           )}
-                        </div>
-                        {record.description && <p>{record.description}</p>}
-                        {record.mileage && (
-                          <p className="text-xs">
-                            Kilometrazh:{" "}
-                            <span className="font-medium">
-                              {record.mileage}
-                            </span>
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
@@ -3736,38 +3786,45 @@ const accidentSummaryEntries = useMemo(
                   </h3>
                   {ownerChangesList.length > 0 ? (
                     <div className="space-y-3">
-                      {ownerChangesList.map((change, index) => (
-                        <Card
-                          key={`${change?.change_type || "owner"}-${index}`}
-                          className="border-l-4 border-l-primary/50"
-                        >
-                          <CardContent className="p-4 space-y-2">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="font-semibold text-foreground text-base">
-                                {change?.change_type || "Ndryshim pronari"}
-                              </span>
-                              {change?.date && (
-                                <Badge variant="outline" className="text-xs font-medium">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {formatDisplayDate(change.date) ?? change.date}
-                                </Badge>
+                      {ownerChangesList.map((change, index) => {
+                        const changeType =
+                          translateGeneralText(change?.change_type) ||
+                          "Ndryshim pronari";
+                        const usageType = translateGeneralText(change?.usage_type);
+
+                        return (
+                          <Card
+                            key={`${change?.change_type || "owner"}-${index}`}
+                            className="border-l-4 border-l-primary/50"
+                          >
+                            <CardContent className="p-4 space-y-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="font-semibold text-foreground text-base">
+                                  {changeType}
+                                </span>
+                                {change?.date && (
+                                  <Badge variant="outline" className="text-xs font-medium">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {formatDisplayDate(change.date) ?? change.date}
+                                  </Badge>
+                                )}
+                              </div>
+                              {usageType && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-xs text-muted-foreground">Lloji i përdorimit:</span>
+                                  <span className="text-xs font-medium text-foreground">{usageType}</span>
+                                </div>
                               )}
-                            </div>
-                            {change?.usage_type && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs text-muted-foreground">Lloji i përdorimit:</span>
-                                <span className="text-xs font-medium text-foreground">{change.usage_type}</span>
-                              </div>
-                            )}
-                            {change?.previous_number && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs text-muted-foreground">Numri paraprak:</span>
-                                <span className="text-xs font-mono font-medium text-foreground">{change.previous_number}</span>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
+                              {change?.previous_number && (
+                                <div className="flex items-start gap-2">
+                                  <span className="text-xs text-muted-foreground">Numri paraprak:</span>
+                                  <span className="text-xs font-mono font-medium text-foreground">{change.previous_number}</span>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
@@ -3792,7 +3849,7 @@ const accidentSummaryEntries = useMemo(
                             Dëmtimi Kryesor
                           </h4>
                           <p className="text-sm text-muted-foreground capitalize">
-                            {car.damage.main}
+                            {translateGeneralText(car.damage.main)}
                           </p>
                         </div>
                       )}
@@ -3803,7 +3860,7 @@ const accidentSummaryEntries = useMemo(
                             Dëmtimi Dytësor
                           </h4>
                           <p className="text-sm text-muted-foreground capitalize">
-                            {car.damage.second}
+                            {translateGeneralText(car.damage.second)}
                           </p>
                         </div>
                       )}
@@ -3833,14 +3890,14 @@ const accidentSummaryEntries = useMemo(
             <Button
               onClick={handleContactWhatsApp}
               variant="outline"
-              className="h-11 flex-1 rounded-xl border border-green-500/50 bg-green-500/10 text-green-700 hover:border-green-500 hover:bg-green-500 hover:text-white transition-all"
+              className="h-10 flex-1 rounded-lg border border-green-500/50 bg-green-500/10 text-sm text-green-700 hover:border-green-500 hover:bg-green-500 hover:text-white transition-all"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               WhatsApp
             </Button>
             <InspectionRequestForm
               trigger={
-                <Button className="h-11 flex-1 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-all">
+                <Button className="h-10 flex-1 rounded-lg bg-primary text-sm text-primary-foreground shadow-sm hover:bg-primary/90 transition-all">
                   <FileText className="h-4 w-4 mr-2" />
                   Kërko Inspektim
                 </Button>
@@ -3852,7 +3909,7 @@ const accidentSummaryEntries = useMemo(
             />
             <Button
               variant="outline"
-              className="h-11 flex-1 rounded-xl border border-border/60 hover:bg-muted/40 transition-all"
+              className="h-10 flex-1 rounded-lg border border-border/60 text-sm hover:bg-muted/40 transition-all"
               onClick={() => openCarDetailsInNewTab(car.lot || lot)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
