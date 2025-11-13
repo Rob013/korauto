@@ -389,6 +389,8 @@ export const useSecureAuctionAPI = () => {
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
+  const activeFetchRequestIdRef = useRef(0);
+
   const makeSecureAPICall = async (
     endpoint: string,
     filters: any = {},
@@ -444,7 +446,11 @@ export const useSecureAuctionAPI = () => {
       return data;
     } catch (e: any) {
       clearTimeout(timeoutId);
-      throw new Error(e?.message || 'External API request failed');
+      const error = new Error(e?.message || 'External API request failed');
+      if (e?.name) {
+        error.name = e.name;
+      }
+      throw error;
     }
   };
 
@@ -524,6 +530,10 @@ export const useSecureAuctionAPI = () => {
     resetList: boolean = true
   ): Promise<void> => {
     const cacheKey = createCarsCacheKey(page, newFilters);
+    activeFetchRequestIdRef.current += 1;
+    const requestId = activeFetchRequestIdRef.current;
+
+    const isCurrentRequest = () => activeFetchRequestIdRef.current === requestId;
     const cachedEntry = carsCacheRef.current.get(cacheKey);
     const cacheIsFresh = cachedEntry && Date.now() - cachedEntry.timestamp < CARS_CACHE_TTL;
 
@@ -534,12 +544,17 @@ export const useSecureAuctionAPI = () => {
 
       if (cacheIsFresh) {
         startTransition(() => {
+          if (!isCurrentRequest()) {
+            return;
+          }
           setCars(cachedEntry.cars);
           setTotalCount(cachedEntry.totalCount);
           setHasMorePages(cachedEntry.hasMorePages);
           setCurrentPage(page);
         });
-        setLoading(false);
+        if (isCurrentRequest()) {
+          setLoading(false);
+        }
       } else {
         setLoading(true);
         if (page === 1) {
@@ -660,6 +675,9 @@ export const useSecureAuctionAPI = () => {
       );
 
         startTransition(() => {
+          if (!isCurrentRequest()) {
+            return;
+          }
           setTotalCount(total);
           setHasMorePages(hasMore);
 
@@ -672,7 +690,7 @@ export const useSecureAuctionAPI = () => {
           setCurrentPage(page);
         });
 
-        if (resetList) {
+        if (resetList && isCurrentRequest()) {
           carsCacheRef.current.set(cacheKey, {
             cars: activeCars,
             totalCount: total,
@@ -682,9 +700,20 @@ export const useSecureAuctionAPI = () => {
           pruneCacheMap(carsCacheRef.current);
         }
 
-      prefetchCarDetails(activeCars);
+      if (isCurrentRequest()) {
+        prefetchCarDetails(activeCars);
+      }
     } catch (err: any) {
       console.error("❌ API Error:", err);
+
+      if (err?.name === 'AbortError' || /abort/i.test(err?.message || '')) {
+        console.warn('🔁 Fetch aborted due to a newer request, skipping state updates.');
+        return;
+      }
+
+      if (!isCurrentRequest()) {
+        return;
+      }
       
       if (err.message === "RATE_LIMITED") {
         // Retry once after rate limit
@@ -738,6 +767,9 @@ export const useSecureAuctionAPI = () => {
         const fallbackHasMore = endIndex < fallbackCars.length;
 
         startTransition(() => {
+          if (!isCurrentRequest()) {
+            return;
+          }
           setTotalCount(fallbackTotal);
           setHasMorePages(fallbackHasMore);
 
@@ -753,7 +785,9 @@ export const useSecureAuctionAPI = () => {
       // Clear error since we're showing fallback data
       setError(null);
     } finally {
-      setLoading(false);
+      if (isCurrentRequest()) {
+        setLoading(false);
+      }
     }
   };
 
