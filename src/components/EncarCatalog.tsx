@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -110,7 +110,8 @@ const EncarCatalog = ({
   const [showAllCars, setShowAllCars] = useState(false); // New state for showing all cars
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
-    const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
+  const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
+  const [isApplyingFilters, startApplyingFilters] = useTransition();
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
 
@@ -140,6 +141,20 @@ const EncarCatalog = ({
   // Use ref for tracking fetch progress to avoid triggering re-renders
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
+  const normalizedCurrentFilters = useMemo(() => normalizeFilters(filters || {}), [filters]);
+  const currentFiltersSignature = useMemo(() => JSON.stringify(normalizedCurrentFilters), [normalizedCurrentFilters]);
+  const scheduleFetchCars = useMemo(
+    () => catalogDebounce((page: number, nextFilters: APIFilters, resetList: boolean) => {
+      fetchCars(page, nextFilters, resetList);
+    }, 120),
+    [fetchCars]
+  );
+
+  useEffect(() => {
+    if (!loading && !isApplyingFilters) {
+      setIsFilterLoading(false);
+    }
+  }, [loading, isApplyingFilters]);
 
   // Ensure filters are always open on desktop
   useEffect(() => {
@@ -459,13 +474,13 @@ const EncarCatalog = ({
       ...filtersWithPagination,
       sort_by: sortBy
     } : filtersWithPagination;
-    fetchCars(1, filtersWithSort, true);
+    scheduleFetchCars(1, filtersWithSort, true);
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
-  }, [fetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
+  }, [scheduleFetchCars, setSearchParams, hasUserSelectedSort, sortBy, clearGlobalSorting]);
 
   // Optimized year filtering hook for better performance
   const {
@@ -482,34 +497,45 @@ const EncarCatalog = ({
     filters
   });
 
-  // Apply filters instantly without debouncing
+  // Apply filters with lightweight transition and request coalescing
   const handleFiltersChange = useCallback(async (newFilters: APIFilters) => {
-      // Reset sorting to neutral whenever filters change
+      const normalizedFilters = normalizeFilters(newFilters || {});
+      const nextFiltersSignature = JSON.stringify(normalizedFilters);
+      if (nextFiltersSignature === currentFiltersSignature) {
+        return;
+      }
+
       setHasUserSelectedSort(false);
       setSortBy("");
 
-      // Update UI immediately for instant response
-      setFilters(newFilters);
+      setIsFilterLoading(true);
+      startApplyingFilters(() => {
+        setFilters(newFilters);
+      });
 
-      // Reset "Show All" mode when filters change
       setShowAllCars(false);
       setAllCarsData([]);
-
-      // Clear global sorting when filters change
       clearGlobalSorting();
 
-      // Apply filters immediately - no debouncing - fetch from ALL sources
-      const filtersWithPagination = addPaginationToFilters(newFilters, 200, 1);
-      fetchCars(1, filtersWithPagination, true);
+      const filtersWithPagination = addPaginationToFilters(normalizedFilters, 200, 1);
+      scheduleFetchCars(1, filtersWithPagination, true);
       setCurrentPage(1);
 
-      // Update URL
-      const searchParams = filtersToURLParams(newFilters);
+      const searchParams = filtersToURLParams(normalizedFilters);
       searchParams.set('page', '1');
       setSearchParams(searchParams);
-      
-      setIsFilterLoading(false);
-    }, [fetchCars, setSearchParams, clearGlobalSorting]);
+    }, [
+      currentFiltersSignature,
+      scheduleFetchCars,
+      setSearchParams,
+      clearGlobalSorting,
+      startApplyingFilters,
+      setFilters,
+      setShowAllCars,
+      setAllCarsData,
+      setHasUserSelectedSort,
+      setSortBy
+    ]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
@@ -544,7 +570,7 @@ const EncarCatalog = ({
       ...filtersWithPagination,
       sort_by: sortBy
     } : filtersWithPagination;
-    fetchCars(page, filtersWithSort, true); // Reset list for new page
+    scheduleFetchCars(page, filtersWithSort, true); // Reset list for new page
 
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -553,7 +579,7 @@ const EncarCatalog = ({
 
     // Avoid forcing scroll on desktop; let dropdowns remain in view
     console.log(`📄 Navigated to page ${page} of ${totalPages} with filters:`, filtersWithPagination);
-  }, [filters, fetchCars, setSearchParams, addPaginationToFilters, totalPages]);
+  }, [filters, scheduleFetchCars, setSearchParams, addPaginationToFilters, totalPages, hasUserSelectedSort, sortBy]);
 
   // Function to fetch and display all cars
   const handleShowAllCars = useCallback(async () => {

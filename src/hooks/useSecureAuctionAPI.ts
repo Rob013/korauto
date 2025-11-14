@@ -9,6 +9,8 @@ import { getBrandLogo } from '@/data/brandLogos';
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 60000; // 60 seconds
+const MAX_API_RETRIES = 2;
+const API_RETRY_BASE_DELAY = 300;
 
 // Helper function to get cached data or make API call
 const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {
@@ -337,6 +339,7 @@ export const useSecureAuctionAPI = () => {
   const [cachePrimed, setCachePrimed] = useState(false);
   const prefetchedCarIdsRef = useRef<Set<string>>(new Set());
   const carsCacheRef = useRef<Map<string, { cars: Car[]; totalCount: number; hasMorePages: boolean; timestamp: number }>>(new Map());
+  const lastSuccessfulSnapshotRef = useRef<{ cars: Car[]; totalCount: number; hasMorePages: boolean } | null>(null);
 
   const prefetchCarDetails = useCallback(async (carsToCache: Car[]) => {
     if (!Array.isArray(carsToCache) || carsToCache.length === 0) {
@@ -400,14 +403,7 @@ export const useSecureAuctionAPI = () => {
     const API_BASE_URL = 'https://auctionsapi.com/api';
     const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
 
-    // Small delay to avoid burst
-    const now = Date.now();
-    if (now - lastFetchTime < 50) {
-      await delay(50 - (now - lastFetchTime));
-    }
-    setLastFetchTime(Date.now());
-
-    // Build URL
+    // Build URL once – query params remain the same across retries
     let url: string;
     if (carId && (endpoint === 'cars' || endpoint === 'car')) {
       url = `${API_BASE_URL}/cars/${encodeURIComponent(carId)}`;
@@ -420,7 +416,6 @@ export const useSecureAuctionAPI = () => {
       url = `${API_BASE_URL}/${endpoint}${params.toString() ? `?${params.toString()}` : ''}`;
     } else {
       const params = new URLSearchParams();
-      // default per_page
       if (!filters?.per_page) params.append('per_page', '200');
       Object.entries(filters || {}).forEach(([k, v]) => {
         if (v !== undefined && v !== null && String(v).trim() !== '') params.append(k, String(v));
@@ -428,30 +423,59 @@ export const useSecureAuctionAPI = () => {
       url = `${API_BASE_URL}/${endpoint}?${params.toString()}`;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    try {
-      const res = await fetch(url, {
-        headers: {
-          accept: 'application/json',
-          'x-api-key': API_KEY,
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) {
-        throw new Error(`API ${res.status}`);
+    const performRequest = async () => {
+      const now = Date.now();
+      if (now - lastFetchTime < 50) {
+        await delay(50 - (now - lastFetchTime));
       }
-      const data = await res.json();
-      return data;
-    } catch (e: any) {
-      clearTimeout(timeoutId);
-      const error = new Error(e?.message || 'External API request failed');
-      if (e?.name) {
-        error.name = e.name;
+      setLastFetchTime(Date.now());
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      try {
+        const res = await fetch(url, {
+          headers: {
+            accept: 'application/json',
+            'x-api-key': API_KEY,
+          },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (!res.ok) {
+          throw new Error(`API ${res.status}`);
+        }
+        return await res.json();
+      } catch (e: any) {
+        clearTimeout(timeoutId);
+        const error = new Error(e?.message || 'External API request failed');
+        if (e?.name) {
+          error.name = e.name;
+        }
+        throw error;
       }
-      throw error;
+    };
+
+    let attempt = 0;
+    while (attempt <= MAX_API_RETRIES) {
+      try {
+        if (attempt > 0) {
+          console.warn(`🔁 Retrying ${endpoint} (attempt ${attempt + 1}/${MAX_API_RETRIES + 1})`);
+        }
+        return await performRequest();
+      } catch (error: any) {
+        const isAbortError = error?.name === 'AbortError';
+        const canRetry = attempt < MAX_API_RETRIES && !isAbortError;
+        if (!canRetry) {
+          throw error;
+        }
+
+        const backoffDelay = API_RETRY_BASE_DELAY * Math.pow(2, attempt);
+        await delay(backoffDelay);
+        attempt += 1;
+      }
     }
+
+    throw new Error('Unexpected API retry exit');
   };
 
   const filtersSignature = useMemo(() => JSON.stringify(filters || {}), [filters]);
@@ -690,6 +714,12 @@ export const useSecureAuctionAPI = () => {
           setCurrentPage(page);
         });
 
+        lastSuccessfulSnapshotRef.current = {
+          cars: activeCars,
+          totalCount: total,
+          hasMorePages: hasMore,
+        };
+
         if (resetList && isCurrentRequest()) {
           carsCacheRef.current.set(cacheKey, {
             cars: activeCars,
@@ -724,6 +754,22 @@ export const useSecureAuctionAPI = () => {
           console.error("❌ Retry failed:", retryErr);
           // Fall through to use fallback data
         }
+      }
+
+      const cachedSnapshot = cachedEntry || lastSuccessfulSnapshotRef.current;
+      if (cachedSnapshot && cachedSnapshot.cars && cachedSnapshot.cars.length > 0) {
+        console.warn('⚠️ API failed, showing cached catalog snapshot');
+        startTransition(() => {
+          if (!isCurrentRequest()) {
+            return;
+          }
+          setCars(cachedSnapshot.cars);
+          setTotalCount(cachedSnapshot.totalCount);
+          setHasMorePages(cachedSnapshot.hasMorePages);
+          setCurrentPage(page);
+        });
+        setError(null);
+        return;
       }
       
       // Use fallback car data when API fails - but only if no specific brand filter is applied
@@ -781,6 +827,12 @@ export const useSecureAuctionAPI = () => {
 
           setCurrentPage(page);
         });
+
+        lastSuccessfulSnapshotRef.current = {
+          cars: paginatedCars,
+          totalCount: fallbackTotal,
+          hasMorePages: fallbackHasMore,
+        };
 
       // Clear error since we're showing fallback data
       setError(null);
