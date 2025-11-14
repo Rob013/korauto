@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useHaptics } from "@/hooks/useHaptics";
 import type { LucideIcon } from "lucide-react";
@@ -1314,6 +1315,10 @@ const CarDetails = memo(() => {
     useState<EncarsVehicleResponse["contact"] | null>(null);
   const [liveDealerLoading, setLiveDealerLoading] = useState(false);
   const [liveDealerError, setLiveDealerError] = useState<string | null>(null);
+  
+  // Collapsible section states
+  const [isSpecsOpen, setIsSpecsOpen] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -2844,6 +2849,30 @@ const CarDetails = memo(() => {
 
       return "-";
     }, [car]);
+    
+    const resolvedFuel = useMemo(() => {
+      if (!car) return null;
+      
+      if (car.fuel) return car.fuel;
+      
+      return resolveFuelFromSources(
+        car,
+        car.details,
+        car.details?.specs,
+        car.details?.specifications,
+        car.details?.specification,
+        car.details?.technical,
+        (car.details as any)?.technicalSpecifications,
+        (car.details as any)?.technicalSpecification,
+        car.details?.summary,
+        (car.details?.summary as any)?.specs,
+        (car.details?.summary as any)?.specifications,
+        car.insurance_v2,
+        (car.insurance_v2 as any)?.vehicle,
+        car.inspect,
+        car.insurance,
+      ) ?? null;
+    }, [car]);
 
   // Add swipe functionality for car detail photos - must be before early returns
   const {
@@ -3505,43 +3534,91 @@ const CarDetails = memo(() => {
             </Card>
 
             {resolvedMainTitle && (
-              <div className="px-1 flex flex-wrap items-center gap-3 justify-between">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <div className="space-y-3 animate-fade-in-up stagger-1">
+                {/* Main Title */}
+                <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
                   {resolvedMainTitle}
                 </h1>
-                <Button
-                  type="button"
-                  variant={historyButtonVariant}
-                  size="sm"
-                  onClick={handleScrollToHistory}
-                  className={`ml-auto flex items-center gap-2 transition-colors ${hasMainFrameworkAccident ? "shadow-sm" : ""}`}
-                >
-                  <span>Historia</span>
-                  <Badge
-                    variant="secondary"
-                    className={`text-[10px] font-semibold uppercase tracking-wide ${hasMainFrameworkAccident ? "bg-destructive text-destructive-foreground" : ""}`}
-                  >
-                    {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
-                  </Badge>
-                </Button>
+                
+                {/* Subtitle with year and key details */}
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  {car.year && <span className="font-medium">{car.year}</span>}
+                  {car.year && (car.mileage || resolvedFuel) && <span>•</span>}
+                  {car.mileage && <span>{formatMileage(car.mileage)}</span>}
+                  {car.mileage && resolvedFuel && <span>•</span>}
+                  {resolvedFuel && <span>{localizeFuel(resolvedFuel)}</span>}
+                  {resolvedFuel && car.transmission && <span>•</span>}
+                  {car.transmission && <span>{car.transmission}</span>}
+                </div>
+                
+                {/* Quick Info Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <div>
+                      <div className="text-xs text-muted-foreground">Viti</div>
+                      <div className="font-semibold text-sm">{car.year || "N/A"}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                    <Gauge className="h-4 w-4 text-primary" />
+                    <div>
+                      <div className="text-xs text-muted-foreground">Kilometrazh</div>
+                      <div className="font-semibold text-sm">{car.mileage ? formatMileage(car.mileage) : "N/A"}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                    <Fuel className="h-4 w-4 text-primary" />
+                    <div>
+                      <div className="text-xs text-muted-foreground">Karburanti</div>
+                      <div className="font-semibold text-sm">{resolvedFuel ? localizeFuel(resolvedFuel) : "N/A"}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                    <Settings className="h-4 w-4 text-primary" />
+                    <div>
+                      <div className="text-xs text-muted-foreground">Transmisioni</div>
+                      <div className="font-semibold text-sm">{car.transmission || "N/A"}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Vehicle Specifications - Compact Mobile Card */}
-            <Card
-              id="specifications"
-              className="border-0 shadow-2xl rounded-xl md:rounded-2xl mobile-specs-card bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden animate-fade-in"
-              style={{ animationDelay: "400ms" }}
+            {/* Vehicle Specifications - Collapsible Section */}
+            <Collapsible
+              open={isSpecsOpen}
+              onOpenChange={setIsSpecsOpen}
+              className="animate-fade-in-up stagger-2"
             >
-              <CardContent className="p-3 md:p-6">
-                <div className="flex flex-col gap-2 md:gap-4 mb-3 md:mb-6">
-                  <h3 className="text-base md:text-xl font-bold flex items-center text-foreground">
-                    <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg mr-2 md:mr-3">
-                      <Settings className="h-4 w-4 md:h-6 md:w-6 text-primary" />
+              <Card
+                id="specifications"
+                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card"
+              >
+                <CollapsibleTrigger className="w-full">
+                  <CardContent className="p-4 md:p-6 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Info className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="text-lg md:text-xl font-bold text-foreground">
+                            Detajet
+                          </h3>
+                          <p className="text-xs text-muted-foreground">Specifikimet Teknike</p>
+                        </div>
+                      </div>
+                      {isSpecsOpen ? (
+                        <ChevronUp className="h-5 w-5 text-muted-foreground transition-transform" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
+                      )}
                     </div>
-                    Specifikimet Teknike
-                  </h3>
-                </div>
+                  </CardContent>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="p-3 md:p-6 pt-0"  >
 
                 {/* Specifications Grid - Reorganized in specific order */}
                 <div className="grid grid-cols-2 gap-1.5 md:gap-3 text-xs md:text-sm items-stretch auto-rows-fr isolate relative z-0">
@@ -3857,8 +3934,108 @@ const CarDetails = memo(() => {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* History Section - Collapsible */}
+            <Collapsible
+              open={isHistoryOpen}
+              onOpenChange={setIsHistoryOpen}
+              className="animate-fade-in-up stagger-3"
+            >
+              <Card
+                id="history"
+                ref={historySectionRef}
+                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card"
+              >
+                <CollapsibleTrigger className="w-full">
+                  <CardContent className="p-4 md:p-6 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Shield className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+                            Historia
+                            <Badge
+                              variant={hasMainFrameworkAccident ? "destructive" : "secondary"}
+                              className="text-[10px] font-semibold uppercase"
+                            >
+                              {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                            </Badge>
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            Aksidentet & Historiku i Pronësisë
+                          </p>
+                        </div>
+                      </div>
+                      {isHistoryOpen ? (
+                        <ChevronUp className="h-5 w-5 text-muted-foreground transition-transform" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
+                      )}
+                    </div>
+                  </CardContent>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="p-3 md:p-6 pt-0">
+                    {(car.insurance_v2 || car.inspect || car.insurance) && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {car.insurance_v2?.accidentCnt !== undefined && (
+                            <div className="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg">
+                              <span className="text-sm font-medium">
+                                Historia e Aksidenteve:
+                              </span>
+                              <Badge
+                                variant={
+                                  car.insurance_v2.accidentCnt === 0
+                                    ? "secondary"
+                                    : "destructive"
+                                }
+                              >
+                                {car.insurance_v2.accidentCnt === 0
+                                  ? "E Pastër"
+                                  : `${car.insurance_v2.accidentCnt} aksidente`}
+                              </Badge>
+                            </div>
+                          )}
+                          {car.insurance_v2?.ownerChangeCnt !== undefined && (
+                            <div className="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg">
+                              <span className="text-sm font-medium">
+                                Ndërrimi i Pronarit:
+                              </span>
+                              <Badge variant="secondary">
+                                {car.insurance_v2.ownerChangeCnt} herë
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {hasMainFrameworkAccident && (
+                          <div className="p-4 bg-destructive/10 border-l-4 border-destructive rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                              <div>
+                                <h4 className="font-semibold text-destructive mb-1">
+                                  Dëmtim i Kornizës Kryesore
+                                </h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Ky automjet ka pasur dëmtime në kornizën kryesore. Kontrolloni raportin e plotë të inspektimit për detaje.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
             {/* Enhanced Detailed Information Section */}
             <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
