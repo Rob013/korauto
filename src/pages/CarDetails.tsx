@@ -18,6 +18,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useHaptics } from "@/hooks/useHaptics";
 import type { LucideIcon } from "lucide-react";
@@ -1319,6 +1326,8 @@ const CarDetails = memo(() => {
   // Collapsible section states
   const [isSpecsOpen, setIsSpecsOpen] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSpecsDialogOpen, setIsSpecsDialogOpen] = useState(false);
+  const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -3549,38 +3558,13 @@ const CarDetails = memo(() => {
                   {resolvedFuel && <span>{localizeFuel(resolvedFuel)}</span>}
                   {resolvedFuel && car.transmission && <span>•</span>}
                   {car.transmission && <span>{car.transmission}</span>}
-                </div>
-                
-                {/* Quick Info Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">Viti</div>
-                      <div className="font-semibold text-sm">{car.year || "N/A"}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-                    <Gauge className="h-4 w-4 text-primary" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">Kilometrazh</div>
-                      <div className="font-semibold text-sm">{car.mileage ? formatMileage(car.mileage) : "N/A"}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-                    <Fuel className="h-4 w-4 text-primary" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">Karburanti</div>
-                      <div className="font-semibold text-sm">{resolvedFuel ? localizeFuel(resolvedFuel) : "N/A"}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-                    <Settings className="h-4 w-4 text-primary" />
-                    <div>
-                      <div className="text-xs text-muted-foreground">Transmisioni</div>
-                      <div className="font-semibold text-sm">{car.transmission || "N/A"}</div>
-                    </div>
-                  </div>
+                  {car.transmission && <span>•</span>}
+                  <button
+                    onClick={() => setIsSpecsDialogOpen(true)}
+                    className="text-primary hover:underline font-medium cursor-pointer"
+                  >
+                    Detajet
+                  </button>
                 </div>
               </div>
             )}
@@ -3984,36 +3968,91 @@ const CarDetails = memo(() => {
                   <CardContent className="p-3 md:p-6 pt-0">
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {car.insurance_v2?.accidentCnt !== undefined && (
-                            <div className="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg">
-                              <span className="text-sm font-medium">
-                                Historia e Aksidenteve:
-                              </span>
-                              <Badge
-                                variant={
-                                  car.insurance_v2.accidentCnt === 0
-                                    ? "secondary"
-                                    : "destructive"
-                                }
-                              >
-                                {car.insurance_v2.accidentCnt === 0
-                                  ? "E Pastër"
-                                  : `${car.insurance_v2.accidentCnt} aksidente`}
-                              </Badge>
-                            </div>
-                          )}
-                          {car.insurance_v2?.ownerChangeCnt !== undefined && (
-                            <div className="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg">
-                              <span className="text-sm font-medium">
-                                Ndërrimi i Pronarit:
-                              </span>
-                              <Badge variant="secondary">
-                                {car.insurance_v2.ownerChangeCnt} herë
-                              </Badge>
-                            </div>
-                          )}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {/* Exchange/Replacement - Shkëmbim */}
+                          <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-xs text-muted-foreground uppercase mb-1">
+                              Shkëmbim
+                            </span>
+                            <span className="text-sm font-semibold">
+                              {car.insurance_v2?.replacementCnt > 0 
+                                ? `${car.insurance_v2.replacementCnt}` 
+                                : "Asnjë"}
+                            </span>
+                          </div>
+                          
+                          {/* Sheet Metal - Limar */}
+                          <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-xs text-muted-foreground uppercase mb-1">
+                              Limar
+                            </span>
+                            <span className="text-sm font-semibold">
+                              {car.inspect?.sheetMetal || car.insurance_v2?.sheetMetalCnt > 0
+                                ? `${car.inspect?.sheetMetal || car.insurance_v2?.sheetMetalCnt || 1}`
+                                : "Asnjë"}
+                            </span>
+                          </div>
+                          
+                          {/* Corrosion - Korrozioni */}
+                          <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-xs text-muted-foreground uppercase mb-1">
+                              Korrozioni
+                            </span>
+                            <span className="text-sm font-semibold">
+                              {car.inspect?.corrosion || car.insurance_v2?.corrosionCnt > 0
+                                ? `${car.inspect?.corrosion || car.insurance_v2?.corrosionCnt || 1}`
+                                : "Asnjë"}
+                            </span>
+                          </div>
+                          
+                          {/* Owner Changes - Ndërrimi i Pronarit */}
+                          <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-xs text-muted-foreground uppercase mb-1">
+                              Historiku i Veturës
+                            </span>
+                            <span className="text-sm font-semibold">
+                              {car.insurance_v2?.ownerChangeCnt !== undefined 
+                                ? `${car.insurance_v2.ownerChangeCnt} pronarë` 
+                                : "N/A"}
+                            </span>
+                          </div>
+                          
+                          {/* My Car Damage - Dëmtimi i Veturës Sime */}
+                          <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-xs text-muted-foreground uppercase mb-1">
+                              Dëmtimi i Veturës
+                            </span>
+                            <span className="text-sm font-semibold text-destructive">
+                              {car.insurance_v2?.myCarDmgAmt 
+                                ? `${car.insurance_v2.myCarDmgAmt.toLocaleString()} KRW` 
+                                : "Asnjë"}
+                            </span>
+                          </div>
+                          
+                          {/* Other Car Damage - Dëmtimi i Veturës Tjetër */}
+                          <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-xs text-muted-foreground uppercase mb-1">
+                              Aksidente të Tjera
+                            </span>
+                            <span className="text-sm font-semibold">
+                              {car.insurance_v2?.otherCarDmgCnt > 0 
+                                ? `${car.insurance_v2.otherCarDmgCnt}` 
+                                : "Asnjë"}
+                            </span>
+                          </div>
                         </div>
+                        
+                        {/* Special Notes - Shënime Speciale */}
+                        {(car.insurance_v2?.specialNote || car.inspect?.specialNotes) && (
+                          <div className="mt-3 p-3 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-xs text-muted-foreground uppercase block mb-2">
+                              Shënime Speciale
+                            </span>
+                            <p className="text-sm">
+                              {car.insurance_v2?.specialNote || car.inspect?.specialNotes || "Asnjë"}
+                            </p>
+                          </div>
+                        )}
                         
                         {hasMainFrameworkAccident && (
                           <div className="p-4 bg-destructive/10 border-l-4 border-destructive rounded-lg">
@@ -4374,12 +4413,20 @@ const CarDetails = memo(() => {
       {car &&
         isPortalReady &&
         createPortal(
-          <div className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
+          <div className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
             <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="flex-1 min-w-0">
-                <div className="text-2xl font-bold text-foreground leading-tight">
-                  €{car.price.toLocaleString()}
-                </div>
+                <button 
+                  onClick={() => setIsServicesDialogOpen(true)}
+                  className="text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="text-2xl font-bold text-foreground leading-tight">
+                    €{(car.price + 350).toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Deri ne Prishtine pa dogan
+                  </div>
+                </button>
               </div>
               <Button
                 size="default"
@@ -4402,6 +4449,155 @@ const CarDetails = memo(() => {
           </div>,
           document.body,
         )}
+      
+      {/* Specs Dialog */}
+      <Dialog open={isSpecsDialogOpen} onOpenChange={setIsSpecsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Specifikimet Teknike</DialogTitle>
+            <DialogDescription>
+              Të dhënat e plota teknike për {resolvedMainTitle}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            {/* Engine Specs */}
+            {(car.details?.engine_type || car.details?.cylinders || car.details?.displacement) && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-lg flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-primary" />
+                  Motori
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {car.details?.engine_type && (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <div className="text-xs text-muted-foreground">Tipi i Motorit</div>
+                      <div className="font-semibold">{car.details.engine_type}</div>
+                    </div>
+                  )}
+                  {car.details?.cylinders && (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <div className="text-xs text-muted-foreground">Cilindrat</div>
+                      <div className="font-semibold">{car.details.cylinders}</div>
+                    </div>
+                  )}
+                  {car.details?.displacement && (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <div className="text-xs text-muted-foreground">Kapaciteti</div>
+                      <div className="font-semibold">{car.details.displacement}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Basic Specs */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-lg flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                Informacione Bazë
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                {car.year && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Viti</div>
+                    <div className="font-semibold">{car.year}</div>
+                  </div>
+                )}
+                {car.mileage && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Kilometrazh</div>
+                    <div className="font-semibold">{formatMileage(car.mileage)}</div>
+                  </div>
+                )}
+                {resolvedFuel && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Karburanti</div>
+                    <div className="font-semibold">{localizeFuel(resolvedFuel)}</div>
+                  </div>
+                )}
+                {car.transmission && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Transmisioni</div>
+                    <div className="font-semibold">{car.transmission}</div>
+                  </div>
+                )}
+                {car.color && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Ngjyra</div>
+                    <div className="font-semibold capitalize">{translateColor(car.color)}</div>
+                  </div>
+                )}
+                {car.details?.interior_color && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Ngjyra e Brendshme</div>
+                    <div className="font-semibold capitalize">{translateColor(car.details.interior_color)}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Services Dialog */}
+      <Dialog open={isServicesDialogOpen} onOpenChange={setIsServicesDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Shërbimet e Përfshira</DialogTitle>
+            <DialogDescription>
+              Çmimi përfshin të gjitha shërbimet e mëposhtme
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Inspektimi i veturës</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Blerja e veturës në Kore</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Transporti deri te porti në Kore</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Ç'regjistrimi dhe eksporti në Kore</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Taksat e portit në Kore</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Transporti detar nga Korea në Durrës</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Taksat për lirimin e veturës nga porti në Durrës</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Pagesa e shpedicionit në Durrës</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="text-sm">Transporti tokësor Durrës - Prishtinë</span>
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <Separator />
+            <div className="p-4 bg-primary/10 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Çmimi Total:</span>
+                <span className="text-2xl font-bold text-primary">€{(car.price + 350).toLocaleString()}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                *Deri në Prishtinë pa doganë
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });
