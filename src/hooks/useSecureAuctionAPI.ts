@@ -51,6 +51,28 @@ export const createFallbackManufacturers = () => {
   return [];
 };
 
+const normalizeFilterValue = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (value && typeof value === 'object') {
+    const candidate = (value as any).value;
+    if (typeof candidate === 'string') {
+      return candidate;
+    }
+    if (typeof candidate === 'number' || typeof candidate === 'boolean') {
+      return String(candidate);
+    }
+  }
+
+  return '';
+};
+
 
 interface Lot {
   buy_now?: number;
@@ -599,11 +621,13 @@ export const useSecureAuctionAPI = () => {
         per_page: newFilters.per_page || "200", // Show 200 cars per page
         simple_paginate: "0",
       };
-      
+
       // IMPORTANT: Remove grade_iaai and trim_level from server request - we'll do client-side filtering
       // This prevents backend errors and ensures we get all cars for client-side filtering
-      const selectedVariant = newFilters.grade_iaai;
-      const selectedTrimLevel = newFilters.trim_level;
+      const selectedVariantRaw = newFilters.grade_iaai;
+      const selectedTrimLevelRaw = newFilters.trim_level;
+      const selectedVariant = normalizeFilterValue(selectedVariantRaw).trim();
+      const selectedTrimLevel = normalizeFilterValue(selectedTrimLevelRaw).trim();
       delete apiFilters.grade_iaai;
       delete apiFilters.trim_level;
 
@@ -614,31 +638,35 @@ export const useSecureAuctionAPI = () => {
       let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
-        
+
         filteredCars = filteredCars.filter(car => {
           // Check if car has the selected variant in any of its lots
           if (car.lots && Array.isArray(car.lots)) {
             return car.lots.some(lot => {
               // Check grade_iaai field
-              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
+              const lotGrade = normalizeFilterValue(lot.grade_iaai).trim();
+              if (lotGrade && lotGrade === selectedVariant) {
                 return true;
               }
-              
+
               // Check badge field
-              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
+              const lotBadge = normalizeFilterValue(lot.details?.badge).trim();
+              if (lotBadge && lotBadge === selectedVariant) {
                 return true;
               }
-              
+
               // Check engine name
-              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
+              const engineName = normalizeFilterValue(car.engine?.name).trim();
+              if (engineName && engineName === selectedVariant) {
                 return true;
               }
-              
+
               // Check title for variant
-              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
+              const carTitle = normalizeFilterValue(car.title);
+              if (carTitle && carTitle.toLowerCase().includes(selectedVariant.toLowerCase())) {
                 return true;
               }
-              
+
               return false;
             });
           }
@@ -651,35 +679,38 @@ export const useSecureAuctionAPI = () => {
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
         console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
-        
+
+        const selectedTrimLevelLower = selectedTrimLevel.toLowerCase();
+
         filteredCars = filteredCars.filter(car => {
           // Check if car has the selected trim level in any of its lots or title
           if (car.lots && Array.isArray(car.lots)) {
             // Check lots for trim level in badge or grade_iaai
             const hasMatchInLots = car.lots.some(lot => {
               // Check badge field for trim level
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              const lotBadge = normalizeFilterValue(lot.details?.badge).toLowerCase();
+              if (lotBadge && lotBadge.includes(selectedTrimLevelLower)) {
                 return true;
               }
-              
+
               // Check grade_iaai field for trim level
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              const lotGrade = normalizeFilterValue(lot.grade_iaai).toLowerCase();
+              if (lotGrade && lotGrade.includes(selectedTrimLevelLower)) {
                 return true;
               }
-              
+
               return false;
             });
-            
+
             if (hasMatchInLots) return true;
           }
-          
+
           // Check title for trim level
-          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+          const carTitle = normalizeFilterValue(car.title).toLowerCase();
+          if (carTitle && carTitle.includes(selectedTrimLevelLower)) {
             return true;
           }
-          
+
           return false;
         });
         
@@ -1846,8 +1877,10 @@ export const useSecureAuctionAPI = () => {
       };
       
       // Remove grade_iaai and trim_level from server request for client-side filtering
-      const selectedVariant = newFilters.grade_iaai;
-      const selectedTrimLevel = newFilters.trim_level;
+      const selectedVariantRaw = newFilters.grade_iaai;
+      const selectedTrimLevelRaw = newFilters.trim_level;
+      const selectedVariant = normalizeFilterValue(selectedVariantRaw).trim();
+      const selectedTrimLevel = normalizeFilterValue(selectedTrimLevelRaw).trim();
       delete apiFilters.grade_iaai;
       delete apiFilters.trim_level;
 
@@ -1858,20 +1891,24 @@ export const useSecureAuctionAPI = () => {
       let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
-        
+
         filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
             return car.lots.some(lot => {
-              if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
+              const lotGrade = normalizeFilterValue(lot.grade_iaai).trim();
+              if (lotGrade && lotGrade === selectedVariant) {
                 return true;
               }
-              if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
+              const lotBadge = normalizeFilterValue(lot.details?.badge).trim();
+              if (lotBadge && lotBadge === selectedVariant) {
                 return true;
               }
-              if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
+              const engineName = normalizeFilterValue(car.engine?.name).trim();
+              if (engineName && engineName === selectedVariant) {
                 return true;
               }
-              if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
+              const carTitle = normalizeFilterValue(car.title);
+              if (carTitle && carTitle.toLowerCase().includes(selectedVariant.toLowerCase())) {
                 return true;
               }
               return false;
@@ -1884,23 +1921,26 @@ export const useSecureAuctionAPI = () => {
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
         console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
-        
+
+        const selectedTrimLevelLower = selectedTrimLevel.toLowerCase();
+
         filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
             const hasMatchInLots = car.lots.some(lot => {
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              const lotBadge = normalizeFilterValue(lot.details?.badge).toLowerCase();
+              if (lotBadge && lotBadge.includes(selectedTrimLevelLower)) {
                 return true;
               }
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              const lotGrade = normalizeFilterValue(lot.grade_iaai).toLowerCase();
+              if (lotGrade && lotGrade.includes(selectedTrimLevelLower)) {
                 return true;
               }
               return false;
             });
             if (hasMatchInLots) return true;
           }
-          if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+          const carTitle = normalizeFilterValue(car.title).toLowerCase();
+          if (carTitle && carTitle.includes(selectedTrimLevelLower)) {
             return true;
           }
           return false;

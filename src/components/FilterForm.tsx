@@ -88,27 +88,51 @@ const FilterForm = memo<FilterFormProps>(({
   // Map grades data to the format expected by the select
   const grades = useMemo(() => {
     if (!gradesData || !Array.isArray(gradesData)) return [];
-    return gradesData.map((grade: any) => ({
-      value: grade.id,
-      label: grade.name,
-      count: grade.car_count
-    }));
+    return gradesData
+      .map((grade: any) => {
+        const rawValue = grade?.id ?? grade?.value;
+        const value = typeof rawValue === 'string'
+          ? rawValue
+          : rawValue != null
+            ? String(rawValue)
+            : '';
+        const labelSource = grade?.name ?? grade?.label ?? '';
+        const label = typeof labelSource === 'string'
+          ? labelSource
+          : labelSource != null
+            ? String(labelSource)
+            : '';
+        const count = typeof grade?.car_count === 'number'
+          ? grade.car_count
+          : typeof grade?.count === 'number'
+            ? grade.count
+            : undefined;
+
+        return value
+          ? { value, label, count }
+          : null;
+      })
+      .filter((grade): grade is { value: string; label: string; count?: number } => Boolean(grade));
   }, [gradesData]);
 
 
   const updateFilter = useCallback((key: string, value: string) => {
+    const normalizedValue = typeof value === 'string' ? value : String(value ?? '');
+    const trimmedValue = normalizedValue.trim();
     // Handle special "all" values by converting them to undefined
-    const actualValue = value === 'all' || value === 'any' ? undefined : value;
+    const actualValue = trimmedValue === 'all' || trimmedValue === 'any' || trimmedValue === ''
+      ? undefined
+      : trimmedValue;
     
     // Handle cascading filters - instant response, no loading state
     if (key === 'manufacturer_id') {
       // Reset model, grade, and engine when manufacturer changes
       onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined, engine_spec: undefined });
-      onManufacturerChange?.(actualValue || '');
+      onManufacturerChange?.(actualValue ?? '');
     } else if (key === 'model_id') {
       // Reset grade and engine when model changes
       onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined, engine_spec: undefined });
-      onModelChange?.(actualValue || '');
+      onModelChange?.(actualValue ?? '');
     } else {
       // For other filters, use the standard filter change handler
       const updatedFilters = { ...filters, [key]: actualValue };
@@ -199,7 +223,31 @@ const FilterForm = memo<FilterFormProps>(({
         onFetchTrimLevels(filters.manufacturer_id, filters.model_id)
           .then(trimLevelsData => {
             if (!cancelled && Array.isArray(trimLevelsData)) {
-              setTrimLevels(trimLevelsData);
+              const normalized = trimLevelsData
+                .map((trim) => {
+                  const rawValue = trim?.value;
+                  const value = typeof rawValue === 'string'
+                    ? rawValue
+                    : rawValue != null
+                      ? String(rawValue)
+                      : '';
+                  const labelSource = trim?.label ?? '';
+                  const label = typeof labelSource === 'string'
+                    ? labelSource
+                    : labelSource != null
+                      ? String(labelSource)
+                      : '';
+                  const count = typeof trim?.count === 'number'
+                    ? trim.count
+                    : undefined;
+
+                  return value
+                    ? { value, label, count }
+                    : null;
+                })
+                .filter((trim): trim is { value: string; label: string; count?: number } => Boolean(trim));
+
+              setTrimLevels(normalized);
             }
           })
           .catch((err) => {
