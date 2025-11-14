@@ -2135,6 +2135,32 @@ const CarDetails = memo(() => {
 
   const showSpecsDialogTrigger = Boolean(car);
 
+  const resolvedFuel = useMemo(() => {
+    if (!car) return null;
+
+    if (car.fuel) return car.fuel;
+
+    return (
+      resolveFuelFromSources(
+        car,
+        car.details,
+        car.details?.specs,
+        car.details?.specifications,
+        car.details?.specification,
+        car.details?.technical,
+        (car.details as any)?.technicalSpecifications,
+        (car.details as any)?.technicalSpecification,
+        car.details?.summary,
+        (car.details?.summary as any)?.specs,
+        (car.details?.summary as any)?.specifications,
+        car.insurance_v2,
+        (car.insurance_v2 as any)?.vehicle,
+        car.inspect,
+        car.insurance,
+      ) ?? null
+    );
+  }, [car]);
+
   const summaryYear = car?.year ?? prefetchedSummary?.year ?? null;
   const summaryMileage = car?.mileage
     ? formatMileage(car.mileage)
@@ -3293,30 +3319,6 @@ const CarDetails = memo(() => {
       return "-";
     }, [car]);
     
-    const resolvedFuel = useMemo(() => {
-      if (!car) return null;
-      
-      if (car.fuel) return car.fuel;
-      
-      return resolveFuelFromSources(
-        car,
-        car.details,
-        car.details?.specs,
-        car.details?.specifications,
-        car.details?.specification,
-        car.details?.technical,
-        (car.details as any)?.technicalSpecifications,
-        (car.details as any)?.technicalSpecification,
-        car.details?.summary,
-        (car.details?.summary as any)?.specs,
-        (car.details?.summary as any)?.specifications,
-        car.insurance_v2,
-        (car.insurance_v2 as any)?.vehicle,
-        car.inspect,
-        car.insurance,
-      ) ?? null;
-    }, [car]);
-
   // Add swipe functionality for car detail photos - must be before early returns
   const {
     currentIndex: swipeCurrentIndex,
