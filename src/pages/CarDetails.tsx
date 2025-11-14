@@ -734,6 +734,9 @@ interface PrefetchedCarSummary {
   condition?: string;
   title?: string;
   vin?: string;
+  engineVolume?: number;
+  driveType?: string;
+  seats?: number;
   status?: number;
   sale_status?: string;
   final_price?: number;
@@ -819,6 +822,91 @@ const extractPrefetchedCarSummary = (
       ? normalizeString(imagesCandidate[0])
       : undefined);
 
+  const normalizeDriveType = (): string | undefined => {
+    const candidates: Array<unknown> = [
+      data.drive_type?.name,
+      data.drive_type,
+      data.drive,
+      data.drivetrain,
+      data.details?.drive_type,
+      data.details?.drive,
+      data.details?.drivetrain,
+      data.lots?.[0]?.drive_type?.name,
+      data.lots?.[0]?.drive_type,
+      data.lots?.[0]?.drivetrain,
+      data.lots?.[0]?.details?.drive_type,
+      data.lots?.[0]?.details?.drive,
+      data.lots?.[0]?.details?.drivetrain,
+    ];
+
+    for (const candidate of candidates) {
+      const normalized = normalizeString(candidate);
+      if (normalized) {
+        return normalized;
+      }
+    }
+
+    return undefined;
+  };
+
+  const normalizeSeats = (): number | undefined => {
+    const candidates: Array<unknown> = [
+      data.seats,
+      data.seats_count,
+      data.seat_count,
+      data.details?.seats,
+      data.details?.seats_count,
+      data.details?.seat_count,
+      data.lots?.[0]?.seats,
+      data.lots?.[0]?.seats_count,
+      data.lots?.[0]?.details?.seats,
+      data.lots?.[0]?.details?.seats_count,
+    ];
+
+    for (const candidate of candidates) {
+      const numeric = normalizeNumber(candidate);
+      if (typeof numeric === "number") {
+        return Math.round(numeric);
+      }
+    }
+
+    return undefined;
+  };
+
+  const normalizeEngineVolume = (): number | undefined => {
+    const candidates: Array<unknown> = [
+      data.engine_volume,
+      data.engineVolume,
+      data.engine_capacity,
+      data.engineCapacity,
+      data.engine_size,
+      data.engine?.volume,
+      data.engine?.capacity,
+      data.engine?.size,
+      data.details?.engine_volume,
+      data.details?.engineVolume,
+      data.details?.engine_capacity,
+      data.details?.engineCapacity,
+      data.details?.displacement,
+      data.details?.specs?.engine_volume,
+      data.details?.specs?.displacement,
+      data.lots?.[0]?.engine_volume,
+      data.lots?.[0]?.engineVolume,
+      data.lots?.[0]?.details?.engine_volume,
+      data.lots?.[0]?.details?.engineVolume,
+      data.lots?.[0]?.details?.displacement,
+    ];
+
+    for (const candidate of candidates) {
+      const numeric = normalizeNumber(candidate);
+      if (typeof numeric === "number") {
+        return Math.round(numeric);
+      }
+    }
+
+    return undefined;
+  };
+
   return {
     id: normalizeString(data.id) ?? (rawLot ? String(rawLot) : undefined),
     lot: rawLot ? String(rawLot) : undefined,
@@ -862,6 +950,9 @@ const extractPrefetchedCarSummary = (
       normalizeString(data.condition?.name),
     title: normalizeString(data.title),
     vin: normalizeString(data.vin),
+    engineVolume: normalizeEngineVolume(),
+    driveType: normalizeDriveType(),
+    seats: normalizeSeats(),
     status: normalizeNumber(data.status),
     sale_status: normalizeString(data.sale_status),
     final_price: normalizeNumber(data.final_price),
@@ -1465,7 +1556,6 @@ const CarDetails = memo(() => {
   
   // Collapsible section states
   const [isSpecsOpen, setIsSpecsOpen] = useState(true);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSpecsDialogOpen, setIsSpecsDialogOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
 
@@ -2043,25 +2133,93 @@ const CarDetails = memo(() => {
     specialNoteValue,
   } = historySummary;
 
-  const hasReplacementIssues =
-    (parseHistoryNumber(replacementValue) ?? 0) > 0;
-  const hasSheetMetalRepairs =
-    (parseHistoryNumber(sheetMetalValue) ?? 0) > 0;
-  const hasCorrosionIssues =
-    (parseHistoryNumber(corrosionValue) ?? 0) > 0;
-  const hasOwnerChanges =
-    (parseHistoryNumber(ownerHistoryValue) ?? 0) > 0;
-  const hasMyCarDamageRecords =
-    (parseHistoryNumber(myCarDamageAmount) ?? 0) > 0 ||
-    (parseHistoryNumber(myCarDamageCount) ?? 0) > 0;
-  const hasOtherCarDamageRecords =
-    (parseHistoryNumber(otherCarDamageValue) ?? 0) > 0;
-  const hasSpecialNotes =
-    specialNoteText !== "Asnjë" &&
-    specialNoteText !== "E panjohur" &&
-    specialNoteText.trim().length > 0;
-
   const showSpecsDialogTrigger = Boolean(car);
+
+  const summaryYear = car?.year ?? prefetchedSummary?.year ?? null;
+  const summaryMileage = car?.mileage
+    ? formatMileage(car.mileage)
+    : prefetchedSummary?.mileageLabel ?? undefined;
+  const summaryFuel = (() => {
+    if (resolvedFuel) {
+      return localizeFuel(resolvedFuel) ?? resolvedFuel;
+    }
+    if (prefetchedSummary?.fuel) {
+      return localizeFuel(prefetchedSummary.fuel) ?? prefetchedSummary.fuel;
+    }
+    return undefined;
+  })();
+  const summaryTransmission = (() => {
+    if (car?.transmission) {
+      return translateTransmission(car.transmission);
+    }
+    if (prefetchedSummary?.transmission) {
+      return translateTransmission(prefetchedSummary.transmission);
+    }
+    return undefined;
+  })();
+  const summaryEngineVolumeValue = parseHistoryNumber(
+    car?.details?.engine_volume ?? prefetchedSummary?.engineVolume,
+  );
+  const summaryEngineVolume =
+    typeof summaryEngineVolumeValue === "number" && summaryEngineVolumeValue > 0
+      ? `${summaryEngineVolumeValue.toLocaleString()} cc`
+      : undefined;
+  const summaryDriveRaw = car?.drive_wheel?.name ?? prefetchedSummary?.driveType;
+  const summaryDrive =
+    typeof summaryDriveRaw === "string" && summaryDriveRaw.trim()
+      ? summaryDriveRaw.trim().length <= 4
+        ? summaryDriveRaw.trim().toUpperCase()
+        : summaryDriveRaw.trim()
+      : undefined;
+  const summarySeatsValue = parseHistoryNumber(
+    car?.details?.seats_count ?? prefetchedSummary?.seats,
+  );
+  const summarySeats =
+    typeof summarySeatsValue === "number" && summarySeatsValue > 0
+      ? summarySeatsValue.toString()
+      : undefined;
+  const summaryVin = car?.vin ?? prefetchedSummary?.vin;
+  const summaryMake = car?.make ?? prefetchedSummary?.make;
+  const summaryModel = (() => {
+    if (car?.model) {
+      return car.model;
+    }
+    if (prefetchedSummary?.model) {
+      return prefetchedSummary.model;
+    }
+    return prefetchedSummary?.title;
+  })();
+  const summaryExteriorColorRaw =
+    car?.color ?? car?.details?.exterior_color ?? prefetchedSummary?.color;
+  const summaryExteriorColor =
+    typeof summaryExteriorColorRaw === "string" && summaryExteriorColorRaw.trim()
+      ? translateColor(summaryExteriorColorRaw)
+      : undefined;
+  const summaryInteriorColorRaw = car?.details?.interior_color;
+  const summaryInteriorColor =
+    typeof summaryInteriorColorRaw === "string" && summaryInteriorColorRaw.trim()
+      ? translateColor(summaryInteriorColorRaw)
+      : undefined;
+  const primarySpecs = [
+    { label: "Prodhuesi", value: summaryMake },
+    { label: "Modeli", value: summaryModel },
+    {
+      label: "Viti",
+      value:
+        typeof summaryYear === "number"
+          ? summaryYear.toString()
+          : undefined,
+    },
+    { label: "Kilometrazh", value: summaryMileage },
+    { label: "Karburanti", value: summaryFuel },
+    { label: "Kapaciteti i Motorit", value: summaryEngineVolume },
+    { label: "Transmisioni", value: summaryTransmission },
+    { label: "Drejtimi", value: summaryDrive },
+    { label: "Ulëset", value: summarySeats },
+    { label: "VIN", value: summaryVin },
+    { label: "Ngjyra e Jashtme", value: summaryExteriorColor },
+    { label: "Ngjyra e Brendshme", value: summaryInteriorColor },
+  ].filter((item) => Boolean(item.value));
 
   const handleOpenHistoryReport = useCallback(() => {
     const targetLot = carLot ?? lot;
@@ -4203,207 +4361,66 @@ const CarDetails = memo(() => {
               </Card>
             </Collapsible>
 
-            {/* History Section - Collapsible */}
-            <Collapsible
-              open={isHistoryOpen}
-              onOpenChange={setIsHistoryOpen}
-              className="animate-fade-in-up stagger-3"
+            {/* History Section */}
+            <Card
+              id="history"
+              ref={historySectionRef}
+              className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
             >
-              <Card
-                id="history"
-                ref={historySectionRef}
-                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card"
-              >
-                <CardContent className="p-4 md:p-6">
-                  <CollapsibleTrigger asChild>
-                    <button
-                      type="button"
-                      className="group flex w-full items-center justify-between gap-3 rounded-lg border border-transparent bg-transparent p-2 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="p-2 rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20 group-data-[state=open]:bg-primary/20">
-                          <Shield className="h-5 w-5 text-primary" />
+              <CardContent className="p-4 md:p-6 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-lg bg-primary/10">
+                      <Shield className="h-5 w-5 text-primary" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg md:text-xl font-bold text-foreground">
+                          Historia
                         </span>
-                        <span className="text-left">
-                          <span className="flex items-center gap-2">
-                            <span className="text-lg md:text-xl font-bold text-foreground transition-colors group-hover:text-primary">
-                              Historia
-                            </span>
-                            <Badge
-                              variant={hasMainFrameworkAccident ? "destructive" : "secondary"}
-                              className="text-[10px] font-semibold uppercase"
-                            >
-                              {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
-                            </Badge>
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            Aksidentet & Historiku i Pronësisë
-                          </p>
-                        </span>
-                      </span>
-                      <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-all duration-200 group-hover:bg-primary/20 group-data-[state=open]:rotate-180">
-                        <ChevronDown className="h-4 w-4" />
-                      </span>
-                    </button>
-                  </CollapsibleTrigger>
-                  {hasHistoryData && (
-                    <div className="mt-3 md:mt-4 space-y-3 text-sm text-muted-foreground">
-                      <div className="flex items-start gap-2">
-                        <span className="text-lg leading-none text-primary">•</span>
-                        <div className="space-y-1">
-                          <div>Shkëmbime: {replacementText}</div>
-                          <div>Punime llamarine: {sheetMetalText}</div>
-                          <div>Korrozioni: {corrosionText}</div>
-                          <button
-                            type="button"
-                            onClick={handleOpenHistoryReport}
-                            className="text-primary font-medium inline-flex items-center gap-1 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                          >
-                            Shiko raportin e performancës
-                            <ChevronRight className="h-3.5 w-3.5" />
-                          </button>
-                          <div>Historia e veturës: {ownerHistoryText}</div>
-                        </div>
+                        <Badge
+                          variant={hasMainFrameworkAccident ? "destructive" : "secondary"}
+                          className="text-[10px] font-semibold uppercase"
+                        >
+                          {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                        </Badge>
                       </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-lg leading-none text-primary">•</span>
-                        <div className="space-y-1">
-                          <div>Dëmet e veturës: {myCarDamageText}</div>
-                          <div>Dëmet ndaj veturave të tjera: {otherCarDamageText}</div>
-                          <div>Shënime të veçanta: {specialNoteText}</div>
-                        </div>
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Aksidentet & Historiku i Pronësisë
+                      </p>
                     </div>
-                  )}
-                </CardContent>
-                <CollapsibleContent>
-                  <CardContent className="p-3 md:p-6 pt-0">
-                    {(car.insurance_v2 || car.inspect || car.insurance) && (
-                      <div className="space-y-6">
-                        <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
-                          <div className="border-b border-border/60 px-4 py-3">
-                            <h4 className="text-sm font-semibold text-foreground">Raport i riparimeve</h4>
-                            <p className="text-xs text-muted-foreground">
-                              Përmbledhje e punimeve të regjistruara në raportet zyrtare.
-                            </p>
-                          </div>
-                          <dl className="divide-y divide-border/60">
-                            <div className="flex items-center justify-between gap-4 px-4 py-3">
-                              <dt className="text-sm text-muted-foreground">Shkëmbime</dt>
-                              <dd
-                                className={`text-sm font-semibold text-right ${
-                                  hasReplacementIssues ? "text-destructive" : "text-foreground"
-                                }`}
-                              >
-                                {replacementText}
-                              </dd>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 px-4 py-3">
-                              <dt className="text-sm text-muted-foreground">Punime llamarine</dt>
-                              <dd
-                                className={`text-sm font-semibold text-right ${
-                                  hasSheetMetalRepairs ? "text-destructive" : "text-foreground"
-                                }`}
-                              >
-                                {sheetMetalText}
-                              </dd>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 px-4 py-3">
-                              <dt className="text-sm text-muted-foreground">Korrozioni</dt>
-                              <dd
-                                className={`text-sm font-semibold text-right ${
-                                  hasCorrosionIssues ? "text-destructive" : "text-foreground"
-                                }`}
-                              >
-                                {corrosionText}
-                              </dd>
-                            </div>
-                          </dl>
-                        </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenHistoryReport}
+                    className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    Hap raportin e veturës
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                {hasHistoryData ? (
+                  <div className="space-y-4 text-sm text-muted-foreground">
+                    <div className="space-y-1">
+                      <div>Shkëmbime: {replacementText}</div>
+                      <div>Punime llamarine: {sheetMetalText}</div>
+                      <div>Korrozioni: {corrosionText}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div>Dëmet e veturës: {myCarDamageText}</div>
+                      <div>Dëmet ndaj veturave të tjera: {otherCarDamageText}</div>
+                      <div>Historia e veturës: {ownerHistoryText}</div>
+                      <div>Shënime të veçanta: {specialNoteText}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Nuk ka të dhëna të disponueshme për historinë e kësaj veture.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-                        <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
-                          <div className="border-b border-border/60 px-4 py-3">
-                            <h4 className="text-sm font-semibold text-foreground">Historiku i dëmeve</h4>
-                            <p className="text-xs text-muted-foreground">
-                              Të dhënat origjinale nga siguracioni dhe inspektimi i veturës.
-                            </p>
-                          </div>
-                          <dl className="divide-y divide-border/60">
-                            <div className="flex items-center justify-between gap-4 px-4 py-3">
-                              <dt className="text-sm text-muted-foreground">Ndryshimet e pronarit</dt>
-                              <dd
-                                className={`text-sm font-semibold text-right ${
-                                  hasOwnerChanges ? "text-primary" : "text-foreground"
-                                }`}
-                              >
-                                {ownerHistoryText}
-                              </dd>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 px-4 py-3">
-                              <dt className="text-sm text-muted-foreground">Dëmet e veturës</dt>
-                              <dd
-                                className={`text-sm font-semibold text-right ${
-                                  hasMyCarDamageRecords ? "text-destructive" : "text-foreground"
-                                }`}
-                              >
-                                {myCarDamageText}
-                              </dd>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 px-4 py-3">
-                              <dt className="text-sm text-muted-foreground">Dëmet ndaj veturave të tjera</dt>
-                              <dd
-                                className={`text-sm font-semibold text-right ${
-                                  hasOtherCarDamageRecords ? "text-destructive" : "text-foreground"
-                                }`}
-                              >
-                                {otherCarDamageText}
-                              </dd>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 px-4 py-3">
-                              <dt className="text-sm text-muted-foreground">Shënime të veçanta</dt>
-                              <dd
-                                className={`text-sm font-semibold text-right ${
-                                  hasSpecialNotes ? "text-primary" : "text-foreground"
-                                }`}
-                              >
-                                {specialNoteText}
-                              </dd>
-                            </div>
-                          </dl>
-                        </div>
-
-                        {hasMainFrameworkAccident && (
-                          <div className="rounded-xl border border-destructive bg-destructive/10 p-4">
-                            <div className="flex items-start gap-3">
-                              <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
-                              <div>
-                                <h4 className="mb-1 font-semibold text-destructive">
-                                  Dëmtim i Kornizës Kryesore
-                                </h4>
-                                <p className="text-sm text-muted-foreground">
-                                  Ky automjet ka pasur dëmtime në kornizën kryesore. Kontrolloni raportin e plotë të inspektimit për detaje.
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex justify-end">
-                          <button
-                            type="button"
-                            onClick={handleOpenHistoryReport}
-                            className="inline-flex items-center gap-1 rounded text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            Hap raportin e plotë
-                            <ChevronRight className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
 
             {/* Enhanced Detailed Information Section */}
             <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
@@ -4764,7 +4781,7 @@ const CarDetails = memo(() => {
                 onClick={handlePhoneCall}
               >
                 <Phone className="h-4 w-4" />
-                <span className="leading-tight">+383 48 181 116</span>
+                <span className="leading-tight uppercase tracking-wide">CALL</span>
               </Button>
               <Button
                 size="default"
@@ -4788,7 +4805,24 @@ const CarDetails = memo(() => {
               Të dhënat e plota teknike për {resolvedMainTitle}
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-6">
+            {primarySpecs.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-lg flex items-center gap-2">
+                  <Info className="h-5 w-5 text-primary" />
+                  Specifikime kryesore
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {primarySpecs.map((item) => (
+                    <div key={item.label} className="p-3 bg-muted/50 rounded-lg">
+                      <div className="text-xs text-muted-foreground">{item.label}</div>
+                      <div className="font-semibold">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Engine Specs */}
             {(car.details?.engine_type || car.details?.cylinders || car.details?.displacement) && (
               <div className="space-y-2">
@@ -4818,52 +4852,6 @@ const CarDetails = memo(() => {
                 </div>
               </div>
             )}
-            
-            {/* Basic Specs */}
-            <div className="space-y-2">
-              <h4 className="font-semibold text-lg flex items-center gap-2">
-                <Car className="h-5 w-5 text-primary" />
-                Informacione Bazë
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                {car.year && (
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Viti</div>
-                    <div className="font-semibold">{car.year}</div>
-                  </div>
-                )}
-                {car.mileage && (
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Kilometrazh</div>
-                    <div className="font-semibold">{formatMileage(car.mileage)}</div>
-                  </div>
-                )}
-                {resolvedFuel && (
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Karburanti</div>
-                    <div className="font-semibold">{localizeFuel(resolvedFuel)}</div>
-                  </div>
-                )}
-                {car.transmission && (
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Transmisioni</div>
-                    <div className="font-semibold">{car.transmission}</div>
-                  </div>
-                )}
-                {car.color && (
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Ngjyra</div>
-                    <div className="font-semibold capitalize">{translateColor(car.color)}</div>
-                  </div>
-                )}
-                {car.details?.interior_color && (
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Ngjyra e Brendshme</div>
-                    <div className="font-semibold capitalize">{translateColor(car.details.interior_color)}</div>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
