@@ -29,31 +29,31 @@ import { useToast } from "@/hooks/use-toast";
 import { useHaptics } from "@/hooks/useHaptics";
 import type { LucideIcon } from "lucide-react";
 import {
-    ArrowLeft,
-    Phone,
-    Mail,
-    MapPin,
-    Car,
-    Gauge,
-    Settings,
-    Fuel,
-    Palette,
-    Hash,
-    Shield,
-    Search,
-    Info,
-    Eye,
-    CheckCircle,
-    AlertTriangle,
-    Star,
-    Clock,
-    Users,
-    MessageCircle,
-    MessageCircleMore,
-    Share2,
-    Heart,
-    ChevronLeft,
-    ChevronRight,
+  ArrowLeft,
+  Phone,
+  Mail,
+  MapPin,
+  Car,
+  Gauge,
+  Settings,
+  Fuel,
+  Palette,
+  Hash,
+  Shield,
+  Search,
+  Info,
+  Eye,
+  CheckCircle,
+  AlertTriangle,
+  Star,
+  Clock,
+  Users,
+  MessageCircle,
+  Share2,
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  Expand,
   Copy,
   ChevronDown,
   DollarSign,
@@ -111,6 +111,7 @@ import { getFallbackOptionName } from "@/data/koreaOptionFallbacks";
 import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
 import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 import "@/styles/carDetailsOptimizations.css";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/components/ThemeProvider";
 
 const ImageZoom = lazy(() =>
@@ -3264,36 +3265,13 @@ const CarDetails = memo(() => {
       restoreCarFromSession,
       trackCarView,
     ]);
-    const handleContactWhatsApp = useCallback(() => {
-      impact("light");
-      const currentUrl = window.location.href;
-      const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
-      const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, "_blank");
-    }, [car, lot, impact]);
-    const handleOpenLiveChat = useCallback(() => {
-      impact("light");
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      try {
-        if (typeof window.smartsupp === "function") {
-          window.smartsupp("chat:show");
-          window.smartsupp("chat:open");
-          return;
-        }
-
-        const bubble =
-          document.querySelector<HTMLElement>("#smartsupp-widget-bubble") ||
-          document.querySelector<HTMLElement>(".smartsupp-widget-bubble") ||
-          document.querySelector<HTMLElement>("#smartsupp-widget-container button");
-
-        bubble?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      } catch (error) {
-        console.warn("Failed to open Smartsupp chat", error);
-      }
-    }, [impact]);
+  const handleContactWhatsApp = useCallback(() => {
+    impact("light");
+    const currentUrl = window.location.href;
+    const message = `Përshëndetje! Jam i interesuar për ${car?.year} ${car?.make} ${car?.model} (€${car?.price.toLocaleString()}) - Kodi #${car?.lot || lot}. A mund të më jepni më shumë informacion? ${currentUrl}`;
+    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank");
+  }, [car, lot, impact]);
   const handlePhoneCall = useCallback(() => {
     impact("light");
     window.open("tel:+38348181116", "_self");
@@ -4028,6 +4006,7 @@ const CarDetails = memo(() => {
               <span className="sm:hidden font-medium">Home</span>
             </Button>
             <div className="ml-auto flex items-center gap-2">
+              <ThemeToggle />
               <Button
                 variant="outline"
                 size="sm"
@@ -4161,6 +4140,17 @@ const CarDetails = memo(() => {
                       </Badge>
                     )}
 
+                    {/* Zoom icon - Improved positioning and visibility */}
+                    {allowImageZoom && (
+                      <button
+                        type="button"
+                        onClick={handleImageZoomOpen}
+                        className="absolute top-3 right-3 hidden rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+                        aria-label="Zmadho imazhin"
+                      >
+                        <Expand className="h-4 w-4" />
+                      </button>
+                    )}
                 </div>
                 {typeof car?.price === "number" && (
                   <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
@@ -4331,6 +4321,17 @@ const CarDetails = memo(() => {
                     </Badge>
                   )}
 
+                  {/* Zoom icon - Improved positioning and visibility */}
+                  {allowImageZoom && (
+                    <button
+                      type="button"
+                      onClick={handleImageZoomOpen}
+                      className="absolute top-3 right-3 flex rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-label="Zmadho imazhin"
+                    >
+                      <Expand className="h-4 w-4" />
+                    </button>
+                  )}
 
                   {/* Loading indicator */}
                   {isPlaceholderImage && (
@@ -4657,16 +4658,7 @@ const CarDetails = memo(() => {
                 </h3>
 
                 {/* Enhanced Contact Buttons */}
-                  <div className="mb-4 space-y-3">
-                    <Button
-                      variant="outline"
-                      className="w-full h-10 text-sm font-medium border border-primary/30 text-primary hover:bg-primary/10 hover:text-primary dark:text-primary-foreground dark:hover:bg-primary/10"
-                      onClick={handleOpenLiveChat}
-                    >
-                      <MessageCircleMore className="h-4 w-4 mr-2" />
-                      Chat Live
-                    </Button>
-
+                <div className="mb-4 space-y-3">
                   <Button
                     onClick={handleContactWhatsApp}
                     className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
@@ -4825,8 +4817,8 @@ const CarDetails = memo(() => {
       {car &&
         isPortalReady &&
         createPortal(
-            <div className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
-              <div className="mx-auto flex w-full max-w-[1600px] items-center gap-2.5 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
+            <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="flex-1 min-w-0">
                 <button 
                   onClick={() => setIsServicesDialogOpen(true)}
@@ -4849,15 +4841,6 @@ const CarDetails = memo(() => {
                 <Phone className="h-4 w-4" />
                 <span className="leading-tight uppercase tracking-wide">CALL</span>
               </Button>
-                <Button
-                  size="default"
-                  aria-label="Hap chatin live"
-                  className="flex h-9 min-w-[104px] flex-shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-white/85 px-3 text-[0.8125rem] font-semibold text-foreground shadow-lg shadow-black/10 transition-colors hover:bg-white focus-visible:ring-offset-background dark:bg-white/10 dark:text-white/90"
-                  onClick={handleOpenLiveChat}
-                >
-                  <MessageCircleMore className="h-4 w-4" />
-                  <span className="leading-tight uppercase tracking-wide">CHAT</span>
-                </Button>
               <Button
                 size="default"
                 className="h-9 flex-shrink-0 rounded-xl bg-green-600 px-3 text-[0.8125rem] font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"

@@ -59,9 +59,7 @@ export const createRippleEffect = (
   element.appendChild(ripple);
 
   setTimeout(() => {
-    if (ripple.parentElement) {
-      ripple.parentElement.removeChild(ripple);
-    }
+    ripple.remove();
   }, 600);
 };
 
