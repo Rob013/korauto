@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +38,6 @@ import {
   Fuel,
   Palette,
   Hash,
-  Calendar,
   Shield,
   Search,
   Info,
@@ -57,19 +55,16 @@ import {
   Expand,
   Copy,
   ChevronDown,
-  ChevronUp,
   DollarSign,
   Cog,
   Lightbulb,
   Camera,
   Wind,
   Radar,
-  Tag,
   Armchair,
   DoorClosed,
   Cylinder,
   CircleDot,
-  PaintBucket,
   Disc3,
   Instagram,
   Facebook,
@@ -1554,8 +1549,7 @@ const CarDetails = memo(() => {
   const [liveDealerLoading, setLiveDealerLoading] = useState(false);
   const [liveDealerError, setLiveDealerError] = useState<string | null>(null);
   
-  // Collapsible section states
-  const [isSpecsOpen, setIsSpecsOpen] = useState(true);
+  // Dialog states
   const [isSpecsDialogOpen, setIsSpecsDialogOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
 
@@ -3979,14 +3973,14 @@ const CarDetails = memo(() => {
             </Card>
 
             {resolvedMainTitle && (
-              <div className="space-y-3 animate-fade-in-up stagger-1">
+              <div className="space-y-2 animate-fade-in-up stagger-1">
                 {/* Main Title */}
                 <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
                   {resolvedMainTitle}
                 </h1>
                 
                 {/* Subtitle with year and key details */}
-                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                   {car.year && <span className="font-medium">{car.year}</span>}
                   {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
                   {car.mileage && <span>{formatMileage(car.mileage)}</span>}
@@ -4010,373 +4004,20 @@ const CarDetails = memo(() => {
               </div>
             )}
 
-            {/* Vehicle Specifications - Collapsible Section */}
-            <Collapsible
-              open={isSpecsOpen}
-              onOpenChange={setIsSpecsOpen}
-              className="animate-fade-in-up stagger-2"
-            >
-              <Card
-                id="specifications"
-                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card"
-              >
-                <CollapsibleTrigger className="w-full">
-                  <CardContent className="p-4 md:p-6 cursor-pointer hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Info className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="text-left">
-                          <h3 className="text-lg md:text-xl font-bold text-foreground">
-                            Detajet
-                          </h3>
-                        </div>
-                      </div>
-                      {isSpecsOpen ? (
-                        <ChevronUp className="h-5 w-5 text-muted-foreground transition-transform" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
-                      )}
-                    </div>
-                  </CardContent>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="p-3 md:p-6 pt-0"  >
-
-                {/* Specifications Grid - Reorganized in specific order */}
-                <div className="grid grid-cols-2 gap-1.5 md:gap-3 text-xs md:text-sm items-stretch auto-rows-fr isolate relative z-0">
-                  {/* 1. Brand - e.g., Volkswagen */}
-                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                    <div className="flex items-center">
-                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                      </div>
-                    </div>
-                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.make}
-                    </span>
-                  </div>
-
-                  {/* 2. Model - e.g., A6 35 TDI Quattro (full variant info) */}
-                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                    <div className="flex items-center">
-                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Tag className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                      </div>
-                    </div>
-                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {(() => {
-                        // Build full model specification with all available variant/trim info from API
-                        let fullModel = (car.model || "").trim();
-                        const parts: string[] = [];
-
-                        const grade =
-                          car.grade_iaai ||
-                          car.details?.grade?.name ||
-                          car.details?.grade;
-                        if (
-                          grade &&
-                          typeof grade === "string" &&
-                          !fullModel.toLowerCase().includes(grade.toLowerCase())
-                        ) {
-                          parts.push(grade);
-                        }
-
-                        const variant =
-                          car.details?.variant?.name || car.details?.variant;
-                        if (
-                          variant &&
-                          typeof variant === "string" &&
-                          !fullModel
-                            .toLowerCase()
-                            .includes(variant.toLowerCase())
-                        ) {
-                          parts.push(variant);
-                        }
-
-                        const trim =
-                          car.details?.trim?.name || car.details?.trim;
-                        if (
-                          trim &&
-                          typeof trim === "string" &&
-                          !fullModel
-                            .toLowerCase()
-                            .includes(trim.toLowerCase()) &&
-                          !parts
-                            .join(" ")
-                            .toLowerCase()
-                            .includes(trim.toLowerCase())
-                        ) {
-                          parts.push(trim);
-                        }
-
-                        const engineName = car.engine?.name || car.engine;
-                        const engineStr =
-                          typeof engineName === "string" ? engineName : "";
-                        if (
-                          engineStr &&
-                          engineStr !== car.model &&
-                          !fullModel
-                            .toLowerCase()
-                            .includes(engineStr.toLowerCase())
-                        ) {
-                          const engineInfo = engineStr.trim();
-                          if (engineInfo) {
-                            parts.push(engineInfo);
-                          }
-                        }
-
-                        const driveType =
-                          car.drive_wheel?.name || car.drive_wheel;
-                        const driveStr =
-                          typeof driveType === "string" ? driveType : "";
-                        if (
-                          driveStr &&
-                          !fullModel
-                            .toLowerCase()
-                            .includes(driveStr.toLowerCase()) &&
-                          !parts
-                            .join(" ")
-                            .toLowerCase()
-                            .includes(driveStr.toLowerCase())
-                        ) {
-                          const driveInfo = driveStr.trim();
-                          if (driveInfo) {
-                            parts.push(driveInfo);
-                          }
-                        }
-
-                        if (parts.length > 0) {
-                          fullModel = [fullModel, parts.join(" ")]
-                            .filter(Boolean)
-                            .join(" ")
-                            .trim();
-                        }
-
-                        const cleanedSecondary = (() => {
-                          if (!resolvedSecondaryTitle) {
-                            return "";
-                          }
-                          let detail = resolvedSecondaryTitle.trim();
-                          const stripLeading = (value?: string | number | null) => {
-                            if (!value && value !== 0) return;
-                            const text = String(value).trim();
-                            if (!text) return;
-                            const pattern = new RegExp(`^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\s*`, "i");
-                            detail = detail.replace(pattern, "").trim();
-                          };
-                          stripLeading(resolvedMainTitle);
-                          stripLeading(car.year);
-                          stripLeading(car.make);
-                          return detail.replace(/^[-•]+\s*/u, "").trim();
-                        })();
-
-                        const normalizedModel = fullModel.trim().toLowerCase();
-                        if (cleanedSecondary) {
-                          const normalizedSecondary = cleanedSecondary
-                            .replace(/\s+/g, " ")
-                            .trim();
-                          const baseModel = (car.model || "").trim().toLowerCase();
-                          if (
-                            !normalizedModel ||
-                            normalizedModel === baseModel ||
-                            /\b5er\b/.test(normalizedModel) ||
-                            normalizedSecondary.toLowerCase().includes("(f10)")
-                          ) {
-                            return normalizedSecondary;
-                          }
-                        }
-
-                        const fallback = cleanedSecondary || car.title || "";
-                        return fullModel || fallback || "-";
-                      })()}
-                    </span>
-                  </div>
-
-                  {/* 3. Year - e.g., 2022 */}
-                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                    <div className="flex items-center">
-                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Calendar className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                      </div>
-                    </div>
-                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {car.year}
-                    </span>
-                  </div>
-
-                  {/* 4. Mileage */}
-                  <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                    <div className="flex items-center">
-                      <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                        <Gauge className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                      </div>
-                    </div>
-                    <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                      {formatMileage(car.mileage)}
-                    </span>
-                  </div>
-
-                  {/* Cylinders */}
-                  {car.cylinders && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Cylinder className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {car.cylinders}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Doors */}
-                  {car.details?.doors_count && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <DoorClosed className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {car.details.doors_count}
-                      </span>
-                    </div>
-                  )}
-
-                    {/* Fuel Type */}
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Fuel className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {fuelDisplay}
-                      </span>
-                    </div>
-
-                  {/* 5. Engine - e.g., 998cc */}
-                  {car.details?.engine_volume && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Cog className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {car.details.engine_volume}cc
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Transmission */}
-                  {car.transmission && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Settings className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium capitalize text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {translateTransmission(car.transmission)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Drivetrain */}
-                  {car.drive_wheel?.name && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <CircleDot className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium uppercase text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {car.drive_wheel.name}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Seats */}
-                  {car.details?.seats_count && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {car.details.seats_count}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Exterior Color */}
-                  {car.color && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <PaintBucket className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium capitalize text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {translateColor(car.color)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Interior Color */}
-                  {car.details?.interior_color && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Armchair className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground font-medium capitalize text-left leading-tight whitespace-normal break-words min-w-0 text-xs md:text-sm">
-                        {translateColor(car.details.interior_color)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* VIN Number */}
-                  {car.vin && (
-                    <div className="group grid grid-cols-[auto,1fr] items-start gap-x-2 md:gap-x-3 p-2 md:p-3 bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border rounded-lg md:rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 mobile-spec-item h-full overflow-hidden relative z-0 min-w-0">
-                      <div className="flex items-center">
-                        <div className="p-1 md:p-2 bg-primary/10 rounded-md md:rounded-lg group-hover:bg-primary/20 transition-colors duration-300 shrink-0">
-                          <Car className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
-                        <span className="text-muted-foreground font-medium font-mono text-xs md:text-sm text-left leading-tight whitespace-normal break-words min-w-0">
-                          {car.vin}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
             {/* History Section */}
             <Card
               id="history"
               ref={historySectionRef}
               className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
             >
-              <CardContent className="p-4 md:p-6 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
+              <CardContent className="p-3 md:p-5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5">
                     <span className="p-2 rounded-lg bg-primary/10">
                       <Shield className="h-5 w-5 text-primary" />
                     </span>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <span className="text-lg md:text-xl font-bold text-foreground">
                           Historia
                         </span>
@@ -4402,7 +4043,7 @@ const CarDetails = memo(() => {
                   </button>
                 </div>
                 {hasHistoryData ? (
-                  <div className="space-y-4 text-sm text-muted-foreground">
+                  <div className="space-y-2.5 text-sm text-muted-foreground">
                     <div className="space-y-1">
                       <div>Shkëmbime: {replacementText}</div>
                       <div>Punime llamarine: {sheetMetalText}</div>
@@ -4415,35 +4056,31 @@ const CarDetails = memo(() => {
                       <div>Shënime të veçanta: {specialNoteText}</div>
                     </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nuk ka të dhëna të disponueshme për historinë e kësaj veture.
-                  </p>
-                )}
+                ) : null}
               </CardContent>
             </Card>
 
 
             {/* Enhanced Detailed Information Section */}
             <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4"></div>
+              <CardContent className="p-3 sm:p-4 lg:p-5">
+                <div className="flex flex-col gap-2 sm:gap-2.5 mb-2 sm:mb-3"></div>
 
                 {showDetailedInfo && (
-                  <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-3 sm:space-y-4 animate-in slide-in-from-top-2 duration-300">
                     {/* Insurance & Safety Report - Mobile Optimized */}
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
                       <div
                         ref={historySectionRef}
-                        className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
+                        className="space-y-2 sm:space-y-3 p-3 sm:p-3 bg-muted/50 rounded-lg mobile-info-section"
                       >
                         <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                           <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
                           Raporti i Sigurisë dhe Sigurimit
                         </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                           {car.insurance_v2?.accidentCnt !== undefined && (
-                            <div className="flex items-center justify-between p-2 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
+                            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
                               <span className="text-xs sm:text-sm font-medium">
                                 Historia e Aksidenteve:
                               </span>
@@ -4502,7 +4139,7 @@ const CarDetails = memo(() => {
                                 return (
                                   <div
                                     key={item.label}
-                                    className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-4"
+                                    className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-3.5"
                                   >
                                     <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
                                       {item.label}
@@ -4800,25 +4437,25 @@ const CarDetails = memo(() => {
       
       {/* Specs Dialog */}
       <Dialog open={isSpecsDialogOpen} onOpenChange={setIsSpecsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Specifikimet Teknike</DialogTitle>
-            <DialogDescription>
-              Të dhënat e plota teknike për {resolvedMainTitle}
+        <DialogContent className="max-w-2xl sm:max-w-3xl max-h-[80vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="space-y-1.5">
+            <DialogTitle className="text-xl sm:text-2xl font-semibold">Specifikimet Teknike</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Të dhënat kryesore teknike për {resolvedMainTitle}
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4 space-y-6">
+          <div className="mt-3 space-y-4">
             {primarySpecs.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-lg flex items-center gap-2">
+              <div className="space-y-1.5">
+                <h4 className="font-semibold text-base sm:text-lg flex items-center gap-2">
                   <Info className="h-5 w-5 text-primary" />
                   Specifikime kryesore
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {primarySpecs.map((item) => (
-                    <div key={item.label} className="p-3 bg-muted/50 rounded-lg">
-                      <div className="text-xs text-muted-foreground">{item.label}</div>
-                      <div className="font-semibold">{item.value}</div>
+                    <div key={item.label} className="p-2.5 bg-muted/60 rounded-lg">
+                      <div className="text-xs text-muted-foreground leading-tight">{item.label}</div>
+                      <div className="text-sm font-semibold">{item.value}</div>
                     </div>
                   ))}
                 </div>
@@ -4827,28 +4464,28 @@ const CarDetails = memo(() => {
 
             {/* Engine Specs */}
             {(car.details?.engine_type || car.details?.cylinders || car.details?.displacement) && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-lg flex items-center gap-2">
+              <div className="space-y-1.5">
+                <h4 className="font-semibold text-base sm:text-lg flex items-center gap-2">
                   <Settings className="h-5 w-5 text-primary" />
                   Motori
                 </h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {car.details?.engine_type && (
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="text-xs text-muted-foreground">Tipi i Motorit</div>
-                      <div className="font-semibold">{car.details.engine_type}</div>
+                    <div className="p-2.5 bg-muted/60 rounded-lg">
+                      <div className="text-xs text-muted-foreground leading-tight">Tipi i Motorit</div>
+                      <div className="text-sm font-semibold">{car.details.engine_type}</div>
                     </div>
                   )}
                   {car.details?.cylinders && (
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="text-xs text-muted-foreground">Cilindrat</div>
-                      <div className="font-semibold">{car.details.cylinders}</div>
+                    <div className="p-2.5 bg-muted/60 rounded-lg">
+                      <div className="text-xs text-muted-foreground leading-tight">Cilindrat</div>
+                      <div className="text-sm font-semibold">{car.details.cylinders}</div>
                     </div>
                   )}
                   {car.details?.displacement && (
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="text-xs text-muted-foreground">Kapaciteti</div>
-                      <div className="font-semibold">{car.details.displacement}</div>
+                    <div className="p-2.5 bg-muted/60 rounded-lg">
+                      <div className="text-xs text-muted-foreground leading-tight">Kapaciteti</div>
+                      <div className="text-sm font-semibold">{car.details.displacement}</div>
                     </div>
                   )}
                 </div>
