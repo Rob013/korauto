@@ -360,7 +360,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           <Filter className="h-5 w-5 text-primary transition-transform hover:scale-110" />
           <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
-        <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex items-center gap-2 whitespace-nowrap">
           {activeFiltersCount > 0 && (
             <Badge variant="secondary" className="animate-scale-in">{activeFiltersCount}</Badge>
           )}
@@ -368,7 +368,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
             variant="outline" 
             size="sm" 
             onClick={onClearFilters}
-            className="transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+              className="justify-center text-xs font-semibold text-foreground/90 transition-all duration-200 hover:text-destructive sm:text-sm"
           >
             <X className="h-3 w-3 mr-1" />
             Pastro të gjitha
@@ -386,12 +386,13 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
               className="flex items-center gap-1 animate-scale-in bg-primary/10 hover:bg-primary/20 border border-primary/20 backdrop-blur-sm transition-all duration-200 hover:scale-105"
             >
               <span className="text-xs font-medium">{chip.label}: {chip.value}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-auto w-auto p-0 hover:bg-transparent transition-transform hover:scale-110"
-                onClick={() => removeFilter(chip.key)}
-              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Hiq filtrin ${chip.label}`}
+                  className="ml-1 h-5 w-5 min-w-0 border-none bg-transparent p-0 text-muted-foreground shadow-none transition-transform hover:scale-110 hover:bg-transparent hover:text-destructive focus-visible:ring-0"
+                  onClick={() => removeFilter(chip.key)}
+                >
                 <X className="h-3 w-3" />
               </Button>
             </Badge>
@@ -419,12 +420,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       </div>
 
       {/* Basic Filters Section */}
-      <div className="space-y-3">
-        <Button
-          variant="ghost"
-          onClick={() => toggleSection('basic')}
-          className="w-full justify-between p-2 h-auto"
-        >
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            onClick={() => toggleSection('basic')}
+            className="w-full justify-between text-sm font-semibold"
+          >
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-primary" />
             <span className="font-medium">Filtrat Bazë</span>
@@ -543,12 +544,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       </div>
 
       {/* Advanced Filters Section */}
-      <div className="space-y-3">
-        <Button
-          variant="ghost"
-          onClick={() => toggleSection('advanced')}
-          className="w-full justify-between p-2 h-auto hover:bg-muted/50 backdrop-blur-sm border border-border/30 transition-all duration-200"
-        >
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            onClick={() => toggleSection('advanced')}
+            className="w-full justify-between text-sm font-semibold"
+          >
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary transition-transform hover:scale-110" />
             <span className="font-medium">Filtrat e Avancuar</span>
