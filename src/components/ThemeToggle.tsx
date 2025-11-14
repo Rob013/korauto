@@ -1,20 +1,34 @@
-import { Moon, Sun } from "lucide-react"
+import { SunMoon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/components/ThemeProvider"
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+
+  const handleToggle = () => setTheme(isDark ? "light" : "dark")
 
   return (
     <Button
       variant="ghost"
-      size="sm"
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="w-9 h-9 p-0 relative inline-flex items-center justify-center shrink-0"
-      aria-label="Toggle theme"
+      size="icon"
+      onClick={handleToggle}
+      aria-pressed={isDark}
+      aria-label={isDark ? "Kalo në mënyrën e ditës" : "Kalo në mënyrën e natës"}
+      className="relative h-10 w-10 rounded-2xl border border-border/70 bg-gradient-to-br from-white/95 via-white/80 to-white/60 text-foreground shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)] dark:from-slate-900/80 dark:via-slate-900/60 dark:to-slate-900/40"
     >
-      <Sun className="absolute h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-[1px] rounded-[1.05rem] bg-white/70 backdrop-blur-md transition-all duration-300 dark:bg-slate-950/60"
+      />
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute -inset-5 blur-2xl opacity-40 transition-all duration-500 ${isDark ? "bg-amber-300/50" : "bg-primary/40"}`}
+      />
+      <SunMoon
+        className={`relative z-10 h-5 w-5 transition-all duration-300 ${isDark ? "text-amber-200 drop-shadow-md" : "text-primary drop-shadow-sm"}`}
+      />
+      <span className="sr-only">Ndrysho temën vizuale</span>
     </Button>
   )
 }
