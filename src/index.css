@@ -476,14 +476,14 @@ body.car-details-page .smartsupp-widget-container {
 @media (max-width: 1023.98px) {
   body.car-details-page #smartsupp-widget-container,
   body.car-details-page .smartsupp-widget-container {
-    bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(11rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
 @media (min-width: 1024px) {
   body.car-details-page #smartsupp-widget-container,
   body.car-details-page .smartsupp-widget-container {
-    bottom: 4rem !important;
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
     right: calc(
       env(safe-area-inset-right, 0px) +
       clamp(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem), 6rem)

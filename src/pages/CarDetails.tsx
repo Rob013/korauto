@@ -1023,7 +1023,7 @@ const EquipmentOptionsSection = memo(
     return (
       <div className="overflow-hidden bg-gradient-to-br from-background to-muted/20 rounded-xl border border-border/40 backdrop-blur-sm shadow-lg">
         {/* Equipment Preview - Shows up to 10 real equipment items from API */}
-        {!showOptions && (
+        {!showOptions && specificFeatures.length > 0 && (
           <div className="p-4 border-b border-border/20">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-primary"></div>
@@ -3263,6 +3263,67 @@ const CarDetails = memo(() => {
         return "";
       }, [prefetchedSummary?.title, resolvedMainTitle, secondaryTitle]);
 
+      const normalizedOptions = useMemo(
+        () => convertOptionsToNames(car?.details?.options),
+        [car?.details?.options, convertOptionsToNames],
+      );
+
+      const sanitizedOptions = useMemo(() => {
+        const baseOptions = normalizedOptions || {
+          standard: [],
+          choice: [],
+          tuning: [],
+        };
+
+        const exclusionValues = new Set<string>();
+        [
+          mainTitle,
+          resolvedMainTitle,
+          resolvedSecondaryTitle,
+          typeof car?.title === "string" ? car.title : "",
+          typeof car?.details?.variant === "string" ? car.details.variant : "",
+          typeof car?.details?.trim === "string" ? car.details.trim : "",
+        ].forEach((value) => {
+          if (typeof value === "string" && value.trim()) {
+            exclusionValues.add(value.trim().toLowerCase());
+          }
+        });
+
+        const sanitizeList = (list: string[]): string[] => {
+          const seen = new Set<string>();
+          return list.filter((item) => {
+            const normalized = item.trim().toLowerCase();
+            if (!normalized || exclusionValues.has(normalized)) {
+              return false;
+            }
+            if (seen.has(normalized)) {
+              return false;
+            }
+            seen.add(normalized);
+            return true;
+          });
+        };
+
+        return {
+          standard: sanitizeList(baseOptions.standard),
+          choice: sanitizeList(baseOptions.choice),
+          tuning: sanitizeList(baseOptions.tuning),
+        };
+      }, [
+        normalizedOptions,
+        mainTitle,
+        resolvedMainTitle,
+        resolvedSecondaryTitle,
+        car?.title,
+        car?.details?.variant,
+        car?.details?.trim,
+      ]);
+
+      const hasAnySanitizedOptions =
+        sanitizedOptions.standard.length > 0 ||
+        sanitizedOptions.choice.length > 0 ||
+        sanitizedOptions.tuning.length > 0;
+
     const fuelDisplay = useMemo(() => {
       if (!car) {
         return "-";
@@ -3978,7 +4039,13 @@ const CarDetails = memo(() => {
                 <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
                   {resolvedMainTitle}
                 </h1>
-                
+
+                {resolvedSecondaryTitle && (
+                  <p className="text-sm sm:text-base text-muted-foreground/90 leading-snug">
+                    {resolvedSecondaryTitle}
+                  </p>
+                )}
+
                 {/* Subtitle with year and key details */}
                 <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                   {car.year && <span className="font-medium">{car.year}</span>}
@@ -4164,9 +4231,9 @@ const CarDetails = memo(() => {
 
                     {/* Equipment & Options */}
 
-                    {car.details?.options && (
+                    {car.details?.options && hasAnySanitizedOptions && (
                       <EquipmentOptionsSection
-                        options={convertOptionsToNames(car.details.options)}
+                        options={sanitizedOptions}
                         features={car.features}
                         safetyFeatures={car.safety_features}
                         comfortFeatures={car.comfort_features}
@@ -4174,7 +4241,7 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Fallback if no options found */}
-                    {!car.details?.options && (
+                    {(!car.details?.options || !hasAnySanitizedOptions) && (
                       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <Settings className="h-5 w-5" />
@@ -4437,25 +4504,32 @@ const CarDetails = memo(() => {
       
       {/* Specs Dialog */}
       <Dialog open={isSpecsDialogOpen} onOpenChange={setIsSpecsDialogOpen}>
-        <DialogContent className="max-w-2xl sm:max-w-3xl max-h-[80vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader className="space-y-1.5">
-            <DialogTitle className="text-xl sm:text-2xl font-semibold">Specifikimet Teknike</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+        <DialogContent className="max-w-2xl sm:max-w-3xl max-h-[80vh] overflow-y-auto p-4 sm:p-5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-lg sm:text-xl font-semibold">Specifikimet Teknike</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
               Të dhënat kryesore teknike për {resolvedMainTitle}
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-3 space-y-4">
+          <div className="mt-3 space-y-3">
             {primarySpecs.length > 0 && (
               <div className="space-y-1.5">
-                <h4 className="font-semibold text-base sm:text-lg flex items-center gap-2">
+                <h4 className="font-semibold text-sm sm:text-base flex items-center gap-2">
                   <Info className="h-5 w-5 text-primary" />
                   Specifikime kryesore
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {primarySpecs.map((item) => (
-                    <div key={item.label} className="p-2.5 bg-muted/60 rounded-lg">
-                      <div className="text-xs text-muted-foreground leading-tight">{item.label}</div>
-                      <div className="text-sm font-semibold">{item.value}</div>
+                    <div
+                      key={item.label}
+                      className="p-2 sm:p-2.5 bg-muted/60 rounded-lg border border-border/50"
+                    >
+                      <div className="text-[11px] sm:text-xs text-muted-foreground leading-tight">
+                        {item.label}
+                      </div>
+                      <div className="text-sm sm:text-base font-semibold text-foreground">
+                        {item.value}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -4465,27 +4539,39 @@ const CarDetails = memo(() => {
             {/* Engine Specs */}
             {(car.details?.engine_type || car.details?.cylinders || car.details?.displacement) && (
               <div className="space-y-1.5">
-                <h4 className="font-semibold text-base sm:text-lg flex items-center gap-2">
+                <h4 className="font-semibold text-sm sm:text-base flex items-center gap-2">
                   <Settings className="h-5 w-5 text-primary" />
                   Motori
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {car.details?.engine_type && (
-                    <div className="p-2.5 bg-muted/60 rounded-lg">
-                      <div className="text-xs text-muted-foreground leading-tight">Tipi i Motorit</div>
-                      <div className="text-sm font-semibold">{car.details.engine_type}</div>
+                    <div className="p-2 sm:p-2.5 bg-muted/60 rounded-lg border border-border/50">
+                      <div className="text-[11px] sm:text-xs text-muted-foreground leading-tight">
+                        Tipi i Motorit
+                      </div>
+                      <div className="text-sm sm:text-base font-semibold text-foreground">
+                        {car.details.engine_type}
+                      </div>
                     </div>
                   )}
                   {car.details?.cylinders && (
-                    <div className="p-2.5 bg-muted/60 rounded-lg">
-                      <div className="text-xs text-muted-foreground leading-tight">Cilindrat</div>
-                      <div className="text-sm font-semibold">{car.details.cylinders}</div>
+                    <div className="p-2 sm:p-2.5 bg-muted/60 rounded-lg border border-border/50">
+                      <div className="text-[11px] sm:text-xs text-muted-foreground leading-tight">
+                        Cilindrat
+                      </div>
+                      <div className="text-sm sm:text-base font-semibold text-foreground">
+                        {car.details.cylinders}
+                      </div>
                     </div>
                   )}
                   {car.details?.displacement && (
-                    <div className="p-2.5 bg-muted/60 rounded-lg">
-                      <div className="text-xs text-muted-foreground leading-tight">Kapaciteti</div>
-                      <div className="text-sm font-semibold">{car.details.displacement}</div>
+                    <div className="p-2 sm:p-2.5 bg-muted/60 rounded-lg border border-border/50">
+                      <div className="text-[11px] sm:text-xs text-muted-foreground leading-tight">
+                        Kapaciteti
+                      </div>
+                      <div className="text-sm sm:text-base font-semibold text-foreground">
+                        {car.details.displacement}
+                      </div>
                     </div>
                   )}
                 </div>
