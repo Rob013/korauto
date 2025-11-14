@@ -110,6 +110,7 @@ import { getFallbackOptionName } from "@/data/koreaOptionFallbacks";
 import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
 import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 import "@/styles/carDetailsOptimizations.css";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
@@ -3763,27 +3764,29 @@ const CarDetails = memo(() => {
               <span className="hidden sm:inline font-medium">Kryefaqja</span>
               <span className="sm:hidden font-medium">Home</span>
             </Button>
-            <div className="flex-1"></div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLike}
-              className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
-            >
-              <Heart
-                className={`h-4 w-4 mr-2 transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "group-hover:scale-110"}`}
-              />
-              <span className="hidden sm:inline font-medium">Pëlqej</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
-            >
-              <Share2 className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
-              <span className="hidden sm:inline font-medium">Ndaj</span>
-            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <ThemeToggle />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLike}
+                className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+              >
+                <Heart
+                  className={`h-4 w-4 mr-2 transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "group-hover:scale-110"}`}
+                />
+                <span className="hidden sm:inline font-medium">Pëlqej</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+                className="hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+              >
+                <Share2 className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="hidden sm:inline font-medium">Ndaj</span>
+              </Button>
+            </div>
           </div>
         </div>
 

@@ -10,11 +10,27 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const touchGuardActivated = useRef(false);
   const pointerActive = useRef(false);
   const pointerStartX = useRef(0);
   const pointerLastX = useRef(0);
+  const pointerStartY = useRef(0);
+  const pointerLastY = useRef(0);
+  const pointerGuardActivated = useRef(false);
   const preventClickRef = useRef(false);
   const clickGuardTimeout = useRef<number | null>(null);
+
+  const activateClickGuard = (duration = 180) => {
+    preventClickRef.current = true;
+    if (clickGuardTimeout.current) {
+      window.clearTimeout(clickGuardTimeout.current);
+    }
+    clickGuardTimeout.current = window.setTimeout(() => {
+      preventClickRef.current = false;
+      clickGuardTimeout.current = null;
+    }, duration);
+  };
 
   const goToNext = () => {
     const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
@@ -47,30 +63,51 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
         } else {
           goToPrevious();
         }
-        preventClickRef.current = true;
-        if (clickGuardTimeout.current) {
-          window.clearTimeout(clickGuardTimeout.current);
-        }
-        clickGuardTimeout.current = window.setTimeout(() => {
-          preventClickRef.current = false;
-          clickGuardTimeout.current = null;
-        }, 150);
+        return true;
       }
+      return false;
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-      touchStartX.current = e.touches[0].clientX;
+      const touch = e.touches[0];
+      touchStartX.current = touch.clientX;
+      touchStartY.current = touch.clientY;
+      touchGuardActivated.current = false;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.cancelable) {
-        e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touchStartX.current - touch.clientX;
+      const deltaY = touchStartY.current - touch.clientY;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (Math.abs(deltaX) > 6 && e.cancelable) {
+          e.preventDefault();
+        }
+      } else if (Math.abs(deltaY) > 6 && !touchGuardActivated.current) {
+        touchGuardActivated.current = true;
+        activateClickGuard(200);
       }
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       touchEndX.current = e.changedTouches[0].clientX;
-      evaluateSwipe(touchStartX.current - touchEndX.current);
+      const touch = e.changedTouches[0];
+      const deltaX = touchStartX.current - touch.clientX;
+      const deltaY = touchStartY.current - touch.clientY;
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
+
+      const swiped = evaluateSwipe(deltaX);
+      if (swiped) {
+        activateClickGuard();
+      } else {
+        const movementThreshold = 10;
+        if (absDeltaX > movementThreshold || absDeltaY > movementThreshold || touchGuardActivated.current) {
+          activateClickGuard();
+        }
+      }
+      touchGuardActivated.current = false;
     };
 
       const handlePointerDown = (e: PointerEvent) => {
@@ -80,6 +117,9 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
         pointerActive.current = true;
         pointerStartX.current = e.clientX;
         pointerLastX.current = e.clientX;
+        pointerStartY.current = e.clientY;
+        pointerLastY.current = e.clientY;
+        pointerGuardActivated.current = false;
         if (typeof container.setPointerCapture === "function") {
           try {
             container.setPointerCapture(e.pointerId);
@@ -95,6 +135,14 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
         }
         if (!pointerActive.current) return;
         pointerLastX.current = e.clientX;
+        pointerLastY.current = e.clientY;
+        if (!pointerGuardActivated.current) {
+          const deltaX = pointerStartX.current - e.clientX;
+          const deltaY = pointerStartY.current - e.clientY;
+          if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 6) {
+            pointerGuardActivated.current = true;
+          }
+        }
       };
 
       const handlePointerUp = (e: PointerEvent) => {
@@ -110,7 +158,20 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
             // ignore release errors
           }
         }
-        evaluateSwipe(pointerStartX.current - pointerLastX.current);
+        const deltaX = pointerStartX.current - pointerLastX.current;
+        const deltaY = pointerStartY.current - pointerLastY.current;
+        const absDeltaX = Math.abs(deltaX);
+        const absDeltaY = Math.abs(deltaY);
+        const swiped = evaluateSwipe(deltaX);
+        if (swiped) {
+          activateClickGuard();
+        } else {
+          const movementThreshold = 6;
+          if (pointerGuardActivated.current || absDeltaX > movementThreshold || absDeltaY > movementThreshold) {
+            activateClickGuard();
+          }
+        }
+        pointerGuardActivated.current = false;
       };
 
       const handlePointerCancel = (e: PointerEvent) => {
@@ -126,6 +187,7 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
             // ignore release errors
           }
         }
+        pointerGuardActivated.current = false;
       };
 
     // Add touch event listeners for mobile
