@@ -132,6 +132,146 @@ const DealerInfoSection = lazy(() =>
 const normalizeText = (value: string) =>
   value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+const containsKoreanNone = (value: string) => {
+  const normalized = value.replace(/\s+/g, "").toLowerCase();
+  return (
+    normalized.includes("없음") ||
+    normalized.includes("해당없음") ||
+    normalized === "무"
+  );
+};
+
+const parseHistoryNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (containsKoreanNone(trimmed)) {
+      return 0;
+    }
+
+    const normalized = trimmed.replace(/[,]/g, "");
+    const numericMatch = normalized.match(/-?\d+(?:\.\d+)?/);
+    if (numericMatch) {
+      const parsed = Number(numericMatch[0]);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+};
+
+const formatHistoryCount = (value: unknown, fallbackLabel = "E panjohur") => {
+  const numeric = parseHistoryNumber(value);
+  if (numeric === 0) {
+    return "Asnjë";
+  }
+  if (typeof numeric === "number") {
+    return numeric.toString();
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return fallbackLabel;
+    }
+    if (containsKoreanNone(trimmed)) {
+      return "Asnjë";
+    }
+    return trimmed;
+  }
+  if (typeof value === "boolean") {
+    return value ? "Po" : "Asnjë";
+  }
+  return fallbackLabel;
+};
+
+const formatHistoryOwnerText = (value: unknown): string => {
+  const numeric = parseHistoryNumber(value);
+  if (numeric === null) {
+    return "E panjohur";
+  }
+  if (numeric === 0) {
+    return "Asnjë ndryshim pronësie";
+  }
+  if (numeric === 1) {
+    return "1 ndryshim pronësie";
+  }
+  return `${numeric} ndryshime pronësie`;
+};
+
+const formatHistoryDamage = (amount: unknown, count?: unknown): string => {
+  const numericAmount = parseHistoryNumber(amount);
+  const numericCount = parseHistoryNumber(count);
+
+  const hasAmount = typeof numericAmount === "number" && numericAmount > 0;
+  const hasCount = typeof numericCount === "number" && numericCount > 0;
+
+  if (!hasAmount && !hasCount) {
+    if (typeof amount === "string" && containsKoreanNone(amount.trim())) {
+      return "Asnjë";
+    }
+    if (typeof count === "string" && containsKoreanNone(count.trim())) {
+      return "Asnjë";
+    }
+    if (numericAmount === 0 || numericCount === 0) {
+      return "Asnjë";
+    }
+  }
+
+  const amountText = hasAmount && typeof numericAmount === "number"
+    ? `${numericAmount.toLocaleString()} KRW`
+    : null;
+  const countText = hasCount ? `${numericCount} herë` : null;
+
+  if (amountText && countText) {
+    return `${amountText} (${countText})`;
+  }
+  if (amountText) {
+    return amountText;
+  }
+  if (countText) {
+    return countText;
+  }
+
+  if (typeof amount === "string" && amount.trim()) {
+    const trimmed = amount.trim();
+    if (containsKoreanNone(trimmed)) {
+      return "Asnjë";
+    }
+    return trimmed;
+  }
+
+  return "E panjohur";
+};
+
+const formatHistorySpecialNote = (note: unknown): string => {
+  if (!note) {
+    return "Asnjë";
+  }
+  if (typeof note === "string") {
+    const trimmed = note.trim();
+    if (!trimmed) {
+      return "Asnjë";
+    }
+    if (containsKoreanNone(trimmed)) {
+      return "Asnjë";
+    }
+    return trimmed;
+  }
+  return String(note);
+};
+
 const formatDisplayDate = (
   value: unknown,
   { monthYear = false }: { monthYear?: boolean } = {},
@@ -1791,9 +1931,125 @@ const CarDetails = memo(() => {
     return false;
   }, [car]);
 
-  const historyButtonVariant = hasMainFrameworkAccident
-    ? "destructive"
-    : "outline";
+  const carLot = car?.lot;
+
+  const historySummary = useMemo(() => {
+    if (!car) {
+      return {
+        hasHistoryData: false,
+        replacementValue: null,
+        sheetMetalValue: null,
+        corrosionValue: null,
+        ownerHistoryValue: null,
+        myCarDamageAmount: null,
+        myCarDamageCount: null,
+        otherCarDamageValue: null,
+        specialNoteValue: null,
+        replacementText: "E panjohur",
+        sheetMetalText: "E panjohur",
+        corrosionText: "E panjohur",
+        ownerHistoryText: "E panjohur",
+        myCarDamageText: "E panjohur",
+        otherCarDamageText: "E panjohur",
+        specialNoteText: "Asnjë",
+      } as const;
+    }
+
+    const insurance = car.insurance_v2 as Record<string, unknown> | undefined;
+    const inspect = car.inspect as Record<string, unknown> | undefined;
+
+    const replacementValue =
+      (inspect as any)?.exchange ??
+      (inspect as any)?.replacement ??
+      (insurance as any)?.replacementCnt ??
+      (insurance as any)?.replacement_cnt;
+
+    const sheetMetalValue =
+      (inspect as any)?.sheetMetal ??
+      (inspect as any)?.sheetMetalCnt ??
+      (inspect as any)?.panelRepairCnt ??
+      (insurance as any)?.sheetMetalCnt ??
+      (insurance as any)?.panelRepairCnt;
+
+    const corrosionValue =
+      (inspect as any)?.corrosion ??
+      (insurance as any)?.corrosionCnt ??
+      (insurance as any)?.rustCnt;
+
+    const ownerHistoryValue =
+      (insurance as any)?.ownerChangeCnt ??
+      (insurance as any)?.owner_cnt ??
+      (insurance as any)?.ownerHistoryCnt;
+
+    const myCarDamageAmount =
+      (insurance as any)?.myCarDmgAmt ??
+      (insurance as any)?.myCarDamageAmt ??
+      (inspect as any)?.myCarDamageAmt;
+
+    const myCarDamageCount =
+      (insurance as any)?.myCarDmgCnt ??
+      (insurance as any)?.myCarDamageCnt ??
+      (insurance as any)?.myCarDmgHistoryCnt ??
+      (inspect as any)?.myCarDamageCnt;
+
+    const otherCarDamageValue =
+      (insurance as any)?.otherCarDmgCnt ??
+      (insurance as any)?.otherCarDamageCnt ??
+      (inspect as any)?.otherCarDamageCnt;
+
+    const specialNoteValue =
+      (insurance as any)?.specialNote ??
+      (inspect as any)?.specialNotes ??
+      (insurance as any)?.remark;
+
+    const hasHistoryData = Boolean(insurance || inspect);
+
+    return {
+      hasHistoryData,
+      replacementValue,
+      sheetMetalValue,
+      corrosionValue,
+      ownerHistoryValue,
+      myCarDamageAmount,
+      myCarDamageCount,
+      otherCarDamageValue,
+      specialNoteValue,
+      replacementText: formatHistoryCount(replacementValue),
+      sheetMetalText: formatHistoryCount(sheetMetalValue),
+      corrosionText: formatHistoryCount(corrosionValue),
+      ownerHistoryText: formatHistoryOwnerText(ownerHistoryValue),
+      myCarDamageText: formatHistoryDamage(myCarDamageAmount, myCarDamageCount),
+      otherCarDamageText: formatHistoryCount(otherCarDamageValue),
+      specialNoteText: formatHistorySpecialNote(specialNoteValue),
+    } as const;
+  }, [car]);
+
+  const {
+    hasHistoryData,
+    replacementText,
+    sheetMetalText,
+    corrosionText,
+    ownerHistoryText,
+    myCarDamageText,
+    otherCarDamageText,
+    specialNoteText,
+    replacementValue,
+    sheetMetalValue,
+    corrosionValue,
+    ownerHistoryValue,
+    myCarDamageAmount,
+    myCarDamageCount,
+    otherCarDamageValue,
+    specialNoteValue,
+  } = historySummary;
+
+  const handleOpenHistoryReport = useCallback(() => {
+    const targetLot = carLot ?? lot;
+    if (!targetLot) {
+      return;
+    }
+    navigate(`/car/${encodeURIComponent(String(targetLot))}/report`);
+  }, [carLot, lot, navigate]);
 
   // Reset placeholder state when image selection changes
   useEffect(() => {
@@ -3563,7 +3819,7 @@ const CarDetails = memo(() => {
                     onClick={() => setIsSpecsDialogOpen(true)}
                     className="text-primary hover:underline font-medium cursor-pointer"
                   >
-                    Detajet
+                    Specifikimet teknike
                   </button>
                 </div>
               </div>
@@ -3590,7 +3846,6 @@ const CarDetails = memo(() => {
                           <h3 className="text-lg md:text-xl font-bold text-foreground">
                             Detajet
                           </h3>
-                          <p className="text-xs text-muted-foreground">Specifikimet Teknike</p>
                         </div>
                       </div>
                       {isSpecsOpen ? (
@@ -3934,36 +4189,79 @@ const CarDetails = memo(() => {
                 ref={historySectionRef}
                 className="border-0 shadow-xl rounded-xl overflow-hidden bg-card"
               >
-                <CollapsibleTrigger className="w-full">
-                  <CardContent className="p-4 md:p-6 cursor-pointer hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Shield className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="text-left">
-                          <h3 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={handleOpenHistoryReport}
+                      className="flex items-center gap-3 text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg transition-colors"
+                    >
+                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                        <Shield className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg md:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                             Historia
-                            <Badge
-                              variant={hasMainFrameworkAccident ? "destructive" : "secondary"}
-                              className="text-[10px] font-semibold uppercase"
-                            >
-                              {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
-                            </Badge>
-                          </h3>
-                          <p className="text-xs text-muted-foreground">
-                            Aksidentet & Historiku i Pronësisë
-                          </p>
+                          </span>
+                          <Badge
+                            variant={hasMainFrameworkAccident ? "destructive" : "secondary"}
+                            className="text-[10px] font-semibold uppercase"
+                          >
+                            {accidentCount === 0 ? "Pa aksidente" : `${accidentCount}`}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Aksidentet & Historiku i Pronësisë
+                        </p>
+                      </div>
+                    </button>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        type="button"
+                        className="flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 hover:bg-primary/10"
+                      >
+                        {isHistoryOpen ? "Mbyll detajet" : "Shfaq detajet"}
+                        {isHistoryOpen ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  {hasHistoryData && (
+                    <div className="mt-3 md:mt-4 space-y-3 text-sm text-muted-foreground">
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg leading-none text-primary">•</span>
+                        <div className="space-y-1">
+                          <div>Shkëmbime: {replacementText}</div>
+                          <div>Punime llamarine: {sheetMetalText}</div>
+                          <div>Korrozioni: {corrosionText}</div>
+                          <button
+                            type="button"
+                            onClick={handleOpenHistoryReport}
+                            className="text-primary font-medium inline-flex items-center gap-1 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                          >
+                            Shiko raportin e performancës
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                          <div>Historia e veturës: {ownerHistoryText}</div>
                         </div>
                       </div>
-                      {isHistoryOpen ? (
-                        <ChevronUp className="h-5 w-5 text-muted-foreground transition-transform" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
-                      )}
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg leading-none text-primary">•</span>
+                        <div className="space-y-1">
+                          <div>Dëmet e veturës: {myCarDamageText}</div>
+                          <div>Dëmet ndaj veturave të tjera: {otherCarDamageText}</div>
+                          <div>Shënime të veçanta: {specialNoteText}</div>
+                        </div>
+                      </div>
                     </div>
-                  </CardContent>
-                </CollapsibleTrigger>
+                  )}
+                </CardContent>
                 <CollapsibleContent>
                   <CardContent className="p-3 md:p-6 pt-0">
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
@@ -3975,85 +4273,73 @@ const CarDetails = memo(() => {
                               Shkëmbim
                             </span>
                             <span className="text-sm font-semibold">
-                              {car.insurance_v2?.replacementCnt > 0 
-                                ? `${car.insurance_v2.replacementCnt}` 
-                                : "Asnjë"}
+                              {formatHistoryCount(replacementValue)}
                             </span>
                           </div>
-                          
+
                           {/* Sheet Metal - Limar */}
                           <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
                             <span className="text-xs text-muted-foreground uppercase mb-1">
-                              Limar
+                              Punime llamarine
                             </span>
                             <span className="text-sm font-semibold">
-                              {car.inspect?.sheetMetal || car.insurance_v2?.sheetMetalCnt > 0
-                                ? `${car.inspect?.sheetMetal || car.insurance_v2?.sheetMetalCnt || 1}`
-                                : "Asnjë"}
+                              {formatHistoryCount(sheetMetalValue)}
                             </span>
                           </div>
-                          
+
                           {/* Corrosion - Korrozioni */}
                           <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
                             <span className="text-xs text-muted-foreground uppercase mb-1">
                               Korrozioni
                             </span>
                             <span className="text-sm font-semibold">
-                              {car.inspect?.corrosion || car.insurance_v2?.corrosionCnt > 0
-                                ? `${car.inspect?.corrosion || car.insurance_v2?.corrosionCnt || 1}`
-                                : "Asnjë"}
+                              {formatHistoryCount(corrosionValue)}
                             </span>
                           </div>
-                          
+
                           {/* Owner Changes - Ndërrimi i Pronarit */}
                           <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
                             <span className="text-xs text-muted-foreground uppercase mb-1">
                               Historiku i Veturës
                             </span>
                             <span className="text-sm font-semibold">
-                              {car.insurance_v2?.ownerChangeCnt !== undefined 
-                                ? `${car.insurance_v2.ownerChangeCnt} pronarë` 
-                                : "N/A"}
+                              {ownerHistoryText}
                             </span>
                           </div>
-                          
+
                           {/* My Car Damage - Dëmtimi i Veturës Sime */}
                           <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
                             <span className="text-xs text-muted-foreground uppercase mb-1">
                               Dëmtimi i Veturës
                             </span>
                             <span className="text-sm font-semibold text-destructive">
-                              {car.insurance_v2?.myCarDmgAmt 
-                                ? `${car.insurance_v2.myCarDmgAmt.toLocaleString()} KRW` 
-                                : "Asnjë"}
+                              {formatHistoryDamage(myCarDamageAmount, myCarDamageCount)}
                             </span>
                           </div>
-                          
+
                           {/* Other Car Damage - Dëmtimi i Veturës Tjetër */}
                           <div className="flex flex-col p-3 bg-muted/30 border border-border rounded-lg">
                             <span className="text-xs text-muted-foreground uppercase mb-1">
                               Aksidente të Tjera
                             </span>
                             <span className="text-sm font-semibold">
-                              {car.insurance_v2?.otherCarDmgCnt > 0 
-                                ? `${car.insurance_v2.otherCarDmgCnt}` 
-                                : "Asnjë"}
+                              {formatHistoryCount(otherCarDamageValue)}
                             </span>
                           </div>
                         </div>
-                        
+
                         {/* Special Notes - Shënime Speciale */}
-                        {(car.insurance_v2?.specialNote || car.inspect?.specialNotes) && (
+                        {specialNoteValue && (
                           <div className="mt-3 p-3 bg-muted/30 border border-border rounded-lg">
                             <span className="text-xs text-muted-foreground uppercase block mb-2">
                               Shënime Speciale
                             </span>
                             <p className="text-sm">
-                              {car.insurance_v2?.specialNote || car.inspect?.specialNotes || "Asnjë"}
+                              {specialNoteText}
                             </p>
                           </div>
                         )}
-                        
+
                         {hasMainFrameworkAccident && (
                           <div className="p-4 bg-destructive/10 border-l-4 border-destructive rounded-lg">
                             <div className="flex items-start gap-3">
@@ -4421,7 +4707,7 @@ const CarDetails = memo(() => {
                   className="text-left hover:opacity-80 transition-opacity"
                 >
                   <div className="text-2xl font-bold text-foreground leading-tight">
-                    €{(car.price + 350).toLocaleString()}
+                    €{car.price.toLocaleString()}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     Deri ne Prishtine pa dogan
@@ -4589,7 +4875,7 @@ const CarDetails = memo(() => {
             <div className="p-4 bg-primary/10 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Çmimi Total:</span>
-                <span className="text-2xl font-bold text-primary">€{(car.price + 350).toLocaleString()}</span>
+                <span className="text-2xl font-bold text-primary">€{car.price.toLocaleString()}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 *Deri në Prishtinë pa doganë

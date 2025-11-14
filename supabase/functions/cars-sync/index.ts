@@ -298,7 +298,7 @@ const buildCarCacheRecord = ({ listCar, detailedCar, detailPayload, syncBatchId,
     ?? fallbackCar?.price
     ?? fallbackCar?.buy_now_price;
   const normalizedPrice = safeNumber(buyNowRaw) ?? null;
-  const adjustedPrice = normalizedPrice !== null ? Math.round(normalizedPrice + 2300) : null;
+  const adjustedPrice = normalizedPrice !== null ? Math.round(normalizedPrice + 2550) : null;
 
   const mileageInfo = buildMileageInfo(lot, fallbackLot);
   const imageInfo = gatherImages(lot, fallbackLot, baseCar);
@@ -577,7 +577,7 @@ Deno.serve(async (req) => {
               seen.add(id);
 
               const preview = listing?.images?.[0]?.preview || '';
-              const priceAmount = typeof listing?.price?.price === 'number' ? Math.round(listing.price.price + 2300) : null;
+              const priceAmount = typeof listing?.price?.price === 'number' ? Math.round(listing.price.price + 2550) : null;
               const lotNumber = raw?.lot_number || undefined;
               const lotStatus = 1; // grid cars treated as active
               const lotData = listing || {};

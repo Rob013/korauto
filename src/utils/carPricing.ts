@@ -28,19 +28,19 @@ export const filterCarsWithRealPricing = <T>(cars: T[]): T[] => {
  * Calculate the final price in EUR: convert USD base price to EUR and add markup
  * @param basePriceUSD - The base price in USD from the API
  * @param usdToEurRate - The USD to EUR conversion rate
- * @returns Final price in EUR (base price converted + 2300 EUR markup)
+ * @returns Final price in EUR (base price converted + 2550 EUR markup)
  */
 export const calculateFinalPriceEUR = (basePriceUSD: number, usdToEurRate: number): number => {
   const basePriceEUR = Math.round(basePriceUSD * usdToEurRate);
-  return basePriceEUR + 2300; // Add 2300 EUR markup
+  return basePriceEUR + 2550; // Add 2550 EUR markup
 };
 
 /**
  * Check if a calculated price is the default fallback price
- * Default is 25000 USD converted to EUR + markup (25000 * 0.87 + 2300 = 24050 EUR)
+ * Default is 25000 USD converted to EUR + markup (25000 * 0.87 + 2550 = 24300 EUR)
  */
 export const isDefaultPrice = (priceEUR: number): boolean => {
-  return priceEUR === 24050; // 25000 USD * 0.87 + 2300 EUR markup
+  return priceEUR === 24300; // 25000 USD * 0.87 + 2550 EUR markup
 };
 
 /**
