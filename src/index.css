@@ -466,6 +466,12 @@ html.theme-transitioning *::after {
     right: 1rem !important;
     bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
   }
+
+  #smartsupp-widget-bubble,
+  .smartsupp-widget-bubble {
+    right: 1rem !important;
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
 }
 
 body.car-details-page #smartsupp-widget-container,
@@ -477,6 +483,11 @@ body.car-details-page .smartsupp-widget-container {
   body.car-details-page #smartsupp-widget-container,
   body.car-details-page .smartsupp-widget-container {
     bottom: calc(11rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.car-details-page #smartsupp-widget-bubble,
+  body.car-details-page .smartsupp-widget-bubble {
+    bottom: calc(13rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

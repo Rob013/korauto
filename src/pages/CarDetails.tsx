@@ -92,6 +92,7 @@ import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe } from "@/hooks/useImageSwipe";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { fallbackCars } from "@/data/fallbackData";
+import { getBrandLogo } from "@/data/brandLogos";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 import {
@@ -3263,6 +3264,47 @@ const CarDetails = memo(() => {
         return "";
       }, [prefetchedSummary?.title, resolvedMainTitle, secondaryTitle]);
 
+      const displayTitle = useMemo(() => {
+        if (resolvedSecondaryTitle) {
+          return resolvedSecondaryTitle;
+        }
+        return resolvedMainTitle;
+      }, [resolvedMainTitle, resolvedSecondaryTitle]);
+
+      const detailsMake = (car?.details as any)?.make;
+      const detailsManufacturer = (car?.details as any)?.manufacturer;
+
+      const resolvedBrandName = useMemo(() => {
+        const potentialBrands = [
+          car?.make,
+          detailsMake,
+          detailsManufacturer,
+          prefetchedSummary?.make,
+        ];
+
+        for (const value of potentialBrands) {
+          if (typeof value === "string" && value.trim()) {
+            return value.trim();
+          }
+        }
+
+        if (resolvedMainTitle) {
+          const firstWord = resolvedMainTitle.split(" ")[0]?.trim();
+          if (firstWord) {
+            return firstWord;
+          }
+        }
+
+        return "";
+      }, [car?.make, detailsMake, detailsManufacturer, prefetchedSummary?.make, resolvedMainTitle]);
+
+      const brandLogo = useMemo(() => {
+        if (!resolvedBrandName) {
+          return undefined;
+        }
+        return getBrandLogo(resolvedBrandName);
+      }, [resolvedBrandName]);
+
       const normalizedOptions = useMemo(
         () => convertOptionsToNames(car?.details?.options),
         [car?.details?.options, convertOptionsToNames],
@@ -4033,21 +4075,34 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {resolvedMainTitle && (
-              <div className="space-y-2 animate-fade-in-up stagger-1">
-                {/* Main Title */}
-                <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-                  {resolvedMainTitle}
-                </h1>
+            {displayTitle && (
+              <div className="space-y-1.5 animate-fade-in-up stagger-1">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {brandLogo ? (
+                    <img
+                      src={brandLogo}
+                      alt={`${resolvedBrandName} logo`}
+                      className="h-9 w-9 sm:h-11 sm:w-11 object-contain"
+                      loading="lazy"
+                    />
+                  ) : resolvedBrandName ? (
+                    <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80">
+                      {resolvedBrandName}
+                    </span>
+                  ) : null}
+                  <p className="text-xl sm:text-3xl font-semibold text-foreground leading-tight">
+                    {displayTitle}
+                  </p>
+                </div>
 
-                {resolvedSecondaryTitle && (
+                {resolvedSecondaryTitle && resolvedSecondaryTitle !== displayTitle && (
                   <p className="text-sm sm:text-base text-muted-foreground/90 leading-snug">
                     {resolvedSecondaryTitle}
                   </p>
                 )}
 
                 {/* Subtitle with year and key details */}
-                <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground leading-tight">
                   {car.year && <span className="font-medium">{car.year}</span>}
                   {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
                   {car.mileage && <span>{formatMileage(car.mileage)}</span>}
