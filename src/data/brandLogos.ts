@@ -183,7 +183,83 @@ export const brandLogos: { [key: string]: string } = {
   "Zotye": "https://auctionsapi.com/images/brands/Zotye.svg"
 };
 
-// Function to get brand logo URL by name
-export const getBrandLogo = (brandName: string): string | undefined => {
-  return brandLogos[brandName];
+export type BrandLogoVariant = {
+  light?: string;
+  dark?: string;
+};
+
+const brandLogosDarkOverrides: Record<string, string> = {};
+
+const buildBrandLogoVariants = () => {
+  const variants: Record<string, BrandLogoVariant> = {};
+
+  for (const [brandName, logoUrl] of Object.entries(brandLogos)) {
+    variants[brandName] = {
+      light: logoUrl,
+      dark: brandLogosDarkOverrides[brandName] ?? logoUrl,
+    };
+  }
+
+  for (const [brandName, darkLogo] of Object.entries(brandLogosDarkOverrides)) {
+    const existing = variants[brandName];
+    if (existing) {
+      existing.dark = darkLogo;
+    } else {
+      variants[brandName] = { dark: darkLogo };
+    }
+  }
+
+  return variants;
+};
+
+const brandLogoVariants = buildBrandLogoVariants();
+
+const brandLogoLookup = new Map<string, BrandLogoVariant>();
+
+for (const [brandName, variant] of Object.entries(brandLogoVariants)) {
+  brandLogoLookup.set(brandName, variant);
+  brandLogoLookup.set(brandName.toLowerCase(), variant);
+}
+
+const normalizeBrandName = (brandName: string | undefined | null): string | null => {
+  if (!brandName) {
+    return null;
+  }
+
+  const trimmed = brandName.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed;
+};
+
+export const getBrandLogoVariants = (
+  brandName: string,
+): BrandLogoVariant | undefined => {
+  const normalized = normalizeBrandName(brandName);
+  if (!normalized) {
+    return undefined;
+  }
+
+  return (
+    brandLogoLookup.get(normalized) ||
+    brandLogoLookup.get(normalized.toLowerCase())
+  );
+};
+
+export const getBrandLogo = (
+  brandName: string,
+  theme: "light" | "dark" = "light",
+): string | undefined => {
+  const variant = getBrandLogoVariants(brandName);
+  if (!variant) {
+    return undefined;
+  }
+
+  if (theme === "dark") {
+    return variant.dark ?? variant.light;
+  }
+
+  return variant.light ?? variant.dark;
 };

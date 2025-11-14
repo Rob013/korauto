@@ -93,7 +93,7 @@ import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe, type ImageSwipeChangeMeta } from "@/hooks/useImageSwipe";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { fallbackCars } from "@/data/fallbackData";
-import { getBrandLogo } from "@/data/brandLogos";
+import { getBrandLogo, getBrandLogoVariants } from "@/data/brandLogos";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
 import {
@@ -112,6 +112,7 @@ import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
 import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 import "@/styles/carDetailsOptimizations.css";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "@/components/ThemeProvider";
 
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
@@ -1531,6 +1532,7 @@ const CarDetails = memo(() => {
   const { exchangeRate } = useCurrencyAPI();
   const { getOptionName } = useKoreaOptions();
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
+  const { theme } = useTheme();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [prefetchedSummary, setPrefetchedSummary] =
     useState<PrefetchedCarSummary | null>(null);
@@ -1555,6 +1557,9 @@ const CarDetails = memo(() => {
     useState<EncarsVehicleResponse["contact"] | null>(null);
   const [liveDealerLoading, setLiveDealerLoading] = useState(false);
   const [liveDealerError, setLiveDealerError] = useState<string | null>(null);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
+    theme === "dark" ? "dark" : "light",
+  );
   
   // Dialog states
   const [isSpecsDialogOpen, setIsSpecsDialogOpen] = useState(false);
@@ -1576,7 +1581,65 @@ const CarDetails = memo(() => {
       return;
     }
 
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const resolveTheme = () => {
+      if (theme === "system") {
+        return mediaQuery.matches ? "dark" : "light";
+      }
+      return theme;
+    };
+
+    const updateResolvedTheme = () => {
+      setResolvedTheme(resolveTheme());
+    };
+
+    updateResolvedTheme();
+
+    if (theme === "system") {
+      const handleChange = () => updateResolvedTheme();
+      mediaQuery.addEventListener("change", handleChange);
+
+      return () => {
+        mediaQuery.removeEventListener("change", handleChange);
+      };
+    }
+
+    return undefined;
+  }, [theme]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+
     const rootElement = document.documentElement;
+    const metaViewport = document.querySelector("meta[name='viewport']");
+    const originalViewportContent = metaViewport?.getAttribute("content") ?? null;
+    const lockedViewportContent = (() => {
+      const buildContent = (base: string | null) => {
+        if (!base) {
+          return "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+        }
+
+        const segments = base
+          .split(",")
+          .map((segment) => segment.trim())
+          .filter(Boolean)
+          .filter(
+            (segment) =>
+              !segment.toLowerCase().startsWith("maximum-scale") &&
+              !segment.toLowerCase().startsWith("user-scalable"),
+          );
+
+        segments.push("maximum-scale=1.0", "user-scalable=no");
+        return segments.join(", ");
+      };
+
+      return buildContent(originalViewportContent);
+    })();
+
+    let isZoomDisabled = false;
     let lastTouchEnd = 0;
 
     const handleTouchEnd = (event: TouchEvent) => {
@@ -1597,14 +1660,73 @@ const CarDetails = memo(() => {
       }
     };
 
-    rootElement.addEventListener("touchend", handleTouchEnd, {
-      passive: false,
-    });
-    document.addEventListener("dblclick", handleDoubleClick, true);
+    const disableZoom = () => {
+      if (isZoomDisabled) {
+        return;
+      }
 
-    return () => {
+      if (metaViewport) {
+        metaViewport.setAttribute("content", lockedViewportContent);
+      }
+
+      rootElement.addEventListener("touchend", handleTouchEnd, { passive: false });
+      document.addEventListener("dblclick", handleDoubleClick, true);
+      isZoomDisabled = true;
+    };
+
+    const restoreZoom = () => {
+      if (!isZoomDisabled) {
+        return;
+      }
+
+      if (metaViewport) {
+        if (originalViewportContent === null) {
+          metaViewport.removeAttribute("content");
+        } else {
+          metaViewport.setAttribute("content", originalViewportContent);
+        }
+      }
+
       rootElement.removeEventListener("touchend", handleTouchEnd);
       document.removeEventListener("dblclick", handleDoubleClick, true);
+      lastTouchEnd = 0;
+      isZoomDisabled = false;
+    };
+
+    const hasCoarsePointer = () => {
+      if (typeof window.matchMedia !== "function") {
+        return navigator.maxTouchPoints > 1;
+      }
+      return window.matchMedia("(pointer: coarse)").matches;
+    };
+
+    const shouldDisableZoom = () => {
+      const width = window.innerWidth;
+      const userAgent = navigator.userAgent || navigator.vendor || "";
+      const coarsePointer = hasCoarsePointer();
+      const isiPad = /iPad/i.test(userAgent) ||
+        (/Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1 && width >= 768);
+      const isAndroidTablet = /Android/i.test(userAgent) && !/Mobile/i.test(userAgent);
+      const isTabletSized = coarsePointer && width >= 768 && width < 1024;
+      const isDesktop = width >= 1024 && !coarsePointer;
+
+      return isiPad || isAndroidTablet || isTabletSized || isDesktop;
+    };
+
+    const updateZoomState = () => {
+      if (shouldDisableZoom()) {
+        disableZoom();
+      } else {
+        restoreZoom();
+      }
+    };
+
+    updateZoomState();
+    window.addEventListener("resize", updateZoomState);
+
+    return () => {
+      window.removeEventListener("resize", updateZoomState);
+      restoreZoom();
     };
   }, []);
 
@@ -3364,12 +3486,19 @@ const CarDetails = memo(() => {
         return "";
       }, [car?.make, detailsMake, detailsManufacturer, prefetchedSummary?.make, resolvedMainTitle]);
 
+      const brandLogoVariants = useMemo(() => {
+        if (!resolvedBrandName) {
+          return undefined;
+        }
+        return getBrandLogoVariants(resolvedBrandName);
+      }, [resolvedBrandName]);
+
       const brandLogo = useMemo(() => {
         if (!resolvedBrandName) {
           return undefined;
         }
-        return getBrandLogo(resolvedBrandName);
-      }, [resolvedBrandName]);
+        return getBrandLogo(resolvedBrandName, resolvedTheme);
+      }, [resolvedBrandName, resolvedTheme]);
 
       const normalizedOptions = useMemo(
         () => convertOptionsToNames(car?.details?.options),
@@ -4220,12 +4349,26 @@ const CarDetails = memo(() => {
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 sm:gap-3">
                       {brandLogo ? (
-                        <img
-                          src={brandLogo}
-                          alt={`${resolvedBrandName} logo`}
-                          className="h-9 w-9 sm:h-11 sm:w-11 object-contain"
-                          loading="lazy"
-                        />
+                        <div
+                          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
+                          aria-hidden={!resolvedBrandName}
+                        >
+                          <picture>
+                            {brandLogoVariants?.dark && (
+                              <source
+                                srcSet={brandLogoVariants.dark}
+                                media="(prefers-color-scheme: dark)"
+                              />
+                            )}
+                            <img
+                              src={brandLogoVariants?.light ?? brandLogo}
+                              alt={`${resolvedBrandName} logo`}
+                              className="h-full w-full object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </picture>
+                        </div>
                       ) : resolvedBrandName ? (
                         <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80">
                           {resolvedBrandName}
