@@ -476,28 +476,44 @@ html.theme-transitioning *::after {
 
 body.car-details-page #smartsupp-widget-container,
 body.car-details-page .smartsupp-widget-container {
-  right: calc(env(safe-area-inset-right, 0px) + clamp(0.75rem, 2vw, 1.5rem)) !important;
+  right: calc(env(safe-area-inset-right, 0px) + clamp(0.75rem, 2vw, 1.75rem)) !important;
+}
+
+body.car-details-page #smartsupp-widget-bubble,
+body.car-details-page .smartsupp-widget-bubble {
+  right: calc(env(safe-area-inset-right, 0px) + clamp(0.75rem, 2vw, 1.75rem)) !important;
 }
 
 @media (max-width: 1023.98px) {
   body.car-details-page #smartsupp-widget-container,
   body.car-details-page .smartsupp-widget-container {
-    bottom: calc(11rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(15rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: calc(env(safe-area-inset-right, 0px) + clamp(0.75rem, 2vw, 1.25rem)) !important;
   }
 
   body.car-details-page #smartsupp-widget-bubble,
   body.car-details-page .smartsupp-widget-bubble {
-    bottom: calc(13rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(17rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: calc(env(safe-area-inset-right, 0px) + clamp(0.75rem, 2vw, 1.25rem)) !important;
   }
 }
 
 @media (min-width: 1024px) {
   body.car-details-page #smartsupp-widget-container,
   body.car-details-page .smartsupp-widget-container {
-    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)) !important;
     right: calc(
       env(safe-area-inset-right, 0px) +
-      clamp(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem), 6rem)
+      clamp(3rem, calc((100vw - 1280px) / 2 + 5rem), 13rem)
+    ) !important;
+  }
+
+  body.car-details-page #smartsupp-widget-bubble,
+  body.car-details-page .smartsupp-widget-bubble {
+    bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: calc(
+      env(safe-area-inset-right, 0px) +
+      clamp(3rem, calc((100vw - 1280px) / 2 + 5rem), 13rem)
     ) !important;
   }
 }
