@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 
 type Theme = "dark" | "light" | "system"
 
@@ -13,12 +20,8 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void
 }
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-}
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+const ThemeProviderContext =
+  createContext<ThemeProviderState | undefined>(undefined)
 
 export function ThemeProvider({
   children,
@@ -26,24 +29,38 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") {
+      return defaultTheme
+    }
+
+    const storedTheme = window.localStorage.getItem(storageKey) as Theme | null
+
+    if (storedTheme) {
+      return storedTheme
+    }
+
+    if (defaultTheme === "system") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+    }
+
+    return defaultTheme
+  })
 
   useEffect(() => {
+    if (typeof window === "undefined") return
+
     const root = window.document.documentElement
 
-    // Butter-smooth theme switching
-    const applyTheme = () => {
-      // Add transition class for smooth animation
-      root.classList.add('theme-transitioning')
-      
-      // Small delay to ensure transition class is applied
+    const applyTheme = (value: Theme) => {
+      root.classList.add("theme-transitioning")
+
       requestAnimationFrame(() => {
-        // Remove old theme class
         root.classList.remove("light", "dark")
 
-        if (theme === "system") {
+        if (value === "system") {
           const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
             .matches
             ? "dark"
@@ -51,26 +68,56 @@ export function ThemeProvider({
 
           root.classList.add(systemTheme)
         } else {
-          root.classList.add(theme)
+          root.classList.add(value)
         }
       })
 
-      // Remove transition class after animation completes
-      setTimeout(() => {
-        root.classList.remove('theme-transitioning')
+      const timeout = window.setTimeout(() => {
+        root.classList.remove("theme-transitioning")
       }, 400)
+
+      return () => window.clearTimeout(timeout)
     }
 
-    applyTheme()
+    const cleanUp = applyTheme(theme)
+    return cleanUp
   }, [theme])
 
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+  const setTheme = useCallback(
+    (value: Theme) => {
+      if (typeof window === "undefined") return
+
+      window.localStorage.setItem(storageKey, value)
+      setThemeState(value)
     },
-  }
+    [storageKey]
+  )
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+
+    const handleChange = () => {
+      if (theme === "system") {
+        setThemeState(
+          mediaQuery.matches ? "dark" : "light"
+        )
+      }
+    }
+
+    mediaQuery.addEventListener("change", handleChange)
+
+    return () => mediaQuery.removeEventListener("change", handleChange)
+  }, [theme])
+
+  const value = useMemo(
+    () => ({
+      theme,
+      setTheme,
+    }),
+    [theme, setTheme]
+  )
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
@@ -82,8 +129,9 @@ export function ThemeProvider({
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
 
-  if (context === undefined)
+  if (context === undefined) {
     throw new Error("useTheme must be used within a ThemeProvider")
+  }
 
   return context
 }
