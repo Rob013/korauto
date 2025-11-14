@@ -6,6 +6,13 @@
   content-visibility: auto;
 }
 
+.car-image-container {
+  touch-action: pan-x pan-y !important;
+  -ms-touch-action: pan-x pan-y !important;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Smooth fade-in for content sections */
 @keyframes fadeInUp {
   from {
