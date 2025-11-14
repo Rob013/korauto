@@ -1565,6 +1565,43 @@ const CarDetails = memo(() => {
       document.body.classList.remove("car-details-page");
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const rootElement = document.documentElement;
+    let lastTouchEnd = 0;
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 400) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+
+    const handleDoubleClick = (event: MouseEvent) => {
+      if (
+        event.detail > 1 &&
+        event.target instanceof Element &&
+        event.target.closest("button, a, [role='button'], .interactive")
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    rootElement.addEventListener("touchend", handleTouchEnd, {
+      passive: false,
+    });
+    document.addEventListener("dblclick", handleDoubleClick, true);
+
+    return () => {
+      rootElement.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("dblclick", handleDoubleClick, true);
+    };
+  }, []);
   const lastFetchedLotRef = useRef<string | null>(null);
   const liveDealerAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -3895,17 +3932,29 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Zoom icon - Improved positioning and visibility */}
-                    <button
-                      type="button"
-                      onClick={handleImageZoomOpen}
-                      className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      aria-label="Zmadho imazhin"
-                    >
-                      <Expand className="h-4 w-4 text-white" />
-                    </button>
+                  <button
+                    type="button"
+                    onClick={handleImageZoomOpen}
+                    className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="Zmadho imazhin"
+                  >
+                    <Expand className="h-4 w-4 text-white" />
+                  </button>
+                </div>
+                {typeof car?.price === "number" && (
+                  <div className="hidden lg:flex w-full justify-end px-6 py-4 border-t border-border/60 bg-card/80">
+                    <div className="text-right space-y-1">
+                      <span className="text-2xl font-bold text-foreground">
+                        €{car.price.toLocaleString()}
+                      </span>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Deri në Prishtinë pa doganë
+                      </span>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </CardContent>
+            </Card>
 
               {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
                 {images.length > 1 && (
