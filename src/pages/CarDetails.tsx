@@ -29,31 +29,30 @@ import { useToast } from "@/hooks/use-toast";
 import { useHaptics } from "@/hooks/useHaptics";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowLeft,
-  Phone,
-  Mail,
-  MapPin,
-  Car,
-  Gauge,
-  Settings,
-  Fuel,
-  Palette,
-  Hash,
-  Shield,
-  Search,
-  Info,
-  Eye,
-  CheckCircle,
-  AlertTriangle,
-  Star,
-  Clock,
-  Users,
-  MessageCircle,
-  Share2,
-  Heart,
-  ChevronLeft,
-  ChevronRight,
-  Expand,
+    ArrowLeft,
+    Phone,
+    Mail,
+    MapPin,
+    Car,
+    Gauge,
+    Settings,
+    Fuel,
+    Palette,
+    Hash,
+    Shield,
+    Search,
+    Info,
+    Eye,
+    CheckCircle,
+    AlertTriangle,
+    Star,
+    Clock,
+    Users,
+    MessageCircle,
+    Share2,
+    Heart,
+    ChevronLeft,
+    ChevronRight,
   Copy,
   ChevronDown,
   DollarSign,
@@ -111,7 +110,6 @@ import { getFallbackOptionName } from "@/data/koreaOptionFallbacks";
 import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
 import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 import "@/styles/carDetailsOptimizations.css";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/components/ThemeProvider";
 
 const ImageZoom = lazy(() =>
@@ -4006,7 +4004,6 @@ const CarDetails = memo(() => {
               <span className="sm:hidden font-medium">Home</span>
             </Button>
             <div className="ml-auto flex items-center gap-2">
-              <ThemeToggle />
               <Button
                 variant="outline"
                 size="sm"
@@ -4140,17 +4137,6 @@ const CarDetails = memo(() => {
                       </Badge>
                     )}
 
-                    {/* Zoom icon - Improved positioning and visibility */}
-                    {allowImageZoom && (
-                      <button
-                        type="button"
-                        onClick={handleImageZoomOpen}
-                        className="absolute top-3 right-3 hidden rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
-                        aria-label="Zmadho imazhin"
-                      >
-                        <Expand className="h-4 w-4" />
-                      </button>
-                    )}
                 </div>
                 {typeof car?.price === "number" && (
                   <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
@@ -4321,17 +4307,6 @@ const CarDetails = memo(() => {
                     </Badge>
                   )}
 
-                  {/* Zoom icon - Improved positioning and visibility */}
-                  {allowImageZoom && (
-                    <button
-                      type="button"
-                      onClick={handleImageZoomOpen}
-                      className="absolute top-3 right-3 flex rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      aria-label="Zmadho imazhin"
-                    >
-                      <Expand className="h-4 w-4" />
-                    </button>
-                  )}
 
                   {/* Loading indicator */}
                   {isPlaceholderImage && (

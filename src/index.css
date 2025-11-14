@@ -470,7 +470,7 @@ html.theme-transitioning *::after {
   #smartsupp-widget-bubble,
   .smartsupp-widget-bubble {
     right: 1rem !important;
-    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(7rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
