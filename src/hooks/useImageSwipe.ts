@@ -1,12 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+export interface ImageSwipeChangeMeta {
+  direction: 'next' | 'previous' | 'jump';
+  trigger: 'manual' | 'swipe';
+}
 
 interface UseImageSwipeOptions {
   images: string[];
-  onImageChange?: (index: number) => void;
+  onImageChange?: (index: number, meta?: ImageSwipeChangeMeta) => void;
 }
+
+const clampOffset = (value: number, limit: number) => {
+  if (limit <= 0) return value;
+  if (value > limit) return limit;
+  if (value < -limit) return -limit;
+  return value;
+};
 
 export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -20,6 +34,8 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
   const pointerGuardActivated = useRef(false);
   const preventClickRef = useRef(false);
   const clickGuardTimeout = useRef<number | null>(null);
+  const containerWidthRef = useRef(0);
+  const resetAnimationFrame = useRef<number | null>(null);
 
   const activateClickGuard = (duration = 180) => {
     preventClickRef.current = true;
@@ -32,39 +48,120 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     }, duration);
   };
 
-  const goToNext = () => {
-    const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
-    setCurrentIndex(nextIndex);
-    onImageChange?.(nextIndex);
-  };
+  const notifyChange = useCallback(
+    (index: number, meta: ImageSwipeChangeMeta) => {
+      onImageChange?.(index, meta);
+    },
+    [onImageChange],
+  );
 
-  const goToPrevious = () => {
-    const prevIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
-    setCurrentIndex(prevIndex);
-    onImageChange?.(prevIndex);
-  };
+  const goToNext = useCallback(
+    (trigger: 'manual' | 'swipe' = 'manual') => {
+      setCurrentIndex((prev) => {
+        if (images.length === 0) {
+          return prev;
+        }
 
-  const goToIndex = (index: number) => {
-    if (index >= 0 && index < images.length) {
-      setCurrentIndex(index);
-      onImageChange?.(index);
+        if (images.length === 1) {
+          return prev;
+        }
+
+        const nextIndex = prev < images.length - 1 ? prev + 1 : 0;
+        if (nextIndex !== prev) {
+          notifyChange(nextIndex, { direction: 'next', trigger });
+        }
+        return nextIndex;
+      });
+    },
+    [images.length, notifyChange],
+  );
+
+  const goToPrevious = useCallback(
+    (trigger: 'manual' | 'swipe' = 'manual') => {
+      setCurrentIndex((prev) => {
+        if (images.length === 0) {
+          return prev;
+        }
+
+        if (images.length === 1) {
+          return prev;
+        }
+
+        const prevIndex = prev > 0 ? prev - 1 : images.length - 1;
+        if (prevIndex !== prev) {
+          notifyChange(prevIndex, { direction: 'previous', trigger });
+        }
+        return prevIndex;
+      });
+    },
+    [images.length, notifyChange],
+  );
+
+  const goToIndex = useCallback(
+    (index: number, trigger: 'manual' | 'swipe' = 'manual') => {
+      if (index < 0 || index >= images.length) {
+        return;
+      }
+
+      setCurrentIndex((prev) => {
+        if (index === prev) {
+          return prev;
+        }
+
+        let direction: ImageSwipeChangeMeta['direction'] = 'jump';
+        if (index > prev) {
+          direction = 'next';
+        } else if (index < prev) {
+          direction = 'previous';
+        }
+
+        notifyChange(index, { direction, trigger });
+        return index;
+      });
+    },
+    [images.length, notifyChange],
+  );
+
+  const currentImage = images[currentIndex] ?? images[0] ?? '';
+
+  const scheduleResetOffset = useCallback(() => {
+    setIsSwiping(false);
+
+    if (typeof window === 'undefined') {
+      setSwipeOffset(0);
+      return;
     }
-  };
+
+    if (resetAnimationFrame.current) {
+      window.cancelAnimationFrame(resetAnimationFrame.current);
+    }
+
+    resetAnimationFrame.current = window.requestAnimationFrame(() => {
+      setSwipeOffset(0);
+      resetAnimationFrame.current = null;
+    });
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const evaluateSwipe = (deltaX: number) => {
-      const swipeThreshold = 50;
-      if (Math.abs(deltaX) > swipeThreshold) {
-        if (deltaX > 0) {
-          goToNext();
-        } else {
-          goToPrevious();
-        }
+      const width = containerWidthRef.current || container.offsetWidth || 0;
+      const baseThreshold = 50;
+      const dynamicThreshold = width > 0 ? Math.min(width * 0.2, 120) : baseThreshold;
+      const threshold = Math.max(baseThreshold, dynamicThreshold);
+
+      if (deltaX <= -threshold) {
+        goToNext('swipe');
         return true;
       }
+
+      if (deltaX >= threshold) {
+        goToPrevious('swipe');
+        return true;
+      }
+
       return false;
     };
 
@@ -73,17 +170,24 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
       touchStartX.current = touch.clientX;
       touchStartY.current = touch.clientY;
       touchGuardActivated.current = false;
+      containerWidthRef.current = container.offsetWidth;
+      setIsSwiping(true);
+      setSwipeOffset(0);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       const touch = e.touches[0];
-      const deltaX = touchStartX.current - touch.clientX;
-      const deltaY = touchStartY.current - touch.clientY;
+      const deltaX = touch.clientX - touchStartX.current;
+      const deltaY = touch.clientY - touchStartY.current;
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
 
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        if (Math.abs(deltaX) > 6 && e.cancelable) {
+      if (absDeltaX > absDeltaY) {
+        if (absDeltaX > 6 && e.cancelable) {
           e.preventDefault();
         }
+        const width = containerWidthRef.current || container.offsetWidth || 0;
+        setSwipeOffset(clampOffset(deltaX, width || Math.abs(deltaX)));
       } else if (Math.abs(deltaY) > 6 && !touchGuardActivated.current) {
         touchGuardActivated.current = true;
         activateClickGuard(200);
@@ -93,8 +197,8 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     const handleTouchEnd = (e: TouchEvent) => {
       touchEndX.current = e.changedTouches[0].clientX;
       const touch = e.changedTouches[0];
-      const deltaX = touchStartX.current - touch.clientX;
-      const deltaY = touchStartY.current - touch.clientY;
+      const deltaX = touch.clientX - touchStartX.current;
+      const deltaY = touch.clientY - touchStartY.current;
       const absDeltaX = Math.abs(deltaX);
       const absDeltaY = Math.abs(deltaY);
 
@@ -108,6 +212,7 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
         }
       }
       touchGuardActivated.current = false;
+      scheduleResetOffset();
     };
 
       const handlePointerDown = (e: PointerEvent) => {
@@ -120,6 +225,9 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
         pointerStartY.current = e.clientY;
         pointerLastY.current = e.clientY;
         pointerGuardActivated.current = false;
+        containerWidthRef.current = container.offsetWidth;
+        setIsSwiping(true);
+        setSwipeOffset(0);
         if (typeof container.setPointerCapture === "function") {
           try {
             container.setPointerCapture(e.pointerId);
@@ -137,10 +245,14 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
         pointerLastX.current = e.clientX;
         pointerLastY.current = e.clientY;
         if (!pointerGuardActivated.current) {
-          const deltaX = pointerStartX.current - e.clientX;
-          const deltaY = pointerStartY.current - e.clientY;
+          const deltaX = e.clientX - pointerStartX.current;
+          const deltaY = e.clientY - pointerStartY.current;
           if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 6) {
             pointerGuardActivated.current = true;
+            setSwipeOffset(0);
+          } else {
+            const width = containerWidthRef.current || container.offsetWidth || 0;
+            setSwipeOffset(clampOffset(deltaX, width || Math.abs(deltaX)));
           }
         }
       };
@@ -158,8 +270,8 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
             // ignore release errors
           }
         }
-        const deltaX = pointerStartX.current - pointerLastX.current;
-        const deltaY = pointerStartY.current - pointerLastY.current;
+        const deltaX = pointerLastX.current - pointerStartX.current;
+        const deltaY = pointerLastY.current - pointerStartY.current;
         const absDeltaX = Math.abs(deltaX);
         const absDeltaY = Math.abs(deltaY);
         const swiped = evaluateSwipe(deltaX);
@@ -172,6 +284,7 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
           }
         }
         pointerGuardActivated.current = false;
+        scheduleResetOffset();
       };
 
       const handlePointerCancel = (e: PointerEvent) => {
@@ -188,6 +301,8 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
           }
         }
         pointerGuardActivated.current = false;
+        pointerActive.current = false;
+        scheduleResetOffset();
       };
 
     // Add touch event listeners for mobile
@@ -215,8 +330,37 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
         window.clearTimeout(clickGuardTimeout.current);
         clickGuardTimeout.current = null;
       }
+      if (resetAnimationFrame.current) {
+        window.cancelAnimationFrame(resetAnimationFrame.current);
+        resetAnimationFrame.current = null;
+      }
     };
-  }, [currentIndex, images.length]);
+  }, [goToNext, goToPrevious, scheduleResetOffset]);
+
+  useEffect(() => {
+    return () => {
+      if (clickGuardTimeout.current) {
+        window.clearTimeout(clickGuardTimeout.current);
+        clickGuardTimeout.current = null;
+      }
+      if (resetAnimationFrame.current) {
+        window.cancelAnimationFrame(resetAnimationFrame.current);
+        resetAnimationFrame.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setCurrentIndex((prev) => {
+      if (images.length === 0) {
+        return 0;
+      }
+      if (prev >= images.length) {
+        return images.length - 1;
+      }
+      return prev;
+    });
+  }, [images.length]);
 
   return {
     currentIndex,
@@ -224,9 +368,11 @@ export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) =
     goToNext,
     goToPrevious,
     goToIndex,
-    currentImage: images[currentIndex],
+    currentImage,
     hasNext: currentIndex < images.length - 1,
     hasPrevious: currentIndex > 0,
     isClickAllowed: () => !preventClickRef.current,
+    swipeOffset,
+    isSwiping,
   };
 };

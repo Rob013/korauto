@@ -7,6 +7,7 @@ import {
   lazy,
   Suspense,
   useRef,
+  type CSSProperties,
 } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNavigation } from "@/contexts/NavigationContext";
@@ -89,7 +90,7 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
-import { useImageSwipe } from "@/hooks/useImageSwipe";
+import { useImageSwipe, type ImageSwipeChangeMeta } from "@/hooks/useImageSwipe";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { fallbackCars } from "@/data/fallbackData";
 import { getBrandLogo } from "@/data/brandLogos";
@@ -1546,6 +1547,10 @@ const CarDetails = memo(() => {
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
   const [isPortalReady, setIsPortalReady] = useState(false);
+  const [allowImageZoom, setAllowImageZoom] = useState(false);
+  const [imageSwipeDirection, setImageSwipeDirection] = useState<
+    "next" | "previous" | null
+  >(null);
   const [liveDealerContact, setLiveDealerContact] =
     useState<EncarsVehicleResponse["contact"] | null>(null);
   const [liveDealerLoading, setLiveDealerLoading] = useState(false);
@@ -1602,6 +1607,29 @@ const CarDetails = memo(() => {
       document.removeEventListener("dblclick", handleDoubleClick, true);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const updateZoomAvailability = () => {
+      setAllowImageZoom(window.innerWidth < 1024);
+    };
+
+    updateZoomAvailability();
+    window.addEventListener("resize", updateZoomAvailability);
+
+    return () => {
+      window.removeEventListener("resize", updateZoomAvailability);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!allowImageZoom && isImageZoomOpen) {
+      setIsImageZoomOpen(false);
+    }
+  }, [allowImageZoom, isImageZoomOpen]);
   const lastFetchedLotRef = useRef<string | null>(null);
   const liveDealerAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -3454,6 +3482,19 @@ const CarDetails = memo(() => {
       return "-";
     }, [car]);
     
+  const handleSwipeImageChange = useCallback(
+    (index: number, meta?: ImageSwipeChangeMeta) => {
+      setSelectedImageIndex(index);
+
+      if (meta?.direction === "next" || meta?.direction === "previous") {
+        setImageSwipeDirection(meta.direction);
+      } else {
+        setImageSwipeDirection(null);
+      }
+    },
+    [],
+  );
+
   // Add swipe functionality for car detail photos - must be before early returns
   const {
     currentIndex: swipeCurrentIndex,
@@ -3462,15 +3503,36 @@ const CarDetails = memo(() => {
     goToPrevious,
     goToIndex,
     isClickAllowed,
+    swipeOffset,
+    isSwiping,
   } = useImageSwipe({
     images,
-    onImageChange: (index) => setSelectedImageIndex(index),
+    onImageChange: handleSwipeImageChange,
   });
+
+  const imageSwipeStyle = useMemo<CSSProperties>(
+    () => ({
+      transform: `translate3d(${swipeOffset}px, 0, 0)`,
+      transition: isSwiping
+        ? "none"
+        : "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
+      willChange: "transform",
+    }),
+    [swipeOffset, isSwiping],
+  );
+
+  const swipeWrapperClass = useMemo(
+    () =>
+      `image-swipe-wrapper${
+        isSwiping ? " image-swipe-wrapper--dragging" : ""
+      }`,
+    [isSwiping],
+  );
 
   // Sync swipe current index with selected image index
   useEffect(() => {
     if (swipeCurrentIndex !== selectedImageIndex) {
-      goToIndex(selectedImageIndex);
+      goToIndex(selectedImageIndex, "manual");
     }
   }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
   const registerMapTarget = useCallback((node: HTMLDivElement | null) => {
@@ -3510,14 +3572,14 @@ const CarDetails = memo(() => {
       event?.preventDefault();
       event?.stopPropagation();
 
-      if (!images.length || !isClickAllowed()) {
+      if (!allowImageZoom || !images.length || !isClickAllowed()) {
         return;
       }
 
       impact("light");
       setIsImageZoomOpen(true);
     },
-    [images.length, impact, isClickAllowed],
+    [allowImageZoom, images.length, impact, isClickAllowed],
   );
 
   const handleImageZoomClose = useCallback(() => {
@@ -3660,29 +3722,42 @@ const CarDetails = memo(() => {
                   </div>
                 </div>
                 <div className="lg:col-span-2 space-y-4">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Po ngarkohet raporti i plotë
-                    </p>
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground">
-                      {summaryTitle}
-                    </h1>
-                    {prefetchedSummary.title &&
-                      prefetchedSummary.title !== summaryTitle && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {prefetchedSummary.title}
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Po ngarkohet raporti i plotë
+                      </p>
+                      <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground">
+                        {summaryTitle}
+                      </h1>
+                      {prefetchedSummary.title &&
+                        prefetchedSummary.title !== summaryTitle && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {prefetchedSummary.title}
+                          </p>
+                        )}
+                      {prefetchedSummary.lot && (
+                        <p className="mt-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                          Lot #{prefetchedSummary.lot}
                         </p>
                       )}
-                    {prefetchedSummary.lot && (
-                      <p className="mt-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Lot #{prefetchedSummary.lot}
-                      </p>
+                    </div>
+
+                    {formattedPrice && (
+                      <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
+                        <span className="text-3xl font-bold text-primary leading-tight">
+                          {formattedPrice}
+                        </span>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Çmimi paraprak
+                        </span>
+                      </div>
                     )}
                   </div>
 
                     <div className="space-y-3">
                       {formattedPrice && (
-                        <div className="text-2xl font-semibold text-primary">
+                        <div className="text-2xl font-semibold text-primary lg:hidden">
                           {formattedPrice}
                         </div>
                       )}
@@ -3840,23 +3915,28 @@ const CarDetails = memo(() => {
                 <CardContent className="p-0">
                   <div
                     ref={imageContainerRef}
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none car-image-container"
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
                     onClick={handleImageZoomOpen}
-                    role="button"
-                    tabIndex={0}
+                    role={allowImageZoom ? "button" : undefined}
+                    tabIndex={allowImageZoom ? 0 : -1}
                     onKeyDown={(event) => {
+                      if (!allowImageZoom) {
+                        return;
+                      }
                       if (event.key === "Enter" || event.key === " ") {
                         handleImageZoomOpen(event);
                       }
                     }}
                     aria-label="Hap imazhin e makinës në modal me zoom"
+                    data-swipe-direction={imageSwipeDirection ?? undefined}
                   >
                     {/* Main Image with optimized loading */}
                     {images.length > 0 ? (
                       <OptimizedCarImage
                         src={images[selectedImageIndex]}
                         alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                        className="w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105"
+                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105`}
+                        style={imageSwipeStyle}
                         aspectRatio="aspect-[4/3]"
                         priority={selectedImageIndex === 0}
                       />
@@ -3876,7 +3956,7 @@ const CarDetails = memo(() => {
                           onClick={(e) => {
                             e.stopPropagation();
                             impact("light");
-                            goToPrevious();
+                            goToPrevious("manual");
                           }}
                           aria-label="Previous image"
                         >
@@ -3890,7 +3970,7 @@ const CarDetails = memo(() => {
                           onClick={(e) => {
                             e.stopPropagation();
                             impact("light");
-                            goToNext();
+                            goToNext("manual");
                           }}
                           aria-label="Next image"
                         >
@@ -3932,25 +4012,25 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Zoom icon - Improved positioning and visibility */}
-                  <button
-                    type="button"
-                    onClick={handleImageZoomOpen}
-                    className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-label="Zmadho imazhin"
-                  >
-                    <Expand className="h-4 w-4 text-white" />
-                  </button>
+                    {allowImageZoom && (
+                      <button
+                        type="button"
+                        onClick={handleImageZoomOpen}
+                        className="absolute top-3 right-3 hidden rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+                        aria-label="Zmadho imazhin"
+                      >
+                        <Expand className="h-4 w-4" />
+                      </button>
+                    )}
                 </div>
                 {typeof car?.price === "number" && (
-                  <div className="hidden lg:flex w-full justify-end px-6 py-4 border-t border-border/60 bg-card/80">
-                    <div className="text-right space-y-1">
-                      <span className="text-2xl font-bold text-foreground">
-                        €{car.price.toLocaleString()}
-                      </span>
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Deri në Prishtinë pa doganë
-                      </span>
-                    </div>
+                  <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
+                    <span className="text-xl font-bold text-foreground">
+                      €{car.price.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Deri në Prishtinë pa doganë
+                    </span>
                   </div>
                 )}
               </CardContent>
@@ -3967,7 +4047,7 @@ const CarDetails = memo(() => {
                         key={index + 1}
                         onClick={() => {
                           impact("light");
-                          setSelectedImageIndex(index + 1);
+                          goToIndex(index + 1, "manual");
                         }}
                         className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                           selectedImageIndex === index + 1
@@ -4008,23 +4088,28 @@ const CarDetails = memo(() => {
               <CardContent className="p-0">
                 <div
                   ref={imageContainerRef}
-                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none"
+                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-pan-y select-none"
                   onClick={handleImageZoomOpen}
-                  role="button"
-                  tabIndex={0}
+                  role={allowImageZoom ? "button" : undefined}
+                  tabIndex={allowImageZoom ? 0 : -1}
                   onKeyDown={(event) => {
+                    if (!allowImageZoom) {
+                      return;
+                    }
                     if (event.key === "Enter" || event.key === " ") {
                       handleImageZoomOpen(event);
                     }
                   }}
                   aria-label="Hap imazhin e makinës në modal me zoom"
+                  data-swipe-direction={imageSwipeDirection ?? undefined}
                 >
                   {/* Main Image with improved loading states */}
                   {images.length > 0 ? (
                     <img
                       src={images[selectedImageIndex]}
                       alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                      className={`${swipeWrapperClass} w-full h-full object-cover transition-all duration-500`}
+                      style={imageSwipeStyle}
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
                         setIsPlaceholderImage(true);
@@ -4052,7 +4137,7 @@ const CarDetails = memo(() => {
                         onClick={(e) => {
                           e.stopPropagation();
                           impact("light");
-                          goToPrevious();
+                          goToPrevious("manual");
                         }}
                         aria-label="Previous image"
                       >
@@ -4066,7 +4151,7 @@ const CarDetails = memo(() => {
                         onClick={(e) => {
                           e.stopPropagation();
                           impact("light");
-                          goToNext();
+                          goToNext("manual");
                         }}
                         aria-label="Next image"
                       >
@@ -4108,14 +4193,16 @@ const CarDetails = memo(() => {
                   )}
 
                   {/* Zoom icon - Improved positioning and visibility */}
-                  <button
-                    type="button"
-                    onClick={handleImageZoomOpen}
-                    className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-label="Zmadho imazhin"
-                  >
-                    <Expand className="h-4 w-4 text-white" />
-                  </button>
+                  {allowImageZoom && (
+                    <button
+                      type="button"
+                      onClick={handleImageZoomOpen}
+                      className="absolute top-3 right-3 flex rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-label="Zmadho imazhin"
+                    >
+                      <Expand className="h-4 w-4" />
+                    </button>
+                  )}
 
                   {/* Loading indicator */}
                   {isPlaceholderImage && (
@@ -4128,51 +4215,66 @@ const CarDetails = memo(() => {
             </Card>
 
             {displayTitle && (
-              <div className="space-y-1.5 animate-fade-in-up stagger-1">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {brandLogo ? (
-                    <img
-                      src={brandLogo}
-                      alt={`${resolvedBrandName} logo`}
-                      className="h-9 w-9 sm:h-11 sm:w-11 object-contain"
-                      loading="lazy"
-                    />
-                  ) : resolvedBrandName ? (
-                    <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80">
-                      {resolvedBrandName}
-                    </span>
-                  ) : null}
-                  <p className="text-xl sm:text-3xl font-semibold text-foreground leading-tight">
-                    {displayTitle}
-                  </p>
-                </div>
+              <div className="animate-fade-in-up stagger-1">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      {brandLogo ? (
+                        <img
+                          src={brandLogo}
+                          alt={`${resolvedBrandName} logo`}
+                          className="h-9 w-9 sm:h-11 sm:w-11 object-contain"
+                          loading="lazy"
+                        />
+                      ) : resolvedBrandName ? (
+                        <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80">
+                          {resolvedBrandName}
+                        </span>
+                      ) : null}
+                      <p className="text-xl sm:text-3xl font-semibold text-foreground leading-tight">
+                        {displayTitle}
+                      </p>
+                    </div>
 
-                {resolvedSecondaryTitle && resolvedSecondaryTitle !== displayTitle && (
-                  <p className="text-sm sm:text-base text-muted-foreground/90 leading-snug">
-                    {resolvedSecondaryTitle}
-                  </p>
-                )}
+                    {resolvedSecondaryTitle && resolvedSecondaryTitle !== displayTitle && (
+                      <p className="text-sm sm:text-base text-muted-foreground/90 leading-snug">
+                        {resolvedSecondaryTitle}
+                      </p>
+                    )}
 
-                {/* Subtitle with year and key details */}
-                <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground leading-tight">
-                  {car.year && <span className="font-medium">{car.year}</span>}
-                  {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
-                  {car.mileage && <span>{formatMileage(car.mileage)}</span>}
-                  {car.mileage && (resolvedFuel || car.transmission) && <span>•</span>}
-                  {resolvedFuel && <span>{localizeFuel(resolvedFuel)}</span>}
-                  {resolvedFuel && car.transmission && <span>•</span>}
-                  {car.transmission && <span>{car.transmission}</span>}
-                  {showSpecsDialogTrigger && (
-                    <>
-                      {(car.year || car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
-                      <button
-                        type="button"
-                        onClick={() => setIsSpecsDialogOpen(true)}
-                        className="text-primary hover:underline font-medium cursor-pointer"
-                      >
-                        Detajet
-                      </button>
-                    </>
+                    {/* Subtitle with year and key details */}
+                    <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground leading-tight">
+                      {car.year && <span className="font-medium">{car.year}</span>}
+                      {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
+                      {car.mileage && <span>{formatMileage(car.mileage)}</span>}
+                      {car.mileage && (resolvedFuel || car.transmission) && <span>•</span>}
+                      {resolvedFuel && <span>{localizeFuel(resolvedFuel)}</span>}
+                      {resolvedFuel && car.transmission && <span>•</span>}
+                      {car.transmission && <span>{car.transmission}</span>}
+                      {showSpecsDialogTrigger && (
+                        <>
+                          {(car.year || car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
+                          <button
+                            type="button"
+                            onClick={() => setIsSpecsDialogOpen(true)}
+                            className="text-primary hover:underline font-medium cursor-pointer"
+                          >
+                            Detajet
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {typeof car.price === "number" && (
+                    <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
+                      <span className="text-3xl font-bold text-primary leading-tight">
+                        €{car.price.toLocaleString()}
+                      </span>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Deri në Prishtinë pa doganë
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -4557,15 +4659,15 @@ const CarDetails = memo(() => {
 
         {images.length > 0 && (
           <Suspense fallback={null}>
-            <ImageZoom
-              src={images[selectedImageIndex] ?? car?.image ?? ""}
-              alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-              isOpen={isImageZoomOpen}
-              onClose={handleImageZoomClose}
-              images={images}
-              currentIndex={selectedImageIndex}
-              onImageChange={setSelectedImageIndex}
-            />
+          <ImageZoom
+            src={images[selectedImageIndex] ?? car?.image ?? ""}
+            alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+            isOpen={isImageZoomOpen}
+            onClose={handleImageZoomClose}
+            images={images}
+            currentIndex={selectedImageIndex}
+            onImageChange={(index) => goToIndex(index, "manual")}
+          />
           </Suspense>
         )}
       </div>
