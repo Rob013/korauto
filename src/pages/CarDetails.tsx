@@ -117,24 +117,6 @@ const ImageZoom = lazy(() =>
   })),
 );
 
-const DESKTOP_PARTNER_LOGOS = [
-  {
-    alt: "Korauto logo",
-    light: "/lovable-uploads/d1ff645d-f293-44ab-b806-ae5eb2483633.png",
-    dark: "/lovable-uploads/91efade6-53ff-4c15-ae10-6ac8f338c2b9.png",
-  },
-  {
-    alt: "Trusted Encar partner",
-    light: "/lovable-uploads/3094fd63-7a92-4497-8103-e166b6b09f70.png",
-    dark: "/lovable-uploads/3657dff4-7afd-45bb-9f8a-8d3f4ba8d7b4.png",
-  },
-  {
-    alt: "Premium import certification",
-    light: "/lovable-uploads/fb2b9889-d3da-4280-a77b-7567f307aed5.png",
-    dark: "/lovable-uploads/fb2b9889-d3da-4280-a77b-7567f307aed5.png",
-  },
-] as const;
-
 const DealerInfoSection = lazy(() =>
   import("@/components/DealerInfoSection").then((module) => ({
     default: module.DealerInfoSection,
@@ -3812,212 +3794,161 @@ const CarDetails = memo(() => {
             className="space-y-6 animate-fade-in-up stagger-1"
           >
             {/* Main Image with modern styling - Compact mobile design */}
-            <div className="hidden lg:flex lg:gap-6">
-              <div className="flex flex-1 gap-4">
-                {/* Main Image Card */}
-                <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
-                  <CardContent className="p-0">
-                    <div
-                      ref={imageContainerRef}
-                      className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none car-image-container"
-                      onClick={handleImageZoomOpen}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          handleImageZoomOpen(event);
-                        }
-                      }}
-                      aria-label="Hap imazhin e makinës në modal me zoom"
-                    >
-                      {/* Main Image with optimized loading */}
-                      {images.length > 0 ? (
-                        <OptimizedCarImage
-                          src={images[selectedImageIndex]}
-                          alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                          className="w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105"
-                          aspectRatio="aspect-[4/3]"
-                          priority={selectedImageIndex === 0}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Car className="h-16 w-16 text-muted-foreground" />
-                        </div>
-                      )}
+            <div className="hidden lg:flex lg:gap-4">
+              {/* Main Image Card */}
+              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
+                <CardContent className="p-0">
+                  <div
+                    ref={imageContainerRef}
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-none select-none car-image-container"
+                    onClick={handleImageZoomOpen}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        handleImageZoomOpen(event);
+                      }
+                    }}
+                    aria-label="Hap imazhin e makinës në modal me zoom"
+                  >
+                    {/* Main Image with optimized loading */}
+                    {images.length > 0 ? (
+                      <OptimizedCarImage
+                        src={images[selectedImageIndex]}
+                        alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                        className="w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105"
+                        aspectRatio="aspect-[4/3]"
+                        priority={selectedImageIndex === 0}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Car className="h-16 w-16 text-muted-foreground" />
+                      </div>
+                    )}
 
-                      {/* Navigation arrows - Improved positioning and visibility */}
-                      {images.length > 1 && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              impact("light");
-                              goToPrevious();
-                            }}
-                            aria-label="Previous image"
-                          >
-                            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              impact("light");
-                              goToNext();
-                            }}
-                            aria-label="Next image"
-                          >
-                            <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                          </Button>
-                        </>
-                      )}
-
-                      {/* Image counter and gallery button - Improved mobile design */}
-                      {images.length > 1 && (
-                        <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                          {/* Mobile gallery button */}
-                          <button
-                            onClick={handleGalleryButtonClick}
-                            className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                            aria-label={`View all ${images.length} images`}
-                          >
-                            <Camera className="h-3 w-3" />
-                            {selectedImageIndex + 1}/{images.length}
-                          </button>
-
-                          {/* Desktop gallery button */}
-                          <button
-                            onClick={handleGalleryButtonClick}
-                            className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                            aria-label={`View all ${images.length} images`}
-                          >
-                            <Camera className="h-4 w-4" />
-                            View Gallery ({images.length})
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Lot number badge - Improved positioning */}
-                      {car.lot && (
-                        <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                          {car.lot}
-                        </Badge>
-                      )}
-
-                      {/* Zoom icon - Improved positioning and visibility */}
-                      <button
-                        type="button"
-                        onClick={handleImageZoomOpen}
-                        className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        aria-label="Zmadho imazhin"
-                      >
-                        <Expand className="h-4 w-4 text-white" />
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
-                  {images.length > 1 && (
-                    <div
-                      className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
-                      style={{ animationDelay: "200ms" }}
-                    >
-                      {images.slice(1, 7).map((image, index) => (
-                        <button
-                          key={index + 1}
-                          onClick={() => {
+                    {/* Navigation arrows - Improved positioning and visibility */}
+                    {images.length > 1 && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             impact("light");
-                            setSelectedImageIndex(index + 1);
+                            goToPrevious();
                           }}
-                          className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                            selectedImageIndex === index + 1
-                              ? "border-primary shadow-lg scale-105"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                          aria-label={`View image ${index + 2}`}
+                          aria-label="Previous image"
                         >
-                          <img
-                            src={image}
-                            alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg";
-                            }}
-                          />
-                        </button>
-                      ))}
-                      {images.length > 7 && (
+                          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            impact("light");
+                            goToNext();
+                          }}
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </Button>
+                      </>
+                    )}
+
+                    {/* Image counter and gallery button - Improved mobile design */}
+                    {images.length > 1 && (
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        {/* Mobile gallery button */}
                         <button
                           onClick={handleGalleryButtonClick}
-                          className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
-                          aria-label="View all images"
+                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                          aria-label={`View all ${images.length} images`}
                         >
-                          <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
-                          <span className="text-xs xl:text-sm text-primary font-medium">
-                            +{images.length - 7}
-                          </span>
+                          <Camera className="h-3 w-3" />
+                          {selectedImageIndex + 1}/{images.length}
                         </button>
-                      )}
-                    </div>
-                  )}
-              </div>
 
-              {(typeof car.price === "number" && car.price > 0) && (
-                <aside className="hidden lg:flex w-80 xl:w-[360px] flex-shrink-0 flex-col gap-4">
-                  <div className="rounded-2xl border border-border/70 bg-card/90 shadow-2xl px-5 py-6 flex flex-col gap-3">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Çmimi total
-                    </div>
-                    <div className="text-3xl font-bold text-foreground leading-none">
-                      €{car.price.toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Deri në Prishtinë pa doganë
-                    </p>
-                    <Button
-                      onClick={() => setIsServicesDialogOpen(true)}
-                      className="mt-2 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/30 transition-transform hover:translate-y-[-2px] hover:shadow-xl"
-                    >
-                      Shiko shërbimet e përfshira
-                    </Button>
-                  </div>
-
-                  <div className="rounded-2xl border border-border/60 bg-card/80 shadow-lg px-4 py-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Partnerët tanë të verifikuar
-                    </p>
-                    <div className="mt-4 flex flex-col gap-3">
-                      {DESKTOP_PARTNER_LOGOS.map((logo) => (
-                        <div
-                          key={logo.alt}
-                          className="flex min-h-[64px] items-center justify-center rounded-xl bg-muted/40 px-4 py-3 transition-colors duration-300 hover:bg-muted/60"
+                        {/* Desktop gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                          aria-label={`View all ${images.length} images`}
                         >
-                          <img
-                            src={logo.light}
-                            alt={logo.alt}
-                            loading="lazy"
-                            className="block h-10 w-auto object-contain dark:hidden"
-                          />
-                          <img
-                            src={logo.dark}
-                            alt={logo.alt}
-                            loading="lazy"
-                            className="hidden h-10 w-auto object-contain dark:block"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                          <Camera className="h-4 w-4" />
+                          View Gallery ({images.length})
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Lot number badge - Improved positioning */}
+                    {car.lot && (
+                      <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                        {car.lot}
+                      </Badge>
+                    )}
+
+                    {/* Zoom icon - Improved positioning and visibility */}
+                    <button
+                      type="button"
+                      onClick={handleImageZoomOpen}
+                      className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-label="Zmadho imazhin"
+                    >
+                      <Expand className="h-4 w-4 text-white" />
+                    </button>
                   </div>
-                </aside>
-              )}
+                </CardContent>
+              </Card>
+
+              {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
+                {images.length > 1 && (
+                  <div
+                    className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
+                    style={{ animationDelay: "200ms" }}
+                  >
+                    {images.slice(1, 7).map((image, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => {
+                          impact("light");
+                          setSelectedImageIndex(index + 1);
+                        }}
+                        className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                          selectedImageIndex === index + 1
+                            ? "border-primary shadow-lg scale-105"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        aria-label={`View image ${index + 2}`}
+                      >
+                        <img
+                          src={image}
+                          alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
+                      </button>
+                    ))}
+                    {images.length > 7 && (
+                      <button
+                        onClick={handleGalleryButtonClick}
+                        className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
+                        aria-label="View all images"
+                      >
+                        <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
+                        <span className="text-xs xl:text-sm text-primary font-medium">
+                          +{images.length - 7}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Mobile Main Image - Full width for mobile */}
