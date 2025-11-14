@@ -112,6 +112,47 @@ export const ImageZoom = ({ src, alt, isOpen, onClose, images = [], currentIndex
     }
   }, [isOpen]);
 
+  // Prevent browser-level zoom gestures while the modal is active
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const preventPinchZoom = (event: WheelEvent) => {
+      if (event.ctrlKey) {
+        event.preventDefault();
+      }
+    };
+
+    const preventGesture = (event: Event) => {
+      event.preventDefault();
+    };
+
+    window.addEventListener('wheel', preventPinchZoom, { passive: false });
+    const gestureTarget = window as unknown as {
+      addEventListener: (
+        type: string,
+        listener: EventListener,
+        options?: AddEventListenerOptions,
+      ) => void;
+      removeEventListener: (type: string, listener: EventListener) => void;
+    };
+    const gestureEvents = ['gesturestart', 'gesturechange', 'gestureend'] as const;
+
+    gestureEvents.forEach((eventName) => {
+      gestureTarget.addEventListener(eventName, preventGesture as EventListener, {
+        passive: false,
+      });
+    });
+
+    return () => {
+      window.removeEventListener('wheel', preventPinchZoom);
+      gestureEvents.forEach((eventName) => {
+        gestureTarget.removeEventListener(eventName, preventGesture as EventListener);
+      });
+    };
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
