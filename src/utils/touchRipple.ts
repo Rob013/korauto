@@ -39,9 +39,13 @@ export const initializeTouchRipple = () => {
     
     target.appendChild(ripple);
 
-    // Remove ripple after animation
+    // Remove ripple after animation. On some mobile browsers (notably iOS
+    // Safari) calling `remove()` on a node that has already been detached from
+    // the DOM can throw a `NotFoundError`, so guard before removing.
     setTimeout(() => {
-      ripple.remove();
+      if (ripple.parentElement) {
+        ripple.parentElement.removeChild(ripple);
+      }
     }, 600);
   };
 
