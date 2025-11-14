@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface OptimizedCarImageProps {
@@ -7,6 +7,7 @@ interface OptimizedCarImageProps {
   className?: string;
   aspectRatio?: string;
   priority?: boolean;
+  style?: CSSProperties;
 }
 
 export const OptimizedCarImage = ({
@@ -15,6 +16,7 @@ export const OptimizedCarImage = ({
   className = '',
   aspectRatio = 'aspect-[4/3]',
   priority = false,
+  style,
 }: OptimizedCarImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -44,7 +46,10 @@ export const OptimizedCarImage = ({
   }, [src]);
 
   return (
-    <div className={`relative ${aspectRatio} w-full overflow-hidden bg-muted ${className}`}>
+    <div
+      className={`relative ${aspectRatio} w-full overflow-hidden bg-muted ${className}`}
+      style={style}
+    >
       {/* Skeleton loader */}
       {!isLoaded && (
         <Skeleton className="absolute inset-0" />

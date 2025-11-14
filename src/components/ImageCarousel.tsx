@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useImageSwipe } from '@/hooks/useImageSwipe';
+import { useImageSwipe, type ImageSwipeChangeMeta } from '@/hooks/useImageSwipe';
 import { cn } from '@/lib/utils';
 
 interface ImageCarouselProps {
@@ -10,7 +10,7 @@ interface ImageCarouselProps {
   className?: string;
   showArrows?: boolean;
   showDots?: boolean;
-  onImageChange?: (index: number) => void;
+  onImageChange?: (index: number, meta?: ImageSwipeChangeMeta) => void;
 }
 
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({
@@ -30,7 +30,15 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     currentImage,
     hasNext,
     hasPrevious,
+    swipeOffset,
+    isSwiping,
   } = useImageSwipe({ images, onImageChange });
+
+  const swipeStyle: React.CSSProperties = {
+    transform: `translate3d(${swipeOffset}px, 0, 0)`,
+    transition: isSwiping ? 'none' : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+    willChange: 'transform',
+  };
 
   if (!images || images.length === 0) {
     return (
@@ -62,7 +70,10 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
       <img
         src={currentImage}
         alt={`${alt} - Image ${currentIndex + 1} of ${images.length}`}
-        className="w-full h-full object-cover transition-opacity duration-300"
+        className={`w-full h-full object-cover transition-opacity duration-300 image-swipe-wrapper${
+          isSwiping ? ' image-swipe-wrapper--dragging' : ''
+        }`}
+        style={swipeStyle}
         loading="lazy"
       />
 
@@ -75,7 +86,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
             className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 p-0 hidden sm:flex"
             onClick={(e) => {
               e.stopPropagation();
-              goToPrevious();
+              goToPrevious('manual');
             }}
             disabled={!hasPrevious && images.length <= 1}
           >
@@ -88,7 +99,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
             className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 p-0 hidden sm:flex"
             onClick={(e) => {
               e.stopPropagation();
-              goToNext();
+              goToNext('manual');
             }}
             disabled={!hasNext && images.length <= 1}
           >
@@ -116,7 +127,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
               )}
               onClick={(e) => {
                 e.stopPropagation();
-                goToIndex(index);
+                goToIndex(index, 'manual');
               }}
             />
           ))}
