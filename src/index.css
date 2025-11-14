@@ -736,11 +736,33 @@ body.car-details-page .smartsupp-widget-container {
   /* Enhanced button styles */
   .btn-enhanced {
     @apply btn-press-effect hover-lift-gentle;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     box-shadow: var(--shadow-sm);
+    z-index: 0;
+  }
+
+  .btn-enhanced::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 55%);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: -1;
+    pointer-events: none;
   }
 
   .btn-enhanced:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-enhanced:hover::after {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* iOS-style focus ring */
