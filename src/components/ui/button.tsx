@@ -5,23 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "button-shine relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-transparent px-5 py-2.5 text-sm font-semibold tracking-wide transition-[background,transform,border,color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:size-[1.05rem] [&_svg]:shrink-0 active:scale-[0.985] hover:-translate-y-0.5 will-change-transform shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)]",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-semibold tracking-wide transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:size-[1.05rem] [&_svg]:shrink-0 active:scale-[0.985] hover:-translate-y-0.5 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] overflow-hidden isolate border border-transparent bg-clip-padding",
   {
     variants: {
       variant: {
         default:
-          "bg-foreground text-background border-foreground/15 dark:border-foreground/35",
+          "bg-gradient-to-r from-primary/95 via-primary to-primary/80 text-primary-foreground border-primary/70 hover:from-primary hover:via-primary/95 hover:to-primary/85",
         destructive:
-          "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] border-[hsl(var(--foreground))]/45 hover:bg-[hsl(var(--foreground))]/10",
+          "bg-gradient-to-r from-destructive/90 via-destructive to-destructive/75 text-destructive-foreground border-destructive/70 hover:from-destructive hover:via-destructive/90 hover:to-destructive/80",
         outline:
-          "bg-transparent text-foreground border-foreground/35 hover:bg-foreground/5",
+          "border border-border/70 bg-gradient-to-br from-white/95 via-white/70 to-white/40 text-foreground dark:from-slate-900/70 dark:via-slate-900/50 dark:to-slate-900/20 hover:border-primary/60 hover:text-primary",
         secondary:
-          "bg-muted text-foreground border-border hover:bg-muted/80 dark:bg-muted/40 dark:text-foreground",
+          "bg-gradient-to-r from-secondary/90 via-secondary to-secondary/75 text-secondary-foreground border-secondary/70 hover:via-secondary/90 hover:to-secondary/80",
         ghost:
-          "bg-transparent text-foreground border border-transparent shadow-none hover:border-foreground/20 hover:bg-foreground/5",
-        link: "button-link text-foreground underline-offset-4 hover:underline shadow-none border-none px-0 py-0 h-auto hover:-translate-y-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+          "bg-transparent text-foreground border border-transparent hover:border-border/70 hover:bg-foreground/5 dark:hover:bg-white/5 shadow-none hover:shadow-[var(--shadow-sm)]",
+        link: "text-accent underline-offset-4 hover:underline hover:translate-y-0 shadow-none border-none",
         premium:
-          "bg-gradient-to-r from-foreground via-foreground/85 to-foreground/60 text-background border-foreground/25",
+          "bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_transparent_55%)] bg-gradient-to-r from-accent via-rose-500 to-orange-400 text-white border-white/30 hover:brightness-110 hover:border-white/60",
       },
       size: {
         default: "h-11 px-5 py-2.5",

@@ -61,10 +61,10 @@ const AuditTestPage: React.FC = () => {
             {/* Button too small for touch - FIXED: Using min-height/min-width instead and improved contrast */}
             <div>
               <h3 className="text-lg font-medium mb-2">Touch-Friendly Button</h3>
-                <button 
-                  style={{ minHeight: '44px', minWidth: '44px', fontSize: '14px', padding: '8px 16px' }} 
-                  className="rounded-2xl bg-foreground text-background font-semibold tracking-wide transition-colors hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-foreground/40 focus:ring-offset-2 focus:ring-offset-background"
-                >
+              <button 
+                style={{ minHeight: '44px', minWidth: '44px', fontSize: '14px', padding: '8px 16px' }} 
+                className="bg-blue-700 text-white rounded hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
                 Touch-friendly
               </button>
             </div>
@@ -156,14 +156,14 @@ const AuditTestPage: React.FC = () => {
             {/* Focus states - FIXED: Added proper focus outlines and improved contrast */}
             <div>
               <h3 className="text-lg font-medium mb-2">Accessible Buttons</h3>
-                <div className="space-x-2">
-                  <button className="px-6 py-3 rounded-2xl bg-foreground text-background font-semibold tracking-wide transition-colors hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-foreground/40 focus:ring-offset-2 focus:ring-offset-background">
-                    Button with focus outline
-                  </button>
-                  <button className="px-6 py-3 rounded-2xl border border-foreground/40 text-foreground font-semibold tracking-wide transition-colors hover:bg-foreground/10 focus:outline-none focus:ring-2 focus:ring-foreground/40 focus:ring-offset-2 focus:ring-offset-background">
-                    Another accessible button
-                  </button>
-                </div>
+              <div className="space-x-2">
+                <button className="px-6 py-3 bg-blue-700 text-white rounded hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  Button with focus outline
+                </button>
+                <button className="px-6 py-3 bg-green-700 text-white rounded hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                  Another accessible button
+                </button>
+              </div>
             </div>
             
             {/* Interactive elements with ARIA - FIXED: Added proper ARIA labels */}

@@ -939,7 +939,7 @@ const AdminDashboard = () => {
                                       href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-foreground hover:text-foreground/70 transition-colors"
+                                      className="text-green-600 hover:text-green-700 transition-colors"
                                       title="Contact via WhatsApp"
                                     >
                                       <Phone className="h-3 w-3" />
@@ -1199,7 +1199,7 @@ const AdminDashboard = () => {
                                 href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-foreground hover:text-foreground/70 text-sm font-medium"
+                                className="text-green-600 hover:text-green-700 text-sm font-medium"
                               >
                                 {request.customer_phone}
                               </a>
@@ -1386,7 +1386,7 @@ const AdminDashboard = () => {
                                 href={`https://wa.me/${request.customer_phone.replace(/[^0-9]/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-foreground hover:text-foreground/70 text-xs font-medium"
+                                className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-xs font-medium"
                               >
                                 <Phone className="h-3 w-3" />
                                 {request.customer_phone}

@@ -3907,51 +3907,43 @@ const CarDetails = memo(() => {
                     )}
                   </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {formattedPrice && (
                         <div className="text-2xl font-semibold text-primary lg:hidden">
                           {formattedPrice}
                         </div>
                       )}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 text-sm sm:text-base text-muted-foreground">
+                      <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
                         {summaryMileage && (
-                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
-                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
+                          <div>
+                            <span className="block font-medium text-foreground">
                               Kilometrazhi
                             </span>
-                            <span className="text-foreground text-base font-semibold">
-                              {summaryMileage}
-                            </span>
+                            <span>{summaryMileage}</span>
                           </div>
                         )}
                         {summaryFuel && (
-                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
-                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
+                          <div>
+                            <span className="block font-medium text-foreground">
                               Karburanti
                             </span>
-                            <span className="text-foreground text-base font-semibold">
-                              {summaryFuel}
-                            </span>
+                            <span>{summaryFuel}</span>
                           </div>
                         )}
                         {summaryTransmission && (
-                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
-                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
+                          <div>
+                            <span className="block font-medium text-foreground">
                               Transmisioni
                             </span>
-                            <span className="text-foreground text-base font-semibold">
-                              {summaryTransmission}
-                            </span>
+                            <span>{summaryTransmission}</span>
                           </div>
                         )}
                         {summaryColor && (
-                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
-                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
+                          <div>
+                            <span className="block font-medium text-foreground">
                               Ngjyra
                             </span>
-                            <span className="text-foreground text-base font-semibold">
-                              {summaryColor}
-                            </span>
+                            <span>{summaryColor}</span>
                           </div>
                         )}
                       </div>
@@ -4062,11 +4054,11 @@ const CarDetails = memo(() => {
         </div>
 
         {/* Main Content - Modern Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8 xl:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
-            <div
-              className="space-y-8 sm:space-y-10 animate-fade-in-up stagger-1"
-            >
+          <div
+            className="space-y-6 animate-fade-in-up stagger-1"
+          >
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
@@ -4373,11 +4365,11 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-              {displayTitle && (
-                <div className="animate-fade-in-up stagger-1">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 md:gap-4">
+            {displayTitle && (
+              <div className="animate-fade-in-up stagger-1">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       {brandLogo ? (
                         <div
                           className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
@@ -4404,24 +4396,24 @@ const CarDetails = memo(() => {
                           {resolvedBrandName}
                         </span>
                       ) : null}
-                        <p
-                          className={cn(
-                            "font-semibold text-foreground leading-[1.1] sm:leading-[1.15] tracking-tight transition-[font-size] duration-300",
-                            getAdaptiveTitleClasses(displayTitle),
-                          )}
-                        >
+                      <p
+                        className={cn(
+                          "font-semibold text-foreground leading-tight tracking-tight transition-[font-size] duration-300",
+                          getAdaptiveTitleClasses(displayTitle),
+                        )}
+                      >
                         {displayTitle}
                       </p>
                     </div>
 
                     {resolvedSecondaryTitle && resolvedSecondaryTitle !== displayTitle && (
-                        <p className="mt-1.5 text-sm sm:text-base text-muted-foreground/90 leading-relaxed">
+                      <p className="text-sm sm:text-base text-muted-foreground/90 leading-snug">
                         {resolvedSecondaryTitle}
                       </p>
                     )}
 
                     {/* Subtitle with year and key details */}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm sm:text-base text-muted-foreground leading-tight sm:leading-snug">
+                    <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground leading-tight">
                       {car.year && <span className="font-medium">{car.year}</span>}
                       {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
                       {car.mileage && <span>{formatMileage(car.mileage)}</span>}
@@ -4459,13 +4451,13 @@ const CarDetails = memo(() => {
             )}
 
             {/* History Section */}
-              <Card
-                id="history"
-                ref={historySectionRef}
-                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
-              >
-                <CardContent className="p-4 sm:p-5 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+            <Card
+              id="history"
+              ref={historySectionRef}
+              className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
+            >
+              <CardContent className="p-3 md:p-5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2.5">
                     <span className="p-2 rounded-lg bg-primary/10">
                       <Shield className="h-5 w-5 text-primary" />
@@ -4516,21 +4508,23 @@ const CarDetails = memo(() => {
 
 
             {/* Enhanced Detailed Information Section */}
-              <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
-                <CardContent className="space-y-4 p-3 sm:p-4 lg:p-5">
-                  {showDetailedInfo && (
-                    <div className="space-y-4 sm:space-y-5 animate-in slide-in-from-top-2 duration-300">
+            <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
+              <CardContent className="p-3 sm:p-4 lg:p-5">
+                <div className="flex flex-col gap-2 sm:gap-2.5 mb-2 sm:mb-3"></div>
+
+                {showDetailedInfo && (
+                  <div className="space-y-3 sm:space-y-4 animate-in slide-in-from-top-2 duration-300">
                     {/* Insurance & Safety Report - Mobile Optimized */}
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
                       <div
                         ref={historySectionRef}
-                          className="space-y-2.5 sm:space-y-3.5 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
+                        className="space-y-2 sm:space-y-3 p-3 sm:p-3 bg-muted/50 rounded-lg mobile-info-section"
                       >
                         <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                           <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
                           Raporti i Sigurisë dhe Sigurimit
                         </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                           {car.insurance_v2?.accidentCnt !== undefined && (
                             <div className="flex items-center justify-between p-2.5 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
                               <span className="text-xs sm:text-sm font-medium">
@@ -4579,8 +4573,8 @@ const CarDetails = memo(() => {
                               </div>
                             )}
                           </div>
-                            {usageHighlights.length > 0 && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+                          {usageHighlights.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                               {usageHighlights.map((item) => {
                                 const valueClass =
                                   item.value === "Po"
@@ -4691,60 +4685,60 @@ const CarDetails = memo(() => {
                 </h3>
 
                 {/* Enhanced Contact Buttons */}
-                  <div className="mb-4 space-y-3">
-                    <Button
-                      onClick={handleContactWhatsApp}
-                      className="w-full h-11 text-sm font-semibold"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      WhatsApp
-                    </Button>
+                <div className="mb-4 space-y-3">
+                  <Button
+                    onClick={handleContactWhatsApp}
+                    className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    WhatsApp
+                  </Button>
 
-                    <Button
-                      variant="outline"
-                      className="w-full h-11 text-sm font-medium"
-                      onClick={handlePhoneCall}
-                    >
-                      <Phone className="h-4 w-4 mr-2" />
-                      +383 48 181 116
-                    </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={handlePhoneCall}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    +383 48 181 116
+                  </Button>
 
-                    {/* Instagram */}
-                    <Button
-                      variant="outline"
-                      className="w-full h-11 text-sm font-medium"
-                      onClick={() =>
-                        window.open("https://www.instagram.com/korauto.ks/", "_blank")
-                      }
-                    >
-                      <Instagram className="h-4 w-4 mr-2" />
-                      Instagram
-                    </Button>
+                  {/* Instagram */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
+                    onClick={() =>
+                      window.open("https://www.instagram.com/korauto.ks/", "_blank")
+                    }
+                  >
+                    <Instagram className="h-4 w-4 mr-2" />
+                    Instagram
+                  </Button>
 
-                    {/* Facebook */}
-                    <Button
-                      variant="outline"
-                      className="w-full h-11 text-sm font-medium"
-                      onClick={() =>
-                        window.open(
-                          "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
-                          "_blank",
-                        )
-                      }
-                    >
-                      <Facebook className="h-4 w-4 mr-2" />
-                      Facebook
-                    </Button>
+                  {/* Facebook */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
+                    onClick={() =>
+                      window.open(
+                        "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
+                        "_blank",
+                      )
+                    }
+                  >
+                    <Facebook className="h-4 w-4 mr-2" />
+                    Facebook
+                  </Button>
 
-                    <Button
-                      variant="outline"
-                      className="w-full h-11 text-sm font-medium"
-                      onClick={() => window.open("mailto:info@korauto.com", "_self")}
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      info@korauto.com
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => window.open("mailto:info@korauto.com", "_self")}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    info@korauto.com
+                  </Button>
+                </div>
 
                 {/* Enhanced Additional Buttons */}
                 <div className="border-t border-border pt-4 space-y-3">
@@ -4876,7 +4870,7 @@ const CarDetails = memo(() => {
               </Button>
               <Button
                 size="default"
-                  className="h-9 flex-shrink-0 rounded-xl px-3 text-[0.8125rem] font-semibold"
+                className="h-9 flex-shrink-0 rounded-xl bg-green-600 px-3 text-[0.8125rem] font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
                 onClick={handleContactWhatsApp}
               >
                 <MessageCircle className="mr-1.5 h-4 w-4" />
