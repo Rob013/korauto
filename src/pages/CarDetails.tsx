@@ -4204,14 +4204,14 @@ const CarDetails = memo(() => {
     );
   }
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
-          <div className="container-responsive py-3 sm:py-5 max-w-[1600px]">
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker car-details-page">
+            <div className="container-responsive py-2 sm:py-4 max-w-[1600px]">
             {/* Header with Actions - Modern Layout with animations */}
-            <div className="flex flex-col gap-1.5 sm:gap-2 mb-3">
+              <div className="flex flex-col gap-1 sm:gap-1.5 mb-2">
             {/* Navigation and Action Buttons with hover effects */}
-            <div
-              className="flex flex-wrap items-center gap-1.5 sm:gap-2"
+              <div
+                className="flex flex-wrap items-center gap-1 sm:gap-1.5"
               style={{
                 animation: "fadeIn 0.3s ease-out forwards",
                 animationDelay: "0.1s",
@@ -4269,12 +4269,12 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
-        {/* Main Content - Modern Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-3 lg:gap-5 xl:gap-6">
+          {/* Main Content - Modern Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-2.5 lg:gap-4 xl:gap-5">
               {/* Left Column - Images and Gallery */}
-                <div className="space-y-4 sm:space-y-5 animate-fade-in-up stagger-1">
-                  <div className="flex flex-col gap-3">
-                    <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-3.5">
+                    <div className="space-y-3 sm:space-y-4 animate-fade-in-up stagger-1">
+                    <div className="flex flex-col gap-2.5">
+                      <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-3">
                       <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
                         <CardContent className="p-0">
                           <div
@@ -4380,16 +4380,6 @@ const CarDetails = memo(() => {
                               </button>
                             )}
                           </div>
-                          {typeof car?.price === "number" && (
-                            <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
-                              <span className="text-xl font-bold text-foreground">
-                                €{car.price.toLocaleString()}
-                              </span>
-                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                Deri në Prishtinë pa doganë
-                              </span>
-                            </div>
-                          )}
                         </CardContent>
                       </Card>
 
@@ -4443,9 +4433,9 @@ const CarDetails = memo(() => {
   
                 {displayTitle && (
                   <div className="animate-fade-in-up stagger-1">
-                    <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-1 sm:space-y-2">
-                      <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 flex-nowrap w-full min-w-0">
+                    <div className="flex flex-col gap-1.5 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-1 sm:space-y-1.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 flex-nowrap w-full min-w-0">
                       {brandLogo ? (
                         <div
                             className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
@@ -4488,8 +4478,8 @@ const CarDetails = memo(() => {
                       </p>
                     )}
 
-                    {/* Subtitle with year and key details */}
-                        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:text-[0.95rem] text-muted-foreground leading-tight sm:leading-snug">
+                      {/* Subtitle with year and key details */}
+                          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-[0.95rem] text-muted-foreground leading-tight sm:leading-snug">
                       {car.year && <span className="font-medium">{car.year}</span>}
                       {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
                       {car.mileage && <span>{formatMileage(car.mileage)}</span>}
@@ -4512,9 +4502,9 @@ const CarDetails = memo(() => {
                     </div>
                   </div>
 
-                  {typeof car.price === "number" && (
-                      <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
-                      <span className="text-3xl font-bold text-primary leading-tight">
+                    {typeof car.price === "number" && (
+                        <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-0.5 self-start text-right">
+                        <span className="text-2xl font-bold text-primary leading-tight">
                         €{car.price.toLocaleString()}
                       </span>
                       <span className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -4527,13 +4517,13 @@ const CarDetails = memo(() => {
             )}
 
             {/* History Section */}
-                <Card
-                  id="history"
-                  ref={historySectionRef}
-                  className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
-                >
-                  <CardContent className="p-4 sm:p-4 space-y-3.5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Card
+                    id="history"
+                    ref={historySectionRef}
+                    className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3 car-details-section"
+                  >
+                    <CardContent className="p-3 sm:p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2.5">
                     <span className="p-2 rounded-lg bg-primary/10">
                       <Shield className="h-5 w-5 text-primary" />
@@ -4564,8 +4554,8 @@ const CarDetails = memo(() => {
                     <ChevronRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                {hasHistoryData ? (
-                  <div className="space-y-2.5 text-sm text-muted-foreground">
+                  {hasHistoryData ? (
+                    <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="space-y-1">
                       <div>Shkëmbime: {replacementText}</div>
                       <div>Punime llamarine: {sheetMetalText}</div>
@@ -4584,8 +4574,8 @@ const CarDetails = memo(() => {
 
 
               {/* Enhanced Detailed Information Section */}
-                <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
-                    <CardContent className="space-y-3.5 p-3 sm:p-3.5 lg:p-4">
+                  <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card car-details-section">
+                      <CardContent className="space-y-3 p-3 sm:p-3.5 lg:p-4">
                       {renderDetailedInfoSection()}
 
                     {/* Equipment & Options */}
@@ -4600,8 +4590,8 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Fallback if no options found */}
-                    {(!car.details?.options || !hasAnySanitizedOptions) && (
-                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                      {(!car.details?.options || !hasAnySanitizedOptions) && (
+                        <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <Settings className="h-5 w-5" />
                           Pajisjet dhe Opsionet
@@ -4645,11 +4635,11 @@ const CarDetails = memo(() => {
           </div>
 
           {/* Right Column - Enhanced Contact Card */}
-            <div className="space-y-3.5">
+              <div className="space-y-3">
             {/* Enhanced Contact & Inspection Card */}
-              <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
-                <CardContent className="flex flex-col gap-3.5 p-4">
-                <div className="space-y-1 text-left sm:text-center">
+                <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm car-details-section">
+                  <CardContent className="flex flex-col gap-3 p-3.5">
+                  <div className="space-y-1 text-left">
                   {resolvedMainTitle && (
                     <h2 className="text-base font-semibold leading-tight text-foreground">
                       {resolvedMainTitle}
@@ -4658,15 +4648,15 @@ const CarDetails = memo(() => {
                 </div>
                 <Separator />
 
-                <h3 className="text-lg font-bold text-center text-foreground">
+                  <h3 className="text-lg font-bold text-left text-foreground">
                   Kontakt & Inspektim
                 </h3>
 
                   {/* Enhanced Contact Buttons */}
-                    <div className="mb-3 space-y-2.5">
+                      <div className="mb-2.5 space-y-2">
                     <Button
                       onClick={handleContactWhatsApp}
-                      className="w-full h-11 text-sm font-semibold"
+                        className="w-full h-10 text-sm font-semibold"
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       WhatsApp
@@ -4674,7 +4664,7 @@ const CarDetails = memo(() => {
 
                     <Button
                       variant="outline"
-                      className="w-full h-11 text-sm font-medium"
+                        className="w-full h-10 text-sm font-medium"
                       onClick={handlePhoneCall}
                     >
                       <Phone className="h-4 w-4 mr-2" />
@@ -4684,7 +4674,7 @@ const CarDetails = memo(() => {
                     {/* Instagram */}
                     <Button
                       variant="outline"
-                      className="w-full h-11 text-sm font-medium"
+                        className="w-full h-10 text-sm font-medium"
                       onClick={() =>
                         window.open("https://www.instagram.com/korauto.ks/", "_blank")
                       }
@@ -4696,7 +4686,7 @@ const CarDetails = memo(() => {
                     {/* Facebook */}
                     <Button
                       variant="outline"
-                      className="w-full h-11 text-sm font-medium"
+                        className="w-full h-10 text-sm font-medium"
                       onClick={() =>
                         window.open(
                           "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
@@ -4710,7 +4700,7 @@ const CarDetails = memo(() => {
 
                     <Button
                       variant="outline"
-                      className="w-full h-11 text-sm font-medium"
+                        className="w-full h-10 text-sm font-medium"
                       onClick={() => window.open("mailto:info@korauto.com", "_self")}
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -4719,7 +4709,7 @@ const CarDetails = memo(() => {
                   </div>
 
                   {/* Enhanced Additional Buttons */}
-                  <div className="border-t border-border pt-3 space-y-2.5">
+                    <div className="border-t border-border pt-2.5 space-y-2">
                   <Button
                     variant="outline"
                     className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
@@ -4731,7 +4721,7 @@ const CarDetails = memo(() => {
                 </div>
 
                   {/* Enhanced Location */}
-                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="mt-2.5 pt-2.5 border-t border-border">
                   <div className="flex items-start gap-3 text-muted-foreground">
                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <a
@@ -4748,7 +4738,7 @@ const CarDetails = memo(() => {
             </Card>
 
             {/* Desktop map - small widget under Kontakt & Inspektim */}
-            <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl">
+              <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl car-details-section">
               <CardContent className="p-0">
                 <div
                   ref={registerMapTarget}
@@ -4776,9 +4766,9 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
-        {/* Google Maps - Store Location (mobile only) */}
-        <div className="container-responsive mt-6 lg:hidden">
-          <Card className="glass-panel border-0 shadow-2xl rounded-xl">
+          {/* Google Maps - Store Location (mobile only) */}
+          <div className="container-responsive mt-4 lg:hidden">
+            <Card className="glass-panel border-0 shadow-2xl rounded-xl car-details-section">
             <CardContent className="p-0">
               <div
                 ref={registerMapTarget}

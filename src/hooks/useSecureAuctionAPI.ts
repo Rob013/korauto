@@ -33,6 +33,53 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
+const FILTER_CACHE_TTL = 1000 * 60 * 30; // 30 minutes
+const getFilterCacheKey = (type: string, identifier?: string | number) =>
+  `catalog_filter_${type}_${identifier ?? "all"}`;
+
+const readFilterCache = <T>(key: string): T | null => {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return null;
+  }
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      typeof parsed.timestamp !== "number" ||
+      Date.now() - parsed.timestamp > FILTER_CACHE_TTL
+    ) {
+      window.sessionStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data as T;
+  } catch (error) {
+    console.warn("Failed to read filter cache", error);
+    return null;
+  }
+};
+
+const writeFilterCache = (key: string, data: unknown) => {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(
+      key,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      }),
+    );
+  } catch (error) {
+    console.warn("Failed to persist filter cache", error);
+  }
+};
+
 const isEmptyFilterValue = (value?: string | null) =>
   value === undefined ||
   value === null ||
@@ -1005,6 +1052,13 @@ export const useSecureAuctionAPI = () => {
   };
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
+    const cacheKey = getFilterCacheKey("manufacturers");
+    const cachedManufacturers = readFilterCache<Manufacturer[]>(cacheKey);
+    if (cachedManufacturers && cachedManufacturers.length > 0) {
+      console.log(`⚡️ Using cached manufacturers (${cachedManufacturers.length})`);
+      return cachedManufacturers;
+    }
+
     try {
       console.log(`🔍 Fetching all manufacturers`);
       
@@ -1036,18 +1090,27 @@ export const useSecureAuctionAPI = () => {
       
       console.log(`🏷️ Retrieved manufacturers:`, 
         manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
-      
+      writeFilterCache(cacheKey, manufacturers);
       return manufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
       console.log(`🔄 Using fallback manufacturer data`);
       
       // Return fallback data when API fails
-      return createFallbackManufacturers();
+      const fallbackManufacturers = createFallbackManufacturers();
+      writeFilterCache(cacheKey, fallbackManufacturers);
+      return fallbackManufacturers;
     }
   };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
+    const cacheKey = getFilterCacheKey("models", manufacturerId);
+    const cachedModels = readFilterCache<Model[]>(cacheKey);
+    if (cachedModels && cachedModels.length > 0) {
+      console.log(`⚡️ Using cached models for manufacturer ${manufacturerId}`);
+      return cachedModels;
+    }
+
     try {
       // Use cached API call for models
       const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
@@ -1066,6 +1129,7 @@ export const useSecureAuctionAPI = () => {
       );
 
       fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
+      writeFilterCache(cacheKey, fallbackModels);
       return fallbackModels;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
@@ -1076,7 +1140,9 @@ export const useSecureAuctionAPI = () => {
         const manufacturers = await fetchManufacturers();
         const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
         if (manufacturer) {
-          return createFallbackModels(manufacturer.name);
+          const fallbackModels = createFallbackModels(manufacturer.name);
+          writeFilterCache(cacheKey, fallbackModels);
+          return fallbackModels;
         }
       } catch (fallbackErr) {
         console.error("Error creating fallback models:", fallbackErr);
@@ -1087,6 +1153,18 @@ export const useSecureAuctionAPI = () => {
   };
 
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
+    const cacheKey = getFilterCacheKey("generations", modelId);
+    const cachedGenerations = readFilterCache<Generation[]>(cacheKey);
+    if (cachedGenerations && cachedGenerations.length > 0) {
+      console.log(`⚡️ Using cached generations for model ${modelId}`);
+      return cachedGenerations;
+    }
+
+    const persistAndReturn = (list: Generation[]) => {
+      writeFilterCache(cacheKey, list);
+      return list;
+    };
+
     try {
       console.log(`🔍 Fetching generations for model ID: ${modelId}`);
       
@@ -1105,7 +1183,8 @@ export const useSecureAuctionAPI = () => {
       // If we have API generations with proper year data, use them
       if (generationsFromAPI.length > 0 && generationsFromAPI.some(g => g.from_year || g.to_year)) {
         console.log('✅ Using generations with real API year data');
-        return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
+        const sorted = generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
+        return persistAndReturn(sorted);
       }
 
       // OPTIMIZED: Use model-specific fallback approach instead of calling all manufacturer APIs
@@ -1159,7 +1238,7 @@ export const useSecureAuctionAPI = () => {
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
       filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
       console.log(`📊 Returning ${filteredGenerations.length} filtered generations for model ${modelId}`);
-      return filteredGenerations;
+      return persistAndReturn(filteredGenerations);
       
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
@@ -1167,7 +1246,7 @@ export const useSecureAuctionAPI = () => {
       
       // Return a minimal set of fallback generations to avoid empty state
       const modelIdNum = parseInt(modelId);
-      return [
+      const fallbackGenerations = [
         { 
           id: modelIdNum * 1000 + 1, 
           name: '1st Generation', 
@@ -1187,6 +1266,7 @@ export const useSecureAuctionAPI = () => {
           model_id: modelIdNum 
         }
       ];
+      return persistAndReturn(fallbackGenerations);
     }
   };
 
