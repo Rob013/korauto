@@ -4277,9 +4277,9 @@ const CarDetails = memo(() => {
                       <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-3">
                       <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
                         <CardContent className="p-0">
-                            <div
-                              ref={imageContainerRef}
-                              className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
+                          <div
+                            ref={imageContainerRef}
+                            className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
                             onClick={handleImageZoomOpen}
                             role={allowImageZoom ? "button" : undefined}
                             tabIndex={allowImageZoom ? 0 : -1}
@@ -4507,8 +4507,8 @@ const CarDetails = memo(() => {
                         <span className="text-2xl font-bold text-primary leading-tight">
                         €{car.price.toLocaleString()}
                       </span>
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                          deri ne prishtine
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Deri në Prishtinë pa doganë
                       </span>
                     </div>
                   )}
@@ -4817,14 +4817,14 @@ const CarDetails = memo(() => {
               <div className="flex-1 min-w-0">
                 <button 
                   onClick={() => setIsServicesDialogOpen(true)}
-                    className="text-left hover:opacity-80 transition-opacity"
-                  >
-                      <div className="text-2xl font-bold text-foreground leading-tight">
-                        €{(car.price + 350).toLocaleString()}
-                      </div>
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        deri ne prishtine
-                      </p>
+                  className="text-left hover:opacity-80 transition-opacity"
+                >
+              <div className="text-2xl font-bold text-foreground leading-tight">
+                €{(car.price + 350).toLocaleString()}
+              </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Deri ne Prishtine pa dogan
+                  </div>
                 </button>
               </div>
               <Button
@@ -4980,8 +4980,8 @@ const CarDetails = memo(() => {
                 <span className="font-semibold">Çmimi Total:</span>
                 <span className="text-2xl font-bold text-primary">€{(car.price + 350).toLocaleString()}</span>
               </div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mt-2">
-                  deri ne prishtine
+              <p className="text-xs text-muted-foreground mt-2">
+                *Deri në Prishtinë pa doganë
               </p>
             </div>
           </div>
