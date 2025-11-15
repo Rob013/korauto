@@ -445,14 +445,16 @@ const EncarCatalog = ({
     onSwipeRight: handleSwipeRightToShowFilters,
     minSwipeDistance: 80,
     // Require a more deliberate swipe
-    maxVerticalDistance: 120
+    maxVerticalDistance: 120,
+    enabled: false,
   });
 
   // Set up swipe gestures for filter panel (swipe left to close filters)
   useSwipeGesture(filterPanelRef, {
     onSwipeLeft: handleSwipeLeftToCloseFilters,
     minSwipeDistance: 80,
-    maxVerticalDistance: 120
+    maxVerticalDistance: 120,
+    enabled: false,
   });
 
   // Internal function to actually apply filters - now using utilities
