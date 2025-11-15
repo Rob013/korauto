@@ -92,7 +92,6 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe, type ImageSwipeChangeMeta } from "@/hooks/useImageSwipe";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { fallbackCars } from "@/data/fallbackData";
 import { getBrandLogo, getBrandLogoVariants } from "@/data/brandLogos";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
@@ -3164,27 +3163,11 @@ const CarDetails = memo(() => {
             }
             return;
           }
-      } catch (apiError) {
-        console.error("Failed to fetch car data:", apiError);
-        if (!isMounted) return;
+        } catch (apiError) {
+          console.error("Failed to fetch car data:", apiError);
+          if (!isMounted) return;
 
-        const fallbackCar = fallbackCars.find(
-          (fallback) => fallback.id === lot || fallback.lot_number === lot,
-        );
-        if (fallbackCar && fallbackCar.lots?.[0]) {
-          const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
-          if (details) {
-            setCar(details);
-            cacheHydratedRef.current = true;
-            if (!background) {
-              setLoading(false);
-            }
-            persistCarToSession(String(lot), details);
-            return;
-          }
-        }
-
-        const errorMessage =
+          const errorMessage =
           apiError instanceof Error
             ? apiError.message.includes("Failed to fetch")
               ? "Unable to connect to the server. Please check your internet connection and try again."
@@ -3256,7 +3239,6 @@ const CarDetails = memo(() => {
       API_BASE_URL,
       API_KEY,
       buildCarDetails,
-      fallbackCars,
       hydrateFromCache,
       lot,
       navigate,
