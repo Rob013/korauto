@@ -3889,8 +3889,7 @@ const accidentSummaryEntries = useMemo(
           <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
             <Button
               onClick={handleContactWhatsApp}
-              variant="outline"
-              className="h-10 flex-1 rounded-lg border border-green-500/50 bg-green-500/10 text-sm text-green-700 hover:border-green-500 hover:bg-green-500 hover:text-white transition-all"
+              className="h-10 flex-1 rounded-lg text-sm font-medium"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               WhatsApp
