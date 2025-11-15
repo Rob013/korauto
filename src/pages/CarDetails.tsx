@@ -1575,6 +1575,7 @@ const CarDetails = memo(() => {
   const cacheHydratedRef = useRef(false);
   const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
+  const [isDeferredSectionsReady, setIsDeferredSectionsReady] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
   const [isPortalReady, setIsPortalReady] = useState(false);
@@ -1593,6 +1594,40 @@ const CarDetails = memo(() => {
   // Dialog states
   const [isSpecsDialogOpen, setIsSpecsDialogOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      setIsDeferredSectionsReady(true);
+      return;
+    }
+
+    const win = window as typeof window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    let idleHandle: number | null = null;
+    let timeoutHandle: number | null = null;
+
+    const reveal = () => setIsDeferredSectionsReady(true);
+
+    if (typeof win.requestIdleCallback === "function") {
+      idleHandle = win.requestIdleCallback(() => {
+        reveal();
+      });
+    } else {
+      timeoutHandle = window.setTimeout(reveal, 200);
+    }
+
+    return () => {
+      if (idleHandle !== null && typeof win.cancelIdleCallback === "function") {
+        win.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle !== null) {
+        window.clearTimeout(timeoutHandle);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -4386,7 +4421,8 @@ const CarDetails = memo(() => {
                 <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
                   <CardContent className="space-y-3.5 p-3 sm:p-3.5 lg:p-4">
                     {showDetailedInfo && (
-                      <div className="space-y-3.5 sm:space-y-4.5 animate-in slide-in-from-top-2 duration-300">
+                      isDeferredSectionsReady ? (
+                        <div className="space-y-3.5 sm:space-y-4.5 animate-in slide-in-from-top-2 duration-300">
                     {/* Insurance & Safety Report - Mobile Optimized */}
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
                       <div
@@ -4479,6 +4515,20 @@ const CarDetails = memo(() => {
                             </div>
                           )}
                       </div>
+                    ) : (
+                      <div className="space-y-3.5 sm:space-y-4.5">
+                        <div className="h-5 w-36 rounded bg-muted/40 animate-pulse" />
+                        <div className="h-4 w-24 rounded bg-muted/30 animate-pulse" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <div
+                              key={index}
+                              className="h-16 rounded-lg bg-muted/40 animate-pulse"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )
                     )}
 
                     {/* Equipment & Options */}

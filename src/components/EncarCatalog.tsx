@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition, useDeferredValue } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -296,6 +296,19 @@ const EncarCatalog = ({
       }),
     [smoothCarsToDisplay],
   );
+
+  const deferredRenderableCars = useDeferredValue(renderableCars);
+  const initialRenderCount = useMemo(() => {
+    const limit = viewMode === "grid" ? (isMobile ? 8 : 16) : 12;
+    return Math.min(renderableCars.length, limit);
+  }, [renderableCars, viewMode, isMobile]);
+  const previewRenderableCars = useMemo(
+    () => renderableCars.slice(0, initialRenderCount || renderableCars.length),
+    [renderableCars, initialRenderCount],
+  );
+  const isDeferredRendering = deferredRenderableCars !== renderableCars;
+  const carsForImmediateRender = isDeferredRendering ? previewRenderableCars : renderableCars;
+  const carsShownCount = isDeferredRendering ? previewRenderableCars.length : renderableCars.length;
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{
@@ -1436,24 +1449,30 @@ const EncarCatalog = ({
                     (isFilterLoading || loading || isCarsTransitioning) && "opacity-80",
                   )}
                 >
-                  {renderableCars.map((car: CarWithRank | any) => {
+                  {carsForImmediateRender.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
               // Only use buy_now price, no fallbacks
               const usdPrice = lot?.buy_now;
               const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               const lotNumber = car.lot_number || lot?.lot || "";
-                return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
+                return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`} className="[content-visibility:auto] [contain-intrinsic-size:320px_360px]">
                         <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
                   vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} viewMode={viewMode} />
                       </div>;
             })}
               </div>
 
+              {isDeferredRendering && (
+                <div className="flex justify-center py-4">
+                  <LoadingLogo size="sm" className="text-muted-foreground" />
+                </div>
+              )}
+
               {/* Pagination Controls - replace Load More button */}
               {!showAllCars && totalPages > 1 && <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                     <div className="text-center text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages.toLocaleString()} • {renderableCars.length} cars shown
+                      Page {currentPage} of {totalPages.toLocaleString()} • {carsShownCount} cars shown
                   </div>
                   
                   {/* Pagination Navigation */}
