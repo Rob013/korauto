@@ -343,28 +343,6 @@ const getAdaptiveTitleClasses = (title?: string | null) => {
   return "text-2xl sm:text-3xl";
 };
 
-const getAdaptiveMetaRowClasses = (text?: string | null) => {
-  if (!text) {
-    return "text-xs sm:text-sm";
-  }
-
-  const normalizedLength = text.replace(/\s+/g, " ").trim().length;
-
-  if (normalizedLength >= 80) {
-    return "text-[0.65rem] sm:text-xs tracking-tight";
-  }
-
-  if (normalizedLength >= 60) {
-    return "text-[0.7rem] sm:text-[0.8rem]";
-  }
-
-  if (normalizedLength >= 45) {
-    return "text-[0.78rem] sm:text-[0.9rem]";
-  }
-
-  return "text-[0.85rem] sm:text-[0.95rem]";
-};
-
 type EquipmentIconMapping = {
   icon: LucideIcon;
   keywords: string[];
@@ -2432,37 +2410,6 @@ const CarDetails = memo(() => {
     );
   }, [car]);
 
-  const summaryDetailPreview = useMemo(() => {
-    const parts: string[] = [];
-
-    if (car?.year) {
-      parts.push(String(car.year));
-    }
-
-    if (car?.mileage) {
-      parts.push(formatMileage(car.mileage));
-    }
-
-    if (resolvedFuel) {
-      parts.push(localizeFuel(resolvedFuel) ?? resolvedFuel);
-    }
-
-    if (car?.transmission) {
-      parts.push(car.transmission);
-    }
-
-    if (showSpecsDialogTrigger) {
-      parts.push("Detajet");
-    }
-
-    return parts.join(" • ");
-  }, [car?.year, car?.mileage, car?.transmission, resolvedFuel, showSpecsDialogTrigger]);
-
-  const summaryDetailClasses = useMemo(
-    () => getAdaptiveMetaRowClasses(summaryDetailPreview),
-    [summaryDetailPreview],
-  );
-
   const summaryYear = car?.year ?? prefetchedSummary?.year ?? null;
   const summaryMileage = car?.mileage
     ? formatMileage(car.mileage)
@@ -4327,12 +4274,12 @@ const CarDetails = memo(() => {
               {/* Left Column - Images and Gallery */}
                     <div className="space-y-3 sm:space-y-4 animate-fade-in-up stagger-1">
                     <div className="flex flex-col gap-2.5">
-                      <div className="flex flex-col items-center lg:flex-row lg:items-stretch lg:gap-3">
+                      <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-3">
                       <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
                         <CardContent className="p-0">
-                            <div
-                              ref={imageContainerRef}
-                              className="relative w-full max-w-[640px] lg:max-w-full mx-auto lg:mx-0 aspect-[3/2] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
+                          <div
+                            ref={imageContainerRef}
+                            className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
                             onClick={handleImageZoomOpen}
                             role={allowImageZoom ? "button" : undefined}
                             tabIndex={allowImageZoom ? 0 : -1}
@@ -4531,33 +4478,28 @@ const CarDetails = memo(() => {
                       </p>
                     )}
 
-                        {/* Subtitle with year and key details */}
-                            <div
-                              className={cn(
-                                "mt-1 flex flex-nowrap items-center gap-1 text-muted-foreground leading-tight sm:leading-snug whitespace-nowrap overflow-hidden min-w-0",
-                              summaryDetailClasses,
-                              )}
-                        >
-                        {car.year && <span className="font-medium flex-shrink-0">{car.year}</span>}
-                        {car.year && (car.mileage || resolvedFuel || car.transmission) && <span className="flex-shrink-0">•</span>}
-                        {car.mileage && <span className="flex-shrink-0">{formatMileage(car.mileage)}</span>}
-                        {car.mileage && (resolvedFuel || car.transmission) && <span className="flex-shrink-0">•</span>}
-                        {resolvedFuel && <span className="flex-shrink-0">{localizeFuel(resolvedFuel)}</span>}
-                        {resolvedFuel && car.transmission && <span className="flex-shrink-0">•</span>}
-                        {car.transmission && <span className="flex-shrink-0">{car.transmission}</span>}
-                        {showSpecsDialogTrigger && (
-                          <>
-                            {(car.year || car.mileage || resolvedFuel || car.transmission) && <span className="flex-shrink-0">•</span>}
-                            <button
-                              type="button"
-                              onClick={() => setIsSpecsDialogOpen(true)}
-                              className="text-primary hover:underline font-medium cursor-pointer flex-shrink-0 text-[inherit] leading-[inherit]"
-                            >
-                              Detajet
-                            </button>
-                          </>
-                        )}
-                      </div>
+                      {/* Subtitle with year and key details */}
+                          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-[0.95rem] text-muted-foreground leading-tight sm:leading-snug">
+                      {car.year && <span className="font-medium">{car.year}</span>}
+                      {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
+                      {car.mileage && <span>{formatMileage(car.mileage)}</span>}
+                      {car.mileage && (resolvedFuel || car.transmission) && <span>•</span>}
+                      {resolvedFuel && <span>{localizeFuel(resolvedFuel)}</span>}
+                      {resolvedFuel && car.transmission && <span>•</span>}
+                      {car.transmission && <span>{car.transmission}</span>}
+                      {showSpecsDialogTrigger && (
+                        <>
+                          {(car.year || car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
+                          <button
+                            type="button"
+                            onClick={() => setIsSpecsDialogOpen(true)}
+                            className="text-primary hover:underline font-medium cursor-pointer"
+                          >
+                            Detajet
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                     {typeof car.price === "number" && (
