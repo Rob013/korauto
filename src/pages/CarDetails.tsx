@@ -318,8 +318,16 @@ const getAdaptiveTitleClasses = (title?: string | null) => {
 
   const normalizedLength = title.trim().length;
 
+  if (normalizedLength >= 100) {
+    return "text-base sm:text-lg";
+  }
+
+  if (normalizedLength >= 88) {
+    return "text-[1.05rem] sm:text-[1.35rem]";
+  }
+
   if (normalizedLength >= 72) {
-    return "text-lg sm:text-xl";
+    return "text-[1.15rem] sm:text-[1.55rem]";
   }
 
   if (normalizedLength >= 58) {
@@ -1569,7 +1577,6 @@ const CarDetails = memo(() => {
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
-  const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
   const [isPortalReady, setIsPortalReady] = useState(false);
   const [allowImageZoom, setAllowImageZoom] = useState(false);
   const [imageSwipeDirection, setImageSwipeDirection] = useState<
@@ -2459,11 +2466,6 @@ const CarDetails = memo(() => {
     }
     navigate(`/car/${encodeURIComponent(String(targetLot))}/report`);
   }, [carLot, lot, navigate]);
-
-  // Reset placeholder state when image selection changes
-  useEffect(() => {
-    setIsPlaceholderImage(false);
-  }, [selectedImageIndex]);
 
   // Auto-expand detailed info if car has rich data (only once)
   useEffect(() => {
@@ -4001,10 +4003,10 @@ const CarDetails = memo(() => {
     );
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
-        <div className="container-responsive py-4 sm:py-6 max-w-[1600px]">
-          {/* Header with Actions - Modern Layout with animations */}
-          <div className="flex flex-col gap-2.5 mb-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
+          <div className="container-responsive py-3 sm:py-5 max-w-[1600px]">
+            {/* Header with Actions - Modern Layout with animations */}
+            <div className="flex flex-col gap-1.5 sm:gap-2 mb-3">
             {/* Navigation and Action Buttons with hover effects */}
             <div
               className="flex flex-wrap items-center gap-1.5 sm:gap-2"
@@ -4066,319 +4068,181 @@ const CarDetails = memo(() => {
         </div>
 
         {/* Main Content - Modern Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-4 lg:gap-6 xl:gap-8">
-            {/* Left Column - Images and Gallery */}
-              <div className="space-y-5 sm:space-y-7 animate-fade-in-up stagger-1">
-            {/* Main Image with modern styling - Compact mobile design */}
-            <div className="hidden lg:flex lg:gap-3.5">
-              {/* Main Image Card */}
-              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
-                <CardContent className="p-0">
-                  <div
-                    ref={imageContainerRef}
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
-                    onClick={handleImageZoomOpen}
-                    role={allowImageZoom ? "button" : undefined}
-                    tabIndex={allowImageZoom ? 0 : -1}
-                    onKeyDown={(event) => {
-                      if (!allowImageZoom) {
-                        return;
-                      }
-                      if (event.key === "Enter" || event.key === " ") {
-                        handleImageZoomOpen(event);
-                      }
-                    }}
-                    aria-label="Hap imazhin e makinës në modal me zoom"
-                    data-swipe-direction={imageSwipeDirection ?? undefined}
-                  >
-                    {/* Main Image with optimized loading */}
-                    {images.length > 0 ? (
-                      <OptimizedCarImage
-                        src={images[selectedImageIndex]}
-                        alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105`}
-                        style={imageSwipeStyle}
-                        aspectRatio="aspect-[4/3]"
-                        priority={selectedImageIndex === 0}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Car className="h-16 w-16 text-muted-foreground" />
-                      </div>
-                    )}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-3 lg:gap-5 xl:gap-6">
+              {/* Left Column - Images and Gallery */}
+                <div className="space-y-4 sm:space-y-5 animate-fade-in-up stagger-1">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-3.5">
+                      <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
+                        <CardContent className="p-0">
+                          <div
+                            ref={imageContainerRef}
+                            className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
+                            onClick={handleImageZoomOpen}
+                            role={allowImageZoom ? "button" : undefined}
+                            tabIndex={allowImageZoom ? 0 : -1}
+                            onKeyDown={(event) => {
+                              if (!allowImageZoom) {
+                                return;
+                              }
+                              if (event.key === "Enter" || event.key === " ") {
+                                handleImageZoomOpen(event);
+                              }
+                            }}
+                            aria-label="Hap imazhin e makinës në modal me zoom"
+                            data-swipe-direction={imageSwipeDirection ?? undefined}
+                          >
+                            {images.length > 0 ? (
+                              <OptimizedCarImage
+                                src={images[selectedImageIndex]}
+                                alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                                className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105`}
+                                style={imageSwipeStyle}
+                                aspectRatio="aspect-[4/3]"
+                                priority={selectedImageIndex === 0}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Car className="h-16 w-16 text-muted-foreground" />
+                              </div>
+                            )}
 
-                    {/* Navigation arrows - Improved positioning and visibility */}
-                    {images.length > 1 && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            impact("light");
-                            goToPrevious("manual");
-                          }}
-                          aria-label="Previous image"
+                            {images.length > 1 && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    impact("light");
+                                    goToPrevious("manual");
+                                  }}
+                                  aria-label="Previous image"
+                                >
+                                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                                </Button>
+
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    impact("light");
+                                    goToNext("manual");
+                                  }}
+                                  aria-label="Next image"
+                                >
+                                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                                </Button>
+                              </>
+                            )}
+
+                            {images.length > 1 && (
+                              <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                                <button
+                                  onClick={handleGalleryButtonClick}
+                                  className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                                  aria-label={`View all ${images.length} images`}
+                                >
+                                  <Camera className="h-3 w-3" />
+                                  {selectedImageIndex + 1}/{images.length}
+                                </button>
+
+                                <button
+                                  onClick={handleGalleryButtonClick}
+                                  className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                                  aria-label={`View all ${images.length} images`}
+                                >
+                                  <Camera className="h-4 w-4" />
+                                  View Gallery ({images.length})
+                                </button>
+                              </div>
+                            )}
+
+                            {car.lot && (
+                              <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                                {car.lot}
+                              </Badge>
+                            )}
+
+                            {allowImageZoom && (
+                              <button
+                                type="button"
+                                onClick={handleImageZoomOpen}
+                                className="absolute top-3 right-3 flex rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                aria-label="Zmadho imazhin"
+                              >
+                                <Expand className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                          {typeof car?.price === "number" && (
+                            <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
+                              <span className="text-xl font-bold text-foreground">
+                                €{car.price.toLocaleString()}
+                              </span>
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                Deri në Prishtinë pa doganë
+                              </span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {images.length > 1 && (
+                        <div
+                          className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
+                          style={{ animationDelay: "200ms" }}
                         >
-                          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            impact("light");
-                            goToNext("manual");
-                          }}
-                          aria-label="Next image"
-                        >
-                          <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </Button>
-                      </>
-                    )}
-
-                    {/* Image counter and gallery button - Improved mobile design */}
-                    {images.length > 1 && (
-                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                        {/* Mobile gallery button */}
-                        <button
-                          onClick={handleGalleryButtonClick}
-                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                          aria-label={`View all ${images.length} images`}
-                        >
-                          <Camera className="h-3 w-3" />
-                          {selectedImageIndex + 1}/{images.length}
-                        </button>
-
-                        {/* Desktop gallery button */}
-                        <button
-                          onClick={handleGalleryButtonClick}
-                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                          aria-label={`View all ${images.length} images`}
-                        >
-                          <Camera className="h-4 w-4" />
-                          View Gallery ({images.length})
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Lot number badge - Improved positioning */}
-                    {car.lot && (
-                      <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                        {car.lot}
-                      </Badge>
-                    )}
-
-                    {/* Zoom icon - Improved positioning and visibility */}
-                    {allowImageZoom && (
-                      <button
-                        type="button"
-                        onClick={handleImageZoomOpen}
-                        className="absolute top-3 right-3 hidden rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
-                        aria-label="Zmadho imazhin"
-                      >
-                        <Expand className="h-4 w-4" />
-                      </button>
-                    )}
-                </div>
-                {typeof car?.price === "number" && (
-                  <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
-                    <span className="text-xl font-bold text-foreground">
-                      €{car.price.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Deri në Prishtinë pa doganë
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-              {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
-                {images.length > 1 && (
-                  <div
-                    className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
-                    style={{ animationDelay: "200ms" }}
-                  >
-                    {images.slice(1, 7).map((image, index) => (
-                      <button
-                        key={index + 1}
-                        onClick={() => {
-                          impact("light");
-                          goToIndex(index + 1, "manual");
-                        }}
-                        className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                          selectedImageIndex === index + 1
-                            ? "border-primary shadow-lg scale-105"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                        aria-label={`View image ${index + 2}`}
-                      >
-                        <img
-                          src={image}
-                          alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
-                      </button>
-                    ))}
-                    {images.length > 7 && (
-                      <button
-                        onClick={handleGalleryButtonClick}
-                        className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
-                        aria-label="View all images"
-                      >
-                        <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
-                        <span className="text-xs xl:text-sm text-primary font-medium">
-                          +{images.length - 7}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                )}
-            </div>
-
-            {/* Mobile Main Image - Full width for mobile */}
-            <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
-              <CardContent className="p-0">
-                <div
-                  ref={imageContainerRef}
-                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-pan-y select-none"
-                  onClick={handleImageZoomOpen}
-                  role={allowImageZoom ? "button" : undefined}
-                  tabIndex={allowImageZoom ? 0 : -1}
-                  onKeyDown={(event) => {
-                    if (!allowImageZoom) {
-                      return;
-                    }
-                    if (event.key === "Enter" || event.key === " ") {
-                      handleImageZoomOpen(event);
-                    }
-                  }}
-                  aria-label="Hap imazhin e makinës në modal me zoom"
-                  data-swipe-direction={imageSwipeDirection ?? undefined}
-                >
-                  {/* Main Image with improved loading states */}
-                  {images.length > 0 ? (
-                    <img
-                      src={images[selectedImageIndex]}
-                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                      className={`${swipeWrapperClass} w-full h-full object-cover transition-all duration-500`}
-                      style={imageSwipeStyle}
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                        setIsPlaceholderImage(true);
-                      }}
-                      onLoad={(e) => {
-                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
-                          setIsPlaceholderImage(false);
-                        }
-                      }}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Car className="h-16 w-16 text-muted-foreground" />
+                          {images.slice(1, 7).map((image, index) => (
+                            <button
+                              key={index + 1}
+                              onClick={() => {
+                                impact("light");
+                                goToIndex(index + 1, "manual");
+                              }}
+                              className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                                selectedImageIndex === index + 1
+                                  ? "border-primary shadow-lg scale-105"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                              aria-label={`View image ${index + 2}`}
+                            >
+                              <img
+                                src={image}
+                                alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.src = "/placeholder.svg";
+                                }}
+                              />
+                            </button>
+                          ))}
+                          {images.length > 7 && (
+                            <button
+                              onClick={handleGalleryButtonClick}
+                              className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
+                              aria-label="View all images"
+                            >
+                              <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
+                              <span className="text-xs xl:text-sm text-primary font-medium">
+                                +{images.length - 7}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* Navigation arrows - Improved positioning and visibility */}
-                  {images.length > 1 && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          impact("light");
-                          goToPrevious("manual");
-                        }}
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          impact("light");
-                          goToNext("manual");
-                        }}
-                        aria-label="Next image"
-                      >
-                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </Button>
-                    </>
-                  )}
-
-                  {/* Image counter and gallery button - Improved mobile design */}
-                  {images.length > 1 && (
-                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                        {/* Mobile gallery button */}
-                        <button
-                          onClick={handleGalleryButtonClick}
-                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                          aria-label={`View all ${images.length} images`}
-                        >
-                          <Camera className="h-3 w-3" />
-                          {selectedImageIndex + 1}/{images.length}
-                        </button>
-
-                        {/* Desktop gallery button */}
-                        <button
-                          onClick={handleGalleryButtonClick}
-                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                          aria-label={`View all ${images.length} images`}
-                        >
-                          <Camera className="h-4 w-4" />
-                          View Gallery ({images.length})
-                        </button>
-                      </div>
-                  )}
-
-                  {/* Lot number badge - Improved positioning */}
-                  {car.lot && (
-                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                      {car.lot}
-                    </Badge>
-                  )}
-
-                  {/* Zoom icon - Improved positioning and visibility */}
-                  {allowImageZoom && (
-                    <button
-                      type="button"
-                      onClick={handleImageZoomOpen}
-                      className="absolute top-3 right-3 flex rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      aria-label="Zmadho imazhin"
-                    >
-                      <Expand className="h-4 w-4" />
-                    </button>
-                  )}
-
-                  {/* Loading indicator */}
-                  {isPlaceholderImage && (
-                    <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-              {displayTitle && (
-                <div className="animate-fade-in-up stagger-1">
-                  <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-1.5 sm:space-y-2.5">
+  
+                {displayTitle && (
+                  <div className="animate-fade-in-up stagger-1">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-1 sm:space-y-2">
                       <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 flex-nowrap w-full min-w-0">
                       {brandLogo ? (
                         <div
