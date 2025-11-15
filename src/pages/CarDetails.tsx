@@ -111,8 +111,8 @@ import { getFallbackOptionName } from "@/data/koreaOptionFallbacks";
 import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
 import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 import "@/styles/carDetailsOptimizations.css";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/components/ThemeProvider";
-import { cn } from "@/lib/utils";
 
 const ImageZoom = lazy(() =>
   import("@/components/ImageZoom").then((module) => ({
@@ -309,24 +309,6 @@ const formatDisplayDate = (
     });
   }
   return undefined;
-};
-
-const getAdaptiveTitleClasses = (title?: string | null) => {
-  if (!title) {
-    return "text-2xl sm:text-3xl";
-  }
-
-  const normalizedLength = title.trim().length;
-
-  if (normalizedLength >= 52) {
-    return "text-xl sm:text-2xl";
-  }
-
-  if (normalizedLength >= 38) {
-    return "text-[1.65rem] sm:text-[2.25rem]";
-  }
-
-  return "text-2xl sm:text-3xl";
 };
 
 type EquipmentIconMapping = {
@@ -3874,12 +3856,7 @@ const CarDetails = memo(() => {
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Po ngarkohet raporti i plotë
                       </p>
-                      <h1
-                        className={cn(
-                          "mt-2 font-bold text-foreground leading-tight tracking-tight transition-[font-size] duration-300",
-                          getAdaptiveTitleClasses(summaryTitle),
-                        )}
-                      >
+                      <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground">
                         {summaryTitle}
                       </h1>
                       {prefetchedSummary.title &&
@@ -3990,46 +3967,47 @@ const CarDetails = memo(() => {
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
-        <div className="container-responsive py-6 max-w-[1600px]">
-          {/* Header with Actions - Modern Layout with animations */}
-          <div className="flex flex-col gap-3 mb-6">
-            {/* Navigation and Action Buttons with hover effects */}
-            <div
-              className="flex flex-wrap items-center gap-2"
-              style={{
-                animation: "fadeIn 0.3s ease-out forwards",
-                animationDelay: "0.1s",
-                opacity: 0,
+      <div className="container-responsive py-6 max-w-[1600px]">
+        {/* Header with Actions - Modern Layout with animations */}
+        <div className="flex flex-col gap-3 mb-6">
+          {/* Navigation and Action Buttons with hover effects */}
+          <div
+            className="flex flex-wrap items-center gap-2"
+            style={{
+              animation: "fadeIn 0.3s ease-out forwards",
+              animationDelay: "0.1s",
+              opacity: 0,
+            }}
+          >
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (pageState && pageState.url) {
+                  navigate(pageState.url);
+                } else {
+                  goBack();
+                }
               }}
+              className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
             >
+              <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span className="hidden sm:inline font-medium">
+                Kthehu te Makinat
+              </span>
+              <span className="sm:hidden font-medium">Kthehu</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/")}
+              className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
+              <span className="hidden sm:inline font-medium">Kryefaqja</span>
+              <span className="sm:hidden font-medium">Home</span>
+            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <ThemeToggle />
               <Button
-                variant="outline"
-                onClick={() => {
-                  if (pageState && pageState.url) {
-                    navigate(pageState.url);
-                  } else {
-                    goBack();
-                  }
-                }}
-                className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
-                <span className="hidden sm:inline font-medium">
-                  Kthehu te Makinat
-                </span>
-                <span className="sm:hidden font-medium">Kthehu</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/")}
-                className="flex-1 sm:flex-none hover-scale shadow-lg hover:shadow-xl transition-all duration-300 h-9 px-4 group"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
-                <span className="hidden sm:inline font-medium">Kryefaqja</span>
-                <span className="sm:hidden font-medium">Home</span>
-              </Button>
-              <div className="ml-auto flex items-center gap-2">
-                <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLike}
@@ -4396,12 +4374,7 @@ const CarDetails = memo(() => {
                           {resolvedBrandName}
                         </span>
                       ) : null}
-                      <p
-                        className={cn(
-                          "font-semibold text-foreground leading-tight tracking-tight transition-[font-size] duration-300",
-                          getAdaptiveTitleClasses(displayTitle),
-                        )}
-                      >
+                      <p className="text-xl sm:text-3xl font-semibold text-foreground leading-tight">
                         {displayTitle}
                       </p>
                     </div>
