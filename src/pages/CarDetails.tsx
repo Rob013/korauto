@@ -140,6 +140,8 @@ const containsKoreanNone = (value: string) => {
   );
 };
 
+const CATALOG_PREFETCH_TTL = 1000 * 60 * 10; // 10 minutes
+
 const parseHistoryNumber = (value: unknown): number | null => {
   if (value === null || value === undefined) {
     return null;
@@ -2860,7 +2862,7 @@ const CarDetails = memo(() => {
     [setPrefetchedSummary],
   );
 
-  const restoreCarFromSession = useCallback((): CarDetails | null => {
+    const restoreCarFromSession = useCallback((): CarDetails | null => {
     if (typeof window === "undefined" || !lot) {
       return null;
     }
@@ -2891,8 +2893,40 @@ const CarDetails = memo(() => {
       }
     }
 
+      const catalogKeys = [
+        `car_catalog_prefetch_${encodedLot}`,
+        encodedLot !== normalizedLot ? `car_catalog_prefetch_${normalizedLot}` : null,
+      ].filter(Boolean) as string[];
+
+      for (const key of catalogKeys) {
+        try {
+          const raw = sessionStorage.getItem(key);
+          if (!raw) {
+            continue;
+          }
+          const parsed = JSON.parse(raw);
+          const storedAt = typeof parsed?.storedAt === "number" ? parsed.storedAt : 0;
+          if (storedAt && Date.now() - storedAt > CATALOG_PREFETCH_TTL) {
+            sessionStorage.removeItem(key);
+            continue;
+          }
+          const carData = parsed?.carData || parsed;
+          const lotData = parsed?.lotData || carData?.lots?.[0];
+          if (!carData || !lotData) {
+            continue;
+          }
+          const detailsFromCatalog = buildCarDetails(carData, lotData);
+          if (detailsFromCatalog) {
+            persistCarToSession(normalizedLot, detailsFromCatalog);
+            return detailsFromCatalog;
+          }
+        } catch (prefetchError) {
+          console.warn(`Failed to restore catalog prefetch data from ${key}`, prefetchError);
+        }
+      }
+
     return null;
-  }, [lot, setPrefetchedSummary]);
+    }, [lot, setPrefetchedSummary, buildCarDetails, persistCarToSession]);
 
   const hydrateFromCache = useCallback(async () => {
     if (!lot) {

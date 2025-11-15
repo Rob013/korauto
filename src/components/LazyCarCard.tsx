@@ -44,6 +44,7 @@ interface LazyCarCardProps {
   archived_at?: string;
   archive_reason?: string;
   viewMode?: 'grid' | 'list';
+  prefetchPayload?: any;
 }
 
 type UserFavoritesState = {
@@ -150,6 +151,7 @@ const LazyCarCard = memo(({
   archive_reason,
   source,
   viewMode = "grid",
+  prefetchPayload,
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
@@ -243,10 +245,52 @@ const LazyCarCard = memo(({
         if (encodedKey !== rawKey) {
           sessionStorage.setItem(rawKey, serialized);
         }
+
+          if (prefetchPayload) {
+            const encodedPayloadKey = `car_catalog_prefetch_${encodeURIComponent(storageKey)}`;
+            const rawPayloadKey = `car_catalog_prefetch_${storageKey}`;
+            const sanitizedLots = Array.isArray(prefetchPayload.lots)
+              ? prefetchPayload.lots.map((lotItem: any) => {
+                  if (!lotItem) {
+                    return lotItem;
+                  }
+                  const limitedNormal = Array.isArray(lotItem?.images?.normal)
+                    ? lotItem.images.normal.slice(0, 12)
+                    : lotItem?.images?.normal;
+                  const limitedBig = Array.isArray(lotItem?.images?.big)
+                    ? lotItem.images.big.slice(0, 12)
+                    : lotItem?.images?.big;
+                  return {
+                    ...lotItem,
+                    images: limitedNormal || limitedBig
+                      ? {
+                          normal: limitedNormal,
+                          big: limitedBig,
+                        }
+                      : lotItem.images,
+                  };
+                })
+              : prefetchPayload.lots;
+
+            const payload = {
+              carData: {
+                ...prefetchPayload,
+                lots: sanitizedLots,
+              },
+              lotData: Array.isArray(sanitizedLots) ? sanitizedLots[0] : sanitizedLots,
+              storedAt: Date.now(),
+            };
+
+            const payloadString = JSON.stringify(payload);
+            sessionStorage.setItem(encodedPayloadKey, payloadString);
+            if (encodedPayloadKey !== rawPayloadKey) {
+              sessionStorage.setItem(rawPayloadKey, payloadString);
+            }
+          }
       } catch (storageError) {
         console.warn("Failed to cache car summary before navigation", storageError);
       }
-  }, [
+    }, [
     id,
     lot,
     make,
@@ -267,6 +311,7 @@ const LazyCarCard = memo(({
     final_price,
     insurance_v2,
     source,
+      prefetchPayload,
   ]);
 
   useEffect(() => {
