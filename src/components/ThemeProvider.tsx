@@ -7,6 +7,14 @@ import {
   useState,
 } from "react"
 
+type DocumentWithViewTransition = Document & {
+  startViewTransition?: (callback: () => void | Promise<void>) => {
+    finished?: Promise<void>
+  }
+}
+
+const THEME_TRANSITION_TIMEOUT = 650
+
 type Theme = "dark" | "light" | "system"
 
 type ThemeProviderProps = {
@@ -61,8 +69,7 @@ export function ThemeProvider({
         root.classList.remove("light", "dark")
 
         if (value === "system") {
-          const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-            .matches
+          const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
             ? "dark"
             : "light"
 
@@ -74,7 +81,7 @@ export function ThemeProvider({
 
       const timeout = window.setTimeout(() => {
         root.classList.remove("theme-transitioning")
-      }, 400)
+      }, THEME_TRANSITION_TIMEOUT)
 
       return () => window.clearTimeout(timeout)
     }
@@ -88,7 +95,22 @@ export function ThemeProvider({
       if (typeof window === "undefined") return
 
       window.localStorage.setItem(storageKey, value)
-      setThemeState(value)
+
+      const doc = window.document as DocumentWithViewTransition
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+      const start = () => setThemeState(value)
+
+      if (!prefersReducedMotion && typeof doc.startViewTransition === "function") {
+        try {
+          doc.startViewTransition(() => start())
+          return
+        } catch {
+          // Fallback to default state update below
+        }
+      }
+
+      start()
     },
     [storageKey]
   )

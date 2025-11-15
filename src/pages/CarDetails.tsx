@@ -4685,60 +4685,60 @@ const CarDetails = memo(() => {
                 </h3>
 
                 {/* Enhanced Contact Buttons */}
-                <div className="mb-4 space-y-3">
-                  <Button
-                    onClick={handleContactWhatsApp}
-                    className="w-full h-10 text-sm font-medium shadow-md hover:shadow-lg transition-shadow bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    WhatsApp
-                  </Button>
+                  <div className="mb-4 space-y-3">
+                    <Button
+                      onClick={handleContactWhatsApp}
+                      className="w-full h-11 text-sm font-semibold"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      WhatsApp
+                    </Button>
 
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={handlePhoneCall}
-                  >
-                    <Phone className="h-4 w-4 mr-2" />
-                    +383 48 181 116
-                  </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 text-sm font-medium"
+                      onClick={handlePhoneCall}
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      +383 48 181 116
+                    </Button>
 
-                  {/* Instagram */}
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-pink-600 hover:text-white transition-colors"
-                    onClick={() =>
-                      window.open("https://www.instagram.com/korauto.ks/", "_blank")
-                    }
-                  >
-                    <Instagram className="h-4 w-4 mr-2" />
-                    Instagram
-                  </Button>
+                    {/* Instagram */}
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 text-sm font-medium"
+                      onClick={() =>
+                        window.open("https://www.instagram.com/korauto.ks/", "_blank")
+                      }
+                    >
+                      <Instagram className="h-4 w-4 mr-2" />
+                      Instagram
+                    </Button>
 
-                  {/* Facebook */}
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-blue-600 hover:text-white transition-colors"
-                    onClick={() =>
-                      window.open(
-                        "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
-                        "_blank",
-                      )
-                    }
-                  >
-                    <Facebook className="h-4 w-4 mr-2" />
-                    Facebook
-                  </Button>
+                    {/* Facebook */}
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 text-sm font-medium"
+                      onClick={() =>
+                        window.open(
+                          "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
+                          "_blank",
+                        )
+                      }
+                    >
+                      <Facebook className="h-4 w-4 mr-2" />
+                      Facebook
+                    </Button>
 
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={() => window.open("mailto:info@korauto.com", "_self")}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    info@korauto.com
-                  </Button>
-                </div>
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 text-sm font-medium"
+                      onClick={() => window.open("mailto:info@korauto.com", "_self")}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      info@korauto.com
+                    </Button>
+                  </div>
 
                 {/* Enhanced Additional Buttons */}
                 <div className="border-t border-border pt-4 space-y-3">
@@ -4870,7 +4870,7 @@ const CarDetails = memo(() => {
               </Button>
               <Button
                 size="default"
-                className="h-9 flex-shrink-0 rounded-xl bg-green-600 px-3 text-[0.8125rem] font-semibold text-white shadow-lg shadow-green-600/30 hover:bg-green-700"
+                  className="h-9 flex-shrink-0 rounded-xl px-3 text-[0.8125rem] font-semibold"
                 onClick={handleContactWhatsApp}
               >
                 <MessageCircle className="mr-1.5 h-4 w-4" />

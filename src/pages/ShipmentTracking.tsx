@@ -432,7 +432,7 @@ const ShipmentTracking = () => {
                 <Button 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full sm:w-auto mobile-text-optimize tracking-button-compact bg-blue-600 hover:bg-blue-700"
+                  className="w-full sm:w-auto mobile-text-optimize tracking-button-compact"
                 >
                   {loading ? (
                     <>

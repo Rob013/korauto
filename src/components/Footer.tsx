@@ -84,20 +84,20 @@ const Footer = () => {
                 >
                   <Instagram className="h-5 w-5" />
                 </a>
-                <a 
-                  href="https://wa.me/38348181116" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-green-400 hover:text-green-300 transition-colors"
-                >
-                  WhatsApp
-                </a>
-                <a 
-                  href="viber://chat?number=+38348181116" 
-                  className="text-purple-400 hover:text-purple-300 transition-colors"
-                >
-                  Viber
-                </a>
+                  <a 
+                    href="https://wa.me/38348181116" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-gray-300 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a 
+                    href="viber://chat?number=+38348181116" 
+                    className="hover:text-gray-300 transition-colors"
+                  >
+                    Viber
+                  </a>
               </div>
             </div>
           </div>

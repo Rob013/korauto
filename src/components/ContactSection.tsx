@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Mail, Phone, MapPin, Clock, MessageCircle, PhoneCall } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 
 const ContactSection = () => {
@@ -85,22 +86,37 @@ const ContactSection = () => {
                 >
                   +38348181116
                 </a>
-                <div className="flex gap-2 justify-center">
-                  <a 
-                    href="https://wa.me/38348181116" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs sm:text-sm bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition-all duration-300 btn-press-effect"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href="viber://chat?number=+38348181116" 
-                    className="text-xs sm:text-sm bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 transition-all duration-300 btn-press-effect"
-                  >
-                    Viber
-                  </a>
-                </div>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      asChild
+                      size="sm"
+                      className="h-9 text-xs sm:text-sm px-4"
+                    >
+                      <a
+                        href="https://wa.me/38348181116"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Kontakto në WhatsApp me Robertin"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-9 text-xs sm:text-sm px-4"
+                    >
+                      <a
+                        href="viber://chat?number=+38348181116"
+                        aria-label="Kontakto në Viber me Robertin"
+                      >
+                        <PhoneCall className="h-4 w-4" />
+                        Viber
+                      </a>
+                    </Button>
+                  </div>
               </div>
             </CardContent>
           </Card>
@@ -123,22 +139,37 @@ const ContactSection = () => {
                 >
                   +38346105588
                 </a>
-                <div className="flex gap-2 justify-center">
-                  <a 
-                    href="https://wa.me/38346105588" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs sm:text-sm bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition-all duration-300 btn-press-effect"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href="viber://chat?number=+38346105588" 
-                    className="text-xs sm:text-sm bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 transition-all duration-300 btn-press-effect"
-                  >
-                    Viber
-                  </a>
-                </div>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      asChild
+                      size="sm"
+                      className="h-9 text-xs sm:text-sm px-4"
+                    >
+                      <a
+                        href="https://wa.me/38346105588"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Kontakto në WhatsApp me Rajmondin"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-9 text-xs sm:text-sm px-4"
+                    >
+                      <a
+                        href="viber://chat?number=+38346105588"
+                        aria-label="Kontakto në Viber me Rajmondin"
+                      >
+                        <PhoneCall className="h-4 w-4" />
+                        Viber
+                      </a>
+                    </Button>
+                  </div>
               </div>
             </CardContent>
           </Card>
@@ -159,22 +190,37 @@ const ContactSection = () => {
                 >
                   +38346181117
                 </a>
-                <div className="flex gap-2 justify-center">
-                  <a 
-                    href="https://wa.me/38348181117" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs sm:text-sm bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition-all duration-300 btn-press-effect"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href="viber://chat?number=+38348181117" 
-                    className="text-xs sm:text-sm bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 transition-all duration-300 btn-press-effect"
-                  >
-                    Viber
-                  </a>
-                </div>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      asChild
+                      size="sm"
+                      className="h-9 text-xs sm:text-sm px-4"
+                    >
+                      <a
+                        href="https://wa.me/38348181117"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Kontakto në WhatsApp me Renaton"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-9 text-xs sm:text-sm px-4"
+                    >
+                      <a
+                        href="viber://chat?number=+38348181117"
+                        aria-label="Kontakto në Viber me Renaton"
+                      >
+                        <PhoneCall className="h-4 w-4" />
+                        Viber
+                      </a>
+                    </Button>
+                  </div>
               </div>
             </CardContent>
           </Card>
