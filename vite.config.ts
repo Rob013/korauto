@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -17,88 +16,6 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' &&
     componentTagger(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'lovable-uploads/**/*'],
-      manifest: {
-        name: 'KORAUTO - Premium Cars from South Korea',
-        short_name: 'KORAUTO',
-        description: 'Find your perfect car from South Korea with best price and quality',
-        theme_color: '#1f2937',
-        background_color: '#ffffff',
-        display: 'standalone',
-        icons: [
-          {
-            src: '/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/lovable-uploads/7a3e2aa4-2a3b-4320-b33c-72d3d7721cfd.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/iyezkczshcgbcgpswpyg\.supabase\.co\/rest\/v1\/cars.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cars-cache',
-              expiration: {
-                maxEntries: 500,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/iyezkczshcgbcgpswpyg\.supabase\.co\/rest\/v1\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 2 // 2 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images-cache',
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:woff|woff2|ttf|otf|eot)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'fonts-cache',
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              }
-            }
-          }
-        ],
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true
-      }
-    })
   ].filter(Boolean),
   resolve: {
     alias: {

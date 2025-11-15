@@ -92,23 +92,6 @@ html {
   scroll-behavior: smooth;
 }
 
-.car-details-page .container-responsive {
-  padding-left: clamp(0.75rem, 4vw, 1.5rem);
-  padding-right: clamp(0.75rem, 4vw, 1.5rem);
-}
-
-.car-details-page .car-details-section {
-  content-visibility: auto;
-  contain: layout style paint;
-  scroll-margin-top: 5rem;
-}
-
-@media (max-width: 768px) {
-  .car-details-page .car-details-section {
-    border-radius: 1rem;
-  }
-}
-
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   *,

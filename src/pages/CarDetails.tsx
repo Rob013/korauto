@@ -140,8 +140,6 @@ const containsKoreanNone = (value: string) => {
   );
 };
 
-const CATALOG_PREFETCH_TTL = 1000 * 60 * 10; // 10 minutes
-
 const parseHistoryNumber = (value: unknown): number | null => {
   if (value === null || value === undefined) {
     return null;
@@ -320,24 +318,12 @@ const getAdaptiveTitleClasses = (title?: string | null) => {
 
   const normalizedLength = title.trim().length;
 
-  if (normalizedLength >= 100) {
-    return "text-base sm:text-lg";
+  if (normalizedLength >= 52) {
+    return "text-xl sm:text-2xl";
   }
 
-  if (normalizedLength >= 88) {
-    return "text-[1.05rem] sm:text-[1.35rem]";
-  }
-
-  if (normalizedLength >= 72) {
-    return "text-[1.15rem] sm:text-[1.55rem]";
-  }
-
-  if (normalizedLength >= 58) {
-    return "text-xl sm:text-[1.9rem]";
-  }
-
-  if (normalizedLength >= 42) {
-    return "text-[1.55rem] sm:text-[2.15rem]";
+  if (normalizedLength >= 38) {
+    return "text-[1.65rem] sm:text-[2.25rem]";
   }
 
   return "text-2xl sm:text-3xl";
@@ -1577,9 +1563,9 @@ const CarDetails = memo(() => {
   const cacheHydratedRef = useRef(false);
   const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
-  const [isDeferredSectionsReady, setIsDeferredSectionsReady] = useState(false);
   const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [showEngineSection, setShowEngineSection] = useState(false);
+  const [isPlaceholderImage, setIsPlaceholderImage] = useState(false);
   const [isPortalReady, setIsPortalReady] = useState(false);
   const [allowImageZoom, setAllowImageZoom] = useState(false);
   const [imageSwipeDirection, setImageSwipeDirection] = useState<
@@ -1596,40 +1582,6 @@ const CarDetails = memo(() => {
   // Dialog states
   const [isSpecsDialogOpen, setIsSpecsDialogOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      setIsDeferredSectionsReady(true);
-      return;
-    }
-
-    const win = window as typeof window & {
-      requestIdleCallback?: (cb: () => void) => number;
-      cancelIdleCallback?: (handle: number) => void;
-    };
-
-    let idleHandle: number | null = null;
-    let timeoutHandle: number | null = null;
-
-    const reveal = () => setIsDeferredSectionsReady(true);
-
-    if (typeof win.requestIdleCallback === "function") {
-      idleHandle = win.requestIdleCallback(() => {
-        reveal();
-      });
-    } else {
-      timeoutHandle = window.setTimeout(reveal, 200);
-    }
-
-    return () => {
-      if (idleHandle !== null && typeof win.cancelIdleCallback === "function") {
-        win.cancelIdleCallback(idleHandle);
-      }
-      if (timeoutHandle !== null) {
-        window.clearTimeout(timeoutHandle);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -2504,54 +2456,26 @@ const CarDetails = memo(() => {
     navigate(`/car/${encodeURIComponent(String(targetLot))}/report`);
   }, [carLot, lot, navigate]);
 
-    // Auto-expand detailed info if car has rich data (deferred to keep initial render snappy)
-    useEffect(() => {
-      if (!car || hasAutoExpanded) {
-        return;
-      }
+  // Reset placeholder state when image selection changes
+  useEffect(() => {
+    setIsPlaceholderImage(false);
+  }, [selectedImageIndex]);
+
+  // Auto-expand detailed info if car has rich data (only once)
+  useEffect(() => {
+    if (car && !hasAutoExpanded) {
       const hasRichData =
         car.details?.options ||
         car.insurance_v2 ||
         car.details?.inspect_outer ||
         car.details?.inspect?.inner ||
         car.details?.insurance;
-      if (!hasRichData) {
-        return;
-      }
-
-      let idleHandle: number | null = null;
-      let timeoutHandle: number | null = null;
-      const win = typeof window !== "undefined"
-        ? (window as typeof window & {
-            requestIdleCallback?: (cb: IdleRequestCallback) => number;
-            cancelIdleCallback?: (handle: number) => void;
-          })
-        : undefined;
-
-      const activate = () => {
+      if (hasRichData) {
         setShowDetailedInfo(true);
         setHasAutoExpanded(true);
-      };
-
-      if (win && typeof win.requestIdleCallback === "function") {
-        idleHandle = win.requestIdleCallback(() => {
-          timeoutHandle = window.setTimeout(activate, 60);
-        });
-      } else if (typeof window !== "undefined") {
-        timeoutHandle = window.setTimeout(activate, 180);
-      } else {
-        activate();
       }
-
-      return () => {
-        if (idleHandle !== null && win && typeof win.cancelIdleCallback === "function") {
-          win.cancelIdleCallback(idleHandle);
-        }
-        if (timeoutHandle !== null && typeof window !== "undefined") {
-          window.clearTimeout(timeoutHandle);
-        }
-      };
-    }, [car, hasAutoExpanded]);
+    }
+  }, [car, hasAutoExpanded]);
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
   const KBC_DOMAINS = [
@@ -2895,7 +2819,7 @@ const CarDetails = memo(() => {
     [setPrefetchedSummary],
   );
 
-    const restoreCarFromSession = useCallback((): CarDetails | null => {
+  const restoreCarFromSession = useCallback((): CarDetails | null => {
     if (typeof window === "undefined" || !lot) {
       return null;
     }
@@ -2926,40 +2850,8 @@ const CarDetails = memo(() => {
       }
     }
 
-      const catalogKeys = [
-        `car_catalog_prefetch_${encodedLot}`,
-        encodedLot !== normalizedLot ? `car_catalog_prefetch_${normalizedLot}` : null,
-      ].filter(Boolean) as string[];
-
-      for (const key of catalogKeys) {
-        try {
-          const raw = sessionStorage.getItem(key);
-          if (!raw) {
-            continue;
-          }
-          const parsed = JSON.parse(raw);
-          const storedAt = typeof parsed?.storedAt === "number" ? parsed.storedAt : 0;
-          if (storedAt && Date.now() - storedAt > CATALOG_PREFETCH_TTL) {
-            sessionStorage.removeItem(key);
-            continue;
-          }
-          const carData = parsed?.carData || parsed;
-          const lotData = parsed?.lotData || carData?.lots?.[0];
-          if (!carData || !lotData) {
-            continue;
-          }
-          const detailsFromCatalog = buildCarDetails(carData, lotData);
-          if (detailsFromCatalog) {
-            persistCarToSession(normalizedLot, detailsFromCatalog);
-            return detailsFromCatalog;
-          }
-        } catch (prefetchError) {
-          console.warn(`Failed to restore catalog prefetch data from ${key}`, prefetchError);
-        }
-      }
-
     return null;
-    }, [lot, setPrefetchedSummary, buildCarDetails, persistCarToSession]);
+  }, [lot, setPrefetchedSummary]);
 
   const hydrateFromCache = useCallback(async () => {
     if (!lot) {
@@ -3896,105 +3788,6 @@ const CarDetails = memo(() => {
     navigate(`/car/${encodedLot}/report`);
   }, [car?.lot, impact, lot, navigate, prepareInspectionReportPrefetch]);
 
-    const renderDetailedInfoSection = () => {
-      if (!showDetailedInfo) {
-        return null;
-      }
-      if (isDeferredSectionsReady) {
-        return (
-          <div className="space-y-3.5 sm:space-y-4.5 animate-in slide-in-from-top-2 duration-300">
-            {/* Insurance & Safety Report - Mobile Optimized */}
-            {(car.insurance_v2 || car.inspect || car.insurance) && (
-              <div
-                ref={historySectionRef}
-                className="space-y-2.5 sm:space-y-3.5 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
-              >
-                <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Raporti i Sigurisë dhe Sigurimit
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
-                  {car.insurance_v2?.accidentCnt !== undefined && (
-                    <div className="flex items-center justify-between p-2.5 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
-                      <span className="text-xs sm:text-sm font-medium">
-                        Historia e Aksidenteve:
-                      </span>
-                      <Badge
-                        variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"}
-                        className="text-xs"
-                      >
-                        {car.insurance_v2.accidentCnt === 0
-                          ? "E Pastër"
-                          : `${car.insurance_v2.accidentCnt} aksidente`}
-                      </Badge>
-                    </div>
-                  )}
-                  {car.insurance_v2?.ownerChangeCnt !== undefined && (
-                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                      <span className="text-sm">Ndryshime Pronësie:</span>
-                      <span className="font-medium">{car.insurance_v2.ownerChangeCnt}</span>
-                    </div>
-                  )}
-                  {car.insurance_v2?.totalLossCnt !== undefined && car.insurance_v2.totalLossCnt > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                      <span className="text-sm">Humbje Totale:</span>
-                      <Badge variant="destructive">{car.insurance_v2.totalLossCnt}</Badge>
-                    </div>
-                  )}
-                  {car.insurance_v2?.floodTotalLossCnt !== undefined && car.insurance_v2.floodTotalLossCnt > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                      <span className="text-sm">demtime:</span>
-                      <Badge variant="destructive">{car.insurance_v2.floodTotalLossCnt}</Badge>
-                    </div>
-                  )}
-                </div>
-                {usageHighlights.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
-                    {usageHighlights.map((item) => {
-                      const valueClass =
-                        item.value === "Po"
-                          ? "text-destructive"
-                          : item.value === "Jo"
-                            ? "text-emerald-600"
-                            : "text-muted-foreground";
-                      return (
-                        <div
-                          key={item.label}
-                          className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-3.5"
-                        >
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                            {item.label}
-                          </span>
-                          <span className={`text-base sm:text-lg font-semibold ${valueClass}`}>{item.value}</span>
-                          {item.details.length > 0 && (
-                            <span className="text-xs text-muted-foreground leading-relaxed">
-                              {item.details.join(" • ")}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      return (
-        <div className="space-y-3.5 sm:space-y-4.5">
-          <div className="h-5 w-36 rounded bg-muted/40 animate-pulse" />
-          <div className="h-4 w-24 rounded bg-muted/30 animate-pulse" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-16 rounded-lg bg-muted/40 animate-pulse" />
-            ))}
-          </div>
-        </div>
-      );
-    };
-
     // Preload important images
     useImagePreload(car?.image ?? prefetchedSummary?.image);
     
@@ -4033,7 +3826,7 @@ const CarDetails = memo(() => {
 
         return (
           <div className="min-h-screen bg-background animate-fade-in">
-            <div className="container-responsive py-4 sm:py-6 max-w-[1600px] space-y-6">
+            <div className="container-responsive py-6 max-w-[1600px] space-y-6">
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
@@ -4180,7 +3973,7 @@ const CarDetails = memo(() => {
   if (error || !car) {
     return (
       <div className="min-h-screen bg-background animate-fade-in">
-        <div className="container-responsive py-5 sm:py-8">
+        <div className="container-responsive py-8">
           <Button
             variant="outline"
             onClick={() => navigate("/")}
@@ -4204,14 +3997,13 @@ const CarDetails = memo(() => {
     );
   }
   return (
-      <>
-        <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker car-details-page">
-            <div className="container-responsive py-2 sm:py-4 max-w-[1600px]">
-            {/* Header with Actions - Modern Layout with animations */}
-              <div className="flex flex-col gap-1 sm:gap-1.5 mb-2">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
+        <div className="container-responsive py-6 max-w-[1600px]">
+          {/* Header with Actions - Modern Layout with animations */}
+          <div className="flex flex-col gap-3 mb-6">
             {/* Navigation and Action Buttons with hover effects */}
-              <div
-                className="flex flex-wrap items-center gap-1 sm:gap-1.5"
+            <div
+              className="flex flex-wrap items-center gap-2"
               style={{
                 animation: "fadeIn 0.3s ease-out forwards",
                 animationDelay: "0.1s",
@@ -4269,176 +4061,326 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
-          {/* Main Content - Modern Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-2.5 lg:gap-4 xl:gap-5">
-              {/* Left Column - Images and Gallery */}
-                    <div className="space-y-3 sm:space-y-4 animate-fade-in-up stagger-1">
-                    <div className="flex flex-col gap-2.5">
-                      <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-3">
-                      <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
-                        <CardContent className="p-0">
-                          <div
-                            ref={imageContainerRef}
-                            className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
-                            onClick={handleImageZoomOpen}
-                            role={allowImageZoom ? "button" : undefined}
-                            tabIndex={allowImageZoom ? 0 : -1}
-                            onKeyDown={(event) => {
-                              if (!allowImageZoom) {
-                                return;
-                              }
-                              if (event.key === "Enter" || event.key === " ") {
-                                handleImageZoomOpen(event);
-                              }
-                            }}
-                            aria-label="Hap imazhin e makinës në modal me zoom"
-                            data-swipe-direction={imageSwipeDirection ?? undefined}
-                          >
-                            {images.length > 0 ? (
-                              <OptimizedCarImage
-                                src={images[selectedImageIndex]}
-                                alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                                className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105`}
-                                style={imageSwipeStyle}
-                                aspectRatio="aspect-[4/3]"
-                                priority={selectedImageIndex === 0}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Car className="h-16 w-16 text-muted-foreground" />
-                              </div>
-                            )}
+        {/* Main Content - Modern Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8 xl:gap-10">
+          {/* Left Column - Images and Gallery */}
+            <div
+              className="space-y-8 sm:space-y-10 animate-fade-in-up stagger-1"
+            >
+            {/* Main Image with modern styling - Compact mobile design */}
+            <div className="hidden lg:flex lg:gap-4">
+              {/* Main Image Card */}
+              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
+                <CardContent className="p-0">
+                  <div
+                    ref={imageContainerRef}
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
+                    onClick={handleImageZoomOpen}
+                    role={allowImageZoom ? "button" : undefined}
+                    tabIndex={allowImageZoom ? 0 : -1}
+                    onKeyDown={(event) => {
+                      if (!allowImageZoom) {
+                        return;
+                      }
+                      if (event.key === "Enter" || event.key === " ") {
+                        handleImageZoomOpen(event);
+                      }
+                    }}
+                    aria-label="Hap imazhin e makinës në modal me zoom"
+                    data-swipe-direction={imageSwipeDirection ?? undefined}
+                  >
+                    {/* Main Image with optimized loading */}
+                    {images.length > 0 ? (
+                      <OptimizedCarImage
+                        src={images[selectedImageIndex]}
+                        alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105`}
+                        style={imageSwipeStyle}
+                        aspectRatio="aspect-[4/3]"
+                        priority={selectedImageIndex === 0}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Car className="h-16 w-16 text-muted-foreground" />
+                      </div>
+                    )}
 
-                            {images.length > 1 && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    impact("light");
-                                    goToPrevious("manual");
-                                  }}
-                                  aria-label="Previous image"
-                                >
-                                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                                </Button>
-
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    impact("light");
-                                    goToNext("manual");
-                                  }}
-                                  aria-label="Next image"
-                                >
-                                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                                </Button>
-                              </>
-                            )}
-
-                            {images.length > 1 && (
-                              <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                                <button
-                                  onClick={handleGalleryButtonClick}
-                                  className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                                  aria-label={`View all ${images.length} images`}
-                                >
-                                  <Camera className="h-3 w-3" />
-                                  {selectedImageIndex + 1}/{images.length}
-                                </button>
-
-                                <button
-                                  onClick={handleGalleryButtonClick}
-                                  className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                                  aria-label={`View all ${images.length} images`}
-                                >
-                                  <Camera className="h-4 w-4" />
-                                  View Gallery ({images.length})
-                                </button>
-                              </div>
-                            )}
-
-                            {car.lot && (
-                              <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
-                                {car.lot}
-                              </Badge>
-                            )}
-
-                            {allowImageZoom && (
-                              <button
-                                type="button"
-                                onClick={handleImageZoomOpen}
-                                className="absolute top-3 right-3 flex rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                aria-label="Zmadho imazhin"
-                              >
-                                <Expand className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {images.length > 1 && (
-                        <div
-                          className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
-                          style={{ animationDelay: "200ms" }}
+                    {/* Navigation arrows - Improved positioning and visibility */}
+                    {images.length > 1 && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            impact("light");
+                            goToPrevious("manual");
+                          }}
+                          aria-label="Previous image"
                         >
-                          {images.slice(1, 7).map((image, index) => (
-                            <button
-                              key={index + 1}
-                              onClick={() => {
-                                impact("light");
-                                goToIndex(index + 1, "manual");
-                              }}
-                              className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                                selectedImageIndex === index + 1
-                                  ? "border-primary shadow-lg scale-105"
-                                  : "border-border hover:border-primary/50"
-                              }`}
-                              aria-label={`View image ${index + 2}`}
-                            >
-                              <img
-                                src={image}
-                                alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                onError={(e) => {
-                                  e.currentTarget.src = "/placeholder.svg";
-                                }}
-                              />
-                            </button>
-                          ))}
-                          {images.length > 7 && (
-                            <button
-                              onClick={handleGalleryButtonClick}
-                              className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
-                              aria-label="View all images"
-                            >
-                              <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
-                              <span className="text-xs xl:text-sm text-primary font-medium">
-                                +{images.length - 7}
-                              </span>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            impact("light");
+                            goToNext("manual");
+                          }}
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </Button>
+                      </>
+                    )}
+
+                    {/* Image counter and gallery button - Improved mobile design */}
+                    {images.length > 1 && (
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        {/* Mobile gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-3 w-3" />
+                          {selectedImageIndex + 1}/{images.length}
+                        </button>
+
+                        {/* Desktop gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-4 w-4" />
+                          View Gallery ({images.length})
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Lot number badge - Improved positioning */}
+                    {car.lot && (
+                      <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                        {car.lot}
+                      </Badge>
+                    )}
+
+                    {/* Zoom icon - Improved positioning and visibility */}
+                    {allowImageZoom && (
+                      <button
+                        type="button"
+                        onClick={handleImageZoomOpen}
+                        className="absolute top-3 right-3 hidden rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+                        aria-label="Zmadho imazhin"
+                      >
+                        <Expand className="h-4 w-4" />
+                      </button>
+                    )}
                 </div>
-  
-                {displayTitle && (
-                  <div className="animate-fade-in-up stagger-1">
-                    <div className="flex flex-col gap-1.5 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-1 sm:space-y-1.5">
-                      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 flex-nowrap w-full min-w-0">
+                {typeof car?.price === "number" && (
+                  <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
+                    <span className="text-xl font-bold text-foreground">
+                      €{car.price.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Deri në Prishtinë pa doganë
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+              {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
+                {images.length > 1 && (
+                  <div
+                    className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
+                    style={{ animationDelay: "200ms" }}
+                  >
+                    {images.slice(1, 7).map((image, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => {
+                          impact("light");
+                          goToIndex(index + 1, "manual");
+                        }}
+                        className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                          selectedImageIndex === index + 1
+                            ? "border-primary shadow-lg scale-105"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        aria-label={`View image ${index + 2}`}
+                      >
+                        <img
+                          src={image}
+                          alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
+                      </button>
+                    ))}
+                    {images.length > 7 && (
+                      <button
+                        onClick={handleGalleryButtonClick}
+                        className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
+                        aria-label="View all images"
+                      >
+                        <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
+                        <span className="text-xs xl:text-sm text-primary font-medium">
+                          +{images.length - 7}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
+            </div>
+
+            {/* Mobile Main Image - Full width for mobile */}
+            <Card className="lg:hidden border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+              <CardContent className="p-0">
+                <div
+                  ref={imageContainerRef}
+                  className="relative w-full aspect-[3/2] sm:aspect-[16/10] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer touch-pan-y select-none"
+                  onClick={handleImageZoomOpen}
+                  role={allowImageZoom ? "button" : undefined}
+                  tabIndex={allowImageZoom ? 0 : -1}
+                  onKeyDown={(event) => {
+                    if (!allowImageZoom) {
+                      return;
+                    }
+                    if (event.key === "Enter" || event.key === " ") {
+                      handleImageZoomOpen(event);
+                    }
+                  }}
+                  aria-label="Hap imazhin e makinës në modal me zoom"
+                  data-swipe-direction={imageSwipeDirection ?? undefined}
+                >
+                  {/* Main Image with improved loading states */}
+                  {images.length > 0 ? (
+                    <img
+                      src={images[selectedImageIndex]}
+                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                      className={`${swipeWrapperClass} w-full h-full object-cover transition-all duration-500`}
+                      style={imageSwipeStyle}
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.svg";
+                        setIsPlaceholderImage(true);
+                      }}
+                      onLoad={(e) => {
+                        if (!e.currentTarget.src.includes("/placeholder.svg")) {
+                          setIsPlaceholderImage(false);
+                        }
+                      }}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Car className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                  )}
+
+                  {/* Navigation arrows - Improved positioning and visibility */}
+                  {images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          impact("light");
+                          goToPrevious("manual");
+                        }}
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 hidden sm:flex z-20 hover:scale-110"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          impact("light");
+                          goToNext("manual");
+                        }}
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Image counter and gallery button - Improved mobile design */}
+                  {images.length > 1 && (
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        {/* Mobile gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-3 w-3" />
+                          {selectedImageIndex + 1}/{images.length}
+                        </button>
+
+                        {/* Desktop gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-4 w-4" />
+                          View Gallery ({images.length})
+                        </button>
+                      </div>
+                  )}
+
+                  {/* Lot number badge - Improved positioning */}
+                  {car.lot && (
+                    <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
+                      {car.lot}
+                    </Badge>
+                  )}
+
+                  {/* Zoom icon - Improved positioning and visibility */}
+                  {allowImageZoom && (
+                    <button
+                      type="button"
+                      onClick={handleImageZoomOpen}
+                      className="absolute top-3 right-3 flex rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-label="Zmadho imazhin"
+                    >
+                      <Expand className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  {/* Loading indicator */}
+                  {isPlaceholderImage && (
+                    <div className="absolute inset-0 bg-muted/50 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+              {displayTitle && (
+                <div className="animate-fade-in-up stagger-1">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 md:gap-4">
                       {brandLogo ? (
                         <div
-                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
+                          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
                           aria-hidden={!resolvedBrandName}
                         >
                           <picture>
@@ -4464,7 +4406,7 @@ const CarDetails = memo(() => {
                       ) : null}
                         <p
                           className={cn(
-                              "font-semibold text-foreground leading-[1.05] sm:leading-[1.1] tracking-tight transition-[font-size] duration-300 whitespace-nowrap overflow-hidden text-ellipsis min-w-0",
+                            "font-semibold text-foreground leading-[1.1] sm:leading-[1.15] tracking-tight transition-[font-size] duration-300",
                             getAdaptiveTitleClasses(displayTitle),
                           )}
                         >
@@ -4473,13 +4415,13 @@ const CarDetails = memo(() => {
                     </div>
 
                     {resolvedSecondaryTitle && resolvedSecondaryTitle !== displayTitle && (
-                          <p className="mt-1 text-sm sm:text-base text-muted-foreground/90 leading-relaxed">
+                        <p className="mt-1.5 text-sm sm:text-base text-muted-foreground/90 leading-relaxed">
                         {resolvedSecondaryTitle}
                       </p>
                     )}
 
-                      {/* Subtitle with year and key details */}
-                          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-[0.95rem] text-muted-foreground leading-tight sm:leading-snug">
+                    {/* Subtitle with year and key details */}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm sm:text-base text-muted-foreground leading-tight sm:leading-snug">
                       {car.year && <span className="font-medium">{car.year}</span>}
                       {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
                       {car.mileage && <span>{formatMileage(car.mileage)}</span>}
@@ -4502,9 +4444,9 @@ const CarDetails = memo(() => {
                     </div>
                   </div>
 
-                    {typeof car.price === "number" && (
-                        <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-0.5 self-start text-right">
-                        <span className="text-2xl font-bold text-primary leading-tight">
+                  {typeof car.price === "number" && (
+                    <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
+                      <span className="text-3xl font-bold text-primary leading-tight">
                         €{car.price.toLocaleString()}
                       </span>
                       <span className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -4517,13 +4459,13 @@ const CarDetails = memo(() => {
             )}
 
             {/* History Section */}
-                  <Card
-                    id="history"
-                    ref={historySectionRef}
-                    className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3 car-details-section"
-                  >
-                    <CardContent className="p-3 sm:p-4 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <Card
+                id="history"
+                ref={historySectionRef}
+                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
+              >
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className="p-2 rounded-lg bg-primary/10">
                       <Shield className="h-5 w-5 text-primary" />
@@ -4554,8 +4496,8 @@ const CarDetails = memo(() => {
                     <ChevronRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                  {hasHistoryData ? (
-                    <div className="space-y-2 text-sm text-muted-foreground">
+                {hasHistoryData ? (
+                  <div className="space-y-2.5 text-sm text-muted-foreground">
                     <div className="space-y-1">
                       <div>Shkëmbime: {replacementText}</div>
                       <div>Punime llamarine: {sheetMetalText}</div>
@@ -4573,10 +4515,104 @@ const CarDetails = memo(() => {
             </Card>
 
 
-              {/* Enhanced Detailed Information Section */}
-                  <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card car-details-section">
-                      <CardContent className="space-y-3 p-3 sm:p-3.5 lg:p-4">
-                      {renderDetailedInfoSection()}
+            {/* Enhanced Detailed Information Section */}
+              <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
+                <CardContent className="space-y-4 p-3 sm:p-4 lg:p-5">
+                  {showDetailedInfo && (
+                    <div className="space-y-4 sm:space-y-5 animate-in slide-in-from-top-2 duration-300">
+                    {/* Insurance & Safety Report - Mobile Optimized */}
+                    {(car.insurance_v2 || car.inspect || car.insurance) && (
+                      <div
+                        ref={historySectionRef}
+                          className="space-y-2.5 sm:space-y-3.5 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
+                      >
+                        <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
+                          Raporti i Sigurisë dhe Sigurimit
+                        </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+                          {car.insurance_v2?.accidentCnt !== undefined && (
+                            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
+                              <span className="text-xs sm:text-sm font-medium">
+                                Historia e Aksidenteve:
+                              </span>
+                              <Badge
+                                variant={
+                                  car.insurance_v2.accidentCnt === 0
+                                    ? "secondary"
+                                    : "destructive"
+                                }
+                                className="text-xs"
+                              >
+                                {car.insurance_v2.accidentCnt === 0
+                                  ? "E Pastër"
+                                  : `${car.insurance_v2.accidentCnt} aksidente`}
+                              </Badge>
+                            </div>
+                          )}
+                          {car.insurance_v2?.ownerChangeCnt !== undefined && (
+                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                              <span className="text-sm">
+                                Ndryshime Pronësie:
+                              </span>
+                              <span className="font-medium">
+                                {car.insurance_v2.ownerChangeCnt}
+                              </span>
+                            </div>
+                          )}
+                          {car.insurance_v2?.totalLossCnt !== undefined &&
+                            car.insurance_v2.totalLossCnt > 0 && (
+                              <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                                <span className="text-sm">Humbje Totale:</span>
+                                <Badge variant="destructive">
+                                  {car.insurance_v2.totalLossCnt}
+                                </Badge>
+                              </div>
+                            )}
+                          {car.insurance_v2?.floodTotalLossCnt !== undefined &&
+                            car.insurance_v2.floodTotalLossCnt > 0 && (
+                              <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                                <span className="text-sm">demtime:</span>
+                                <Badge variant="destructive">
+                                  {car.insurance_v2.floodTotalLossCnt}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                            {usageHighlights.length > 0 && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+                              {usageHighlights.map((item) => {
+                                const valueClass =
+                                  item.value === "Po"
+                                    ? "text-destructive"
+                                    : item.value === "Jo"
+                                      ? "text-emerald-600"
+                                      : "text-muted-foreground";
+                                return (
+                                  <div
+                                    key={item.label}
+                                    className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-3.5"
+                                  >
+                                    <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                                      {item.label}
+                                    </span>
+                                    <span
+                                      className={`text-base sm:text-lg font-semibold ${valueClass}`}
+                                    >
+                                      {item.value}
+                                    </span>
+                                    {item.details.length > 0 && (
+                                      <span className="text-xs text-muted-foreground leading-relaxed">
+                                        {item.details.join(" • ")}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                      </div>
+                    )}
 
                     {/* Equipment & Options */}
 
@@ -4590,8 +4626,8 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Fallback if no options found */}
-                      {(!car.details?.options || !hasAnySanitizedOptions) && (
-                        <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                    {(!car.details?.options || !hasAnySanitizedOptions) && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                         <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           <Settings className="h-5 w-5" />
                           Pajisjet dhe Opsionet
@@ -4629,17 +4665,19 @@ const CarDetails = memo(() => {
                       </Suspense>
                     )}
 
-                      {/* Comprehensive Inspection Report */}
+                    {/* Comprehensive Inspection Report */}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Right Column - Enhanced Contact Card */}
-              <div className="space-y-3">
+          <div className="space-y-4">
             {/* Enhanced Contact & Inspection Card */}
-                <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm car-details-section">
-                  <CardContent className="flex flex-col gap-3 p-3.5">
-                  <div className="space-y-1 text-left">
+            <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
+              <CardContent className="flex flex-col gap-4 p-4">
+                <div className="space-y-1 text-left sm:text-center">
                   {resolvedMainTitle && (
                     <h2 className="text-base font-semibold leading-tight text-foreground">
                       {resolvedMainTitle}
@@ -4648,15 +4686,15 @@ const CarDetails = memo(() => {
                 </div>
                 <Separator />
 
-                  <h3 className="text-lg font-bold text-left text-foreground">
+                <h3 className="text-lg font-bold text-center text-foreground">
                   Kontakt & Inspektim
                 </h3>
 
-                  {/* Enhanced Contact Buttons */}
-                      <div className="mb-2.5 space-y-2">
+                {/* Enhanced Contact Buttons */}
+                  <div className="mb-4 space-y-3">
                     <Button
                       onClick={handleContactWhatsApp}
-                        className="w-full h-10 text-sm font-semibold"
+                      className="w-full h-11 text-sm font-semibold"
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       WhatsApp
@@ -4664,7 +4702,7 @@ const CarDetails = memo(() => {
 
                     <Button
                       variant="outline"
-                        className="w-full h-10 text-sm font-medium"
+                      className="w-full h-11 text-sm font-medium"
                       onClick={handlePhoneCall}
                     >
                       <Phone className="h-4 w-4 mr-2" />
@@ -4674,7 +4712,7 @@ const CarDetails = memo(() => {
                     {/* Instagram */}
                     <Button
                       variant="outline"
-                        className="w-full h-10 text-sm font-medium"
+                      className="w-full h-11 text-sm font-medium"
                       onClick={() =>
                         window.open("https://www.instagram.com/korauto.ks/", "_blank")
                       }
@@ -4686,7 +4724,7 @@ const CarDetails = memo(() => {
                     {/* Facebook */}
                     <Button
                       variant="outline"
-                        className="w-full h-10 text-sm font-medium"
+                      className="w-full h-11 text-sm font-medium"
                       onClick={() =>
                         window.open(
                           "https://www.facebook.com/share/19tUXpz5dG/?mibextid=wwXIfr",
@@ -4700,7 +4738,7 @@ const CarDetails = memo(() => {
 
                     <Button
                       variant="outline"
-                        className="w-full h-10 text-sm font-medium"
+                      className="w-full h-11 text-sm font-medium"
                       onClick={() => window.open("mailto:info@korauto.com", "_self")}
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -4708,8 +4746,8 @@ const CarDetails = memo(() => {
                     </Button>
                   </div>
 
-                  {/* Enhanced Additional Buttons */}
-                    <div className="border-t border-border pt-2.5 space-y-2">
+                {/* Enhanced Additional Buttons */}
+                <div className="border-t border-border pt-4 space-y-3">
                   <Button
                     variant="outline"
                     className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
@@ -4720,8 +4758,8 @@ const CarDetails = memo(() => {
                   </Button>
                 </div>
 
-                  {/* Enhanced Location */}
-                    <div className="mt-2.5 pt-2.5 border-t border-border">
+                {/* Enhanced Location */}
+                <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-start gap-3 text-muted-foreground">
                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <a
@@ -4738,7 +4776,7 @@ const CarDetails = memo(() => {
             </Card>
 
             {/* Desktop map - small widget under Kontakt & Inspektim */}
-              <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl car-details-section">
+            <Card className="hidden lg:block glass-panel border-0 shadow-2xl rounded-xl">
               <CardContent className="p-0">
                 <div
                   ref={registerMapTarget}
@@ -4766,9 +4804,9 @@ const CarDetails = memo(() => {
           </div>
         </div>
 
-          {/* Google Maps - Store Location (mobile only) */}
-          <div className="container-responsive mt-4 lg:hidden">
-            <Card className="glass-panel border-0 shadow-2xl rounded-xl car-details-section">
+        {/* Google Maps - Store Location (mobile only) */}
+        <div className="container-responsive mt-6 lg:hidden">
+          <Card className="glass-panel border-0 shadow-2xl rounded-xl">
             <CardContent className="p-0">
               <div
                 ref={registerMapTarget}
@@ -4819,9 +4857,9 @@ const CarDetails = memo(() => {
                   onClick={() => setIsServicesDialogOpen(true)}
                   className="text-left hover:opacity-80 transition-opacity"
                 >
-              <div className="text-2xl font-bold text-foreground leading-tight">
-                €{(car.price + 350).toLocaleString()}
-              </div>
+                  <div className="text-2xl font-bold text-foreground leading-tight">
+                    €{car.price.toLocaleString()}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     Deri ne Prishtine pa dogan
                   </div>
@@ -4846,7 +4884,7 @@ const CarDetails = memo(() => {
               </Button>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
       
       {/* Specs Dialog */}
@@ -4978,7 +5016,7 @@ const CarDetails = memo(() => {
             <div className="p-4 bg-primary/10 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Çmimi Total:</span>
-                <span className="text-2xl font-bold text-primary">€{(car.price + 350).toLocaleString()}</span>
+                <span className="text-2xl font-bold text-primary">€{car.price.toLocaleString()}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 *Deri në Prishtinë pa doganë
@@ -4987,7 +5025,7 @@ const CarDetails = memo(() => {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 });
 

@@ -29,8 +29,8 @@ const chunkArray = <T>(items: T[], size: number): T[][] => {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function upsertCarsBatch(
-  supabase: any,
-  records: any[],
+  supabase: SupabaseClient,
+  records: Record<string, unknown>[],
   errors: string[],
 ): Promise<number> {
   let processed = 0
@@ -76,8 +76,8 @@ async function upsertCarsBatch(
 }
 
 async function applyArchivedUpdates(
-  supabase: any,
-  records: any[],
+  supabase: SupabaseClient,
+  records: Record<string, unknown>[],
   errors: string[],
 ): Promise<number> {
   let processed = 0
@@ -164,10 +164,9 @@ async function makeApiRequest(url: string, retryCount = 0): Promise<any> {
       return data
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error(`❌ API Error for ${url}:`, errorMessage)
+      console.error(`❌ API Error for ${url}:`, error.message)
       
-      if (retryCount < MAX_RETRIES && !errorMessage.includes('Rate limit exceeded')) {
+      if (retryCount < MAX_RETRIES && !error.message.includes('Rate limit exceeded')) {
         const delay = 1000 * Math.pow(BACKOFF_MULTIPLIER, retryCount)
         console.log(`⏰ Retrying in ${delay}ms...`)
         await wait(delay)
@@ -380,7 +379,7 @@ Deno.serve(async (req) => {
                 })
               } catch (carError) {
                 console.error(`❌ Error processing car:`, carError)
-                errors.push(`Car processing error: ${carError instanceof Error ? carError.message : String(carError)}`)
+                errors.push(`Car processing error: ${carError.message}`)
               }
             }
 
@@ -421,12 +420,11 @@ Deno.serve(async (req) => {
 
         } catch (pageError) {
           console.error(`❌ Error processing page ${currentPage}:`, pageError)
-          const errorMessage = pageError instanceof Error ? pageError.message : String(pageError)
-          errors.push(`Page ${currentPage}: ${errorMessage}`)
+          errors.push(`Page ${currentPage}: ${pageError.message}`)
           consecutiveErrors++
           
           // If rate limited, wait longer before next attempt
-            if (errorMessage.includes('Rate limit')) {
+            if (pageError.message.includes('Rate limit')) {
               console.log(`⏸️ Rate limit detected, waiting 30 seconds...`)
               await wait(30000)
           }
@@ -489,7 +487,7 @@ Deno.serve(async (req) => {
                 })
               } catch (archiveError) {
                 console.error(`❌ Error processing archived lot:`, archiveError)
-                errors.push(`Archive processing error: ${archiveError instanceof Error ? archiveError.message : String(archiveError)}`)
+                errors.push(`Archive processing error: ${archiveError.message}`)
               }
             }
 
@@ -526,7 +524,7 @@ Deno.serve(async (req) => {
 
         } catch (archivedError) {
           console.error(`❌ Error processing archived lots page ${archivedPage}:`, archivedError)
-          errors.push(`Archived lots page ${archivedPage}: ${archivedError instanceof Error ? archivedError.message : String(archivedError)}`)
+          errors.push(`Archived lots page ${archivedPage}: ${archivedError.message}`)
           break
         }
       }
@@ -547,7 +545,7 @@ Deno.serve(async (req) => {
           }
         } catch (cleanupError) {
           console.error(`❌ Error calling cleanup function:`, cleanupError)
-          errors.push(`Cleanup function error: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`)
+          errors.push(`Cleanup function error: ${cleanupError.message}`)
         }
       }
 
@@ -598,7 +596,7 @@ Deno.serve(async (req) => {
         .update({
           status: 'failed',
           completed_at: new Date().toISOString(),
-          error_message: error instanceof Error ? error.message : String(error),
+          error_message: error.message,
           cars_processed: totalCarsProcessed,
           archived_lots_processed: totalArchivedProcessed
         })
@@ -607,7 +605,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: error.message,
           sync_id: syncRecord.id,
           cars_processed: totalCarsProcessed,
           archived_lots_processed: totalArchivedProcessed
@@ -624,7 +622,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error.message
       }),
       {
         status: 500,

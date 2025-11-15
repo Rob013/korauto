@@ -44,7 +44,6 @@ interface LazyCarCardProps {
   archived_at?: string;
   archive_reason?: string;
   viewMode?: 'grid' | 'list';
-  prefetchPayload?: any;
 }
 
 type UserFavoritesState = {
@@ -151,7 +150,6 @@ const LazyCarCard = memo(({
   archive_reason,
   source,
   viewMode = "grid",
-  prefetchPayload,
 }: LazyCarCardProps) => {
   const navigate = useNavigate();
   const { setCompletePageState } = useNavigation();
@@ -245,52 +243,10 @@ const LazyCarCard = memo(({
         if (encodedKey !== rawKey) {
           sessionStorage.setItem(rawKey, serialized);
         }
-
-          if (prefetchPayload) {
-            const encodedPayloadKey = `car_catalog_prefetch_${encodeURIComponent(storageKey)}`;
-            const rawPayloadKey = `car_catalog_prefetch_${storageKey}`;
-            const sanitizedLots = Array.isArray(prefetchPayload.lots)
-              ? prefetchPayload.lots.map((lotItem: any) => {
-                  if (!lotItem) {
-                    return lotItem;
-                  }
-                  const limitedNormal = Array.isArray(lotItem?.images?.normal)
-                    ? lotItem.images.normal.slice(0, 12)
-                    : lotItem?.images?.normal;
-                  const limitedBig = Array.isArray(lotItem?.images?.big)
-                    ? lotItem.images.big.slice(0, 12)
-                    : lotItem?.images?.big;
-                  return {
-                    ...lotItem,
-                    images: limitedNormal || limitedBig
-                      ? {
-                          normal: limitedNormal,
-                          big: limitedBig,
-                        }
-                      : lotItem.images,
-                  };
-                })
-              : prefetchPayload.lots;
-
-            const payload = {
-              carData: {
-                ...prefetchPayload,
-                lots: sanitizedLots,
-              },
-              lotData: Array.isArray(sanitizedLots) ? sanitizedLots[0] : sanitizedLots,
-              storedAt: Date.now(),
-            };
-
-            const payloadString = JSON.stringify(payload);
-            sessionStorage.setItem(encodedPayloadKey, payloadString);
-            if (encodedPayloadKey !== rawPayloadKey) {
-              sessionStorage.setItem(rawPayloadKey, payloadString);
-            }
-          }
       } catch (storageError) {
         console.warn("Failed to cache car summary before navigation", storageError);
       }
-    }, [
+  }, [
     id,
     lot,
     make,
@@ -311,7 +267,6 @@ const LazyCarCard = memo(({
     final_price,
     insurance_v2,
     source,
-      prefetchPayload,
   ]);
 
   useEffect(() => {
@@ -514,7 +469,7 @@ const LazyCarCard = memo(({
     return (
         <div
           ref={cardRef}
-          className="glass-card rounded-lg overflow-hidden h-96 animate-pulse [content-visibility:auto] [contain-intrinsic-size:280px_360px]"
+          className="glass-card rounded-lg overflow-hidden h-96 animate-pulse"
           style={{
             willChange: 'contents',
             containIntrinsicSize: '280px 360px'
@@ -540,13 +495,12 @@ const LazyCarCard = memo(({
       return (
         <div
           ref={cardRef}
-        className={cn(
-          "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg",
-          "transition-transform duration-300 ease-emphasized will-change-transform",
-          hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500 motion-safe:ease-emphasized",
-          "hover:-translate-y-0.5 hover:shadow-lg",
-          "[content-visibility:auto] [contain-intrinsic-size:320px_200px]"
-        )}
+          className={cn(
+            "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg",
+            "transition-transform duration-300 ease-emphasized will-change-transform",
+            hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500 motion-safe:ease-emphasized",
+            "hover:-translate-y-0.5 hover:shadow-lg"
+          )}
           onClick={handleCardClick}
         >
           <div className="flex flex-row gap-2 p-2">
@@ -676,8 +630,7 @@ const LazyCarCard = memo(({
           "mobile-card-compact compact-modern-card car-card-container",
           "transition-transform duration-400 ease-emphasized will-change-transform",
           hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-4 motion-safe:duration-500 motion-safe:ease-emphasized",
-          "hover:-translate-y-1 hover:shadow-xl",
-          "[content-visibility:auto] [contain-intrinsic-size:320px_360px]"
+          "hover:-translate-y-1 hover:shadow-xl"
         )}
         onClick={handleCardClick}
       >

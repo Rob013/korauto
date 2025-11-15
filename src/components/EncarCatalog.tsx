@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, useTransition, useDeferredValue, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,9 +12,11 @@ import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
-import { Skeleton } from "@/components/ui/skeleton";
+import EncarStyleFilter from "@/components/EncarStyleFilter";
+import { AISearchBar } from "@/components/AISearchBar";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
+import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
@@ -34,33 +36,6 @@ import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/car
 import { resolveFuelFromSources } from "@/utils/fuel";
 import { fallbackCars } from "@/data/fallbackData";
 import { useAnimatedCount } from "@/hooks/useAnimatedCount";
-
-const EncarStyleFilter = lazy(() => import("@/components/EncarStyleFilter"));
-
-const FilterPanelSkeleton = ({ isMobile }: { isMobile: boolean }) => (
-  <div className={cn(isMobile ? "p-4 space-y-4" : "p-3 space-y-3")}>
-    <div className="flex items-center gap-3">
-      <Skeleton className="h-5 w-24" />
-      <Skeleton className="h-5 w-16" />
-    </div>
-    <div className="grid grid-cols-1 gap-2.5">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index} className="space-y-2 rounded-lg border border-border/40 bg-card/60 p-3">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const GRID_LINK = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK as string | undefined;
-const CATALOG_SNAPSHOT_KEY = "encar_catalog_snapshot_v2";
-const CATALOG_SNAPSHOT_TTL = 1000 * 60 * 3; // 3 minutes
-const buildSnapshotSignature = (filtersSignature: string, sort: SortOption | "", page: number) => {
-  const resolvedSort = sort && sort.length > 0 ? sort : "default";
-  return `${filtersSignature || "{}"}::${resolvedSort}::${page}`;
-};
 interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
@@ -168,85 +143,18 @@ const EncarCatalog = ({
   const lastSortParamsRef = useRef('');
   const normalizedCurrentFilters = useMemo(() => normalizeFilters(filters || {}), [filters]);
   const currentFiltersSignature = useMemo(() => JSON.stringify(normalizedCurrentFilters), [normalizedCurrentFilters]);
-    const scheduleFetchCars = useMemo(
+  const scheduleFetchCars = useMemo(
     () => catalogDebounce((page: number, nextFilters: APIFilters, resetList: boolean) => {
       fetchCars(page, nextFilters, resetList);
     }, 120),
     [fetchCars]
   );
 
-    const restoreCatalogSnapshot = useCallback(
-      (signature: string, targetPage: number) => {
-        if (typeof window === "undefined" || snapshotHydratedRef.current) {
-          return false;
-        }
-        try {
-          const raw = sessionStorage.getItem(CATALOG_SNAPSHOT_KEY);
-          if (!raw) {
-            return false;
-          }
-          const snapshot = JSON.parse(raw);
-          const isFresh = snapshot?.timestamp && Date.now() - snapshot.timestamp < CATALOG_SNAPSHOT_TTL;
-          if (!isFresh || snapshot?.signature !== signature || snapshot?.page !== targetPage) {
-            return false;
-          }
-          if (!Array.isArray(snapshot?.cars) || snapshot.cars.length === 0) {
-            return false;
-          }
-          setCars(snapshot.cars);
-          if (typeof snapshot.totalCount === "number") {
-            setTotalCount(snapshot.totalCount);
-          }
-          snapshotHydratedRef.current = true;
-          return true;
-        } catch (error) {
-          console.warn("Failed to restore catalog snapshot", error);
-          return false;
-        }
-      },
-      [setCars, setTotalCount]
-    );
-
-    const persistCatalogSnapshot = useCallback(
-      (carsToPersist: any[], signature: string, page: number, count: number) => {
-        if (typeof window === "undefined" || !Array.isArray(carsToPersist) || carsToPersist.length === 0) {
-          return;
-        }
-        try {
-          const payload = {
-            cars: carsToPersist.slice(0, 80),
-            totalCount: count,
-            signature,
-            page,
-            timestamp: Date.now(),
-          };
-          sessionStorage.setItem(CATALOG_SNAPSHOT_KEY, JSON.stringify(payload));
-        } catch (error) {
-          console.warn("Failed to persist catalog snapshot", error);
-        }
-      },
-      []
-    );
-
   useEffect(() => {
     if (!loading && !isApplyingFilters) {
       setIsFilterLoading(false);
     }
   }, [loading, isApplyingFilters]);
-
-    useEffect(() => {
-      if (typeof window === "undefined") {
-        return;
-      }
-      if (loading || isFilterLoading || cars.length === 0 || showAllCars) {
-        return;
-      }
-      if (currentPage !== 1) {
-        return;
-      }
-      const signature = buildSnapshotSignature(currentFiltersSignature, sortBy || "recently_added", currentPage);
-      persistCatalogSnapshot(cars, signature, currentPage, totalCount);
-    }, [cars, loading, isFilterLoading, showAllCars, currentPage, currentFiltersSignature, sortBy, totalCount, persistCatalogSnapshot]);
 
   // Ensure filters are always open on desktop
   useEffect(() => {
@@ -388,19 +296,6 @@ const EncarCatalog = ({
       }),
     [smoothCarsToDisplay],
   );
-
-  const deferredRenderableCars = useDeferredValue(renderableCars);
-  const initialRenderCount = useMemo(() => {
-    const limit = viewMode === "grid" ? (isMobile ? 8 : 16) : 12;
-    return Math.min(renderableCars.length, limit);
-  }, [renderableCars, viewMode, isMobile]);
-  const previewRenderableCars = useMemo(
-    () => renderableCars.slice(0, initialRenderCount || renderableCars.length),
-    [renderableCars, initialRenderCount],
-  );
-  const isDeferredRendering = deferredRenderableCars !== renderableCars;
-  const carsForImmediateRender = isDeferredRendering ? previewRenderableCars : renderableCars;
-  const carsShownCount = isDeferredRendering ? previewRenderableCars.length : renderableCars.length;
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{
@@ -438,8 +333,7 @@ const EncarCatalog = ({
 
   // Refs for swipe gesture detection
   const mainContentRef = useRef<HTMLDivElement>(null);
-    const filterPanelRef = useRef<HTMLDivElement>(null);
-    const snapshotHydratedRef = useRef(false);
+  const filterPanelRef = useRef<HTMLDivElement>(null);
 
   // SIMPLIFIED: More efficient scroll position saving
   const saveScrollPosition = useCallback(() => {
@@ -971,13 +865,6 @@ const EncarCatalog = ({
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
       setCurrentPage(urlCurrentPage);
-
-        const normalizedInitialFilters = normalizeFilters(urlFilters || {});
-        const initialSignature = buildSnapshotSignature(JSON.stringify(normalizedInitialFilters), sortBy || "recently_added", urlCurrentPage);
-        const snapshotApplied = restoreCatalogSnapshot(initialSignature, urlCurrentPage);
-        if (snapshotApplied) {
-          setIsRestoringState(false);
-        }
       try {
         // PERFORMANCE OPTIMIZATION: Load only essential data first
         // Load manufacturers immediately (they're cached)
@@ -1081,73 +968,26 @@ const EncarCatalog = ({
       return () => { cancelled = true; };
     }, [filters, displayableGridCount]);
 
-  // Kick off fetching AuctionsAPI grid data once on mount (deferred for faster initial paint)
+  // Kick off fetching AuctionsAPI grid data once on mount (small number of pages for responsiveness)
   useEffect(() => {
-    let idleHandle: number | null = null;
-    let timeoutHandle: number | null = null;
-    let aborted = false;
-
-    const runBackgroundSync = () => {
-      if (aborted) {
-        return;
-      }
-      if (GRID_LINK) {
-        fetchFromLink(GRID_LINK, 10, 100).catch(() => {});
-        fetch("https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "grid_link", link: GRID_LINK, limit: 100, pages: 50 }),
-        })
-          .then((r) => r.json())
-          .then((res) => {
-            if (aborted || !res?.success) {
-              return;
-            }
-            console.log(`☁️ Cloud import done: imported ${res.imported} (KBC: ${res.kbchachaCount}, Encar: ${res.encarCount})`);
-            toast({
-              title: "Shtim i të dhënave",
-              description: `U shtuan ${res.imported} makina nga linku`,
-              duration: 4000,
-            });
-          })
-          .catch(() => {});
-      } else {
-        fetchGrid(3, 100).catch(() => {});
-      }
-    };
-
-    if (typeof window !== "undefined") {
-      const win = window as typeof window & {
-        requestIdleCallback?: (cb: IdleRequestCallback) => number;
-        cancelIdleCallback?: (handle: number) => void;
-      };
-
-      if (typeof win.requestIdleCallback === "function") {
-        idleHandle = win.requestIdleCallback(() => {
-          timeoutHandle = window.setTimeout(runBackgroundSync, 120);
-        });
-      } else {
-        timeoutHandle = window.setTimeout(runBackgroundSync, 250);
-      }
+    const link = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK as string | undefined;
+    if (link) {
+      fetchFromLink(link, 10, 100).catch(() => {});
+      // Trigger cloud import to persist and count
+      fetch('https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'grid_link', link, limit: 100, pages: 50 })
+      }).then(r => r.json()).then((res) => {
+        if (res?.success) {
+          console.log(`☁️ Cloud import done: imported ${res.imported} (KBC: ${res.kbchachaCount}, Encar: ${res.encarCount})`);
+          toast({ title: 'Shtim i të dhënave', description: `U shtuan ${res.imported} makina nga linku`, duration: 4000 });
+        }
+      }).catch(() => {});
     } else {
-      runBackgroundSync();
+      fetchGrid(3, 100).catch(() => {});
     }
-
-    return () => {
-      aborted = true;
-      if (typeof window !== "undefined") {
-        const win = window as typeof window & {
-          cancelIdleCallback?: (handle: number) => void;
-        };
-        if (idleHandle !== null && typeof win.cancelIdleCallback === "function") {
-          win.cancelIdleCallback(idleHandle);
-        }
-        if (timeoutHandle !== null) {
-          window.clearTimeout(timeoutHandle);
-        }
-      }
-    };
-  }, [fetchFromLink, fetchGrid, toast]);
+  }, []);
 
   // Debug: Count how many KB Chachacha cars are added via grid (not present in secure list)
   useEffect(() => {
@@ -1378,25 +1218,24 @@ const EncarCatalog = ({
         </div>
         
         <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
-            <div className={`${isMobile ? 'p-3' : ''}`}>
-              <Suspense fallback={<FilterPanelSkeleton isMobile={isMobile} />}>
-                <EncarStyleFilter 
-                  filters={filters} 
-                  manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
-                  models={models} 
-                  engineVariants={engineVariants}
-                  filterCounts={filterCounts} 
-                  loadingCounts={loadingCounts} 
-                  onFiltersChange={handleFiltersChange} 
-                  onClearFilters={handleClearFilters} 
-                  onManufacturerChange={handleManufacturerChange} 
-                  onModelChange={handleModelChange} 
-                  showAdvanced={showAdvancedFilters} 
-                  onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)} 
-                  onFetchGrades={fetchGrades} 
-                  onFetchTrimLevels={fetchTrimLevels} 
-                  compact={true} 
-                  onSearchCars={() => {
+          <div className={`${isMobile ? 'p-3' : ''}`}>
+            <EncarStyleFilter 
+              filters={filters} 
+              manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
+              models={models} 
+              engineVariants={engineVariants}
+              filterCounts={filterCounts} 
+              loadingCounts={loadingCounts} 
+              onFiltersChange={handleFiltersChange} 
+              onClearFilters={handleClearFilters} 
+              onManufacturerChange={handleManufacturerChange} 
+              onModelChange={handleModelChange} 
+              showAdvanced={showAdvancedFilters} 
+              onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)} 
+              onFetchGrades={fetchGrades} 
+              onFetchTrimLevels={fetchTrimLevels} 
+              compact={true} 
+              onSearchCars={() => {
             console.log("Search button clicked, isMobile:", isMobile);
             // Apply search/filters with current sort preference - fetch from ALL sources
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
@@ -1445,7 +1284,6 @@ const EncarCatalog = ({
               }, 100);
             }
           }} />
-              </Suspense>
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
@@ -1598,30 +1436,24 @@ const EncarCatalog = ({
                     (isFilterLoading || loading || isCarsTransitioning) && "opacity-80",
                   )}
                 >
-                    {carsForImmediateRender.map((car: CarWithRank | any) => {
+                  {renderableCars.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
               // Only use buy_now price, no fallbacks
               const usdPrice = lot?.buy_now;
               const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               const lotNumber = car.lot_number || lot?.lot || "";
-                  return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`} className="[content-visibility:auto] [contain-intrinsic-size:320px_360px]">
-                          <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
-                    vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} viewMode={viewMode} prefetchPayload={car} />
-                        </div>;
+                return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
+                        <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
+                  vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} viewMode={viewMode} />
+                      </div>;
             })}
               </div>
-
-              {isDeferredRendering && (
-                <div className="flex justify-center py-4">
-                  <LoadingLogo size="sm" className="text-muted-foreground" />
-                </div>
-              )}
 
               {/* Pagination Controls - replace Load More button */}
               {!showAllCars && totalPages > 1 && <div className="flex flex-col items-center py-8 space-y-4">
                   {/* Page Info */}
                     <div className="text-center text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages.toLocaleString()} • {carsShownCount} cars shown
+                      Page {currentPage} of {totalPages.toLocaleString()} • {renderableCars.length} cars shown
                   </div>
                   
                   {/* Pagination Navigation */}

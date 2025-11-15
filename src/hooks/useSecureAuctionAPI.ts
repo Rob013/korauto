@@ -3,14 +3,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, startTransition } fr
 import { supabase, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
 import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSold } from "@/services/carCache";
 import { findGenerationYears } from "@/data/generationYears";
-import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from "../utils/grade-categorization";
-import { getBrandLogo } from "@/data/brandLogos";
-import {
-  fallbackCars as staticFallbackCars,
-  fallbackManufacturers as staticFallbackManufacturers,
-  cloneFallbackCar,
-  type FallbackCar,
-} from "@/data/fallbackData";
+import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
+import { getBrandLogo } from '@/data/brandLogos';
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -33,185 +27,10 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
-const FILTER_CACHE_TTL = 1000 * 60 * 30; // 30 minutes
-const getFilterCacheKey = (type: string, identifier?: string | number) =>
-  `catalog_filter_${type}_${identifier ?? "all"}`;
-
-const readFilterCache = <T>(key: string): T | null => {
-  if (typeof window === "undefined" || !window.sessionStorage) {
-    return null;
-  }
-  try {
-    const raw = window.sessionStorage.getItem(key);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw);
-    if (
-      !parsed ||
-      typeof parsed !== "object" ||
-      typeof parsed.timestamp !== "number" ||
-      Date.now() - parsed.timestamp > FILTER_CACHE_TTL
-    ) {
-      window.sessionStorage.removeItem(key);
-      return null;
-    }
-    return parsed.data as T;
-  } catch (error) {
-    console.warn("Failed to read filter cache", error);
-    return null;
-  }
-};
-
-const writeFilterCache = (key: string, data: unknown) => {
-  if (typeof window === "undefined" || !window.sessionStorage) {
-    return;
-  }
-  try {
-    window.sessionStorage.setItem(
-      key,
-      JSON.stringify({
-        data,
-        timestamp: Date.now(),
-      }),
-    );
-  } catch (error) {
-    console.warn("Failed to persist filter cache", error);
-  }
-};
-
-const isEmptyFilterValue = (value?: string | null) =>
-  value === undefined ||
-  value === null ||
-  value === "" ||
-  value === "all";
-
-const normalizeSearchText = (value: unknown) =>
-  typeof value === "string" && value.trim() ? value.trim().toLowerCase() : "";
-
-const getPrimaryFallbackLot = (car: FallbackCar) =>
-  Array.isArray(car.lots) && car.lots.length > 0 ? car.lots[0] : undefined;
-
-const matchesFallbackCarFilters = (car: FallbackCar, filters: APIFilters = {}) => {
-  const lot = getPrimaryFallbackLot(car);
-  if (!lot) {
-    return false;
-  }
-
-  if (!isEmptyFilterValue(filters.manufacturer_id) && String(car.manufacturer.id) !== String(filters.manufacturer_id)) {
-    return false;
-  }
-
-  if (!isEmptyFilterValue(filters.model_id) && String(car.model.id) !== String(filters.model_id)) {
-    return false;
-  }
-
-  if (!isEmptyFilterValue(filters.generation_id)) {
-    if (!car.generation || String(car.generation.id) !== String(filters.generation_id)) {
-      return false;
-    }
-  }
-
-  if (!isEmptyFilterValue(filters.fuel_type)) {
-    const targetFuel = filters.fuel_type!.toLowerCase();
-    if ((car.fuel || "").toLowerCase() !== targetFuel) {
-      return false;
-    }
-  }
-
-  if (!isEmptyFilterValue(filters.transmission)) {
-    const targetTransmission = filters.transmission!.toLowerCase();
-    if ((car.transmission?.name || "").toLowerCase() !== targetTransmission) {
-      return false;
-    }
-  }
-
-  if (!isEmptyFilterValue(filters.body_type)) {
-    const targetBody = filters.body_type!.toLowerCase();
-    const bodyName = typeof car.body_type?.name === "string" ? car.body_type.name.toLowerCase() : "";
-    if (bodyName !== targetBody) {
-      return false;
-    }
-  }
-
-  if (!isEmptyFilterValue(filters.color)) {
-    const targetColor = filters.color!.toLowerCase();
-    const colorValue =
-      typeof car.color === "string"
-        ? car.color.toLowerCase()
-        : typeof (car.color as { name?: string })?.name === "string"
-          ? ((car.color as { name?: string }).name || "").toLowerCase()
-          : "";
-    if (!colorValue.includes(targetColor)) {
-      return false;
-    }
-  }
-
-  if (!isEmptyFilterValue(filters.from_year) && car.year < Number(filters.from_year)) {
-    return false;
-  }
-
-  if (!isEmptyFilterValue(filters.to_year) && car.year > Number(filters.to_year)) {
-    return false;
-  }
-
-  const price = Number(lot.buy_now ?? car.buy_now ?? car.price ?? 0);
-  if (!isEmptyFilterValue(filters.buy_now_price_from) && price < Number(filters.buy_now_price_from)) {
-    return false;
-  }
-  if (!isEmptyFilterValue(filters.buy_now_price_to) && price > Number(filters.buy_now_price_to)) {
-    return false;
-  }
-
-  const mileageKm = lot.odometer?.km;
-  if (!isEmptyFilterValue(filters.odometer_from_km) && typeof mileageKm === "number" && mileageKm < Number(filters.odometer_from_km)) {
-    return false;
-  }
-  if (!isEmptyFilterValue(filters.odometer_to_km) && typeof mileageKm === "number" && mileageKm > Number(filters.odometer_to_km)) {
-    return false;
-  }
-
-  if (!isEmptyFilterValue(filters.seats_count)) {
-    if (car.details?.seats_count !== Number(filters.seats_count)) {
-      return false;
-    }
-  }
-
-  if (!isEmptyFilterValue(filters.grade_iaai)) {
-    const grade = (lot.grade_iaai || "").toLowerCase();
-    const targetGrade = filters.grade_iaai!.toLowerCase();
-    if (!grade.includes(targetGrade)) {
-      return false;
-    }
-  }
-
-  const searchQuery = normalizeSearchText(filters.search);
-  if (searchQuery) {
-    const haystack = [
-      car.title,
-      car.make,
-      car.model?.name,
-      car.vin,
-      lot.lot,
-      car.source_api,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    if (!haystack.includes(searchQuery)) {
-      return false;
-    }
-  }
-
-  return true;
-};
-
 // Create fallback car data for testing when API is not available
-export const createFallbackCars = (filters: APIFilters = {}): any[] => {
-  return staticFallbackCars
-    .filter((car) => matchesFallbackCarFilters(car, filters))
-    .map((car) => cloneFallbackCar(car));
+export const createFallbackCars = (_filters: any = {}): any[] => {
+  console.warn("createFallbackCars called after mock data removal – returning empty array.");
+  return [];
 };
 
 // Create fallback generation data for testing when API is not available
@@ -221,42 +40,15 @@ export const createFallbackGenerations = (_manufacturerName: string): Generation
 };
 
 // Create fallback model data for testing when API is not available
-export const createFallbackModels = (manufacturerIdentifier: string): Model[] => {
-  if (!manufacturerIdentifier) {
-    return [];
-  }
-
-  const normalizedName = manufacturerIdentifier.toLowerCase();
-  const numericId = Number(manufacturerIdentifier);
-
-  const modelsMap = new Map<number, { id: number; name: string; car_count: number }>();
-
-  staticFallbackCars.forEach((car) => {
-    const matchesById = !Number.isNaN(numericId) && car.manufacturer.id === numericId;
-    const matchesByName = car.manufacturer.name.toLowerCase() === normalizedName;
-
-    if (!matchesById && !matchesByName) {
-      return;
-    }
-
-    if (!modelsMap.has(car.model.id)) {
-      modelsMap.set(car.model.id, {
-        id: car.model.id,
-        name: car.model.name,
-        car_count: 1,
-      });
-    } else {
-      const existing = modelsMap.get(car.model.id)!;
-      existing.car_count += 1;
-    }
-  });
-
-  return Array.from(modelsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+export const createFallbackModels = (_manufacturerName: string): Model[] => {
+  console.warn("createFallbackModels called after mock data removal – returning empty array.");
+  return [];
 };
 
 // Create fallback manufacturer data without logos
 export const createFallbackManufacturers = () => {
-  return staticFallbackManufacturers.map((manufacturer) => ({ ...manufacturer }));
+  console.warn("createFallbackManufacturers called after mock data removal – returning empty array.");
+  return [];
 };
 
 
@@ -1052,13 +844,6 @@ export const useSecureAuctionAPI = () => {
   };
 
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
-    const cacheKey = getFilterCacheKey("manufacturers");
-    const cachedManufacturers = readFilterCache<Manufacturer[]>(cacheKey);
-    if (cachedManufacturers && cachedManufacturers.length > 0) {
-      console.log(`⚡️ Using cached manufacturers (${cachedManufacturers.length})`);
-      return cachedManufacturers;
-    }
-
     try {
       console.log(`🔍 Fetching all manufacturers`);
       
@@ -1090,27 +875,18 @@ export const useSecureAuctionAPI = () => {
       
       console.log(`🏷️ Retrieved manufacturers:`, 
         manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
-      writeFilterCache(cacheKey, manufacturers);
+      
       return manufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
       console.log(`🔄 Using fallback manufacturer data`);
       
       // Return fallback data when API fails
-      const fallbackManufacturers = createFallbackManufacturers();
-      writeFilterCache(cacheKey, fallbackManufacturers);
-      return fallbackManufacturers;
+      return createFallbackManufacturers();
     }
   };
 
   const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
-    const cacheKey = getFilterCacheKey("models", manufacturerId);
-    const cachedModels = readFilterCache<Model[]>(cacheKey);
-    if (cachedModels && cachedModels.length > 0) {
-      console.log(`⚡️ Using cached models for manufacturer ${manufacturerId}`);
-      return cachedModels;
-    }
-
     try {
       // Use cached API call for models
       const fallbackData = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
@@ -1129,7 +905,6 @@ export const useSecureAuctionAPI = () => {
       );
 
       fallbackModels.sort((a: any, b: any) => a.name.localeCompare(b.name));
-      writeFilterCache(cacheKey, fallbackModels);
       return fallbackModels;
     } catch (err) {
       console.error("[fetchModels] Error:", err);
@@ -1140,9 +915,7 @@ export const useSecureAuctionAPI = () => {
         const manufacturers = await fetchManufacturers();
         const manufacturer = manufacturers.find(m => m.id.toString() === manufacturerId);
         if (manufacturer) {
-          const fallbackModels = createFallbackModels(manufacturer.name);
-          writeFilterCache(cacheKey, fallbackModels);
-          return fallbackModels;
+          return createFallbackModels(manufacturer.name);
         }
       } catch (fallbackErr) {
         console.error("Error creating fallback models:", fallbackErr);
@@ -1153,18 +926,6 @@ export const useSecureAuctionAPI = () => {
   };
 
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
-    const cacheKey = getFilterCacheKey("generations", modelId);
-    const cachedGenerations = readFilterCache<Generation[]>(cacheKey);
-    if (cachedGenerations && cachedGenerations.length > 0) {
-      console.log(`⚡️ Using cached generations for model ${modelId}`);
-      return cachedGenerations;
-    }
-
-    const persistAndReturn = (list: Generation[]) => {
-      writeFilterCache(cacheKey, list);
-      return list;
-    };
-
     try {
       console.log(`🔍 Fetching generations for model ID: ${modelId}`);
       
@@ -1183,8 +944,7 @@ export const useSecureAuctionAPI = () => {
       // If we have API generations with proper year data, use them
       if (generationsFromAPI.length > 0 && generationsFromAPI.some(g => g.from_year || g.to_year)) {
         console.log('✅ Using generations with real API year data');
-        const sorted = generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
-        return persistAndReturn(sorted);
+        return generationsFromAPI.sort((a, b) => a.name.localeCompare(b.name));
       }
 
       // OPTIMIZED: Use model-specific fallback approach instead of calling all manufacturer APIs
@@ -1238,7 +998,7 @@ export const useSecureAuctionAPI = () => {
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
       filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
       console.log(`📊 Returning ${filteredGenerations.length} filtered generations for model ${modelId}`);
-      return persistAndReturn(filteredGenerations);
+      return filteredGenerations;
       
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
@@ -1246,7 +1006,7 @@ export const useSecureAuctionAPI = () => {
       
       // Return a minimal set of fallback generations to avoid empty state
       const modelIdNum = parseInt(modelId);
-      const fallbackGenerations = [
+      return [
         { 
           id: modelIdNum * 1000 + 1, 
           name: '1st Generation', 
@@ -1266,7 +1026,6 @@ export const useSecureAuctionAPI = () => {
           model_id: modelIdNum 
         }
       ];
-      return persistAndReturn(fallbackGenerations);
     }
   };
 

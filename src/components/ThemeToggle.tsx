@@ -1,67 +1,39 @@
-import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "@/components/ThemeProvider";
-import { cn } from "@/lib/utils";
+import { Moon, Sun } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useTheme } from "@/components/ThemeProvider"
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [systemPrefersDark, setSystemPrefersDark] = useState(true);
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setSystemPrefersDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
-  const isDark = resolvedTheme === "dark";
-
-  const handleToggle = () => setTheme(isDark ? "light" : "dark");
-  const indicatorTransform = isDark ? "translateX(100%)" : "translateX(0%)";
+  const handleToggle = () => setTheme(isDark ? "light" : "dark")
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={handleToggle}
       aria-pressed={isDark}
       aria-label={isDark ? "Kalo në mënyrën e ditës" : "Kalo në mënyrën e natës"}
-      className={cn(
-        "relative inline-flex h-10 w-[5.5rem] items-center justify-between overflow-hidden rounded-full border border-border/60 bg-background/80 px-1 text-xs font-semibold uppercase tracking-wide transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        isDark ? "shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]" : "shadow-sm"
-      )}
+      className="relative h-10 w-10 rounded-2xl border border-border/70 bg-gradient-to-br from-white/95 via-white/80 to-white/60 text-foreground shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-lg)] dark:from-slate-900/80 dark:via-slate-900/60 dark:to-slate-900/40"
     >
-      <span className="sr-only">Ndrysho temën vizuale</span>
-      <span className="absolute inset-1 rounded-full bg-muted/30 dark:bg-slate-900/40" aria-hidden="true" />
       <span
-        className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-primary/15 backdrop-blur-sm transition-transform duration-300 ease-out"
-        style={{ transform: indicatorTransform }}
-        aria-hidden="true"
+        aria-hidden
+        className="pointer-events-none absolute inset-[1px] rounded-[1.05rem] bg-white/70 backdrop-blur-md transition-all duration-300 dark:bg-slate-950/60"
       />
-      <span className="relative z-10 flex w-full items-center justify-between">
-        <span
-          className={cn(
-            "flex h-8 w-1/2 items-center justify-center gap-1 rounded-full transition-colors duration-300",
-            !isDark ? "text-foreground" : "text-muted-foreground/70"
-          )}
-        >
-          <Sun className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">Day</span>
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute -inset-5 blur-2xl opacity-40 transition-all duration-500 ${isDark ? "bg-amber-300/50" : "bg-primary/40"}`}
+      />
+        <span className="relative z-10 flex h-5 w-5 items-center justify-center">
+          <Sun
+            className={`absolute h-5 w-5 transition-all duration-300 ${isDark ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"} text-primary drop-shadow-sm`}
+          />
+          <Moon
+            className={`absolute h-4 w-4 transition-all duration-300 ${isDark ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-90 opacity-0"} text-amber-200 drop-shadow-md`}
+          />
         </span>
-        <span
-          className={cn(
-            "flex h-8 w-1/2 items-center justify-center gap-1 rounded-full transition-colors duration-300",
-            isDark ? "text-foreground" : "text-muted-foreground/70"
-          )}
-        >
-          <Moon className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">Night</span>
-        </span>
-      </span>
-    </button>
-  );
+      <span className="sr-only">Ndrysho temën vizuale</span>
+    </Button>
+  )
 }
