@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, useTransition, useDeferredValue } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition, useDeferredValue, lazy, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +12,9 @@ import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
-import EncarStyleFilter from "@/components/EncarStyleFilter";
-import { AISearchBar } from "@/components/AISearchBar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
-import { useResourcePreloader } from "@/hooks/useResourcePreloader";
 import { debounce } from "@/utils/performance";
 import { useOptimizedYearFilter } from "@/hooks/useOptimizedYearFilter";
 import { initializeTouchRipple, cleanupTouchRipple } from "@/utils/touchRipple";
@@ -37,6 +35,26 @@ import { resolveFuelFromSources } from "@/utils/fuel";
 import { fallbackCars } from "@/data/fallbackData";
 import { useAnimatedCount } from "@/hooks/useAnimatedCount";
 
+const EncarStyleFilter = lazy(() => import("@/components/EncarStyleFilter"));
+
+const FilterPanelSkeleton = ({ isMobile }: { isMobile: boolean }) => (
+  <div className={cn(isMobile ? "p-4 space-y-4" : "p-3 space-y-3")}>
+    <div className="flex items-center gap-3">
+      <Skeleton className="h-5 w-24" />
+      <Skeleton className="h-5 w-16" />
+    </div>
+    <div className="grid grid-cols-1 gap-2.5">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="space-y-2 rounded-lg border border-border/40 bg-card/60 p-3">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const GRID_LINK = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK as string | undefined;
 const CATALOG_SNAPSHOT_KEY = "encar_catalog_snapshot_v2";
 const CATALOG_SNAPSHOT_TTL = 1000 * 60 * 3; // 3 minutes
 const buildSnapshotSignature = (filtersSignature: string, sort: SortOption | "", page: number) => {
@@ -1063,26 +1081,73 @@ const EncarCatalog = ({
       return () => { cancelled = true; };
     }, [filters, displayableGridCount]);
 
-  // Kick off fetching AuctionsAPI grid data once on mount (small number of pages for responsiveness)
+  // Kick off fetching AuctionsAPI grid data once on mount (deferred for faster initial paint)
   useEffect(() => {
-    const link = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK as string | undefined;
-    if (link) {
-      fetchFromLink(link, 10, 100).catch(() => {});
-      // Trigger cloud import to persist and count
-      fetch('https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'grid_link', link, limit: 100, pages: 50 })
-      }).then(r => r.json()).then((res) => {
-        if (res?.success) {
-          console.log(`☁️ Cloud import done: imported ${res.imported} (KBC: ${res.kbchachaCount}, Encar: ${res.encarCount})`);
-          toast({ title: 'Shtim i të dhënave', description: `U shtuan ${res.imported} makina nga linku`, duration: 4000 });
-        }
-      }).catch(() => {});
+    let idleHandle: number | null = null;
+    let timeoutHandle: number | null = null;
+    let aborted = false;
+
+    const runBackgroundSync = () => {
+      if (aborted) {
+        return;
+      }
+      if (GRID_LINK) {
+        fetchFromLink(GRID_LINK, 10, 100).catch(() => {});
+        fetch("https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "grid_link", link: GRID_LINK, limit: 100, pages: 50 }),
+        })
+          .then((r) => r.json())
+          .then((res) => {
+            if (aborted || !res?.success) {
+              return;
+            }
+            console.log(`☁️ Cloud import done: imported ${res.imported} (KBC: ${res.kbchachaCount}, Encar: ${res.encarCount})`);
+            toast({
+              title: "Shtim i të dhënave",
+              description: `U shtuan ${res.imported} makina nga linku`,
+              duration: 4000,
+            });
+          })
+          .catch(() => {});
+      } else {
+        fetchGrid(3, 100).catch(() => {});
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      const win = window as typeof window & {
+        requestIdleCallback?: (cb: IdleRequestCallback) => number;
+        cancelIdleCallback?: (handle: number) => void;
+      };
+
+      if (typeof win.requestIdleCallback === "function") {
+        idleHandle = win.requestIdleCallback(() => {
+          timeoutHandle = window.setTimeout(runBackgroundSync, 120);
+        });
+      } else {
+        timeoutHandle = window.setTimeout(runBackgroundSync, 250);
+      }
     } else {
-      fetchGrid(3, 100).catch(() => {});
+      runBackgroundSync();
     }
-  }, []);
+
+    return () => {
+      aborted = true;
+      if (typeof window !== "undefined") {
+        const win = window as typeof window & {
+          cancelIdleCallback?: (handle: number) => void;
+        };
+        if (idleHandle !== null && typeof win.cancelIdleCallback === "function") {
+          win.cancelIdleCallback(idleHandle);
+        }
+        if (timeoutHandle !== null) {
+          window.clearTimeout(timeoutHandle);
+        }
+      }
+    };
+  }, [fetchFromLink, fetchGrid, toast]);
 
   // Debug: Count how many KB Chachacha cars are added via grid (not present in secure list)
   useEffect(() => {
@@ -1313,24 +1378,25 @@ const EncarCatalog = ({
         </div>
         
         <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
-          <div className={`${isMobile ? 'p-3' : ''}`}>
-            <EncarStyleFilter 
-              filters={filters} 
-              manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
-              models={models} 
-              engineVariants={engineVariants}
-              filterCounts={filterCounts} 
-              loadingCounts={loadingCounts} 
-              onFiltersChange={handleFiltersChange} 
-              onClearFilters={handleClearFilters} 
-              onManufacturerChange={handleManufacturerChange} 
-              onModelChange={handleModelChange} 
-              showAdvanced={showAdvancedFilters} 
-              onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)} 
-              onFetchGrades={fetchGrades} 
-              onFetchTrimLevels={fetchTrimLevels} 
-              compact={true} 
-              onSearchCars={() => {
+            <div className={`${isMobile ? 'p-3' : ''}`}>
+              <Suspense fallback={<FilterPanelSkeleton isMobile={isMobile} />}>
+                <EncarStyleFilter 
+                  filters={filters} 
+                  manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()} 
+                  models={models} 
+                  engineVariants={engineVariants}
+                  filterCounts={filterCounts} 
+                  loadingCounts={loadingCounts} 
+                  onFiltersChange={handleFiltersChange} 
+                  onClearFilters={handleClearFilters} 
+                  onManufacturerChange={handleManufacturerChange} 
+                  onModelChange={handleModelChange} 
+                  showAdvanced={showAdvancedFilters} 
+                  onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)} 
+                  onFetchGrades={fetchGrades} 
+                  onFetchTrimLevels={fetchTrimLevels} 
+                  compact={true} 
+                  onSearchCars={() => {
             console.log("Search button clicked, isMobile:", isMobile);
             // Apply search/filters with current sort preference - fetch from ALL sources
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
@@ -1379,6 +1445,7 @@ const EncarCatalog = ({
               }, 100);
             }
           }} />
+              </Suspense>
           
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
