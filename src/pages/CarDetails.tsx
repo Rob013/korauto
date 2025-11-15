@@ -318,12 +318,16 @@ const getAdaptiveTitleClasses = (title?: string | null) => {
 
   const normalizedLength = title.trim().length;
 
-  if (normalizedLength >= 52) {
-    return "text-xl sm:text-2xl";
+  if (normalizedLength >= 72) {
+    return "text-lg sm:text-xl";
   }
 
-  if (normalizedLength >= 38) {
-    return "text-[1.65rem] sm:text-[2.25rem]";
+  if (normalizedLength >= 58) {
+    return "text-xl sm:text-[1.9rem]";
+  }
+
+  if (normalizedLength >= 42) {
+    return "text-[1.55rem] sm:text-[2.15rem]";
   }
 
   return "text-2xl sm:text-3xl";
@@ -3826,7 +3830,7 @@ const CarDetails = memo(() => {
 
         return (
           <div className="min-h-screen bg-background animate-fade-in">
-            <div className="container-responsive py-6 max-w-[1600px] space-y-6">
+            <div className="container-responsive py-4 sm:py-6 max-w-[1600px] space-y-6">
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
@@ -3973,7 +3977,7 @@ const CarDetails = memo(() => {
   if (error || !car) {
     return (
       <div className="min-h-screen bg-background animate-fade-in">
-        <div className="container-responsive py-8">
+        <div className="container-responsive py-5 sm:py-8">
           <Button
             variant="outline"
             onClick={() => navigate("/")}
@@ -3998,12 +4002,12 @@ const CarDetails = memo(() => {
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
-        <div className="container-responsive py-6 max-w-[1600px]">
+        <div className="container-responsive py-4 sm:py-6 max-w-[1600px]">
           {/* Header with Actions - Modern Layout with animations */}
-          <div className="flex flex-col gap-3 mb-6">
+          <div className="flex flex-col gap-2.5 mb-4">
             {/* Navigation and Action Buttons with hover effects */}
             <div
-              className="flex flex-wrap items-center gap-2"
+              className="flex flex-wrap items-center gap-1.5 sm:gap-2"
               style={{
                 animation: "fadeIn 0.3s ease-out forwards",
                 animationDelay: "0.1s",
@@ -4062,13 +4066,11 @@ const CarDetails = memo(() => {
         </div>
 
         {/* Main Content - Modern Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8 xl:gap-10">
-          {/* Left Column - Images and Gallery */}
-            <div
-              className="space-y-8 sm:space-y-10 animate-fade-in-up stagger-1"
-            >
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-4 lg:gap-6 xl:gap-8">
+            {/* Left Column - Images and Gallery */}
+              <div className="space-y-5 sm:space-y-7 animate-fade-in-up stagger-1">
             {/* Main Image with modern styling - Compact mobile design */}
-            <div className="hidden lg:flex lg:gap-4">
+            <div className="hidden lg:flex lg:gap-3.5">
               {/* Main Image Card */}
               <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
                 <CardContent className="p-0">
@@ -4375,12 +4377,12 @@ const CarDetails = memo(() => {
 
               {displayTitle && (
                 <div className="animate-fade-in-up stagger-1">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 md:gap-4">
+                  <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-1.5 sm:space-y-2.5">
+                      <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 flex-nowrap w-full min-w-0">
                       {brandLogo ? (
                         <div
-                          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
+                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
                           aria-hidden={!resolvedBrandName}
                         >
                           <picture>
@@ -4406,7 +4408,7 @@ const CarDetails = memo(() => {
                       ) : null}
                         <p
                           className={cn(
-                            "font-semibold text-foreground leading-[1.1] sm:leading-[1.15] tracking-tight transition-[font-size] duration-300",
+                              "font-semibold text-foreground leading-[1.05] sm:leading-[1.1] tracking-tight transition-[font-size] duration-300 whitespace-nowrap overflow-hidden text-ellipsis min-w-0",
                             getAdaptiveTitleClasses(displayTitle),
                           )}
                         >
@@ -4415,13 +4417,13 @@ const CarDetails = memo(() => {
                     </div>
 
                     {resolvedSecondaryTitle && resolvedSecondaryTitle !== displayTitle && (
-                        <p className="mt-1.5 text-sm sm:text-base text-muted-foreground/90 leading-relaxed">
+                          <p className="mt-1 text-sm sm:text-base text-muted-foreground/90 leading-relaxed">
                         {resolvedSecondaryTitle}
                       </p>
                     )}
 
                     {/* Subtitle with year and key details */}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm sm:text-base text-muted-foreground leading-tight sm:leading-snug">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:text-[0.95rem] text-muted-foreground leading-tight sm:leading-snug">
                       {car.year && <span className="font-medium">{car.year}</span>}
                       {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
                       {car.mileage && <span>{formatMileage(car.mileage)}</span>}
@@ -4445,7 +4447,7 @@ const CarDetails = memo(() => {
                   </div>
 
                   {typeof car.price === "number" && (
-                    <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
+                      <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
                       <span className="text-3xl font-bold text-primary leading-tight">
                         €{car.price.toLocaleString()}
                       </span>
@@ -4459,12 +4461,12 @@ const CarDetails = memo(() => {
             )}
 
             {/* History Section */}
-              <Card
-                id="history"
-                ref={historySectionRef}
-                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
-              >
-                <CardContent className="p-4 sm:p-5 space-y-4">
+                <Card
+                  id="history"
+                  ref={historySectionRef}
+                  className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
+                >
+                  <CardContent className="p-4 sm:p-4 space-y-3.5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className="p-2 rounded-lg bg-primary/10">
@@ -4515,11 +4517,11 @@ const CarDetails = memo(() => {
             </Card>
 
 
-            {/* Enhanced Detailed Information Section */}
-              <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
-                <CardContent className="space-y-4 p-3 sm:p-4 lg:p-5">
-                  {showDetailedInfo && (
-                    <div className="space-y-4 sm:space-y-5 animate-in slide-in-from-top-2 duration-300">
+              {/* Enhanced Detailed Information Section */}
+                <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
+                  <CardContent className="space-y-3.5 p-3 sm:p-3.5 lg:p-4">
+                    {showDetailedInfo && (
+                      <div className="space-y-3.5 sm:space-y-4.5 animate-in slide-in-from-top-2 duration-300">
                     {/* Insurance & Safety Report - Mobile Optimized */}
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
                       <div
@@ -4673,10 +4675,10 @@ const CarDetails = memo(() => {
           </div>
 
           {/* Right Column - Enhanced Contact Card */}
-          <div className="space-y-4">
+            <div className="space-y-3.5">
             {/* Enhanced Contact & Inspection Card */}
-            <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
-              <CardContent className="flex flex-col gap-4 p-4">
+              <Card className="glass-panel border-0 shadow-2xl lg:sticky top-20 lg:top-4 right-4 lg:right-auto rounded-xl z-50 lg:z-auto w-full lg:w-auto lg:max-w-sm">
+                <CardContent className="flex flex-col gap-3.5 p-4">
                 <div className="space-y-1 text-left sm:text-center">
                   {resolvedMainTitle && (
                     <h2 className="text-base font-semibold leading-tight text-foreground">
@@ -4690,8 +4692,8 @@ const CarDetails = memo(() => {
                   Kontakt & Inspektim
                 </h3>
 
-                {/* Enhanced Contact Buttons */}
-                  <div className="mb-4 space-y-3">
+                  {/* Enhanced Contact Buttons */}
+                    <div className="mb-3 space-y-2.5">
                     <Button
                       onClick={handleContactWhatsApp}
                       className="w-full h-11 text-sm font-semibold"
@@ -4746,8 +4748,8 @@ const CarDetails = memo(() => {
                     </Button>
                   </div>
 
-                {/* Enhanced Additional Buttons */}
-                <div className="border-t border-border pt-4 space-y-3">
+                  {/* Enhanced Additional Buttons */}
+                  <div className="border-t border-border pt-3 space-y-2.5">
                   <Button
                     variant="outline"
                     className="w-full h-10 text-sm font-medium border hover:bg-primary hover:text-primary-foreground transition-colors"
@@ -4758,8 +4760,8 @@ const CarDetails = memo(() => {
                   </Button>
                 </div>
 
-                {/* Enhanced Location */}
-                <div className="mt-4 pt-4 border-t border-border">
+                  {/* Enhanced Location */}
+                  <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex items-start gap-3 text-muted-foreground">
                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <a
