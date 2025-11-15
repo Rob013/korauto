@@ -469,7 +469,7 @@ const LazyCarCard = memo(({
     return (
         <div
           ref={cardRef}
-          className="glass-card rounded-lg overflow-hidden h-96 animate-pulse"
+          className="glass-card rounded-lg overflow-hidden h-96 animate-pulse [content-visibility:auto] [contain-intrinsic-size:280px_360px]"
           style={{
             willChange: 'contents',
             containIntrinsicSize: '280px 360px'
@@ -495,12 +495,13 @@ const LazyCarCard = memo(({
       return (
         <div
           ref={cardRef}
-          className={cn(
-            "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg",
-            "transition-transform duration-300 ease-emphasized will-change-transform",
-            hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500 motion-safe:ease-emphasized",
-            "hover:-translate-y-0.5 hover:shadow-lg"
-          )}
+        className={cn(
+          "glass-card group/card overflow-hidden cursor-pointer touch-manipulation rounded-lg",
+          "transition-transform duration-300 ease-emphasized will-change-transform",
+          hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500 motion-safe:ease-emphasized",
+          "hover:-translate-y-0.5 hover:shadow-lg",
+          "[content-visibility:auto] [contain-intrinsic-size:320px_200px]"
+        )}
           onClick={handleCardClick}
         >
           <div className="flex flex-row gap-2 p-2">
@@ -630,7 +631,8 @@ const LazyCarCard = memo(({
           "mobile-card-compact compact-modern-card car-card-container",
           "transition-transform duration-400 ease-emphasized will-change-transform",
           hasAnimatedIn && "motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-4 motion-safe:duration-500 motion-safe:ease-emphasized",
-          "hover:-translate-y-1 hover:shadow-xl"
+          "hover:-translate-y-1 hover:shadow-xl",
+          "[content-visibility:auto] [contain-intrinsic-size:320px_360px]"
         )}
         onClick={handleCardClick}
       >
