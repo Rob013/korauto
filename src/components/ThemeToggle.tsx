@@ -13,11 +13,11 @@ export function ThemeToggle() {
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size="sm"
       onClick={handleToggle}
       aria-pressed={isDark}
       aria-label={isDark ? "Kalo në mënyrën e ditës" : "Kalo në mënyrën e natës"}
-      className="relative inline-flex h-10 w-16 items-center justify-center rounded-full border border-border/70 bg-gradient-to-r from-card/80 via-card/70 to-card/50 px-1.5 shadow-[var(--shadow-sm)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] dark:from-slate-900/70 dark:to-slate-900/40"
+      className="relative inline-flex h-9 w-16 shrink-0 items-center justify-center rounded-full border border-border/70 bg-gradient-to-r from-card/80 via-card/70 to-card/50 px-1.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:from-slate-900/70 dark:to-slate-900/40"
     >
       <span className="absolute inset-0 rounded-full bg-gradient-to-r from-white/60 via-white/20 to-transparent opacity-70 dark:from-white/10 dark:via-white/5 dark:to-transparent" />
       <span
