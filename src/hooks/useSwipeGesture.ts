@@ -5,7 +5,6 @@ interface SwipeGestureOptions {
   onSwipeRight?: () => void;
   minSwipeDistance?: number;
   maxVerticalDistance?: number;
-  enabled?: boolean;
 }
 
 interface TouchPoint {
@@ -23,8 +22,7 @@ export const useSwipeGesture = (
     onSwipeLeft,
     onSwipeRight,
     minSwipeDistance = 50,
-    maxVerticalDistance = 100,
-    enabled = true,
+    maxVerticalDistance = 100
   } = options;
 
   const handleTouchStart = useCallback((event: TouchEvent) => {
@@ -88,9 +86,9 @@ export const useSwipeGesture = (
     }
   }, []);
 
-    useEffect(() => {
-      const element = elementRef.current;
-      if (!element || !enabled) return;
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
 
     // Add touch event listeners
     element.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -102,5 +100,5 @@ export const useSwipeGesture = (
       element.removeEventListener('touchend', handleTouchEnd);
       element.removeEventListener('touchmove', handleTouchMove);
     };
-    }, [handleTouchStart, handleTouchEnd, handleTouchMove, enabled]);
+  }, [handleTouchStart, handleTouchEnd, handleTouchMove]);
 };

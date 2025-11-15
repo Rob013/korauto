@@ -92,6 +92,7 @@ import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe, type ImageSwipeChangeMeta } from "@/hooks/useImageSwipe";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { fallbackCars } from "@/data/fallbackData";
 import { getBrandLogo, getBrandLogoVariants } from "@/data/brandLogos";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { transformCachedCarRecord } from "@/services/carCache";
@@ -110,6 +111,7 @@ import { getFallbackOptionName } from "@/data/koreaOptionFallbacks";
 import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
 import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 import "@/styles/carDetailsOptimizations.css";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/components/ThemeProvider";
 
 const ImageZoom = lazy(() =>
@@ -3163,11 +3165,27 @@ const CarDetails = memo(() => {
             }
             return;
           }
-        } catch (apiError) {
-          console.error("Failed to fetch car data:", apiError);
-          if (!isMounted) return;
+      } catch (apiError) {
+        console.error("Failed to fetch car data:", apiError);
+        if (!isMounted) return;
 
-          const errorMessage =
+        const fallbackCar = fallbackCars.find(
+          (fallback) => fallback.id === lot || fallback.lot_number === lot,
+        );
+        if (fallbackCar && fallbackCar.lots?.[0]) {
+          const details = buildCarDetails(fallbackCar, fallbackCar.lots[0]);
+          if (details) {
+            setCar(details);
+            cacheHydratedRef.current = true;
+            if (!background) {
+              setLoading(false);
+            }
+            persistCarToSession(String(lot), details);
+            return;
+          }
+        }
+
+        const errorMessage =
           apiError instanceof Error
             ? apiError.message.includes("Failed to fetch")
               ? "Unable to connect to the server. Please check your internet connection and try again."
@@ -3239,6 +3257,7 @@ const CarDetails = memo(() => {
       API_BASE_URL,
       API_KEY,
       buildCarDetails,
+      fallbackCars,
       hydrateFromCache,
       lot,
       navigate,
@@ -3618,7 +3637,6 @@ const CarDetails = memo(() => {
   } = useImageSwipe({
     images,
     onImageChange: handleSwipeImageChange,
-    enableGestures: false,
   });
 
   const imageSwipeStyle = useMemo<CSSProperties>(
@@ -3947,16 +3965,20 @@ const CarDetails = memo(() => {
       </div>
     );
   }
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
-        <div className="container-responsive py-6 max-w-[1600px]">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
+      <div className="container-responsive py-6 max-w-[1600px]">
         {/* Header with Actions - Modern Layout with animations */}
         <div className="flex flex-col gap-3 mb-6">
           {/* Navigation and Action Buttons with hover effects */}
-            <div
-              className="flex flex-wrap items-center gap-2 animate-soft-fade"
-              style={{ animationDelay: "0.1s" }}
-            >
+          <div
+            className="flex flex-wrap items-center gap-2"
+            style={{
+              animation: "fadeIn 0.3s ease-out forwards",
+              animationDelay: "0.1s",
+              opacity: 0,
+            }}
+          >
             <Button
               variant="outline"
               onClick={() => {
@@ -3984,6 +4006,7 @@ const CarDetails = memo(() => {
               <span className="sm:hidden font-medium">Home</span>
             </Button>
             <div className="ml-auto flex items-center gap-2">
+              <ThemeToggle />
               <Button
                 variant="outline"
                 size="sm"
@@ -4011,7 +4034,9 @@ const CarDetails = memo(() => {
         {/* Main Content - Modern Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
           {/* Left Column - Images and Gallery */}
-          <div className="space-y-6 section-glide stagger-1">
+          <div
+            className="space-y-6 animate-fade-in-up stagger-1"
+          >
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
@@ -4035,12 +4060,11 @@ const CarDetails = memo(() => {
                     data-swipe-direction={imageSwipeDirection ?? undefined}
                   >
                     {/* Main Image with optimized loading */}
-                      {images.length > 0 ? (
-                        <OptimizedCarImage
-                          key={images[selectedImageIndex] ?? selectedImageIndex}
-                          src={images[selectedImageIndex]}
-                          alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                          className={`${swipeWrapperClass} w-full h-full image-transition image-crossfade gpu-accelerate transition-all duration-500 group-hover:scale-105`}
+                    {images.length > 0 ? (
+                      <OptimizedCarImage
+                        src={images[selectedImageIndex]}
+                        alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105`}
                         style={imageSwipeStyle}
                         aspectRatio="aspect-[4/3]"
                         priority={selectedImageIndex === 0}
@@ -4209,12 +4233,11 @@ const CarDetails = memo(() => {
                   data-swipe-direction={imageSwipeDirection ?? undefined}
                 >
                   {/* Main Image with improved loading states */}
-                    {images.length > 0 ? (
-                      <img
-                        key={images[selectedImageIndex] ?? selectedImageIndex}
-                        src={images[selectedImageIndex]}
-                        alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                        className={`${swipeWrapperClass} w-full h-full object-cover transition-all duration-500 image-crossfade`}
+                  {images.length > 0 ? (
+                    <img
+                      src={images[selectedImageIndex]}
+                      alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+                      className={`${swipeWrapperClass} w-full h-full object-cover transition-all duration-500`}
                       style={imageSwipeStyle}
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";

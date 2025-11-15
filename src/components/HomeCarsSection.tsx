@@ -15,6 +15,7 @@ import EncarStyleFilter from "@/components/EncarStyleFilter";
 import { useDailyRotatingCars } from "@/hooks/useDailyRotatingCars";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing, filterCarsWithRealPricing } from "@/utils/carPricing";
+import { fallbackCars, fallbackManufacturers } from "@/data/fallbackData";
 import { cn } from "@/lib/utils";
 import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
 interface APIFilters {
@@ -233,25 +234,30 @@ const HomeCarsSection = memo(() => {
     });
   };
 
-  // Type conversion to match the sorting hook interface with live inventory
+  // Type conversion to match the sorting hook interface - use fallback data if API fails
   const carsForSorting = useMemo(() => {
-    const cleanedCars = filterOutTestCars(cars);
+    // Use fallback data when there's an error and no cars loaded and we aren't loading
+    const shouldUseFallback = !loading && (error || cars.length === 0);
+    const sourceCars = shouldUseFallback ? fallbackCars : cars;
+    const cleanedCars = filterOutTestCars(sourceCars);
+    // Filter to show cars that have real pricing (buy_now, final_bid, or price)
     const carsWithRealPricing = filterCarsWithRealPricing(cleanedCars);
     
     return carsWithRealPricing.map(car => {
+      // Calculate EUR price using current exchange rate from the best available price
       const lot = car.lots?.[0];
       const priceUSD = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
       const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
       
       return {
         ...car,
-        price_eur: priceEUR,
+        price_eur: priceEUR, // Add calculated EUR price
         status: String(car.status || ""),
         lot_number: String(car.lot_number || ""),
         cylinders: Number(car.cylinders || 0)
       };
     });
-  }, [cars, exchangeRate.rate]);
+  }, [cars, error, exchangeRate.rate, loading]);
 
   // Check if any meaningful filters are applied (using pendingFilters for homepage)
   const hasFilters = useMemo(() => {
@@ -501,9 +507,9 @@ const HomeCarsSection = memo(() => {
           </div>}
 
         {/* Filter Form */}
-          {showFilters && <div className="mb-6 sm:mb-8">
-              <EncarStyleFilter filters={pendingFilters} manufacturers={manufacturers} models={models} filterCounts={filterCounts} onFiltersChange={handleFiltersChange} onClearFilters={handleClearFilters} onManufacturerChange={handleManufacturerChange} onModelChange={handleModelChange} onFetchGrades={fetchGrades} onFetchTrimLevels={fetchTrimLevels} isHomepage={true} onSearchCars={handleSearchCars} />
-            </div>}
+        {showFilters && <div className="mb-6 sm:mb-8">
+            <EncarStyleFilter filters={pendingFilters} manufacturers={manufacturers.length > 0 ? manufacturers : fallbackManufacturers} models={models} filterCounts={filterCounts} onFiltersChange={handleFiltersChange} onClearFilters={handleClearFilters} onManufacturerChange={handleManufacturerChange} onModelChange={handleModelChange} onFetchGrades={fetchGrades} onFetchTrimLevels={fetchTrimLevels} isHomepage={true} onSearchCars={handleSearchCars} />
+          </div>}
 
         {/* Daily Selection Badge */}
         <div className="text-center mb-6 sm:mb-8">

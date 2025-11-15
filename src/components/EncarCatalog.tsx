@@ -34,6 +34,7 @@ import { CarWithRank } from "@/utils/chronologicalRanking";
 import { filterOutTestCars } from "@/utils/testCarFilter";
 import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/carPricing";
 import { resolveFuelFromSources } from "@/utils/fuel";
+import { fallbackCars } from "@/data/fallbackData";
 import { useAnimatedCount } from "@/hooks/useAnimatedCount";
 interface EncarCatalogProps {
   highlightCarId?: string | null;
@@ -177,8 +178,10 @@ const EncarCatalog = ({
   }, [filters]);
 
   // Memoized client-side grade and engine filtering for better performance
-    const filteredCars = useMemo(() => {
-      const cleanedCars = filterOutTestCars(cars || []);
+  const filteredCars = useMemo(() => {
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
+    const cleanedCars = filterOutTestCars(sourceCars || []);
     
     // Apply grade filter
     const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
@@ -204,8 +207,8 @@ const EncarCatalog = ({
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
   // Merge AuctionsAPI grid cars with secure cars BEFORE sorting to share the same pipeline
-    const mergedCars = useMemo(() => {
-      const result = [...(filterOutTestCars(cars) || [])];
+  const mergedCars = useMemo(() => {
+    const result = [...(filterOutTestCars(error && cars.length === 0 ? fallbackCars : cars) || [])];
     if (Array.isArray(gridCars) && gridCars.length > 0) {
       // Include only cars with buy_now price to match existing rule
       gridCars.forEach((c: any) => {
@@ -442,16 +445,14 @@ const EncarCatalog = ({
     onSwipeRight: handleSwipeRightToShowFilters,
     minSwipeDistance: 80,
     // Require a more deliberate swipe
-    maxVerticalDistance: 120,
-    enabled: false,
+    maxVerticalDistance: 120
   });
 
   // Set up swipe gestures for filter panel (swipe left to close filters)
   useSwipeGesture(filterPanelRef, {
     onSwipeLeft: handleSwipeLeftToCloseFilters,
     minSwipeDistance: 80,
-    maxVerticalDistance: 120,
-    enabled: false,
+    maxVerticalDistance: 120
   });
 
   // Internal function to actually apply filters - now using utilities

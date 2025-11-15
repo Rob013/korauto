@@ -8,7 +8,6 @@ export interface ImageSwipeChangeMeta {
 interface UseImageSwipeOptions {
   images: string[];
   onImageChange?: (index: number, meta?: ImageSwipeChangeMeta) => void;
-  enableGestures?: boolean;
 }
 
 const clampOffset = (value: number, limit: number) => {
@@ -18,11 +17,7 @@ const clampOffset = (value: number, limit: number) => {
   return value;
 };
 
-export const useImageSwipe = ({
-  images,
-  onImageChange,
-  enableGestures = true,
-}: UseImageSwipeOptions) => {
+export const useImageSwipe = ({ images, onImageChange }: UseImageSwipeOptions) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
@@ -148,14 +143,8 @@ export const useImageSwipe = ({
   }, []);
 
   useEffect(() => {
-      if (!enableGestures) {
-        setSwipeOffset(0);
-        setIsSwiping(false);
-        return;
-      }
-
-      const container = containerRef.current;
-      if (!container) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     const evaluateSwipe = (deltaX: number) => {
       const width = containerWidthRef.current || container.offsetWidth || 0;
@@ -346,7 +335,7 @@ export const useImageSwipe = ({
         resetAnimationFrame.current = null;
       }
     };
-    }, [enableGestures, goToNext, goToPrevious, scheduleResetOffset]);
+  }, [goToNext, goToPrevious, scheduleResetOffset]);
 
   useEffect(() => {
     return () => {
