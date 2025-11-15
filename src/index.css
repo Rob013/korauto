@@ -502,7 +502,7 @@ html.dark.theme-transitioning::before {
 #smartsupp-widget-bubble,
 .smartsupp-widget-bubble {
   right: clamp(1rem, 2vw, 1.75rem) !important;
-  bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(8rem + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 @media (max-width: 768px) {
@@ -515,7 +515,7 @@ html.dark.theme-transitioning::before {
   #smartsupp-widget-bubble,
   .smartsupp-widget-bubble {
     right: clamp(0.75rem, 4vw, 1.25rem) !important;
-    bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(9rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
@@ -532,7 +532,7 @@ body.car-details-page .smartsupp-widget-container {
 
   body.car-details-page #smartsupp-widget-bubble,
   body.car-details-page .smartsupp-widget-bubble {
-    bottom: calc(13rem + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(15rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

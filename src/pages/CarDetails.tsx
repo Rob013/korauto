@@ -4819,12 +4819,9 @@ const CarDetails = memo(() => {
                   onClick={() => setIsServicesDialogOpen(true)}
                   className="text-left hover:opacity-80 transition-opacity"
                 >
-              <div className="text-2xl font-bold text-foreground leading-tight">
-                €{(car.price + 350).toLocaleString()}
-              </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Deri ne Prishtine pa dogan
-                  </div>
+                    <div className="text-2xl font-bold text-foreground leading-tight">
+                      €{(car.price + 350).toLocaleString()}
+                    </div>
                 </button>
               </div>
               <Button
