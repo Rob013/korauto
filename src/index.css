@@ -519,32 +519,75 @@ html.dark.theme-transitioning::before {
   }
 }
 
-body.car-details-page #smartsupp-widget-container,
-body.car-details-page .smartsupp-widget-container {
-  right: calc(env(safe-area-inset-right, 0px) + clamp(0.75rem, 2vw, 1.5rem)) !important;
+/* Car Details page specific sizing for chat widget + bubble */
+body.car-details-page {
+  --car-chat-widget-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  --car-chat-widget-right: calc(
+    env(safe-area-inset-right, 0px) +
+    clamp(1.25rem, calc((100vw - 1280px) / 2 + 1rem), 5rem)
+  );
+  --car-chat-widget-width: clamp(230px, 17vw, 300px);
+  --car-chat-widget-height: clamp(17rem, 30vh, 22rem);
+  --car-chat-widget-scale: 0.88;
+  --car-chat-widget-gap: 0.85rem;
 }
 
 @media (max-width: 1023.98px) {
-  body.car-details-page #smartsupp-widget-container,
-  body.car-details-page .smartsupp-widget-container {
-    bottom: calc(11rem + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  body.car-details-page #smartsupp-widget-bubble,
-  body.car-details-page .smartsupp-widget-bubble {
-    bottom: calc(15rem + env(safe-area-inset-bottom, 0px)) !important;
+  body.car-details-page {
+    --car-chat-widget-bottom: calc(10rem + env(safe-area-inset-bottom, 0px));
+    --car-chat-widget-right: calc(
+      env(safe-area-inset-right, 0px) + clamp(0.75rem, 4vw, 1.25rem)
+    );
+    --car-chat-widget-width: min(82vw, 260px);
+    --car-chat-widget-height: clamp(15rem, 38vh, 20rem);
+    --car-chat-widget-scale: 0.94;
+    --car-chat-widget-gap: 0.65rem;
   }
 }
 
-@media (min-width: 1024px) {
-  body.car-details-page #smartsupp-widget-container,
-  body.car-details-page .smartsupp-widget-container {
-    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
-    right: calc(
+@media (min-width: 1600px) {
+  body.car-details-page {
+    --car-chat-widget-right: calc(
       env(safe-area-inset-right, 0px) +
-      clamp(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem), 6rem)
-    ) !important;
+      clamp(2.5rem, calc((100vw - 1600px) / 2 + 2rem), 6rem)
+    );
   }
+}
+
+body.car-details-page #smartsupp-widget-container,
+body.car-details-page .smartsupp-widget-container {
+  bottom: var(--car-chat-widget-bottom) !important;
+  right: var(--car-chat-widget-right) !important;
+  width: var(--car-chat-widget-width) !important;
+  max-width: var(--car-chat-widget-width) !important;
+  height: auto !important;
+  max-height: calc(var(--car-chat-widget-height) + 2rem) !important;
+  border-radius: 1.25rem !important;
+  overflow: hidden !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35) !important;
+  transform: scale(var(--car-chat-widget-scale));
+  transform-origin: bottom right;
+}
+
+body.car-details-page #smartsupp-widget-container iframe,
+body.car-details-page .smartsupp-widget-container iframe {
+  border-radius: 1.25rem !important;
+}
+
+body.car-details-page #smartsupp-widget-bubble,
+body.car-details-page .smartsupp-widget-bubble {
+  right: calc(var(--car-chat-widget-right) + 0.15rem) !important;
+  bottom: calc(
+    var(--car-chat-widget-bottom) +
+    var(--car-chat-widget-height) +
+    var(--car-chat-widget-gap)
+  ) !important;
+}
+
+body.car-details-page #smartsupp-widget-bubble button,
+body.car-details-page .smartsupp-widget-bubble button {
+  border-radius: 999px !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25) !important;
 }
 
 @layer base {
