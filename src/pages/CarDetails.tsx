@@ -4277,9 +4277,9 @@ const CarDetails = memo(() => {
                       <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-3">
                       <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
                         <CardContent className="p-0">
-                          <div
-                            ref={imageContainerRef}
-                            className="relative w-full aspect-[3/2] sm:aspect-[16/10] lg:aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
+                            <div
+                              ref={imageContainerRef}
+                              className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
                             onClick={handleImageZoomOpen}
                             role={allowImageZoom ? "button" : undefined}
                             tabIndex={allowImageZoom ? 0 : -1}
