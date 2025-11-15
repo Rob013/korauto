@@ -2504,21 +2504,54 @@ const CarDetails = memo(() => {
     navigate(`/car/${encodeURIComponent(String(targetLot))}/report`);
   }, [carLot, lot, navigate]);
 
-  // Auto-expand detailed info if car has rich data (only once)
-  useEffect(() => {
-    if (car && !hasAutoExpanded) {
+    // Auto-expand detailed info if car has rich data (deferred to keep initial render snappy)
+    useEffect(() => {
+      if (!car || hasAutoExpanded) {
+        return;
+      }
       const hasRichData =
         car.details?.options ||
         car.insurance_v2 ||
         car.details?.inspect_outer ||
         car.details?.inspect?.inner ||
         car.details?.insurance;
-      if (hasRichData) {
+      if (!hasRichData) {
+        return;
+      }
+
+      let idleHandle: number | null = null;
+      let timeoutHandle: number | null = null;
+      const win = typeof window !== "undefined"
+        ? (window as typeof window & {
+            requestIdleCallback?: (cb: IdleRequestCallback) => number;
+            cancelIdleCallback?: (handle: number) => void;
+          })
+        : undefined;
+
+      const activate = () => {
         setShowDetailedInfo(true);
         setHasAutoExpanded(true);
+      };
+
+      if (win && typeof win.requestIdleCallback === "function") {
+        idleHandle = win.requestIdleCallback(() => {
+          timeoutHandle = window.setTimeout(activate, 60);
+        });
+      } else if (typeof window !== "undefined") {
+        timeoutHandle = window.setTimeout(activate, 180);
+      } else {
+        activate();
       }
-    }
-  }, [car, hasAutoExpanded]);
+
+      return () => {
+        if (idleHandle !== null && win && typeof win.cancelIdleCallback === "function") {
+          win.cancelIdleCallback(idleHandle);
+        }
+        if (timeoutHandle !== null && typeof window !== "undefined") {
+          window.clearTimeout(timeoutHandle);
+        }
+      };
+    }, [car, hasAutoExpanded]);
   const API_BASE_URL = "https://auctionsapi.com/api";
   const API_KEY = "d00985c77981fe8d26be16735f932ed1";
   const KBC_DOMAINS = [
@@ -3863,6 +3896,105 @@ const CarDetails = memo(() => {
     navigate(`/car/${encodedLot}/report`);
   }, [car?.lot, impact, lot, navigate, prepareInspectionReportPrefetch]);
 
+    const renderDetailedInfoSection = () => {
+      if (!showDetailedInfo) {
+        return null;
+      }
+      if (isDeferredSectionsReady) {
+        return (
+          <div className="space-y-3.5 sm:space-y-4.5 animate-in slide-in-from-top-2 duration-300">
+            {/* Insurance & Safety Report - Mobile Optimized */}
+            {(car.insurance_v2 || car.inspect || car.insurance) && (
+              <div
+                ref={historySectionRef}
+                className="space-y-2.5 sm:space-y-3.5 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
+              >
+                <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Raporti i Sigurisë dhe Sigurimit
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+                  {car.insurance_v2?.accidentCnt !== undefined && (
+                    <div className="flex items-center justify-between p-2.5 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
+                      <span className="text-xs sm:text-sm font-medium">
+                        Historia e Aksidenteve:
+                      </span>
+                      <Badge
+                        variant={car.insurance_v2.accidentCnt === 0 ? "secondary" : "destructive"}
+                        className="text-xs"
+                      >
+                        {car.insurance_v2.accidentCnt === 0
+                          ? "E Pastër"
+                          : `${car.insurance_v2.accidentCnt} aksidente`}
+                      </Badge>
+                    </div>
+                  )}
+                  {car.insurance_v2?.ownerChangeCnt !== undefined && (
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                      <span className="text-sm">Ndryshime Pronësie:</span>
+                      <span className="font-medium">{car.insurance_v2.ownerChangeCnt}</span>
+                    </div>
+                  )}
+                  {car.insurance_v2?.totalLossCnt !== undefined && car.insurance_v2.totalLossCnt > 0 && (
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                      <span className="text-sm">Humbje Totale:</span>
+                      <Badge variant="destructive">{car.insurance_v2.totalLossCnt}</Badge>
+                    </div>
+                  )}
+                  {car.insurance_v2?.floodTotalLossCnt !== undefined && car.insurance_v2.floodTotalLossCnt > 0 && (
+                    <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                      <span className="text-sm">demtime:</span>
+                      <Badge variant="destructive">{car.insurance_v2.floodTotalLossCnt}</Badge>
+                    </div>
+                  )}
+                </div>
+                {usageHighlights.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+                    {usageHighlights.map((item) => {
+                      const valueClass =
+                        item.value === "Po"
+                          ? "text-destructive"
+                          : item.value === "Jo"
+                            ? "text-emerald-600"
+                            : "text-muted-foreground";
+                      return (
+                        <div
+                          key={item.label}
+                          className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-3.5"
+                        >
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                            {item.label}
+                          </span>
+                          <span className={`text-base sm:text-lg font-semibold ${valueClass}`}>{item.value}</span>
+                          {item.details.length > 0 && (
+                            <span className="text-xs text-muted-foreground leading-relaxed">
+                              {item.details.join(" • ")}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-3.5 sm:space-y-4.5">
+          <div className="h-5 w-36 rounded bg-muted/40 animate-pulse" />
+          <div className="h-4 w-24 rounded bg-muted/30 animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-16 rounded-lg bg-muted/40 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      );
+    };
+
     // Preload important images
     useImagePreload(car?.image ?? prefetchedSummary?.image);
     
@@ -4453,117 +4585,8 @@ const CarDetails = memo(() => {
 
               {/* Enhanced Detailed Information Section */}
                 <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
-                  <CardContent className="space-y-3.5 p-3 sm:p-3.5 lg:p-4">
-                    {showDetailedInfo && (
-                      isDeferredSectionsReady ? (
-                        <div className="space-y-3.5 sm:space-y-4.5 animate-in slide-in-from-top-2 duration-300">
-                    {/* Insurance & Safety Report - Mobile Optimized */}
-                    {(car.insurance_v2 || car.inspect || car.insurance) && (
-                      <div
-                        ref={historySectionRef}
-                          className="space-y-2.5 sm:space-y-3.5 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
-                      >
-                        <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-                          <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
-                          Raporti i Sigurisë dhe Sigurimit
-                        </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
-                          {car.insurance_v2?.accidentCnt !== undefined && (
-                            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
-                              <span className="text-xs sm:text-sm font-medium">
-                                Historia e Aksidenteve:
-                              </span>
-                              <Badge
-                                variant={
-                                  car.insurance_v2.accidentCnt === 0
-                                    ? "secondary"
-                                    : "destructive"
-                                }
-                                className="text-xs"
-                              >
-                                {car.insurance_v2.accidentCnt === 0
-                                  ? "E Pastër"
-                                  : `${car.insurance_v2.accidentCnt} aksidente`}
-                              </Badge>
-                            </div>
-                          )}
-                          {car.insurance_v2?.ownerChangeCnt !== undefined && (
-                            <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                              <span className="text-sm">
-                                Ndryshime Pronësie:
-                              </span>
-                              <span className="font-medium">
-                                {car.insurance_v2.ownerChangeCnt}
-                              </span>
-                            </div>
-                          )}
-                          {car.insurance_v2?.totalLossCnt !== undefined &&
-                            car.insurance_v2.totalLossCnt > 0 && (
-                              <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                                <span className="text-sm">Humbje Totale:</span>
-                                <Badge variant="destructive">
-                                  {car.insurance_v2.totalLossCnt}
-                                </Badge>
-                              </div>
-                            )}
-                          {car.insurance_v2?.floodTotalLossCnt !== undefined &&
-                            car.insurance_v2.floodTotalLossCnt > 0 && (
-                              <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
-                                <span className="text-sm">demtime:</span>
-                                <Badge variant="destructive">
-                                  {car.insurance_v2.floodTotalLossCnt}
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-                            {usageHighlights.length > 0 && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
-                              {usageHighlights.map((item) => {
-                                const valueClass =
-                                  item.value === "Po"
-                                    ? "text-destructive"
-                                    : item.value === "Jo"
-                                      ? "text-emerald-600"
-                                      : "text-muted-foreground";
-                                return (
-                                  <div
-                                    key={item.label}
-                                    className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-3.5"
-                                  >
-                                    <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                                      {item.label}
-                                    </span>
-                                    <span
-                                      className={`text-base sm:text-lg font-semibold ${valueClass}`}
-                                    >
-                                      {item.value}
-                                    </span>
-                                    {item.details.length > 0 && (
-                                      <span className="text-xs text-muted-foreground leading-relaxed">
-                                        {item.details.join(" • ")}
-                                      </span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                      </div>
-                    ) : (
-                      <div className="space-y-3.5 sm:space-y-4.5">
-                        <div className="h-5 w-36 rounded bg-muted/40 animate-pulse" />
-                        <div className="h-4 w-24 rounded bg-muted/30 animate-pulse" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
-                          {Array.from({ length: 6 }).map((_, index) => (
-                            <div
-                              key={index}
-                              className="h-16 rounded-lg bg-muted/40 animate-pulse"
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )
-                    )}
+                    <CardContent className="space-y-3.5 p-3 sm:p-3.5 lg:p-4">
+                      {renderDetailedInfoSection()}
 
                     {/* Equipment & Options */}
 
@@ -4616,9 +4639,7 @@ const CarDetails = memo(() => {
                       </Suspense>
                     )}
 
-                    {/* Comprehensive Inspection Report */}
-                  </div>
-                )}
+                      {/* Comprehensive Inspection Report */}
               </CardContent>
             </Card>
           </div>
