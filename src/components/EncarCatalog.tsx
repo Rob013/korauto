@@ -36,6 +36,13 @@ import { calculateFinalPriceEUR, filterCarsWithBuyNowPricing } from "@/utils/car
 import { resolveFuelFromSources } from "@/utils/fuel";
 import { fallbackCars } from "@/data/fallbackData";
 import { useAnimatedCount } from "@/hooks/useAnimatedCount";
+
+const CATALOG_SNAPSHOT_KEY = "encar_catalog_snapshot_v2";
+const CATALOG_SNAPSHOT_TTL = 1000 * 60 * 3; // 3 minutes
+const buildSnapshotSignature = (filtersSignature: string, sort: SortOption | "", page: number) => {
+  const resolvedSort = sort && sort.length > 0 ? sort : "default";
+  return `${filtersSignature || "{}"}::${resolvedSort}::${page}`;
+};
 interface EncarCatalogProps {
   highlightCarId?: string | null;
 }
@@ -143,18 +150,85 @@ const EncarCatalog = ({
   const lastSortParamsRef = useRef('');
   const normalizedCurrentFilters = useMemo(() => normalizeFilters(filters || {}), [filters]);
   const currentFiltersSignature = useMemo(() => JSON.stringify(normalizedCurrentFilters), [normalizedCurrentFilters]);
-  const scheduleFetchCars = useMemo(
+    const scheduleFetchCars = useMemo(
     () => catalogDebounce((page: number, nextFilters: APIFilters, resetList: boolean) => {
       fetchCars(page, nextFilters, resetList);
     }, 120),
     [fetchCars]
   );
 
+    const restoreCatalogSnapshot = useCallback(
+      (signature: string, targetPage: number) => {
+        if (typeof window === "undefined" || snapshotHydratedRef.current) {
+          return false;
+        }
+        try {
+          const raw = sessionStorage.getItem(CATALOG_SNAPSHOT_KEY);
+          if (!raw) {
+            return false;
+          }
+          const snapshot = JSON.parse(raw);
+          const isFresh = snapshot?.timestamp && Date.now() - snapshot.timestamp < CATALOG_SNAPSHOT_TTL;
+          if (!isFresh || snapshot?.signature !== signature || snapshot?.page !== targetPage) {
+            return false;
+          }
+          if (!Array.isArray(snapshot?.cars) || snapshot.cars.length === 0) {
+            return false;
+          }
+          setCars(snapshot.cars);
+          if (typeof snapshot.totalCount === "number") {
+            setTotalCount(snapshot.totalCount);
+          }
+          snapshotHydratedRef.current = true;
+          return true;
+        } catch (error) {
+          console.warn("Failed to restore catalog snapshot", error);
+          return false;
+        }
+      },
+      [setCars, setTotalCount]
+    );
+
+    const persistCatalogSnapshot = useCallback(
+      (carsToPersist: any[], signature: string, page: number, count: number) => {
+        if (typeof window === "undefined" || !Array.isArray(carsToPersist) || carsToPersist.length === 0) {
+          return;
+        }
+        try {
+          const payload = {
+            cars: carsToPersist.slice(0, 80),
+            totalCount: count,
+            signature,
+            page,
+            timestamp: Date.now(),
+          };
+          sessionStorage.setItem(CATALOG_SNAPSHOT_KEY, JSON.stringify(payload));
+        } catch (error) {
+          console.warn("Failed to persist catalog snapshot", error);
+        }
+      },
+      []
+    );
+
   useEffect(() => {
     if (!loading && !isApplyingFilters) {
       setIsFilterLoading(false);
     }
   }, [loading, isApplyingFilters]);
+
+    useEffect(() => {
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (loading || isFilterLoading || cars.length === 0 || showAllCars) {
+        return;
+      }
+      if (currentPage !== 1) {
+        return;
+      }
+      const signature = buildSnapshotSignature(currentFiltersSignature, sortBy || "recently_added", currentPage);
+      persistCatalogSnapshot(cars, signature, currentPage, totalCount);
+    }, [cars, loading, isFilterLoading, showAllCars, currentPage, currentFiltersSignature, sortBy, totalCount, persistCatalogSnapshot]);
 
   // Ensure filters are always open on desktop
   useEffect(() => {
@@ -346,7 +420,8 @@ const EncarCatalog = ({
 
   // Refs for swipe gesture detection
   const mainContentRef = useRef<HTMLDivElement>(null);
-  const filterPanelRef = useRef<HTMLDivElement>(null);
+    const filterPanelRef = useRef<HTMLDivElement>(null);
+    const snapshotHydratedRef = useRef(false);
 
   // SIMPLIFIED: More efficient scroll position saving
   const saveScrollPosition = useCallback(() => {
@@ -878,6 +953,13 @@ const EncarCatalog = ({
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
       setCurrentPage(urlCurrentPage);
+
+        const normalizedInitialFilters = normalizeFilters(urlFilters || {});
+        const initialSignature = buildSnapshotSignature(JSON.stringify(normalizedInitialFilters), sortBy || "recently_added", urlCurrentPage);
+        const snapshotApplied = restoreCatalogSnapshot(initialSignature, urlCurrentPage);
+        if (snapshotApplied) {
+          setIsRestoringState(false);
+        }
       try {
         // PERFORMANCE OPTIMIZATION: Load only essential data first
         // Load manufacturers immediately (they're cached)
@@ -1449,16 +1531,16 @@ const EncarCatalog = ({
                     (isFilterLoading || loading || isCarsTransitioning) && "opacity-80",
                   )}
                 >
-                  {carsForImmediateRender.map((car: CarWithRank | any) => {
+                    {carsForImmediateRender.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
               // Only use buy_now price, no fallbacks
               const usdPrice = lot?.buy_now;
               const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               const lotNumber = car.lot_number || lot?.lot || "";
-                return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`} className="[content-visibility:auto] [contain-intrinsic-size:320px_360px]">
-                        <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
-                  vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} viewMode={viewMode} />
-                      </div>;
+                  return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`} className="[content-visibility:auto] [contain-intrinsic-size:320px_360px]">
+                          <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
+                    vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} viewMode={viewMode} prefetchPayload={car} />
+                        </div>;
             })}
               </div>
 
