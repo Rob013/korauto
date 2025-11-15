@@ -9,6 +9,7 @@ import { InstallPrompt } from "./components/InstallPrompt";
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 import { useFrameRate } from "./hooks/useFrameRate";
 import { PerformanceMonitor } from "./components/PerformanceMonitor";
 import { useAdminCheck } from "./hooks/useAdminCheck";
@@ -270,6 +271,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <OfflineIndicator />
               <GlobalProgressProvider>
                 <BrowserRouter>
                   <NavigationProgressListener />
