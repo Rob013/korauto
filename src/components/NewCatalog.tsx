@@ -15,6 +15,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Search, RefreshCw } from 'lucide-react';
 
+const SELECT_CLEAR_VALUE = '__select_clear__';
+
 const SORT_OPTIONS = [
   { value: 'price_asc', label: 'Price: Low to High' },
   { value: 'price_desc', label: 'Price: High to Low' },
@@ -223,80 +225,86 @@ const NewCatalog = () => {
         </header>
 
         <section className="rounded-2xl border bg-card/60 backdrop-blur p-4 space-y-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
-              <Input
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search by make, model, or keyword"
-                className="pl-9"
-                autoComplete="off"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+                <Input
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Search by make, model, or keyword"
+                  className="pl-9"
+                  autoComplete="off"
+                />
+              </div>
+              <Select
+                value={filters.brand || SELECT_CLEAR_VALUE}
+                onValueChange={(value) =>
+                  updateFilters(
+                    {
+                      brand: value === SELECT_CLEAR_VALUE ? undefined : value,
+                      model: undefined,
+                      page: 1,
+                    },
+                    { replace: true }
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All brands" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SELECT_CLEAR_VALUE}>All brands</SelectItem>
+                  {brandOptions.map((brand) => (
+                    <SelectItem key={brand} value={brand}>
+                      {brand}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.model || SELECT_CLEAR_VALUE}
+                onValueChange={(value) =>
+                  updateFilters(
+                    { model: value === SELECT_CLEAR_VALUE ? undefined : value, page: 1 },
+                    { replace: true }
+                  )
+                }
+                disabled={!filters.brand || modelOptions.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All models" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SELECT_CLEAR_VALUE}>All models</SelectItem>
+                  {modelOptions.map((model) => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.fuel || SELECT_CLEAR_VALUE}
+                onValueChange={(value) =>
+                  updateFilters(
+                    { fuel: value === SELECT_CLEAR_VALUE ? undefined : value, page: 1 },
+                    { replace: true }
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All fuel types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SELECT_CLEAR_VALUE}>All fuel types</SelectItem>
+                  {fuelOptions.map((fuel) => (
+                    <SelectItem key={fuel} value={fuel}>
+                      {fuel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select
-              value={filters.brand || ''}
-              onValueChange={(value) =>
-                updateFilters(
-                  {
-                    brand: value || undefined,
-                    model: undefined,
-                    page: 1,
-                  },
-                  { replace: true }
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All brands" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All brands</SelectItem>
-                {brandOptions.map((brand) => (
-                  <SelectItem key={brand} value={brand}>
-                    {brand}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.model || ''}
-              onValueChange={(value) =>
-                updateFilters({ model: value || undefined, page: 1 }, { replace: true })
-              }
-              disabled={!filters.brand || modelOptions.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All models" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All models</SelectItem>
-                {modelOptions.map((model) => (
-                  <SelectItem key={model} value={model}>
-                    {model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.fuel || ''}
-              onValueChange={(value) =>
-                updateFilters({ fuel: value || undefined, page: 1 }, { replace: true })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All fuel types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All fuel types</SelectItem>
-                {fuelOptions.map((fuel) => (
-                  <SelectItem key={fuel} value={fuel}>
-                    {fuel}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm text-muted-foreground">
