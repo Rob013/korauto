@@ -4003,6 +4003,7 @@ const CarDetails = memo(() => {
     );
   }
   return (
+    <>
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background animate-fade-in pb-24 md:pb-0 anti-flicker">
           <div className="container-responsive py-3 sm:py-5 max-w-[1600px]">
             {/* Header with Actions - Modern Layout with animations */}
@@ -4723,9 +4724,9 @@ const CarDetails = memo(() => {
                   onClick={() => setIsServicesDialogOpen(true)}
                   className="text-left hover:opacity-80 transition-opacity"
                 >
-                  <div className="text-2xl font-bold text-foreground leading-tight">
-                    €{car.price.toLocaleString()}
-                  </div>
+              <div className="text-2xl font-bold text-foreground leading-tight">
+                €{(car.price + 350).toLocaleString()}
+              </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     Deri ne Prishtine pa dogan
                   </div>
@@ -4750,7 +4751,7 @@ const CarDetails = memo(() => {
               </Button>
             </div>
           </div>,
-          document.body,
+          document.body
         )}
       
       {/* Specs Dialog */}
@@ -4882,7 +4883,7 @@ const CarDetails = memo(() => {
             <div className="p-4 bg-primary/10 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Çmimi Total:</span>
-                <span className="text-2xl font-bold text-primary">€{car.price.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-primary">€{(car.price + 350).toLocaleString()}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 *Deri në Prishtinë pa doganë
@@ -4891,7 +4892,7 @@ const CarDetails = memo(() => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 });
 
