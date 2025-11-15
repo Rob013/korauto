@@ -3907,43 +3907,51 @@ const CarDetails = memo(() => {
                     )}
                   </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {formattedPrice && (
                         <div className="text-2xl font-semibold text-primary lg:hidden">
                           {formattedPrice}
                         </div>
                       )}
-                      <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 text-sm sm:text-base text-muted-foreground">
                         {summaryMileage && (
-                          <div>
-                            <span className="block font-medium text-foreground">
+                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
+                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
                               Kilometrazhi
                             </span>
-                            <span>{summaryMileage}</span>
+                            <span className="text-foreground text-base font-semibold">
+                              {summaryMileage}
+                            </span>
                           </div>
                         )}
                         {summaryFuel && (
-                          <div>
-                            <span className="block font-medium text-foreground">
+                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
+                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
                               Karburanti
                             </span>
-                            <span>{summaryFuel}</span>
+                            <span className="text-foreground text-base font-semibold">
+                              {summaryFuel}
+                            </span>
                           </div>
                         )}
                         {summaryTransmission && (
-                          <div>
-                            <span className="block font-medium text-foreground">
+                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
+                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
                               Transmisioni
                             </span>
-                            <span>{summaryTransmission}</span>
+                            <span className="text-foreground text-base font-semibold">
+                              {summaryTransmission}
+                            </span>
                           </div>
                         )}
                         {summaryColor && (
-                          <div>
-                            <span className="block font-medium text-foreground">
+                          <div className="space-y-1 rounded-lg border border-border/60 bg-card/60 p-3">
+                            <span className="block text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
                               Ngjyra
                             </span>
-                            <span>{summaryColor}</span>
+                            <span className="text-foreground text-base font-semibold">
+                              {summaryColor}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -4054,11 +4062,11 @@ const CarDetails = memo(() => {
         </div>
 
         {/* Main Content - Modern Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-6 lg:gap-8 xl:gap-10">
           {/* Left Column - Images and Gallery */}
-          <div
-            className="space-y-6 animate-fade-in-up stagger-1"
-          >
+            <div
+              className="space-y-8 sm:space-y-10 animate-fade-in-up stagger-1"
+            >
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
@@ -4365,11 +4373,11 @@ const CarDetails = memo(() => {
               </CardContent>
             </Card>
 
-            {displayTitle && (
-              <div className="animate-fade-in-up stagger-1">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 sm:gap-3">
+              {displayTitle && (
+                <div className="animate-fade-in-up stagger-1">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 md:gap-4">
                       {brandLogo ? (
                         <div
                           className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-white shadow-sm dark:border-white/10 dark:bg-white/90 sm:h-11 sm:w-11"
@@ -4396,24 +4404,24 @@ const CarDetails = memo(() => {
                           {resolvedBrandName}
                         </span>
                       ) : null}
-                      <p
-                        className={cn(
-                          "font-semibold text-foreground leading-tight tracking-tight transition-[font-size] duration-300",
-                          getAdaptiveTitleClasses(displayTitle),
-                        )}
-                      >
+                        <p
+                          className={cn(
+                            "font-semibold text-foreground leading-[1.1] sm:leading-[1.15] tracking-tight transition-[font-size] duration-300",
+                            getAdaptiveTitleClasses(displayTitle),
+                          )}
+                        >
                         {displayTitle}
                       </p>
                     </div>
 
                     {resolvedSecondaryTitle && resolvedSecondaryTitle !== displayTitle && (
-                      <p className="text-sm sm:text-base text-muted-foreground/90 leading-snug">
+                        <p className="mt-1.5 text-sm sm:text-base text-muted-foreground/90 leading-relaxed">
                         {resolvedSecondaryTitle}
                       </p>
                     )}
 
                     {/* Subtitle with year and key details */}
-                    <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground leading-tight">
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm sm:text-base text-muted-foreground leading-tight sm:leading-snug">
                       {car.year && <span className="font-medium">{car.year}</span>}
                       {car.year && (car.mileage || resolvedFuel || car.transmission) && <span>•</span>}
                       {car.mileage && <span>{formatMileage(car.mileage)}</span>}
@@ -4451,13 +4459,13 @@ const CarDetails = memo(() => {
             )}
 
             {/* History Section */}
-            <Card
-              id="history"
-              ref={historySectionRef}
-              className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
-            >
-              <CardContent className="p-3 md:p-5 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <Card
+                id="history"
+                ref={historySectionRef}
+                className="border-0 shadow-xl rounded-xl overflow-hidden bg-card animate-fade-in-up stagger-3"
+              >
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className="p-2 rounded-lg bg-primary/10">
                       <Shield className="h-5 w-5 text-primary" />
@@ -4508,23 +4516,21 @@ const CarDetails = memo(() => {
 
 
             {/* Enhanced Detailed Information Section */}
-            <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
-              <CardContent className="p-3 sm:p-4 lg:p-5">
-                <div className="flex flex-col gap-2 sm:gap-2.5 mb-2 sm:mb-3"></div>
-
-                {showDetailedInfo && (
-                  <div className="space-y-3 sm:space-y-4 animate-in slide-in-from-top-2 duration-300">
+              <Card className="glass-panel border-0 shadow-2xl rounded-xl mobile-detailed-info-card">
+                <CardContent className="space-y-4 p-3 sm:p-4 lg:p-5">
+                  {showDetailedInfo && (
+                    <div className="space-y-4 sm:space-y-5 animate-in slide-in-from-top-2 duration-300">
                     {/* Insurance & Safety Report - Mobile Optimized */}
                     {(car.insurance_v2 || car.inspect || car.insurance) && (
                       <div
                         ref={historySectionRef}
-                        className="space-y-2 sm:space-y-3 p-3 sm:p-3 bg-muted/50 rounded-lg mobile-info-section"
+                          className="space-y-2.5 sm:space-y-3.5 p-3 sm:p-4 bg-muted/50 rounded-lg mobile-info-section"
                       >
                         <h4 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                           <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
                           Raporti i Sigurisë dhe Sigurimit
                         </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
                           {car.insurance_v2?.accidentCnt !== undefined && (
                             <div className="flex items-center justify-between p-2.5 sm:p-3 bg-card border border-border rounded-lg mobile-detail-item">
                               <span className="text-xs sm:text-sm font-medium">
@@ -4573,8 +4579,8 @@ const CarDetails = memo(() => {
                               </div>
                             )}
                           </div>
-                          {usageHighlights.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                            {usageHighlights.length > 0 && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
                               {usageHighlights.map((item) => {
                                 const valueClass =
                                   item.value === "Po"

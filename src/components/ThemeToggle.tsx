@@ -1,4 +1,4 @@
-import { SunMoon } from "lucide-react"
+import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/components/ThemeProvider"
 
@@ -25,9 +25,14 @@ export function ThemeToggle() {
         aria-hidden
         className={`pointer-events-none absolute -inset-5 blur-2xl opacity-40 transition-all duration-500 ${isDark ? "bg-amber-300/50" : "bg-primary/40"}`}
       />
-      <SunMoon
-        className={`relative z-10 h-5 w-5 transition-all duration-300 ${isDark ? "text-amber-200 drop-shadow-md" : "text-primary drop-shadow-sm"}`}
-      />
+        <span className="relative z-10 flex h-5 w-5 items-center justify-center">
+          <Sun
+            className={`absolute h-5 w-5 transition-all duration-300 ${isDark ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"} text-primary drop-shadow-sm`}
+          />
+          <Moon
+            className={`absolute h-4 w-4 transition-all duration-300 ${isDark ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-90 opacity-0"} text-amber-200 drop-shadow-md`}
+          />
+        </span>
       <span className="sr-only">Ndrysho temën vizuale</span>
     </Button>
   )

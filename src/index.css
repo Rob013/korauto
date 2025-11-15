@@ -495,19 +495,27 @@ html.dark.theme-transitioning::before {
 #smartsupp-widget-container,
 .smartsupp-widget-container {
   z-index: 99999 !important;
+  right: clamp(1rem, 2vw, 1.75rem) !important;
+  bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+#smartsupp-widget-bubble,
+.smartsupp-widget-bubble {
+  right: clamp(1rem, 2vw, 1.75rem) !important;
+  bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 @media (max-width: 768px) {
   #smartsupp-widget-container,
   .smartsupp-widget-container {
-    right: 1rem !important;
-    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: clamp(0.75rem, 4vw, 1.25rem) !important;
+    bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   #smartsupp-widget-bubble,
   .smartsupp-widget-bubble {
-    right: 1rem !important;
-    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: clamp(0.75rem, 4vw, 1.25rem) !important;
+    bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
@@ -569,16 +577,29 @@ body.car-details-page .smartsupp-widget-container {
   /* Ensure full-height layout for full-screen sections */
   html, body, #root { min-height: 100%; height: auto; }
 
-  /* iOS-inspired typography */
-  h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-  }
+    /* iOS-inspired typography */
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      text-wrap: balance;
+      margin-bottom: 0.35em;
+    }
 
-  p {
-    line-height: 1.6;
-  }
+    p,
+    li,
+    blockquote {
+      line-height: 1.6;
+      text-wrap: pretty;
+    }
+
+    img,
+    svg,
+    video,
+    canvas {
+      display: block;
+      max-width: 100%;
+    }
 }
 
 /* ============================================================================
