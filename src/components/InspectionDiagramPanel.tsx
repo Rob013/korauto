@@ -40,6 +40,39 @@ const MAX_MARKER_SCALE = 1.1;
 const COLLISION_SPACING_MULTIPLIER = 1.05;
 const DIAGRAM_EDGE_PADDING = 16;
 
+type DiagramNumberLabel = {
+  id: string;
+  value: string;
+  x: number;
+  y: number;
+};
+
+const FRONT_NUMBER_LABELS: DiagramNumberLabel[] = [
+  { id: "front-1", value: "1", x: 320, y: 95 },
+  { id: "front-2-left", value: "2", x: 150, y: 150 },
+  { id: "front-2-right", value: "2", x: 490, y: 150 },
+  { id: "front-3-left", value: "3", x: 205, y: 285 },
+  { id: "front-3-right", value: "3", x: 435, y: 285 },
+  { id: "front-14", value: "14", x: 320, y: 255 },
+  { id: "front-7", value: "7", x: 320, y: 310 },
+  { id: "front-4", value: "4", x: 320, y: 510 },
+  { id: "front-6", value: "6", x: 320, y: 565 },
+];
+
+const REAR_NUMBER_LABELS: DiagramNumberLabel[] = [
+  { id: "rear-5", value: "5", x: 320, y: 65 },
+  { id: "rear-9", value: "9", x: 250, y: 125 },
+  { id: "rear-10", value: "10", x: 390, y: 125 },
+  { id: "rear-11", value: "11", x: 255, y: 205 },
+  { id: "rear-12", value: "12", x: 385, y: 205 },
+  { id: "rear-13", value: "13", x: 320, y: 225 },
+  { id: "rear-15", value: "15", x: 320, y: 300 },
+  { id: "rear-16", value: "16", x: 320, y: 360 },
+  { id: "rear-17", value: "17", x: 320, y: 445 },
+  { id: "rear-18", value: "18", x: 320, y: 505 },
+  { id: "rear-19", value: "19", x: 320, y: 565 },
+];
+
 const clampValue = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
@@ -979,17 +1012,21 @@ const DiagramMarkerWithTooltip: React.FC<{
 
   const fontMin = Math.max(MARKER_FONT_MIN * clampedScale, 3.2);
   const fontMax = Math.max(MARKER_FONT_MAX * clampedScale, fontMin);
-  const markerFontSizePx = clampValue(markerSizePx * 0.55, fontMin, fontMax);
+  const markerFontSizePx = clampValue(
+    markerSizePx * 0.75,
+    fontMin,
+    fontMax * 1.15,
+  );
 
   const baseClasses =
-    "absolute rounded-full flex items-center justify-center font-bold shadow-sm border pointer-events-auto transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
+    "absolute rounded-full flex items-center justify-center font-black tracking-widest shadow-md border pointer-events-auto select-none transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary";
   const variantClasses =
     marker.type === "N"
-      ? "bg-[#E53935] text-white border-white/80"
-      : "bg-[#D84315] text-white border-white/80";
+      ? "bg-white/95 text-red-600 border-red-200"
+      : "bg-white/95 text-orange-500 border-orange-200";
   const editModeClasses = editMode
     ? "cursor-move ring-2 ring-yellow-400"
-    : "cursor-pointer";
+    : "cursor-pointer hover:scale-105";
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!editMode) return;
@@ -1047,44 +1084,46 @@ const DiagramMarkerWithTooltip: React.FC<{
     }
   }, [isDragging, dragOffset, editMode, onDrag]);
 
-  return (
-    <Tooltip delayDuration={editMode ? 999999 : 0}>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${marker.label} - ${marker.type === "N" ? "Zëvendësim" : "Riparim"}`}
-          ref={buttonRef}
-          className={`${baseClasses} ${variantClasses} ${editModeClasses}`}
-          style={{
-            left: `${leftPercent}%`,
-            top: `${topPercent}%`,
-            width: `${markerSizePx}px`,
-            height: `${markerSizePx}px`,
-            fontSize: `${markerFontSizePx}px`,
-            transform: "translate(-50%, -50%)",
-          }}
-          onMouseDown={handleMouseDown}
+    return (
+      <Tooltip delayDuration={editMode ? 999999 : 0}>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label={`${marker.label} - ${marker.type === "N" ? "Zëvendësim" : "Riparim"}`}
+            ref={buttonRef}
+            className={`${baseClasses} ${variantClasses} ${editModeClasses}`}
+            style={{
+              left: `${leftPercent}%`,
+              top: `${topPercent}%`,
+              width: `${markerSizePx}px`,
+              height: `${markerSizePx}px`,
+              fontSize: `${markerFontSizePx}px`,
+              transform: "translate(-50%, -50%)",
+            }}
+            onMouseDown={handleMouseDown}
+          >
+            X
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          sideOffset={5}
+          className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs z-50"
         >
-          {marker.type}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent
-        side="top"
-        sideOffset={5}
-        className="bg-popover text-popover-foreground border-border shadow-lg max-w-xs z-50"
-      >
-        <div className="font-semibold text-sm">{marker.label}</div>
-        <div className="text-xs text-muted-foreground mt-1">
-          {marker.type === "N" ? "Ndërrim / zëvendësim" : "Riparim"}
-        </div>
-        {marker.originalLabel && marker.originalLabel !== marker.label && (
-          <div className="text-[10px] text-muted-foreground/80 mt-1">
-            {marker.originalLabel}
+          <div className="font-semibold text-sm">{marker.label}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {marker.type === "N"
+              ? "Shenjë X për ndërrim / zëvendësim"
+              : "Shenjë X për riparim"}
           </div>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
+          {marker.originalLabel && marker.originalLabel !== marker.label && (
+            <div className="text-[10px] text-muted-foreground/80 mt-1">
+              {marker.originalLabel}
+            </div>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    );
 };
 
 export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
@@ -1369,6 +1408,26 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
               className="w-full h-auto"
             />
             <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
+                <svg
+                  viewBox={`0 0 ${BASE_CANVAS_WIDTH} ${BASE_CANVAS_HEIGHT}`}
+                  className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                >
+                  {FRONT_NUMBER_LABELS.map((label) => (
+                    <text
+                      key={label.id}
+                      x={label.x}
+                      y={label.y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="hsl(var(--muted-foreground))"
+                      fontSize="18"
+                      fontWeight={700}
+                      opacity="0.65"
+                    >
+                      {label.value}
+                    </text>
+                  ))}
+                </svg>
               <TooltipProvider delayDuration={0}>
                 {withinWithCustomPos.map((marker, idx) => (
                   <DiagramMarkerWithTooltip
@@ -1394,6 +1453,26 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
               className="w-full h-auto"
             />
             <div className="diagram-container absolute inset-0 w-full h-full pointer-events-none">
+                <svg
+                  viewBox={`0 0 ${BASE_CANVAS_WIDTH} ${BASE_CANVAS_HEIGHT}`}
+                  className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                >
+                  {REAR_NUMBER_LABELS.map((label) => (
+                    <text
+                      key={label.id}
+                      x={label.x}
+                      y={label.y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="hsl(var(--muted-foreground))"
+                      fontSize="18"
+                      fontWeight={700}
+                      opacity="0.65"
+                    >
+                      {label.value}
+                    </text>
+                  ))}
+                </svg>
               <TooltipProvider delayDuration={0}>
                 {outWithCustomPos.map((marker, idx) => (
                   <DiagramMarkerWithTooltip
@@ -1412,20 +1491,20 @@ export const InspectionDiagramPanel: React.FC<InspectionDiagramPanelProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="px-4 py-3 border-t border-border bg-muted/10 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <div className="w-6 h-6 rounded-full bg-[#E53935] flex items-center justify-center text-white text-xs font-bold shadow-sm">
-            N
+        <div className="px-4 py-3 border-t border-border bg-muted/10 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <div className="w-7 h-7 rounded-full bg-white text-red-600 border border-red-200 flex items-center justify-center text-xs font-black shadow-sm">
+              X
+            </div>
+            Ndërrim (X i kuq)
           </div>
-          Ndërrim (zëvendësim)
-        </div>
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <div className="w-6 h-6 rounded-full bg-[#D84315] flex items-center justify-center text-white text-xs font-bold shadow-sm">
-            R
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <div className="w-7 h-7 rounded-full bg-white text-orange-500 border border-orange-200 flex items-center justify-center text-xs font-black shadow-sm">
+              X
+            </div>
+            Riparim (X portokalli)
           </div>
-          Riparim
         </div>
-      </div>
     </Card>
   );
 };

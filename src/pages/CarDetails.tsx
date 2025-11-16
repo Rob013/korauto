@@ -111,7 +111,6 @@ import { getFallbackOptionName } from "@/data/koreaOptionFallbacks";
 import { CarDetailsSkeleton } from "@/components/CarDetailsSkeleton";
 import { OptimizedCarImage } from "@/components/OptimizedCarImage";
 import "@/styles/carDetailsOptimizations.css";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/components/ThemeProvider";
 
 const ImageZoom = lazy(() =>
@@ -4006,7 +4005,6 @@ const CarDetails = memo(() => {
               <span className="sm:hidden font-medium">Home</span>
             </Button>
             <div className="ml-auto flex items-center gap-2">
-              <ThemeToggle />
               <Button
                 variant="outline"
                 size="sm"
