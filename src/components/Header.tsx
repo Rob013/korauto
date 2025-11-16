@@ -71,7 +71,14 @@ const Header = () => {
               Katalogu
             </Link>
             <Link 
-              to="/inspections" 
+              to="/auctions" 
+              className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+              aria-label="Shikoni ankandet e drejtpërdrejta"
+            >
+              Ankandet
+            </Link>
+            <Link 
+              to="/inspections"
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
               aria-label="Mësoni më shumë për inspektimet"
             >
@@ -165,7 +172,15 @@ const Header = () => {
                 Katalogu
               </Link>
               <Link 
-                to="/inspections" 
+                to="/auctions" 
+                className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
+                onClick={() => setIsMobileMenuOpen(false)}
+                aria-label="Shikoni ankandet e drejtpërdrejta"
+              >
+                Ankandet
+              </Link>
+              <Link 
+                to="/inspections"
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-label="Mësoni më shumë për inspektimet"

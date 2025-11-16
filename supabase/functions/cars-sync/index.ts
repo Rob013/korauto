@@ -607,7 +607,7 @@ Deno.serve(async (req) => {
                 car_data: raw,
                 lot_data: lotData,
                 last_api_sync: new Date().toISOString(),
-                sale_status: lotStatus === 3 ? 'sold' : lotStatus === 2 ? 'pending' : 'active'
+                sale_status: lotStatus === 3 ? 'sold' : (lotStatus === 2 ? 'pending' : 'active')
               } as any;
 
               const { error } = await supabaseClient
@@ -643,7 +643,7 @@ Deno.serve(async (req) => {
           }
           return null;
         })
-        .filter((id): id is string => Boolean(id));
+        .filter((id: unknown): id is string => Boolean(id) && typeof id === 'string');
 
       if (carIds.length === 0) {
         return new Response(
@@ -661,7 +661,7 @@ Deno.serve(async (req) => {
 
       for (const carId of uniqueIds) {
         try {
-          const { car: detailedCar, raw } = await fetchCarDetail(API_BASE_URL, API_KEY, carId);
+          const { car: detailedCar, raw } = await fetchCarDetail(API_BASE_URL, API_KEY, String(carId));
 
           if (!detailedCar) {
             throw new Error('No data returned from detail endpoint');
@@ -693,7 +693,7 @@ Deno.serve(async (req) => {
           cachedCount++;
           await sleep(150);
         } catch (error: any) {
-          errors.push({ id: carId, error: error?.message || String(error) });
+          errors.push({ id: String(carId), error: error instanceof Error ? error.message : String(error) });
         }
       }
 
@@ -835,7 +835,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       }),
       { 

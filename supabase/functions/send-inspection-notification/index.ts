@@ -47,7 +47,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Failed to send notification',
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       }),
       { 
         headers: { 

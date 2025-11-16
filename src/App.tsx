@@ -43,6 +43,7 @@ const PerformanceDashboard = lazyWithPreload(() => import("./components/Performa
 const AuditTestPage = lazyWithPreload(() => import("./pages/AuditTestPage"));
 const ApiInfoDemo = lazyWithPreload(() => import("./components/ApiInfoDemo"));
 const Warranty = lazyWithPreload(() => import("./pages/Warranty"));
+const Auctions = lazyWithPreload(() => import("./pages/Auctions"));
 
 // Lazy load admin components for better code splitting
 const AdminSyncDashboard = lazyWithPreload(() => import("./components/AdminSyncDashboard"));
@@ -276,6 +277,7 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={renderWithTransition(Index)} />
                     <Route path="/catalog" element={renderWithTransition(Catalog)} />
+                    <Route path="/auctions" element={renderWithTransition(Auctions)} />
                     <Route path="/car/:id" element={renderWithTransition(CarDetails)} />
                     <Route path="/car/:id/gallery" element={renderWithTransition(CarGallery)} />
                     <Route path="/car/:id/report" element={renderWithTransition(CarInspectionReport)} />
