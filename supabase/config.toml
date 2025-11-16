@@ -29,6 +29,9 @@ verify_jwt = false
 [functions.secure-inspection-request]
 verify_jwt = false
 
+[functions.ssancar-scraper]
+verify_jwt = false
+
 [functions.send-inspection-notification]
 verify_jwt = false
 
