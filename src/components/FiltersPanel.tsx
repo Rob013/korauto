@@ -73,39 +73,75 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Debounce search term with 250ms delay as specified
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
 
   // Update search filter when debounced term changes
   useEffect(() => {
-    if (debouncedSearchTerm !== filters.search) {
-      onFiltersChange({ search: debouncedSearchTerm || undefined });
+    try {
+      if (debouncedSearchTerm !== filters.search) {
+        onFiltersChange({ search: debouncedSearchTerm || undefined });
+      }
+      setValidationError(null);
+    } catch (error) {
+      console.error('Error updating search filter:', error);
+      setValidationError('Gabim në kërkim');
     }
   }, [debouncedSearchTerm, filters.search, onFiltersChange]);
 
-  const currentYearRange = useMemo(() => [
-    filters.yearMin ?? data.yearRange.min,
-    filters.yearMax ?? data.yearRange.max
-  ], [filters.yearMin, filters.yearMax, data.yearRange.min, data.yearRange.max]);
+  const currentYearRange = useMemo(() => {
+    try {
+      return [
+        filters.yearMin ?? data?.yearRange?.min ?? 2000,
+        filters.yearMax ?? data?.yearRange?.max ?? new Date().getFullYear()
+      ];
+    } catch (error) {
+      console.error('Error calculating year range:', error);
+      return [2000, new Date().getFullYear()];
+    }
+  }, [filters.yearMin, filters.yearMax, data?.yearRange]);
 
-  const currentPriceRange = useMemo(() => [
-    filters.priceMin ?? data.priceRange.min,
-    filters.priceMax ?? data.priceRange.max
-  ], [filters.priceMin, filters.priceMax, data.priceRange.min, data.priceRange.max]);
+  const currentPriceRange = useMemo(() => {
+    try {
+      return [
+        filters.priceMin ?? data?.priceRange?.min ?? 0,
+        filters.priceMax ?? data?.priceRange?.max ?? 100000
+      ];
+    } catch (error) {
+      console.error('Error calculating price range:', error);
+      return [0, 100000];
+    }
+  }, [filters.priceMin, filters.priceMax, data?.priceRange]);
 
-  const currentMileageRange = useMemo(() => [
-    filters.mileageMin ?? data.mileageRange.min,
-    filters.mileageMax ?? data.mileageRange.max
-  ], [filters.mileageMin, filters.mileageMax, data.mileageRange.min, data.mileageRange.max]);
+  const currentMileageRange = useMemo(() => {
+    try {
+      return [
+        filters.mileageMin ?? data?.mileageRange?.min ?? 0,
+        filters.mileageMax ?? data?.mileageRange?.max ?? 300000
+      ];
+    } catch (error) {
+      console.error('Error calculating mileage range:', error);
+      return [0, 300000];
+    }
+  }, [filters.mileageMin, filters.mileageMax, data?.mileageRange]);
 
   const yearOptions = useMemo(() => {
-    const options: Array<{ value: string; label: string }> = [];
-    for (let year = data.yearRange.min; year <= data.yearRange.max; year++) {
-      options.push({ value: year.toString(), label: year.toString() });
+    try {
+      const options: Array<{ value: string; label: string }> = [];
+      const minYear = data?.yearRange?.min ?? 2000;
+      const maxYear = data?.yearRange?.max ?? new Date().getFullYear();
+      
+      for (let year = minYear; year <= maxYear; year++) {
+        options.push({ value: year.toString(), label: year.toString() });
+      }
+      return options;
+    } catch (error) {
+      console.error('Error generating year options:', error);
+      return [];
     }
-    return options;
-  }, [data.yearRange.min, data.yearRange.max]);
+  }, [data?.yearRange]);
 
   const buildSteppedOptions = useCallback((min: number, max: number, step: number, formatter: (value: number) => string) => {
     const values: number[] = [];
@@ -218,7 +254,14 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   }, [data.models, filters.brand]);
 
   // Validate filters
-  const validationErrors = useMemo(() => validateFilters(filters), [filters]);
+  const validationErrors = useMemo(() => {
+    try {
+      return validateFilters(filters);
+    } catch (error) {
+      console.error('Error validating filters:', error);
+      return [];
+    }
+  }, [filters]);
   const { sorted: orderedBrands, priorityCount: priorityBrandCount } = useMemo(
     () => sortBrandsWithPriority(data.brands || []),
     [data.brands]
