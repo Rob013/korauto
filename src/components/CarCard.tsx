@@ -523,12 +523,11 @@ const CarCard = ({
               />
             </Button>
           </div>
-          {/* Price on bottom left with text on the right */}
+          {/* Price on bottom left */}
           <div className="flex items-end justify-between">
             <span className="text-lg font-bold text-primary">
               {typeof price === 'number' && isFinite(price) ? `€${price.toLocaleString()}` : 'Çmimi në kërkesë'}
             </span>
-            <p className="text-xs text-muted-foreground">deri ne portin e Durrësit</p>
           </div>
         </div>
 
