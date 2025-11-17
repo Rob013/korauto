@@ -22,6 +22,7 @@ import { useNavigationPrefetch } from "./hooks/useNavigationPrefetch";
 import { GlobalProgressProvider } from "./contexts/ProgressContext";
 import { TopLoadingBar } from "./components/TopLoadingBar";
 import { NavigationProgressListener } from "./components/NavigationProgressListener";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 
 // Lazy load all pages for better code splitting
 const Index = lazyWithPreload(() => import("./pages/Index"));
@@ -265,12 +266,13 @@ const App = () => {
   }, [supportsHighRefreshRate, targetFPS, currentFPS]);
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <StatusRefreshProvider intervalHours={6} enabled={true}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+    <AppErrorBoundary>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <StatusRefreshProvider intervalHours={6} enabled={true}>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
               <GlobalProgressProvider>
                 <BrowserRouter>
                   <NavigationProgressListener />
@@ -320,6 +322,7 @@ const App = () => {
         </StatusRefreshProvider>
       </QueryClientProvider>
     </ErrorBoundary>
+    </AppErrorBoundary>
   );
 };
 
