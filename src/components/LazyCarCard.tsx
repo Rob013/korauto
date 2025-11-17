@@ -747,9 +747,6 @@ const LazyCarCard = memo(({
                 KORAUTO
               </span>
             </div>
-            <p className="text-xs text-muted-foreground leading-tight">
-              deri ne portin e Durrësit
-            </p>
           </div>
         </div>
       </div>
