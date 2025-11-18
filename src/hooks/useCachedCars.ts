@@ -1,122 +1,192 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSecureAuctionAPI } from './useSecureAuctionAPI';
-
-interface CachedCar {
-  id: string;
-  api_id: string;
-  make: string;
-  model: string;
-  year: number;
-  price: number | null;
-  vin: string | null;
-  fuel: string | null;
-  transmission: string | null;
-  color: string | null;
-  condition: string | null;
-  lot_number: string | null;
-  mileage: string | null;
-  images: any;
-  car_data: any;
-  lot_data: any;
-  created_at: string;
-  updated_at: string;
-  last_api_sync: string;
-}
+import { transformCachedCarRecord, isCarSold } from '@/services/carCache';
+import { APIFilters } from '@/utils/catalog-filter';
 
 export const useCachedCars = () => {
-  const [cachedCars, setCachedCars] = useState<CachedCar[]>([]);
+  const [cars, setCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { cars: apiCars, loading: apiLoading, error: apiError, fetchCars } = useSecureAuctionAPI();
+  const [filters, setFilters] = useState<APIFilters>({});
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMorePages, setHasMorePages] = useState(false);
 
-  const fetchCachedCars = async () => {
+  // Fetch all cars from cache with filters
+  const fetchCars = useCallback(async (appliedFilters: APIFilters = {}): Promise<any[]> => {
     try {
-      const { data, error } = await supabase
-        .from('cars_cache')
-        .select('*')
-        .order('updated_at', { ascending: false });
+      setLoading(true);
+      setError(null);
 
-      if (error) {
-        console.error('Error fetching cached cars:', error);
-        setError(error.message);
-      } else {
-        setCachedCars(data || []);
+      let query = supabase
+        .from('cars_cache')
+        .select('*', { count: 'exact' });
+
+      // Apply filters - map API filter names to cache column names
+      if (appliedFilters.manufacturer_id) {
+        // manufacturer_id in API corresponds to make in cache
+        const { data: makeData } = await supabase
+          .from('cars_cache')
+          .select('make')
+          .limit(1000);
+        
+        // For now just use the make field directly if it matches
+        query = query.ilike('make', `%${appliedFilters.manufacturer_id}%`);
       }
+      
+      if (appliedFilters.model_id) {
+        query = query.ilike('model', `%${appliedFilters.model_id}%`);
+      }
+      
+      if (appliedFilters.from_year) {
+        query = query.gte('year', parseInt(appliedFilters.from_year));
+      }
+      
+      if (appliedFilters.to_year) {
+        query = query.lte('year', parseInt(appliedFilters.to_year));
+      }
+      
+      if (appliedFilters.buy_now_price_from) {
+        query = query.gte('price_cents', parseInt(appliedFilters.buy_now_price_from) * 100);
+      }
+      
+      if (appliedFilters.buy_now_price_to) {
+        query = query.lte('price_cents', parseInt(appliedFilters.buy_now_price_to) * 100);
+      }
+      
+      if (appliedFilters.fuel_type) {
+        query = query.eq('fuel', appliedFilters.fuel_type);
+      }
+      
+      if (appliedFilters.transmission) {
+        query = query.eq('transmission', appliedFilters.transmission);
+      }
+      
+      if (appliedFilters.color) {
+        query = query.eq('color', appliedFilters.color);
+      }
+
+      // Order by updated date
+      query = query.order('updated_at', { ascending: false });
+
+      const { data, error: fetchError, count } = await query;
+
+      if (fetchError) {
+        console.error('Error fetching cached cars:', fetchError);
+        setError(fetchError.message);
+        return [];
+      }
+
+      // Transform and filter out sold cars
+      const transformed = (data || [])
+        .map(transformCachedCarRecord)
+        .filter(car => !isCarSold(car));
+
+      setCars(transformed);
+      setTotalCount(count || transformed.length);
+      setHasMorePages(false); // All data loaded from cache
+
+      return transformed;
     } catch (err) {
       console.error('Failed to fetch cached cars:', err);
       setError('Failed to fetch cached cars');
-    }
-  };
-
-  useEffect(() => {
-    const loadCars = async () => {
-      setLoading(true);
-      
-      // First try to load from cache
-      await fetchCachedCars();
-      
-      // Check if cache is fresh enough (increased from 1 hour to 4 hours for better performance)
-      const now = new Date();
-      const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-      
-      // Only fetch from API if cache is empty or very outdated
-      if (cachedCars.length === 0) {
-        const hasRecentData = cachedCars.some(car => 
-          new Date(car.last_api_sync) > fourHoursAgo
-        );
-        
-        if (!hasRecentData) {
-          console.log('Cache is empty or outdated, fetching from API...');
-          await fetchCars();
-        }
-      }
-      
+      return [];
+    } finally {
       setLoading(false);
-    };
-
-    loadCars();
+    }
   }, []);
 
-  // Memoize transformed cars to prevent unnecessary recalculations
-  const transformedCars = useMemo(() => {
-    return cachedCars.map(cached => {
-      const carData = typeof cached.car_data === 'string' ? JSON.parse(cached.car_data) : cached.car_data;
-      const lotData = typeof cached.lot_data === 'string' ? JSON.parse(cached.lot_data || '{}') : (cached.lot_data || {});
-      const images = typeof cached.images === 'string' ? JSON.parse(cached.images || '[]') : (cached.images || []);
+  // Fetch manufacturers from cache
+  const fetchManufacturers = useCallback(async (appliedFilters: APIFilters = {}, page: number = 1, perPage: number = 500) => {
+    try {
+      const { data, error } = await supabase
+        .from('cars_cache')
+        .select('make')
+        .order('make');
 
-      return {
-        id: cached.api_id,
-        manufacturer: { id: 0, name: cached.make },
-        model: { id: 0, name: cached.model },
-        year: cached.year,
-        vin: cached.vin,
-        fuel: cached.fuel ? { id: 0, name: cached.fuel } : undefined,
-        transmission: cached.transmission ? { id: 0, name: cached.transmission } : undefined,
-        color: cached.color ? { id: 0, name: cached.color } : undefined,
-        condition: cached.condition,
-        lots: [{
-          buy_now: cached.price,
-          lot: cached.lot_number,
-          odometer: lotData.odometer,
-          images: { normal: images, big: images },
-          ...lotData
-        }]
-      };
-    });
-  }, [cachedCars]);
+      if (error) throw error;
 
-  // Use cached cars if available, otherwise fall back to API cars
-  const cars = transformedCars.length > 0 ? transformedCars : apiCars;
-  const finalLoading = loading || (transformedCars.length === 0 && apiLoading);
-  const finalError = error || (transformedCars.length === 0 ? apiError : null);
+      const uniqueMakes = [...new Set(data.map(item => item.make))].filter(Boolean);
+      return uniqueMakes.map((make, index) => ({
+        id: index,
+        name: make
+      }));
+    } catch (err) {
+      console.error('Failed to fetch manufacturers:', err);
+      return [];
+    }
+  }, []);
+
+  // Fetch models for a manufacturer
+  const fetchModels = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cars_cache')
+        .select('model')
+        .ilike('make', `%${manufacturerName}%`)
+        .order('model');
+
+      if (error) throw error;
+
+      const uniqueModels = [...new Set(data.map(item => item.model))].filter(Boolean);
+      return uniqueModels.map((model, index) => ({
+        id: index,
+        name: model
+      }));
+    } catch (err) {
+      console.error('Failed to fetch models:', err);
+      return [];
+    }
+  }, []);
+
+  // Stub implementations for compatibility with useSecureAuctionAPI
+  const fetchGenerations = useCallback(async (manufacturerName: string, modelName: string) => [], []);
+  const fetchAllGenerationsForManufacturer = useCallback(async (manufacturerName: string) => [], []);
+  const fetchFilterCounts = useCallback(async (appliedFilters: APIFilters) => ({ 
+    makes: [], 
+    models: [], 
+    years: [] 
+  }), []);
+  const fetchGrades = useCallback(async (manufacturerName: string, modelName: string) => [], []);
+  const fetchTrimLevels = useCallback(async (manufacturerId?: string, modelId?: string) => {
+    return [];
+  }, []);
+  const loadMore = useCallback(async () => {}, []);
+  const refreshInventory = useCallback(async () => {
+    await fetchCars(filters);
+  }, [fetchCars, filters]);
+  const clearCarsCache = useCallback(() => {
+    setCars([]);
+  }, []);
+  const fetchAllCars = useCallback(async (appliedFilters: APIFilters = {}) => {
+    return await fetchCars(appliedFilters);
+  }, [fetchCars]);
+
+  // Initial load
+  useEffect(() => {
+    fetchCars(filters);
+  }, []);
 
   return {
     cars,
-    loading: finalLoading,
-    error: finalError,
-    cachedCars,
-    fetchCachedCars,
-    hasCachedData: transformedCars.length > 0
+    setCars,
+    loading,
+    error,
+    totalCount,
+    setTotalCount,
+    hasMorePages,
+    fetchCars,
+    fetchAllCars,
+    filters,
+    setFilters,
+    fetchManufacturers,
+    fetchModels,
+    fetchGenerations,
+    fetchAllGenerationsForManufacturer,
+    fetchFilterCounts,
+    fetchGrades,
+    fetchTrimLevels,
+    loadMore,
+    refreshInventory,
+    clearCarsCache,
   };
 };

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,32 +70,115 @@ const handler = async (req: Request): Promise<Response> => {
           break;
         }
 
-        // Upsert to cache
+        // Upsert to cache with ALL available data
         for (const car of cars) {
           const lot = car.lots?.[0] || {};
+          const insurance = lot.insurance || car.insurance || {};
+          const insurance_v2 = lot.insurance_v2 || car.insurance_v2 || {};
           
           const cacheRecord = {
+            id: String(car.id),
             api_id: String(car.id),
             make: car.manufacturer?.name || 'Unknown',
             model: car.model?.name || 'Unknown',
             year: car.year || lot.year || new Date().getFullYear(),
+            vin: car.vin || lot.vin || null,
+            
+            // Pricing - applying +2500 EUR markup
             price: lot.buy_now || lot.final_bid || lot.price || null,
             price_usd: lot.buy_now || lot.final_bid || lot.price || null,
             price_eur: lot.buy_now ? Math.round(lot.buy_now * 0.92 + 2500) : null,
             price_cents: lot.buy_now ? Math.round((lot.buy_now * 0.92 + 2500) * 100) : null,
-            mileage: String(lot.odometer?.km || 0),
+            
+            // Basic specs
+            mileage: String(lot.odometer?.km || car.mileage || 0),
             fuel: lot.fuel || car.fuel || null,
             transmission: lot.transmission || car.transmission || null,
             color: lot.color || car.color || null,
+            condition: car.condition || lot.condition || null,
+            grade: car.grade || lot.grade_iaai || null,
+            
+            // Lot info
             lot_number: lot.lot || null,
-            images: lot.images?.normal || lot.images?.big || [],
+            lot_seller: lot.seller || null,
+            sale_status: lot.sale_status || car.sale_status || 'active',
+            sale_title: lot.detailed_title || null,
+            
+            // Images - all sources
+            images: lot.images?.normal || lot.images?.big || car.images || [],
+            high_res_images: lot.images?.big || car.high_res_images || [],
+            image_url: (lot.images?.normal?.[0] || lot.images?.big?.[0] || car.images?.[0] || null),
+            all_images_urls: [
+              ...(lot.images?.normal || []),
+              ...(lot.images?.big || []),
+              ...(car.images || [])
+            ].filter((url, index, self) => url && self.indexOf(url) === index),
+            
+            // Damage info
+            damage_primary: lot.damage?.main || null,
+            damage_secondary: lot.damage?.second || null,
+            accident_history: insurance?.accident_history || insurance_v2?.accidentHistory || null,
+            
+            // Engine specs
+            engine_size: car.engine_size || car.displacement || null,
+            engine_displacement: car.displacement || null,
+            cylinders: car.cylinders || null,
+            max_power: car.power || car.max_power || null,
+            torque: car.torque || null,
+            
+            // Performance
+            acceleration: car.acceleration || null,
+            top_speed: car.top_speed || null,
+            co2_emissions: car.co2_emissions || null,
+            fuel_consumption: car.fuel_consumption || null,
+            
+            // Vehicle details
+            doors: car.doors || null,
+            seats: car.seats || null,
+            body_style: car.body_style || null,
+            drive_type: car.drive_type || null,
+            
+            // Location
+            location_country: 'South Korea',
+            location_state: lot.location || null,
+            location_city: car.city || null,
+            
+            // Seller info
+            seller_type: lot.seller_type || null,
+            seller_notes: car.description || lot.notes || null,
+            
+            // History
+            previous_owners: car.previous_owners || null,
+            service_history: car.service_history || null,
+            warranty_info: car.warranty || null,
+            modifications: car.modifications || null,
+            
+            // Features
+            features: car.features || lot.features || [],
+            inspection_report: car.inspection || lot.inspection || {},
+            
+            // Keys & docs
+            keys_count: lot.keys_available ? 1 : 0,
+            spare_key_available: lot.keys_available || false,
+            
+            // Store complete data
             car_data: car,
             lot_data: lot,
-            sale_status: lot.sale_status || car.sale_status || 'active',
+            original_api_data: car,
+            
+            // Metadata
             last_api_sync: new Date().toISOString(),
             last_updated_source: 'api-cache-sync',
-            api_version: '1.0',
+            api_version: '2.0',
             rank_score: lot.popularity_score || 0,
+            sync_metadata: {
+              synced_at: new Date().toISOString(),
+              source: 'api-cache-sync',
+              page: currentPage,
+              has_insurance_data: !!insurance?.accident_history,
+              has_insurance_v2_data: !!insurance_v2?.accidentHistory,
+              image_count: (lot.images?.normal?.length || 0) + (lot.images?.big?.length || 0),
+            }
           };
 
           const { error } = await supabase
