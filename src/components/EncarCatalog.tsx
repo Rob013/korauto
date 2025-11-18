@@ -9,7 +9,8 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Grid3X3, List } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
+import { useCachedCars } from "@/hooks/useCachedCars";
+import { createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
@@ -74,7 +75,7 @@ const EncarCatalog = ({
     loadMore,
     refreshInventory,
     clearCarsCache
-  } = useSecureAuctionAPI();
+  } = useCachedCars();
   const {
     convertUSDtoEUR,
     exchangeRate
