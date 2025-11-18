@@ -37,6 +37,7 @@ import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
+import { AdminCacheSyncDashboard } from "@/components/AdminCacheSyncDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
 import ApiInfoDashboard from "@/components/ApiInfoDashboard";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
@@ -753,11 +754,12 @@ const AdminDashboard = () => {
           onValueChange={setActiveTab}
           className="space-y-3 sm:space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-6 h-auto">
+          <TabsList className="grid w-full grid-cols-7 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm p-2 sm:p-3">Overview</TabsTrigger>
             <TabsTrigger value="inspections" className="text-xs sm:text-sm p-2 sm:p-3">Inspections</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm p-2 sm:p-3">Analytics</TabsTrigger>
             <TabsTrigger value="performance" className="text-xs sm:text-sm p-2 sm:p-3">Performance</TabsTrigger>
+            <TabsTrigger value="cache-sync" className="text-xs sm:text-sm p-2 sm:p-3">Cache Sync</TabsTrigger>
             <TabsTrigger value="cookies" className="text-xs sm:text-sm p-2 sm:p-3">Cookies</TabsTrigger>
             <TabsTrigger value="api-info" className="text-xs sm:text-sm p-2 sm:p-3">API Info</TabsTrigger>
           </TabsList>
@@ -1745,8 +1747,12 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="cookies" className="space-y-3 sm:space-y-4">
-            {/* Cookie Management Dashboard */}
+          <TabsContent value="cache-sync" className="space-y-3 sm:space-y-4">
+            {/* Cache Sync Dashboard */}
+            <AdminCacheSyncDashboard />
+          </TabsContent>
+
+          <TabsContent value="cookies" className="space-y-3 sm:space-y-4">{/* Cookie Management Dashboard */}
             <Card className="p-4 sm:p-6">
               <CardHeader className="p-0 pb-4">
                 <div className="flex items-center justify-between">

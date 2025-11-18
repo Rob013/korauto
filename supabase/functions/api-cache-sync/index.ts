@@ -104,15 +104,41 @@ const handler = async (req: Request): Promise<Response> => {
             sale_status: lot.sale_status || car.sale_status || 'active',
             sale_title: lot.detailed_title || null,
             
-            // Images - all sources
-            images: lot.images?.normal || lot.images?.big || car.images || [],
-            high_res_images: lot.images?.big || car.high_res_images || [],
-            image_url: (lot.images?.normal?.[0] || lot.images?.big?.[0] || car.images?.[0] || null),
+            // Images - all sources with comprehensive extraction
+            images: [
+              ...(lot.images?.normal || []),
+              ...(lot.images?.big || []),
+              ...(lot.images?.hd || []),
+              ...(car.images || []),
+              ...(car.photos || []),
+              ...(car.gallery || [])
+            ].filter((url, index, self) => url && self.indexOf(url) === index),
+            high_res_images: [
+              ...(lot.images?.big || []),
+              ...(lot.images?.hd || []),
+              ...(car.high_res_images || []),
+              ...(car.hd_images || [])
+            ].filter((url, index, self) => url && self.indexOf(url) === index),
+            image_url: (
+              lot.images?.big?.[0] || 
+              lot.images?.hd?.[0] || 
+              lot.images?.normal?.[0] || 
+              car.images?.[0] || 
+              car.photos?.[0] || 
+              null
+            ),
             all_images_urls: [
               ...(lot.images?.normal || []),
               ...(lot.images?.big || []),
-              ...(car.images || [])
+              ...(lot.images?.hd || []),
+              ...(car.images || []),
+              ...(car.photos || []),
+              ...(car.gallery || []),
+              ...(car.high_res_images || []),
+              ...(car.hd_images || [])
             ].filter((url, index, self) => url && self.indexOf(url) === index),
+            thumbnail_url: lot.images?.thumbnail?.[0] || lot.images?.normal?.[0] || null,
+            image_count: (lot.images?.normal?.length || 0) + (lot.images?.big?.length || 0) + (lot.images?.hd?.length || 0) + (car.images?.length || 0),
             
             // Damage info
             damage_primary: lot.damage?.main || null,

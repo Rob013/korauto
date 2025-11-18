@@ -117,13 +117,17 @@ export const useCachedCars = () => {
   }, []);
 
   // Fetch models for a manufacturer
-  const fetchModels = useCallback(async () => {
+  const fetchModels = useCallback(async (manufacturerName?: string) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('cars_cache')
-        .select('model')
-        .ilike('make', `%${manufacturerName}%`)
-        .order('model');
+        .select('model');
+      
+      if (manufacturerName) {
+        query = query.ilike('make', `%${manufacturerName}%`);
+      }
+      
+      const { data, error } = await query.order('model');
 
       if (error) throw error;
 
