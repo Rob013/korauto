@@ -4,17 +4,23 @@ import { RefreshCw, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-export const CarsSyncButton = () => {
+interface CarsSyncButtonProps {
+  syncType?: 'full' | 'incremental';
+  onSyncComplete?: () => void;
+}
+
+export const CarsSyncButton = ({ syncType = 'full', onSyncComplete }: CarsSyncButtonProps) => {
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
 
   const handleSync = async () => {
     setSyncing(true);
     try {
-      console.log('🚀 Starting cars sync...');
+      console.log(`🚀 Starting ${syncType} cars sync...`);
       
       const { data, error } = await supabase.functions.invoke('cars-sync', {
-        method: 'POST'
+        method: 'POST',
+        body: { syncType }
       });
 
       if (error) {
@@ -25,12 +31,14 @@ export const CarsSyncButton = () => {
       
       toast({
         title: "Sync Completed",
-        description: `Successfully synced ${data.totalSynced} cars from API`,
+        description: `Successfully synced ${data.totalSynced} cars from API (Total: ${data.totalInDatabase} cars in database)`,
         duration: 5000,
       });
 
-      // Refresh the page to show updated data
-      window.location.reload();
+      // Call completion callback instead of reloading
+      if (onSyncComplete) {
+        onSyncComplete();
+      }
       
     } catch (error) {
       console.error('❌ Sync failed:', error);
@@ -58,7 +66,7 @@ export const CarsSyncButton = () => {
       ) : (
         <Download className="h-4 w-4" />
       )}
-      {syncing ? 'Syncing...' : 'Sync Cars'}
+      {syncing ? `${syncType === 'full' ? 'Full' : 'Quick'} Sync...` : `${syncType === 'full' ? 'Full Sync' : 'Quick Sync'}`}
     </Button>
   );
 };

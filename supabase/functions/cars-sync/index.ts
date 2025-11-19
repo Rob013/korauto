@@ -723,27 +723,29 @@ Deno.serve(async (req) => {
       );
     }
 
-      // For status refresh, do a quick incremental sync
-      const pagesLimit = syncType === 'full' ? 500 : 1; // Full sync: 500 pages, Incremental: 1 page
-      const perPage = 50;
-      
-      let page = 1;
-      let totalSynced = 0;
-      let encarCount = 0;
-      let kbchachaCount = 0;
-      let hasMorePages = true;
-      const syncBatchId = `${syncType}-${Date.now()}`;
+    // Fetch ALL active cars from API - no page limit
+    const perPage = 100; // Increased from 50 for faster sync
     
-    while (hasMorePages && page <= pagesLimit) {
-      console.log(`📄 Fetching page ${page}...`);
-      
-      // Fetch all cars without domain filter to get both Encar and KB Chachacha
-      const response = await fetch(`${API_BASE_URL}/cars?per_page=${perPage}&page=${page}&simple_paginate=0`, {
-        headers: {
-          'accept': 'application/json',
-          'x-api-key': API_KEY
-        }
-      });
+    let page = 1;
+    let totalSynced = 0;
+    let encarCount = 0;
+    let kbchachaCount = 0;
+    let hasMorePages = true;
+    const syncBatchId = `${syncType}-${Date.now()}`;
+    const maxPagesForIncremental = syncType === 'full' ? Infinity : 10; // Full: unlimited, Incremental: 10 pages
+  
+  while (hasMorePages && page <= maxPagesForIncremental) {
+    console.log(`📄 Fetching page ${page}/${maxPagesForIncremental === Infinity ? '∞' : maxPagesForIncremental}...`);
+    
+    // Fetch all active cars without domain filter to get both Encar and KB Chachacha
+    // Use minutes parameter to get recently updated cars
+    const minutesParam = syncType === 'full' ? '' : '&minutes=1440'; // Incremental: last 24 hours
+    const response = await fetch(`${API_BASE_URL}/cars?per_page=${perPage}&page=${page}&simple_paginate=0${minutesParam}`, {
+      headers: {
+        'accept': 'application/json',
+        'x-api-key': API_KEY
+      }
+    });
 
       if (!response.ok) {
         console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
@@ -759,14 +761,15 @@ Deno.serve(async (req) => {
         break;
       }
 
-        console.log(`🔄 Processing ${cars.length} cars from page ${page}...`);
+      console.log(`🔄 Processing ${cars.length} cars from page ${page}... (Total synced: ${totalSynced})`);
 
-        // Process cars in batches
-        const batchSize = syncType === 'full' ? 5 : 10;
+        // Process cars in parallel batches for better performance
+        const batchSize = 10;
         for (let i = 0; i < cars.length; i += batchSize) {
           const batch = cars.slice(i, i + batchSize);
           
-          for (const car of batch) {
+          // Process batch in parallel
+          await Promise.all(batch.map(async (car) => {
             try {
               const { car: detailedCar, raw } = await fetchCarDetail(API_BASE_URL, API_KEY, car.id.toString());
               if (!detailedCar) {
@@ -800,47 +803,55 @@ Deno.serve(async (req) => {
               } else {
                 totalSynced++;
               }
-
-              await sleep(syncType === 'full' ? 200 : 75);
             } catch (err) {
               console.error(`❌ Error processing car ${car.id}:`, err);
             }
-          }
+          }));
+          
+          // Small delay between batches
+          await sleep(100);
         }
 
-      // Check if there are more pages
-      const hasNext = data.meta?.current_page < data.meta?.last_page;
-      hasMorePages = hasNext;
-      page++;
-      
-      // Wait 2 seconds between page requests to avoid rate limiting
-      if (hasMorePages && page <= pagesLimit) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
+    // Check if there are more pages
+    const hasNext = data.meta?.current_page < data.meta?.last_page;
+    hasMorePages = hasNext;
+    
+    // Log progress every 10 pages
+    if (page % 10 === 0) {
+      console.log(`📊 Progress: Page ${page}, Total synced: ${totalSynced} (Encar: ${encarCount}, KB Chachacha: ${kbchachaCount})`);
     }
+    
+    page++;
+    
+    // Rate limiting between pages
+    if (hasMorePages && page <= maxPagesForIncremental) {
+      await sleep(syncType === 'full' ? 300 : 100);
+    }
+  }
 
-    // Get total counts from database
-    const { count: totalCarsInDb } = await supabaseClient
-      .from('cars_cache')
-      .select('*', { count: 'exact', head: true });
+  // Get total counts from database
+  const { count: totalCarsInDb } = await supabaseClient
+    .from('cars_cache')
+    .select('*', { count: 'exact', head: true });
 
-    console.log(`✅ Sync complete! Synced: ${totalSynced} (Encar: ${encarCount}, KB Chachacha: ${kbchachaCount})`);
-    console.log(`📊 Total cars in database: ${totalCarsInDb}`);
+  console.log(`✅ Sync complete! Synced: ${totalSynced} (Encar: ${encarCount}, KB Chachacha: ${kbchachaCount})`);
+  console.log(`📊 Total cars in database: ${totalCarsInDb}`);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Successfully synced ${totalSynced} cars`,
-        totalSynced,
-        encarCount,
-        kbchachaCount,
-        totalInDatabase: totalCarsInDb,
-        syncType
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: `Successfully synced ${totalSynced} cars`,
+      totalSynced,
+      encarCount,
+      kbchachaCount,
+      totalInDatabase: totalCarsInDb,
+      totalPages: page - 1,
+      syncType
+    }),
+    { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    }
+  );
 
   } catch (error) {
     console.error('❌ Cars sync failed:', error);

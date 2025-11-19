@@ -11,11 +11,14 @@ export const useCachedCars = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [hasMorePages, setHasMorePages] = useState(false);
 
-  // Fetch all cars from cache with filters
-  const fetchCars = useCallback(async (appliedFilters: APIFilters = {}): Promise<any[]> => {
+  // Fetch paginated cars from cache with filters
+  const fetchCars = useCallback(async (appliedFilters: APIFilters = {}, page: number = 1, pageSize: number = 200): Promise<any[]> => {
     try {
       setLoading(true);
       setError(null);
+
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
 
       let query = supabase
         .from('cars_cache')
@@ -65,7 +68,7 @@ export const useCachedCars = () => {
       query = query
         .order('rank_score', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false })
-        .limit(200);  // Limit to 200 cars per page to prevent timeout
+        .range(from, to);  // Paginate results
 
       const { data, error: fetchError, count } = await query;
 
@@ -153,7 +156,7 @@ export const useCachedCars = () => {
   }, []);
   const loadMore = useCallback(async () => {}, []);
   const refreshInventory = useCallback(async () => {
-    await fetchCars(filters);
+    await fetchCars(filters, 1, 200);
   }, [fetchCars, filters]);
   const clearCarsCache = useCallback(() => {
     setCars([]);
