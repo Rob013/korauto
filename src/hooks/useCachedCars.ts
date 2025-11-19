@@ -19,17 +19,13 @@ export const useCachedCars = () => {
 
       let query = supabase
         .from('cars_cache')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' })
+        .not('sale_status', 'in', '(sold,archived)')  // Filter out sold/archived cars
+        .not('price_cents', 'is', null)  // Only cars with prices
+        .gt('price_cents', 0);  // Price must be greater than 0
 
       // Apply filters - map API filter names to cache column names
       if (appliedFilters.manufacturer_id) {
-        // manufacturer_id in API corresponds to make in cache
-        const { data: makeData } = await supabase
-          .from('cars_cache')
-          .select('make')
-          .limit(1000);
-        
-        // For now just use the make field directly if it matches
         query = query.ilike('make', `%${appliedFilters.manufacturer_id}%`);
       }
       
@@ -65,8 +61,11 @@ export const useCachedCars = () => {
         query = query.eq('color', appliedFilters.color);
       }
 
-      // Order by updated date
-      query = query.order('updated_at', { ascending: false });
+      // Order by rank score (best cars first) then updated date
+      query = query
+        .order('rank_score', { ascending: false, nullsFirst: false })
+        .order('updated_at', { ascending: false })
+        .limit(200);  // Limit to 200 cars per page to prevent timeout
 
       const { data, error: fetchError, count } = await query;
 
@@ -76,14 +75,12 @@ export const useCachedCars = () => {
         return [];
       }
 
-      // Transform and filter out sold cars
-      const transformed = (data || [])
-        .map(transformCachedCarRecord)
-        .filter(car => !isCarSold(car));
+      // Transform cars (they're already filtered in the query)
+      const transformed = (data || []).map(transformCachedCarRecord);
 
       setCars(transformed);
       setTotalCount(count || transformed.length);
-      setHasMorePages(false); // All data loaded from cache
+      setHasMorePages((count || 0) > transformed.length);
 
       return transformed;
     } catch (err) {
@@ -161,9 +158,73 @@ export const useCachedCars = () => {
   const clearCarsCache = useCallback(() => {
     setCars([]);
   }, []);
-  const fetchAllCars = useCallback(async (appliedFilters: APIFilters = {}) => {
-    return await fetchCars(appliedFilters);
-  }, [fetchCars]);
+  const fetchAllCars = useCallback(async (appliedFilters: APIFilters = {}): Promise<any[]> => {
+    try {
+      console.log('Fetching all cars for global sorting with filters:', appliedFilters);
+      
+      let query = supabase
+        .from('cars_cache')
+        .select('*')
+        .not('sale_status', 'in', '(sold,archived)')
+        .not('price_cents', 'is', null)
+        .gt('price_cents', 0);
+
+      // Apply same filters as fetchCars
+      if (appliedFilters.manufacturer_id) {
+        query = query.ilike('make', `%${appliedFilters.manufacturer_id}%`);
+      }
+      
+      if (appliedFilters.model_id) {
+        query = query.ilike('model', `%${appliedFilters.model_id}%`);
+      }
+      
+      if (appliedFilters.from_year) {
+        query = query.gte('year', parseInt(appliedFilters.from_year));
+      }
+      
+      if (appliedFilters.to_year) {
+        query = query.lte('year', parseInt(appliedFilters.to_year));
+      }
+      
+      if (appliedFilters.buy_now_price_from) {
+        query = query.gte('price_cents', parseInt(appliedFilters.buy_now_price_from) * 100);
+      }
+      
+      if (appliedFilters.buy_now_price_to) {
+        query = query.lte('price_cents', parseInt(appliedFilters.buy_now_price_to) * 100);
+      }
+      
+      if (appliedFilters.fuel_type) {
+        query = query.eq('fuel', appliedFilters.fuel_type);
+      }
+      
+      if (appliedFilters.transmission) {
+        query = query.eq('transmission', appliedFilters.transmission);
+      }
+      
+      if (appliedFilters.color) {
+        query = query.eq('color', appliedFilters.color);
+      }
+
+      // Order and limit to prevent timeout
+      query = query
+        .order('rank_score', { ascending: false, nullsFirst: false })
+        .order('updated_at', { ascending: false })
+        .limit(1000);  // Limit to 1000 for global sorting
+
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) {
+        console.error('Error fetching all cars:', fetchError);
+        return [];
+      }
+
+      return (data || []).map(transformCachedCarRecord);
+    } catch (err) {
+      console.error('Failed to fetch all cars:', err);
+      return [];
+    }
+  }, []);
 
   // Initial load
   useEffect(() => {
