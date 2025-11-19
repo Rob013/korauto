@@ -1,8 +1,20 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Helper to validate and sanitize timestamp values
+const safeTimestamp = (value: unknown): string | null => {
+  if (!value) return null;
+  if (typeof value !== 'string') return null;
+  
+  // Check if it's a valid ISO timestamp
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return null;
+  
+  return date.toISOString();
 }
 
 interface Car {
@@ -402,7 +414,7 @@ const buildCarCacheRecord = ({ listCar, detailedCar, detailPayload, syncBatchId,
     seller_type: lot?.seller_type ?? fallbackLot?.seller_type ?? null,
     sale_status: resolvedSaleStatus,
     sale_title: baseCar?.title ?? fallbackCar?.title ?? `${manufacturerName} ${modelName}`.trim(),
-    auction_date: lot?.sale_date ?? fallbackLot?.sale_date ?? null,
+    auction_date: safeTimestamp(lot?.sale_date ?? fallbackLot?.sale_date),
     bid_count: safeNumber(lot?.bid_count ?? lot?.bid ?? fallbackLot?.bid_count),
     damage_primary: damagePrimary,
     damage_secondary: damageSecondary,
@@ -440,11 +452,12 @@ const buildCarCacheRecord = ({ listCar, detailedCar, detailPayload, syncBatchId,
       ?? (Array.isArray(baseCar?.details?.insurance?.owner_changes)
         ? baseCar.details.insurance.owner_changes.length
         : null),
-    registration_date: baseCar?.details?.insurance?.general_info?.insurance_start_date
+    registration_date: safeTimestamp(
+      baseCar?.details?.insurance?.general_info?.insurance_start_date
       ?? fallbackCar?.details?.insurance?.general_info?.insurance_start_date
       ?? baseCar?.registration_date
       ?? fallbackCar?.registration_date
-      ?? null,
+    ),
     first_registration: (() => {
       const firstReg = baseCar?.details?.first_registration ?? fallbackCar?.details?.first_registration;
       if (!firstReg) return null;
@@ -462,7 +475,7 @@ const buildCarCacheRecord = ({ listCar, detailedCar, detailPayload, syncBatchId,
       }
       return null;
     })(),
-    mot_expiry: baseCar?.details?.mot ?? fallbackCar?.details?.mot ?? null,
+    mot_expiry: safeTimestamp(baseCar?.details?.mot ?? fallbackCar?.details?.mot),
     road_tax: safeNumber(baseCar?.details?.road_tax ?? fallbackCar?.details?.road_tax),
     insurance_group: baseCar?.details?.insurance?.general_info?.insurance_group
       ?? fallbackCar?.details?.insurance?.general_info?.insurance_group
@@ -481,7 +494,7 @@ const buildCarCacheRecord = ({ listCar, detailedCar, detailPayload, syncBatchId,
       source: lot?.domain?.name ?? fallbackLot?.domain?.name ?? 'external',
     },
     sync_retry_count: 0,
-    created_at: fallbackCar?.created_at ?? nowIso,
+    created_at: safeTimestamp(fallbackCar?.created_at) ?? nowIso,
     updated_at: nowIso,
   };
 };
