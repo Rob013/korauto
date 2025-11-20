@@ -17,10 +17,22 @@ export function ThemeToggle() {
       size="icon"
       onClick={handleToggle}
       aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-      className="relative h-9 w-9 rounded-full hover:bg-accent/10 transition-colors"
+      className="relative h-10 w-10 rounded-lg hover:bg-accent transition-all duration-200 group"
     >
-      <Sun className={`absolute h-5 w-5 rotate-0 scale-100 transition-all duration-300 ${isDark ? "-rotate-90 scale-0" : ""}`} />
-      <Moon className={`absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 ${isDark ? "rotate-0 scale-100" : ""}`} />
+      <div className="relative w-5 h-5">
+        <Sun 
+          className={`absolute inset-0 h-5 w-5 text-foreground transition-all duration-300 ${
+            isDark ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
+          }`} 
+          strokeWidth={2}
+        />
+        <Moon 
+          className={`absolute inset-0 h-5 w-5 text-foreground transition-all duration-300 ${
+            isDark ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
+          }`}
+          strokeWidth={2}
+        />
+      </div>
       <span className="sr-only">Toggle theme</span>
     </Button>
   );
