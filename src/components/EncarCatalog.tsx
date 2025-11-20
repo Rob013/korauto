@@ -9,8 +9,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Grid3X3, List } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useCachedCars } from "@/hooks/useCachedCars";
-import { createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
+import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
@@ -75,7 +74,7 @@ const EncarCatalog = ({
     loadMore,
     refreshInventory,
     clearCarsCache
-  } = useCachedCars();
+  } = useSecureAuctionAPI();
   const {
     convertUSDtoEUR,
     exchangeRate
@@ -145,8 +144,8 @@ const EncarCatalog = ({
   const normalizedCurrentFilters = useMemo(() => normalizeFilters(filters || {}), [filters]);
   const currentFiltersSignature = useMemo(() => JSON.stringify(normalizedCurrentFilters), [normalizedCurrentFilters]);
   const scheduleFetchCars = useMemo(
-    () => catalogDebounce((nextFilters: APIFilters) => {
-      fetchCars(nextFilters);
+    () => catalogDebounce((page: number, nextFilters: APIFilters, resetList: boolean) => {
+      fetchCars(page, nextFilters, resetList);
     }, 120),
     [fetchCars]
   );
@@ -163,7 +162,7 @@ const EncarCatalog = ({
   }, [isMobile]);
 
   useEffect(() => {
-    refreshInventory();
+    refreshInventory(60);
   }, [refreshInventory]);
 
   // Memoized helper function to extract grades from title - now using utility
@@ -475,7 +474,7 @@ const EncarCatalog = ({
       ...filtersWithPagination,
       sort_by: sortBy
     } : filtersWithPagination;
-    scheduleFetchCars(filtersWithSort);
+    scheduleFetchCars(1, filtersWithSort, true);
 
     // Update URL with all non-empty filter values - now using utility
     const searchParams = filtersToURLParams(newFilters);
@@ -519,7 +518,7 @@ const EncarCatalog = ({
       clearGlobalSorting();
 
       const filtersWithPagination = addPaginationToFilters(normalizedFilters, 200, 1);
-      scheduleFetchCars(filtersWithPagination);
+      scheduleFetchCars(1, filtersWithPagination, true);
       setCurrentPage(1);
 
       const searchParams = filtersToURLParams(normalizedFilters);
@@ -547,7 +546,7 @@ const EncarCatalog = ({
     setHasUserSelectedSort(false); // Reset sort preference
     setSortBy("recently_added"); // Reset to recently_added default
     clearCarsCache();
-    fetchCars({});
+    fetchCars(1, {}, true);
     setSearchParams({});
   }, [fetchCars, setSearchParams, clearCarsCache]);
   const handleSearch = useCallback(() => {
@@ -571,7 +570,7 @@ const EncarCatalog = ({
       ...filtersWithPagination,
       sort_by: sortBy
     } : filtersWithPagination;
-    scheduleFetchCars(filtersWithSort); // Reset list for new page
+    scheduleFetchCars(page, filtersWithSort, true); // Reset list for new page
 
     // Update URL with new page
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -734,7 +733,7 @@ const EncarCatalog = ({
           ...newFilters,
           per_page: "50"
         };
-      await Promise.all([fetchCars(filtersForCars), modelPromise.then(modelData => {
+      await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
         console.log(`[handleManufacturerChange] Setting models to:`, modelData);
         setModels(modelData);
       }).catch(err => console.warn('Failed to load models:', err))]);
@@ -783,11 +782,11 @@ const EncarCatalog = ({
           ...newFilters,
           per_page: "50"
         };
-      await fetchCars(filtersForCars);
+      await fetchCars(1, filtersForCars, true);
 
       // Fetch generations in background (non-blocking)
-      if (modelId && filters.manufacturer_id) {
-        fetchGenerations(filters.manufacturer_id, modelId).then(generationData => setGenerations(generationData)).catch(err => console.warn('Failed to load generations:', err));
+      if (modelId) {
+        fetchGenerations(modelId).then(generationData => setGenerations(generationData)).catch(err => console.warn('Failed to load generations:', err));
       }
 
       // Update URL after successful data fetch
@@ -877,7 +876,7 @@ const EncarCatalog = ({
           const modelsData = await fetchModels(urlFilters.manufacturer_id);
           setModels(modelsData);
           if (urlFilters.model_id) {
-            const generationsData = await fetchGenerations(urlFilters.manufacturer_id, urlFilters.model_id);
+            const generationsData = await fetchGenerations(urlFilters.model_id);
             setGenerations(generationsData);
           }
         }
@@ -891,7 +890,7 @@ const EncarCatalog = ({
             sort_by: sortBy
           } : {})
         };
-        await fetchCars(initialFilters);
+        await fetchCars(urlCurrentPage, initialFilters, true);
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
@@ -1039,7 +1038,7 @@ const EncarCatalog = ({
       if (manufacturers.length > 0) {
         setLoadingCounts(true);
         try {
-          const counts = await fetchFilterCounts(filters);
+          const counts = await fetchFilterCounts(filters, manufacturers);
           setFilterCounts(counts);
         } catch (error) {
           console.error('Error loading filter counts:', error);
@@ -1061,7 +1060,7 @@ const EncarCatalog = ({
         // Only load if not already loaded
         setLoadingCounts(true);
         try {
-          const counts = await fetchFilterCounts({});
+          const counts = await fetchFilterCounts({}, manufacturers);
           setFilterCounts(counts);
         } catch (error) {
           console.error('Error loading initial filter counts:', error);
@@ -1248,7 +1247,7 @@ const EncarCatalog = ({
               ...filters,
               per_page: "200"
             };
-            fetchCars(searchFilters);
+            fetchCars(1, searchFilters, true);
 
             // Close filter panel on mobile only; keep open on desktop
             if (isMobile) {

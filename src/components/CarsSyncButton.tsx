@@ -4,23 +4,17 @@ import { RefreshCw, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface CarsSyncButtonProps {
-  syncType?: 'full' | 'incremental';
-  onSyncComplete?: () => void;
-}
-
-export const CarsSyncButton = ({ syncType = 'full', onSyncComplete }: CarsSyncButtonProps) => {
+export const CarsSyncButton = () => {
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
 
   const handleSync = async () => {
     setSyncing(true);
     try {
-      console.log(`🚀 Starting ${syncType} cars sync...`);
+      console.log('🚀 Starting cars sync...');
       
       const { data, error } = await supabase.functions.invoke('cars-sync', {
-        method: 'POST',
-        body: { syncType }
+        method: 'POST'
       });
 
       if (error) {
@@ -30,15 +24,13 @@ export const CarsSyncButton = ({ syncType = 'full', onSyncComplete }: CarsSyncBu
       console.log('✅ Sync completed:', data);
       
       toast({
-        title: "Sync Completed Successfully",
-        description: `Synced ${data.totalSynced} cars (${data.totalNew || 0} new, ${data.totalUpdated || 0} updated). Total active: ${data.totalInDatabase} cars`,
-        duration: 6000,
+        title: "Sync Completed",
+        description: `Successfully synced ${data.totalSynced} cars from API`,
+        duration: 5000,
       });
 
-      // Call completion callback instead of reloading
-      if (onSyncComplete) {
-        onSyncComplete();
-      }
+      // Refresh the page to show updated data
+      window.location.reload();
       
     } catch (error) {
       console.error('❌ Sync failed:', error);
@@ -66,7 +58,7 @@ export const CarsSyncButton = ({ syncType = 'full', onSyncComplete }: CarsSyncBu
       ) : (
         <Download className="h-4 w-4" />
       )}
-      {syncing ? `${syncType === 'full' ? 'Full' : 'Quick'} Sync...` : `${syncType === 'full' ? 'Full Sync' : 'Quick Sync'}`}
+      {syncing ? 'Syncing...' : 'Sync Cars'}
     </Button>
   );
 };

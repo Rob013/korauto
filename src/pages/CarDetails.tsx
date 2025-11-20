@@ -88,7 +88,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
-
+import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { useImagePreload } from "@/hooks/useImagePreload";
 import { useImageSwipe, type ImageSwipeChangeMeta } from "@/hooks/useImageSwipe";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -122,12 +122,6 @@ const ImageZoom = lazy(() =>
 const DealerInfoSection = lazy(() =>
   import("@/components/DealerInfoSection").then((module) => ({
     default: module.DealerInfoSection,
-  })),
-);
-
-const CarInspectionDiagram = lazy(() =>
-  import("@/components/CarInspectionDiagram").then((module) => ({
-    default: module.CarInspectionDiagram,
   })),
 );
 
@@ -934,8 +928,8 @@ const extractPrefetchedCarSummary = (
     image,
     images: Array.isArray(imagesCandidate)
       ? imagesCandidate
-        .map((item) => normalizeString(item))
-        .filter((item): item is string => Boolean(item))
+          .map((item) => normalizeString(item))
+          .filter((item): item is string => Boolean(item))
       : undefined,
     mileageLabel: normalizeMileageLabel(),
     transmission:
@@ -1046,18 +1040,21 @@ const EquipmentOptionsSection = memo(
                 return (
                   <div
                     key={index}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-md transition-colors ${feature.hasFeature
-                      ? "bg-primary/10 border border-primary/30"
-                      : "bg-gray-100 border border-gray-200"
-                      }`}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-md transition-colors ${
+                      feature.hasFeature
+                        ? "bg-primary/10 border border-primary/30"
+                        : "bg-gray-100 border border-gray-200"
+                    }`}
                   >
                     <IconComponent
-                      className={`h-4 w-4 flex-shrink-0 ${feature.hasFeature ? "text-primary" : "text-gray-400"
-                        }`}
+                      className={`h-4 w-4 flex-shrink-0 ${
+                        feature.hasFeature ? "text-primary" : "text-gray-400"
+                      }`}
                     />
                     <span
-                      className={`text-[10px] leading-tight text-center line-clamp-2 ${feature.hasFeature ? "text-foreground" : "text-gray-400"
-                        }`}
+                      className={`text-[10px] leading-tight text-center line-clamp-2 ${
+                        feature.hasFeature ? "text-foreground" : "text-gray-400"
+                      }`}
                     >
                       {feature.name}
                     </span>
@@ -1562,7 +1559,7 @@ const CarDetails = memo(() => {
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
     theme === "dark" ? "dark" : "light",
   );
-
+  
   // Dialog states
   const [isSpecsDialogOpen, setIsSpecsDialogOpen] = useState(false);
   const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false);
@@ -2176,14 +2173,14 @@ const CarDetails = memo(() => {
       car.inspect?.accident_summary as Record<string, unknown> | undefined,
       car.details?.inspect?.accident_summary as Record<string, unknown> | undefined,
       (car.details?.insurance as Record<string, unknown> | undefined)?.accident_summary as
-      | Record<string, unknown>
-      | undefined,
+        | Record<string, unknown>
+        | undefined,
       ((car.details?.insurance as Record<string, unknown> | undefined)?.car_info as
         | Record<string, unknown>
         | undefined)?.accident_summary as Record<string, unknown> | undefined,
       (car.insurance_v2 as Record<string, unknown> | undefined)?.accidentSummary as
-      | Record<string, unknown>
-      | undefined,
+        | Record<string, unknown>
+        | undefined,
     ];
 
     const isMainFrameworkKey = (key: string) => {
@@ -2470,223 +2467,223 @@ const CarDetails = memo(() => {
     "kbcchachacha",
   ];
 
-  const buildCarDetails = useCallback(
-    (
-      carData: any,
-      lotData: any,
-      additionalSources: any[] = [],
-    ): CarDetails | null => {
-      if (!carData || !lotData) {
-        return null;
-      }
+    const buildCarDetails = useCallback(
+      (
+        carData: any,
+        lotData: any,
+        additionalSources: any[] = [],
+      ): CarDetails | null => {
+        if (!carData || !lotData) {
+          return null;
+        }
 
-      const buyNow = Number(
-        lotData?.buy_now || carData?.buy_now || carData?.price,
-      );
-      if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
-        return null;
-      }
+        const buyNow = Number(
+          lotData?.buy_now || carData?.buy_now || carData?.price,
+        );
+        if (!buyNow || Number.isNaN(buyNow) || buyNow <= 0) {
+          return null;
+        }
 
-      const price = calculateFinalPriceEUR(buyNow, exchangeRate.rate);
-      const domainRaw = String(
-        lotData?.domain?.name ||
-        carData?.domain_name ||
-        carData?.provider ||
-        carData?.source_api ||
-        "",
-      ).toLowerCase();
-      const isKbc = domainRaw
-        ? KBC_DOMAINS.some((k) => domainRaw.includes(k))
-        : false;
-      const sourceLabel = domainRaw
-        ? isKbc
-          ? "KB Chachacha"
-          : "Encar"
-        : undefined;
+        const price = calculateFinalPriceEUR(buyNow, exchangeRate.rate);
+        const domainRaw = String(
+          lotData?.domain?.name ||
+            carData?.domain_name ||
+            carData?.provider ||
+            carData?.source_api ||
+            "",
+        ).toLowerCase();
+        const isKbc = domainRaw
+          ? KBC_DOMAINS.some((k) => domainRaw.includes(k))
+          : false;
+        const sourceLabel = domainRaw
+          ? isKbc
+            ? "KB Chachacha"
+            : "Encar"
+          : undefined;
 
-      const manufacturerName =
-        carData?.manufacturer?.name || carData?.make || "Unknown";
-      const modelName = carData?.model?.name || carData?.model || "Unknown";
+        const manufacturerName =
+          carData?.manufacturer?.name || carData?.make || "Unknown";
+        const modelName = carData?.model?.name || carData?.model || "Unknown";
 
-      // Extract year from multiple possible sources
-      const year =
-        carData?.year ||
-        lotData?.year ||
-        carData?.model_year ||
-        lotData?.model_year ||
-        carData?.production_year ||
-        lotData?.production_year ||
-        (carData?.registration_date
-          ? new Date(carData.registration_date).getFullYear()
-          : null) ||
-        (lotData?.registration_date
-          ? new Date(lotData.registration_date).getFullYear()
-          : null) ||
-        null;
+        // Extract year from multiple possible sources
+        const year =
+          carData?.year ||
+          lotData?.year ||
+          carData?.model_year ||
+          lotData?.model_year ||
+          carData?.production_year ||
+          lotData?.production_year ||
+          (carData?.registration_date
+            ? new Date(carData.registration_date).getFullYear()
+            : null) ||
+          (lotData?.registration_date
+            ? new Date(lotData.registration_date).getFullYear()
+            : null) ||
+          null;
 
-      if (!year) {
-        console.warn("⚠️ No year found in car data, using fallback");
-      }
+        if (!year) {
+          console.warn("⚠️ No year found in car data, using fallback");
+        }
 
-      const odometer =
-        lotData?.odometer ||
-        carData?.odometer ||
-        (lotData?.odometer_km
-          ? {
-            km: lotData.odometer_km,
-            mi: Math.round(Number(lotData.odometer_km) * 0.621371),
-          }
-          : null) ||
-        (carData?.odometer_km
-          ? {
-            km: carData.odometer_km,
-            mi: Math.round(Number(carData.odometer_km) * 0.621371),
-          }
-          : null) ||
-        (lotData?.mileage
-          ? {
-            km: lotData.mileage,
-            mi: Math.round(Number(lotData.mileage) * 0.621371),
-          }
-          : null) ||
-        (carData?.mileage
-          ? {
-            km: carData.mileage,
-            mi: Math.round(Number(carData.mileage) * 0.621371),
-          }
-          : null);
+        const odometer =
+          lotData?.odometer ||
+          carData?.odometer ||
+          (lotData?.odometer_km
+            ? {
+                km: lotData.odometer_km,
+                mi: Math.round(Number(lotData.odometer_km) * 0.621371),
+              }
+            : null) ||
+          (carData?.odometer_km
+            ? {
+                km: carData.odometer_km,
+                mi: Math.round(Number(carData.odometer_km) * 0.621371),
+              }
+            : null) ||
+          (lotData?.mileage
+            ? {
+                km: lotData.mileage,
+                mi: Math.round(Number(lotData.mileage) * 0.621371),
+              }
+            : null) ||
+          (carData?.mileage
+            ? {
+                km: carData.mileage,
+                mi: Math.round(Number(carData.mileage) * 0.621371),
+              }
+            : null);
 
-      const images =
-        lotData?.images?.normal ||
-        lotData?.images?.big ||
-        carData?.images?.normal ||
-        carData?.images?.big ||
-        lotData?.images ||
-        carData?.images ||
-        [];
+        const images =
+          lotData?.images?.normal ||
+          lotData?.images?.big ||
+          carData?.images?.normal ||
+          carData?.images?.big ||
+          lotData?.images ||
+          carData?.images ||
+          [];
 
-      const normalizedFuelSources = Array.isArray(additionalSources)
-        ? additionalSources.filter(Boolean)
-        : [];
-      const resolvedFuel = resolveFuelFromSources(
-        carData,
-        lotData,
-        ...normalizedFuelSources,
-      );
+        const normalizedFuelSources = Array.isArray(additionalSources)
+          ? additionalSources.filter(Boolean)
+          : [];
+        const resolvedFuel = resolveFuelFromSources(
+          carData,
+          lotData,
+          ...normalizedFuelSources,
+        );
 
-      return {
-        id: carData?.id?.toString() || lotData?.lot,
-        make: manufacturerName,
-        model: modelName,
-        year: year || 2020, // Use extracted year or fallback to 2020
-        price,
-        image: images?.[0],
-        images,
-        source_label: sourceLabel,
-        vin: carData?.vin,
-        mileage: odometer?.km,
-        transmission:
-          carData?.transmission?.name ||
-          carData?.transmission ||
-          lotData?.transmission?.name ||
-          lotData?.transmission,
-        fuel: resolvedFuel || undefined,
-        color:
-          carData?.color?.name ||
-          carData?.color ||
-          lotData?.color?.name ||
-          lotData?.color,
-        condition:
-          lotData?.condition?.name?.replace(
-            "run_and_drives",
-            "Good Condition",
-          ) || carData?.condition,
-        lot: lotData?.lot || carData?.lot_number,
-        title: carData?.title || lotData?.title,
-        odometer: odometer
-          ? {
-            km: odometer.km,
-            mi:
-              odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
-            status:
-              lotData?.odometer?.status ||
-              carData?.odometer?.status || { name: "Verified" },
-          }
-          : undefined,
-        engine: carData?.engine || lotData?.engine,
-        cylinders: carData?.cylinders || lotData?.cylinders,
-        drive_wheel: carData?.drive_wheel || lotData?.drive_wheel,
-        body_type: carData?.body_type || lotData?.body_type,
-        damage: lotData?.damage || carData?.damage,
-        keys_available: lotData?.keys_available ?? carData?.keys_available,
-        airbags: lotData?.airbags || carData?.airbags,
-        grade_iaai:
-          lotData?.grade_iaai ||
-          carData?.grade?.name ||
-          carData?.grade ||
-          lotData?.grade?.name ||
-          lotData?.grade,
-        seller: lotData?.seller || carData?.seller,
-        seller_type: lotData?.seller_type || carData?.seller_type,
-        sale_date: lotData?.sale_date || carData?.sale_date,
-        bid: lotData?.bid || carData?.bid,
-        buy_now: lotData?.buy_now || carData?.buy_now,
-        final_bid: lotData?.final_bid || carData?.final_bid,
-        features: getCarFeatures(carData, lotData, normalizedFuelSources),
-        safety_features: getSafetyFeatures(carData, lotData),
-        comfort_features: getComfortFeatures(carData, lotData),
-        performance_rating: 4.5,
-        popularity_score: 85,
-        insurance: lotData?.insurance,
-        insurance_v2: lotData?.insurance_v2 || carData?.insurance_v2,
-        location: lotData?.location,
-        inspect: lotData?.inspect || carData?.inspect,
-        // Merge details from both sources to get all variant info + inspect data
-        details: {
-          ...(carData?.details || {}),
-          ...(lotData?.details || {}),
-          grade:
+        return {
+          id: carData?.id?.toString() || lotData?.lot,
+          make: manufacturerName,
+          model: modelName,
+          year: year || 2020, // Use extracted year or fallback to 2020
+          price,
+          image: images?.[0],
+          images,
+          source_label: sourceLabel,
+          vin: carData?.vin,
+          mileage: odometer?.km,
+          transmission:
+            carData?.transmission?.name ||
+            carData?.transmission ||
+            lotData?.transmission?.name ||
+            lotData?.transmission,
+          fuel: resolvedFuel || undefined,
+          color:
+            carData?.color?.name ||
+            carData?.color ||
+            lotData?.color?.name ||
+            lotData?.color,
+          condition:
+            lotData?.condition?.name?.replace(
+              "run_and_drives",
+              "Good Condition",
+            ) || carData?.condition,
+          lot: lotData?.lot || carData?.lot_number,
+          title: carData?.title || lotData?.title,
+          odometer: odometer
+            ? {
+                km: odometer.km,
+                mi:
+                  odometer.mi || Math.round(Number(odometer.km || 0) * 0.621371),
+                status:
+                  lotData?.odometer?.status ||
+                  carData?.odometer?.status || { name: "Verified" },
+              }
+            : undefined,
+          engine: carData?.engine || lotData?.engine,
+          cylinders: carData?.cylinders || lotData?.cylinders,
+          drive_wheel: carData?.drive_wheel || lotData?.drive_wheel,
+          body_type: carData?.body_type || lotData?.body_type,
+          damage: lotData?.damage || carData?.damage,
+          keys_available: lotData?.keys_available ?? carData?.keys_available,
+          airbags: lotData?.airbags || carData?.airbags,
+          grade_iaai:
+            lotData?.grade_iaai ||
+            carData?.grade?.name ||
             carData?.grade ||
-            lotData?.grade ||
-            carData?.details?.grade ||
-            lotData?.details?.grade,
-          variant:
-            carData?.variant ||
-            lotData?.variant ||
-            carData?.details?.variant ||
-            lotData?.details?.variant,
-          trim:
-            carData?.trim ||
-            lotData?.trim ||
-            carData?.details?.trim ||
-            lotData?.details?.trim,
-          // Include inspect data from lotData.inspect as per API support
-          inspect:
-            lotData?.inspect ||
-            lotData?.details?.inspect || {
-              accident_summary:
-                lotData?.inspect?.accident_summary ||
-                lotData?.details?.inspect?.accident_summary,
-              outer:
-                lotData?.inspect?.outer ||
-                lotData?.details?.inspect?.outer ||
-                lotData?.inspect_outer,
-              inner:
-                lotData?.inspect?.inner || lotData?.details?.inspect?.inner,
-            },
-          inspect_outer:
-            lotData?.inspect?.outer ||
-            lotData?.details?.inspect_outer ||
-            lotData?.inspect_outer,
-          // Include options data
-          options: lotData?.details?.options || carData?.details?.options,
-          options_extra:
-            lotData?.details?.options_extra || carData?.details?.options_extra,
-        },
-      };
-    },
-    [KBC_DOMAINS, exchangeRate.rate],
-  );
+            lotData?.grade?.name ||
+            lotData?.grade,
+          seller: lotData?.seller || carData?.seller,
+          seller_type: lotData?.seller_type || carData?.seller_type,
+          sale_date: lotData?.sale_date || carData?.sale_date,
+          bid: lotData?.bid || carData?.bid,
+          buy_now: lotData?.buy_now || carData?.buy_now,
+          final_bid: lotData?.final_bid || carData?.final_bid,
+          features: getCarFeatures(carData, lotData, normalizedFuelSources),
+          safety_features: getSafetyFeatures(carData, lotData),
+          comfort_features: getComfortFeatures(carData, lotData),
+          performance_rating: 4.5,
+          popularity_score: 85,
+          insurance: lotData?.insurance,
+          insurance_v2: lotData?.insurance_v2 || carData?.insurance_v2,
+          location: lotData?.location,
+          inspect: lotData?.inspect || carData?.inspect,
+          // Merge details from both sources to get all variant info + inspect data
+          details: {
+            ...(carData?.details || {}),
+            ...(lotData?.details || {}),
+            grade:
+              carData?.grade ||
+              lotData?.grade ||
+              carData?.details?.grade ||
+              lotData?.details?.grade,
+            variant:
+              carData?.variant ||
+              lotData?.variant ||
+              carData?.details?.variant ||
+              lotData?.details?.variant,
+            trim:
+              carData?.trim ||
+              lotData?.trim ||
+              carData?.details?.trim ||
+              lotData?.details?.trim,
+            // Include inspect data from lotData.inspect as per API support
+            inspect:
+              lotData?.inspect ||
+              lotData?.details?.inspect || {
+                accident_summary:
+                  lotData?.inspect?.accident_summary ||
+                  lotData?.details?.inspect?.accident_summary,
+                outer:
+                  lotData?.inspect?.outer ||
+                  lotData?.details?.inspect?.outer ||
+                  lotData?.inspect_outer,
+                inner:
+                  lotData?.inspect?.inner || lotData?.details?.inspect?.inner,
+              },
+            inspect_outer:
+              lotData?.inspect?.outer ||
+              lotData?.details?.inspect_outer ||
+              lotData?.inspect_outer,
+            // Include options data
+            options: lotData?.details?.options || carData?.details?.options,
+            options_extra:
+              lotData?.details?.options_extra || carData?.details?.options_extra,
+          },
+        };
+      },
+      [KBC_DOMAINS, exchangeRate.rate],
+    );
 
   // Convert option numbers to human-friendly names using the Korea options API
   const convertOptionsToNames = useCallback(
@@ -2733,9 +2730,9 @@ const CarDetails = memo(() => {
           return apiName.trim();
         }
 
-        const fallbackName = getFallbackOptionName(optionStr);
-        if (fallbackName) {
-          return fallbackName;
+          const fallbackName = getFallbackOptionName(optionStr);
+          if (fallbackName) {
+            return fallbackName;
         }
 
         return optionStr;
@@ -2744,9 +2741,9 @@ const CarDetails = memo(() => {
       const normalizeList = (list?: any[]): string[] =>
         Array.isArray(list)
           ? list
-            .map(resolveOptionName)
-            .map((name) => (typeof name === "string" ? name.trim() : ""))
-            .filter((name): name is string => Boolean(name))
+              .map(resolveOptionName)
+              .map((name) => (typeof name === "string" ? name.trim() : ""))
+              .filter((name): name is string => Boolean(name))
           : [];
 
       return {
@@ -2895,98 +2892,98 @@ const CarDetails = memo(() => {
 
     return null;
   }, [buildCarDetails, lot, persistCarToSession, restoreCarFromSession]);
-
-  const getFirstNonEmptyString = (...values: unknown[]): string | null => {
-    for (const value of values) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-      const candidate = String(value).trim();
-      if (candidate) {
-        return candidate;
-      }
-    }
-    return null;
-  };
-
-  const selectLotForSource = (source: any, lotNumber?: string) => {
-    if (!source) {
-      return null;
-    }
-
-    const lots = Array.isArray(source?.lots) ? source.lots : [];
-    if (!lots.length) {
-      return null;
-    }
-
-    if (lotNumber) {
-      const normalizedLot = String(lotNumber).trim();
-      const matchedLot = lots.find((candidate: any) => {
-        const candidateValue =
-          candidate?.lot ??
-          candidate?.lot_number ??
-          candidate?.lotNumber ??
-          candidate?.lotNo;
-        if (candidateValue === null || candidateValue === undefined) {
-          return false;
+ 
+    const getFirstNonEmptyString = (...values: unknown[]): string | null => {
+      for (const value of values) {
+        if (value === null || value === undefined) {
+          continue;
         }
-        return String(candidateValue).trim() === normalizedLot;
-      });
-      if (matchedLot) {
-        return matchedLot;
+        const candidate = String(value).trim();
+        if (candidate) {
+          return candidate;
+        }
       }
-    }
+      return null;
+    };
 
-    return lots[0];
-  };
+    const selectLotForSource = (source: any, lotNumber?: string) => {
+      if (!source) {
+        return null;
+      }
 
-  // Extract features from car data
-  const getCarFeatures = (
-    carData: any,
-    lot: any,
-    extraSources: any[] = [],
-  ): string[] => {
-    const features = [];
-    if (carData.transmission?.name) {
-      features.push(`Transmisioni: ${carData.transmission.name}`);
-    }
+      const lots = Array.isArray(source?.lots) ? source.lots : [];
+      if (!lots.length) {
+        return null;
+      }
 
-    const resolvedFuel = resolveFuelFromSources(carData, lot, ...extraSources);
-    if (resolvedFuel) {
-      features.push(
-        `Karburanti: ${localizeFuel(resolvedFuel, "sq") || resolvedFuel}`,
-      );
-    } else if (carData.fuel?.name) {
-      features.push(`Karburanti: ${carData.fuel.name}`);
-    }
+      if (lotNumber) {
+        const normalizedLot = String(lotNumber).trim();
+        const matchedLot = lots.find((candidate: any) => {
+          const candidateValue =
+            candidate?.lot ??
+            candidate?.lot_number ??
+            candidate?.lotNumber ??
+            candidate?.lotNo;
+          if (candidateValue === null || candidateValue === undefined) {
+            return false;
+          }
+          return String(candidateValue).trim() === normalizedLot;
+        });
+        if (matchedLot) {
+          return matchedLot;
+        }
+      }
 
-    if (carData.color?.name) {
-      features.push(`Ngjyra: ${carData.color.name}`);
-    }
-    if (carData.engine?.name) {
-      features.push(`Motori: ${carData.engine.name}`);
-    }
-    if (carData.cylinders) {
-      features.push(`${carData.cylinders} Cilindra`);
-    }
-    if (carData.drive_wheel?.name) {
-      features.push(`Tërheqje: ${carData.drive_wheel.name}`);
-    }
-    if (lot?.keys_available) {
-      features.push("Çelësat të Disponueshëm");
-    }
+      return lots[0];
+    };
 
-    // Add basic features if list is empty
-    if (features.length === 0) {
-      return [
-        "Klimatizimi",
-        "Dritaret Elektrike",
-        "Mbyllja Qendrore",
-        "Frena ABS",
-      ];
-    }
-    return features;
-  };
+    // Extract features from car data
+    const getCarFeatures = (
+      carData: any,
+      lot: any,
+      extraSources: any[] = [],
+    ): string[] => {
+      const features = [];
+      if (carData.transmission?.name) {
+        features.push(`Transmisioni: ${carData.transmission.name}`);
+      }
+
+      const resolvedFuel = resolveFuelFromSources(carData, lot, ...extraSources);
+      if (resolvedFuel) {
+        features.push(
+          `Karburanti: ${localizeFuel(resolvedFuel, "sq") || resolvedFuel}`,
+        );
+      } else if (carData.fuel?.name) {
+        features.push(`Karburanti: ${carData.fuel.name}`);
+      }
+
+      if (carData.color?.name) {
+        features.push(`Ngjyra: ${carData.color.name}`);
+      }
+      if (carData.engine?.name) {
+        features.push(`Motori: ${carData.engine.name}`);
+      }
+      if (carData.cylinders) {
+        features.push(`${carData.cylinders} Cilindra`);
+      }
+      if (carData.drive_wheel?.name) {
+        features.push(`Tërheqje: ${carData.drive_wheel.name}`);
+      }
+      if (lot?.keys_available) {
+        features.push("Çelësat të Disponueshëm");
+      }
+
+      // Add basic features if list is empty
+      if (features.length === 0) {
+        return [
+          "Klimatizimi",
+          "Dritaret Elektrike",
+          "Mbyllja Qendrore",
+          "Frena ABS",
+        ];
+      }
+      return features;
+    };
   const getSafetyFeatures = (carData: any, lot: any): string[] => {
     const safety = [];
     if (lot?.airbags) safety.push(`Sistemi i Airbag-ëve: ${lot.airbags}`);
@@ -3057,116 +3054,116 @@ const CarDetails = memo(() => {
           );
         }
 
-        const data = await response.json();
-        if (!isMounted) return;
+          const data = await response.json();
+          if (!isMounted) return;
 
-        const apiPayload = data?.data ?? data;
-        const initialLotData = selectLotForSource(apiPayload, lot);
+          const apiPayload = data?.data ?? data;
+          const initialLotData = selectLotForSource(apiPayload, lot);
 
-        let appliedDetails: CarDetails | null = null;
-        let hasTrackedView = false;
+          let appliedDetails: CarDetails | null = null;
+          let hasTrackedView = false;
 
-        const applyDetails = (
-          nextDetails: CarDetails,
-          shouldTrackView: boolean,
-        ) => {
-          appliedDetails = nextDetails;
-          setCar(nextDetails);
-          cacheHydratedRef.current = true;
-          persistCarToSession(String(lot), nextDetails);
-          if (!background && shouldTrackView && !hasTrackedView) {
-            trackCarView(lot, nextDetails);
-            hasTrackedView = true;
-          }
-        };
-
-        const baselineDetails = buildCarDetails(apiPayload, initialLotData);
-        if (baselineDetails) {
-          applyDetails(baselineDetails, true);
-          if (!background) {
-            setLoading(false);
-          }
-        }
-
-        let detailedCarData: any = null;
-        let detailedLotData: any = null;
-
-        const candidateCarId = getFirstNonEmptyString(
-          apiPayload?.id,
-          apiPayload?.car_id,
-          apiPayload?.api_id,
-          apiPayload?.carId,
-          initialLotData?.car_id,
-          initialLotData?.carId,
-          initialLotData?.car?.id,
-        );
-
-        if (candidateCarId) {
-          const detailController = new AbortController();
-          const detailTimeoutId = setTimeout(
-            () => detailController.abort(),
-            6000, // Reduced to 6s for faster detail fetch
-          );
-          try {
-            const detailResponse = await fetch(
-              `${API_BASE_URL}/cars/${encodeURIComponent(candidateCarId)}`,
-              {
-                headers: {
-                  accept: "*/*",
-                  "x-api-key": API_KEY,
-                },
-                signal: detailController.signal,
-              },
-            );
-            clearTimeout(detailTimeoutId);
-
-            if (detailResponse.ok) {
-              const detailPayload = await detailResponse.json();
-              detailedCarData = detailPayload?.data || detailPayload || null;
-              detailedLotData =
-                selectLotForSource(detailedCarData, lot) ?? initialLotData;
-            } else {
-              console.warn(
-                `Detailed car request failed: ${detailResponse.status} ${detailResponse.statusText}`,
-              );
+          const applyDetails = (
+            nextDetails: CarDetails,
+            shouldTrackView: boolean,
+          ) => {
+            appliedDetails = nextDetails;
+            setCar(nextDetails);
+            cacheHydratedRef.current = true;
+            persistCarToSession(String(lot), nextDetails);
+            if (!background && shouldTrackView && !hasTrackedView) {
+              trackCarView(lot, nextDetails);
+              hasTrackedView = true;
             }
-          } catch (detailError) {
-            clearTimeout(detailTimeoutId);
-            console.warn("Failed to fetch detailed car data:", detailError);
-          }
-        }
+          };
 
-        const primaryCarData = detailedCarData || apiPayload;
-        const primaryLotData = detailedLotData || initialLotData;
-
-        const additionalFuelSources: any[] = [];
-        if (detailedCarData && apiPayload && detailedCarData !== apiPayload) {
-          additionalFuelSources.push(apiPayload);
-        }
-        if (initialLotData && primaryLotData && primaryLotData !== initialLotData) {
-          additionalFuelSources.push(initialLotData);
-        }
-
-        const enhancedDetails = buildCarDetails(
-          primaryCarData,
-          primaryLotData,
-          additionalFuelSources,
-        );
-
-        if (enhancedDetails) {
-          if (enhancedDetails !== appliedDetails) {
-            applyDetails(enhancedDetails, !hasTrackedView);
+          const baselineDetails = buildCarDetails(apiPayload, initialLotData);
+          if (baselineDetails) {
+            applyDetails(baselineDetails, true);
+            if (!background) {
+              setLoading(false);
+            }
           }
-          if (!baselineDetails && !background) {
-            setLoading(false);
+
+          let detailedCarData: any = null;
+          let detailedLotData: any = null;
+
+          const candidateCarId = getFirstNonEmptyString(
+            apiPayload?.id,
+            apiPayload?.car_id,
+            apiPayload?.api_id,
+            apiPayload?.carId,
+            initialLotData?.car_id,
+            initialLotData?.carId,
+            initialLotData?.car?.id,
+          );
+
+          if (candidateCarId) {
+            const detailController = new AbortController();
+            const detailTimeoutId = setTimeout(
+              () => detailController.abort(),
+              6000, // Reduced to 6s for faster detail fetch
+            );
+            try {
+              const detailResponse = await fetch(
+                `${API_BASE_URL}/cars/${encodeURIComponent(candidateCarId)}`,
+                {
+                  headers: {
+                    accept: "*/*",
+                    "x-api-key": API_KEY,
+                  },
+                  signal: detailController.signal,
+                },
+              );
+              clearTimeout(detailTimeoutId);
+
+              if (detailResponse.ok) {
+                const detailPayload = await detailResponse.json();
+                detailedCarData = detailPayload?.data || detailPayload || null;
+                detailedLotData =
+                  selectLotForSource(detailedCarData, lot) ?? initialLotData;
+              } else {
+                console.warn(
+                  `Detailed car request failed: ${detailResponse.status} ${detailResponse.statusText}`,
+                );
+              }
+            } catch (detailError) {
+              clearTimeout(detailTimeoutId);
+              console.warn("Failed to fetch detailed car data:", detailError);
+            }
           }
-        } else if (!baselineDetails) {
-          if (!background) {
-            setLoading(false);
-            navigate("/catalog");
+
+          const primaryCarData = detailedCarData || apiPayload;
+          const primaryLotData = detailedLotData || initialLotData;
+
+          const additionalFuelSources: any[] = [];
+          if (detailedCarData && apiPayload && detailedCarData !== apiPayload) {
+            additionalFuelSources.push(apiPayload);
           }
-          return;
-        }
+          if (initialLotData && primaryLotData && primaryLotData !== initialLotData) {
+            additionalFuelSources.push(initialLotData);
+          }
+
+          const enhancedDetails = buildCarDetails(
+            primaryCarData,
+            primaryLotData,
+            additionalFuelSources,
+          );
+
+          if (enhancedDetails) {
+            if (enhancedDetails !== appliedDetails) {
+              applyDetails(enhancedDetails, !hasTrackedView);
+            }
+            if (!baselineDetails && !background) {
+              setLoading(false);
+            }
+          } else if (!baselineDetails) {
+            if (!background) {
+              setLoading(false);
+              navigate("/catalog");
+            }
+            return;
+          }
       } catch (apiError) {
         console.error("Failed to fetch car data:", apiError);
         if (!isMounted) return;
@@ -3255,18 +3252,18 @@ const CarDetails = memo(() => {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    API_BASE_URL,
-    API_KEY,
-    buildCarDetails,
-    fallbackCars,
-    hydrateFromCache,
-    lot,
-    navigate,
-    persistCarToSession,
-    restoreCarFromSession,
-    trackCarView,
-  ]);
+    }, [
+      API_BASE_URL,
+      API_KEY,
+      buildCarDetails,
+      fallbackCars,
+      hydrateFromCache,
+      lot,
+      navigate,
+      persistCarToSession,
+      restoreCarFromSession,
+      trackCarView,
+    ]);
   const handleContactWhatsApp = useCallback(() => {
     impact("light");
     const currentUrl = window.location.href;
@@ -3421,198 +3418,198 @@ const CarDetails = memo(() => {
     return sanitizePart(mainTitle);
   }, [car, mainTitle]);
 
-  const summaryTitleFallback = useMemo(() => {
-    if (!prefetchedSummary) {
-      return "";
-    }
-    const parts = [
-      prefetchedSummary.year,
-      prefetchedSummary.make,
-      prefetchedSummary.model,
-    ].filter(Boolean);
-    if (parts.length > 0) {
-      return parts.join(" ").trim();
-    }
-    return prefetchedSummary.title ?? "";
-  }, [prefetchedSummary]);
-
-  const resolvedMainTitle = useMemo(() => {
-    if (mainTitle) {
-      return mainTitle;
-    }
-    return summaryTitleFallback;
-  }, [mainTitle, summaryTitleFallback]);
-
-  const resolvedSecondaryTitle = useMemo(() => {
-    if (secondaryTitle && secondaryTitle !== resolvedMainTitle) {
-      return secondaryTitle;
-    }
-    const summaryTitle = prefetchedSummary?.title?.trim() ?? "";
-    if (summaryTitle && summaryTitle !== resolvedMainTitle) {
-      return summaryTitle;
-    }
-    return "";
-  }, [prefetchedSummary?.title, resolvedMainTitle, secondaryTitle]);
-
-  const displayTitle = useMemo(() => {
-    if (resolvedSecondaryTitle) {
-      return resolvedSecondaryTitle;
-    }
-    return resolvedMainTitle;
-  }, [resolvedMainTitle, resolvedSecondaryTitle]);
-
-  const detailsMake = (car?.details as any)?.make;
-  const detailsManufacturer = (car?.details as any)?.manufacturer;
-
-  const resolvedBrandName = useMemo(() => {
-    const potentialBrands = [
-      car?.make,
-      detailsMake,
-      detailsManufacturer,
-      prefetchedSummary?.make,
-    ];
-
-    for (const value of potentialBrands) {
-      if (typeof value === "string" && value.trim()) {
-        return value.trim();
-      }
-    }
-
-    if (resolvedMainTitle) {
-      const firstWord = resolvedMainTitle.split(" ")[0]?.trim();
-      if (firstWord) {
-        return firstWord;
-      }
-    }
-
-    return "";
-  }, [car?.make, detailsMake, detailsManufacturer, prefetchedSummary?.make, resolvedMainTitle]);
-
-  const brandLogoVariants = useMemo(() => {
-    if (!resolvedBrandName) {
-      return undefined;
-    }
-    return getBrandLogoVariants(resolvedBrandName);
-  }, [resolvedBrandName]);
-
-  const brandLogo = useMemo(() => {
-    if (!resolvedBrandName) {
-      return undefined;
-    }
-    return getBrandLogo(resolvedBrandName, resolvedTheme);
-  }, [resolvedBrandName, resolvedTheme]);
-
-  const normalizedOptions = useMemo(
-    () => convertOptionsToNames(car?.details?.options),
-    [car?.details?.options, convertOptionsToNames],
-  );
-
-  const sanitizedOptions = useMemo(() => {
-    const baseOptions = normalizedOptions || {
-      standard: [],
-      choice: [],
-      tuning: [],
-    };
-
-    const exclusionValues = new Set<string>();
-    [
-      mainTitle,
-      resolvedMainTitle,
-      resolvedSecondaryTitle,
-      typeof car?.title === "string" ? car.title : "",
-      typeof car?.details?.variant === "string" ? car.details.variant : "",
-      typeof car?.details?.trim === "string" ? car.details.trim : "",
-    ].forEach((value) => {
-      if (typeof value === "string" && value.trim()) {
-        exclusionValues.add(value.trim().toLowerCase());
-      }
-    });
-
-    const sanitizeList = (list: string[]): string[] => {
-      const seen = new Set<string>();
-      return list.filter((item) => {
-        const normalized = item.trim().toLowerCase();
-        if (!normalized || exclusionValues.has(normalized)) {
-          return false;
+      const summaryTitleFallback = useMemo(() => {
+        if (!prefetchedSummary) {
+          return "";
         }
-        if (seen.has(normalized)) {
-          return false;
+        const parts = [
+          prefetchedSummary.year,
+          prefetchedSummary.make,
+          prefetchedSummary.model,
+        ].filter(Boolean);
+        if (parts.length > 0) {
+          return parts.join(" ").trim();
         }
-        seen.add(normalized);
-        return true;
-      });
-    };
+        return prefetchedSummary.title ?? "";
+      }, [prefetchedSummary]);
 
-    return {
-      standard: sanitizeList(baseOptions.standard),
-      choice: sanitizeList(baseOptions.choice),
-      tuning: sanitizeList(baseOptions.tuning),
-    };
-  }, [
-    normalizedOptions,
-    mainTitle,
-    resolvedMainTitle,
-    resolvedSecondaryTitle,
-    car?.title,
-    car?.details?.variant,
-    car?.details?.trim,
-  ]);
+      const resolvedMainTitle = useMemo(() => {
+        if (mainTitle) {
+          return mainTitle;
+        }
+        return summaryTitleFallback;
+      }, [mainTitle, summaryTitleFallback]);
 
-  const hasAnySanitizedOptions =
-    sanitizedOptions.standard.length > 0 ||
-    sanitizedOptions.choice.length > 0 ||
-    sanitizedOptions.tuning.length > 0;
+      const resolvedSecondaryTitle = useMemo(() => {
+        if (secondaryTitle && secondaryTitle !== resolvedMainTitle) {
+          return secondaryTitle;
+        }
+        const summaryTitle = prefetchedSummary?.title?.trim() ?? "";
+        if (summaryTitle && summaryTitle !== resolvedMainTitle) {
+          return summaryTitle;
+        }
+        return "";
+      }, [prefetchedSummary?.title, resolvedMainTitle, secondaryTitle]);
 
-  const fuelDisplay = useMemo(() => {
-    if (!car) {
-      return "-";
-    }
+      const displayTitle = useMemo(() => {
+        if (resolvedSecondaryTitle) {
+          return resolvedSecondaryTitle;
+        }
+        return resolvedMainTitle;
+      }, [resolvedMainTitle, resolvedSecondaryTitle]);
 
-    if (car.fuel) {
-      const localizedFromState = localizeFuel(car.fuel, "sq");
-      return localizedFromState || car.fuel;
-    }
+      const detailsMake = (car?.details as any)?.make;
+      const detailsManufacturer = (car?.details as any)?.manufacturer;
 
-    const resolvedFuel =
-      resolveFuelFromSources(
-        car,
-        car.details,
-        car.details?.specs,
-        car.details?.specifications,
-        car.details?.specification,
-        car.details?.technical,
-        (car.details as any)?.technicalSpecifications,
-        (car.details as any)?.technicalSpecification,
-        car.details?.summary,
-        (car.details?.summary as any)?.specs,
-        (car.details?.summary as any)?.specifications,
-        car.insurance_v2,
-        (car.insurance_v2 as any)?.vehicle,
-        car.inspect,
-        car.insurance,
-      ) ?? undefined;
+      const resolvedBrandName = useMemo(() => {
+        const potentialBrands = [
+          car?.make,
+          detailsMake,
+          detailsManufacturer,
+          prefetchedSummary?.make,
+        ];
 
-    if (resolvedFuel) {
-      const localized = localizeFuel(resolvedFuel, "sq");
-      return localized || resolvedFuel;
-    }
+        for (const value of potentialBrands) {
+          if (typeof value === "string" && value.trim()) {
+            return value.trim();
+          }
+        }
 
-    if (Array.isArray(car.features)) {
-      const fuelFeature = car.features.find((feature) =>
-        feature.toLowerCase().startsWith("karburanti"),
+        if (resolvedMainTitle) {
+          const firstWord = resolvedMainTitle.split(" ")[0]?.trim();
+          if (firstWord) {
+            return firstWord;
+          }
+        }
+
+        return "";
+      }, [car?.make, detailsMake, detailsManufacturer, prefetchedSummary?.make, resolvedMainTitle]);
+
+      const brandLogoVariants = useMemo(() => {
+        if (!resolvedBrandName) {
+          return undefined;
+        }
+        return getBrandLogoVariants(resolvedBrandName);
+      }, [resolvedBrandName]);
+
+      const brandLogo = useMemo(() => {
+        if (!resolvedBrandName) {
+          return undefined;
+        }
+        return getBrandLogo(resolvedBrandName, resolvedTheme);
+      }, [resolvedBrandName, resolvedTheme]);
+
+      const normalizedOptions = useMemo(
+        () => convertOptionsToNames(car?.details?.options),
+        [car?.details?.options, convertOptionsToNames],
       );
-      if (fuelFeature) {
-        const value = fuelFeature.split(":").slice(1).join(":").trim();
-        if (value) {
-          const localized = localizeFuel(value, "sq");
-          return localized || value;
+
+      const sanitizedOptions = useMemo(() => {
+        const baseOptions = normalizedOptions || {
+          standard: [],
+          choice: [],
+          tuning: [],
+        };
+
+        const exclusionValues = new Set<string>();
+        [
+          mainTitle,
+          resolvedMainTitle,
+          resolvedSecondaryTitle,
+          typeof car?.title === "string" ? car.title : "",
+          typeof car?.details?.variant === "string" ? car.details.variant : "",
+          typeof car?.details?.trim === "string" ? car.details.trim : "",
+        ].forEach((value) => {
+          if (typeof value === "string" && value.trim()) {
+            exclusionValues.add(value.trim().toLowerCase());
+          }
+        });
+
+        const sanitizeList = (list: string[]): string[] => {
+          const seen = new Set<string>();
+          return list.filter((item) => {
+            const normalized = item.trim().toLowerCase();
+            if (!normalized || exclusionValues.has(normalized)) {
+              return false;
+            }
+            if (seen.has(normalized)) {
+              return false;
+            }
+            seen.add(normalized);
+            return true;
+          });
+        };
+
+        return {
+          standard: sanitizeList(baseOptions.standard),
+          choice: sanitizeList(baseOptions.choice),
+          tuning: sanitizeList(baseOptions.tuning),
+        };
+      }, [
+        normalizedOptions,
+        mainTitle,
+        resolvedMainTitle,
+        resolvedSecondaryTitle,
+        car?.title,
+        car?.details?.variant,
+        car?.details?.trim,
+      ]);
+
+      const hasAnySanitizedOptions =
+        sanitizedOptions.standard.length > 0 ||
+        sanitizedOptions.choice.length > 0 ||
+        sanitizedOptions.tuning.length > 0;
+
+    const fuelDisplay = useMemo(() => {
+      if (!car) {
+        return "-";
+      }
+
+        if (car.fuel) {
+          const localizedFromState = localizeFuel(car.fuel, "sq");
+          return localizedFromState || car.fuel;
+        }
+
+      const resolvedFuel =
+        resolveFuelFromSources(
+          car,
+          car.details,
+          car.details?.specs,
+          car.details?.specifications,
+          car.details?.specification,
+          car.details?.technical,
+          (car.details as any)?.technicalSpecifications,
+          (car.details as any)?.technicalSpecification,
+          car.details?.summary,
+          (car.details?.summary as any)?.specs,
+          (car.details?.summary as any)?.specifications,
+          car.insurance_v2,
+          (car.insurance_v2 as any)?.vehicle,
+          car.inspect,
+          car.insurance,
+        ) ?? undefined;
+
+      if (resolvedFuel) {
+        const localized = localizeFuel(resolvedFuel, "sq");
+        return localized || resolvedFuel;
+      }
+
+      if (Array.isArray(car.features)) {
+        const fuelFeature = car.features.find((feature) =>
+          feature.toLowerCase().startsWith("karburanti"),
+        );
+        if (fuelFeature) {
+          const value = fuelFeature.split(":").slice(1).join(":").trim();
+          if (value) {
+            const localized = localizeFuel(value, "sq");
+            return localized || value;
+          }
         }
       }
-    }
 
-    return "-";
-  }, [car]);
-
+      return "-";
+    }, [car]);
+    
   const handleSwipeImageChange = useCallback(
     (index: number, meta?: ImageSwipeChangeMeta) => {
       setSelectedImageIndex(index);
@@ -3654,7 +3651,8 @@ const CarDetails = memo(() => {
 
   const swipeWrapperClass = useMemo(
     () =>
-      `image-swipe-wrapper${isSwiping ? " image-swipe-wrapper--dragging" : ""
+      `image-swipe-wrapper${
+        isSwiping ? " image-swipe-wrapper--dragging" : ""
       }`,
     [isSwiping],
   );
@@ -3771,175 +3769,175 @@ const CarDetails = memo(() => {
     navigate(`/car/${encodedLot}/report`);
   }, [car?.lot, impact, lot, navigate, prepareInspectionReportPrefetch]);
 
-  // Preload important images
-  useImagePreload(car?.image ?? prefetchedSummary?.image);
-
-  // Show skeleton loader when loading without any cached data
-  if (loading && !car && !prefetchedSummary) {
-    return <CarDetailsSkeleton />;
-  }
-
-  if (loading && !car) {
-    if (prefetchedSummary) {
-      const summaryTitleParts = [
-        prefetchedSummary.year,
-        prefetchedSummary.make,
-        prefetchedSummary.model,
-      ].filter(Boolean);
-      const summaryTitle =
-        summaryTitleParts.length > 0
-          ? summaryTitleParts.join(" ")
-          : prefetchedSummary.title ?? "Makina";
-      const summaryFuel = prefetchedSummary.fuel
-        ? localizeFuel(prefetchedSummary.fuel, "sq") ?? prefetchedSummary.fuel
-        : undefined;
-      const summaryTransmission = prefetchedSummary.transmission
-        ? translateTransmission(prefetchedSummary.transmission)
-        : undefined;
-      const summaryColor = prefetchedSummary.color
-        ? translateColor(prefetchedSummary.color)
-        : undefined;
-      const summaryMileage =
-        prefetchedSummary.mileageLabel ??
-        undefined;
-      const formattedPrice =
-        typeof prefetchedSummary.price === "number"
-          ? `€${prefetchedSummary.price.toLocaleString()}`
+    // Preload important images
+    useImagePreload(car?.image ?? prefetchedSummary?.image);
+    
+    // Show skeleton loader when loading without any cached data
+    if (loading && !car && !prefetchedSummary) {
+      return <CarDetailsSkeleton />;
+    }
+    
+    if (loading && !car) {
+      if (prefetchedSummary) {
+        const summaryTitleParts = [
+          prefetchedSummary.year,
+          prefetchedSummary.make,
+          prefetchedSummary.model,
+        ].filter(Boolean);
+        const summaryTitle =
+          summaryTitleParts.length > 0
+            ? summaryTitleParts.join(" ")
+            : prefetchedSummary.title ?? "Makina";
+        const summaryFuel = prefetchedSummary.fuel
+          ? localizeFuel(prefetchedSummary.fuel, "sq") ?? prefetchedSummary.fuel
           : undefined;
+        const summaryTransmission = prefetchedSummary.transmission
+          ? translateTransmission(prefetchedSummary.transmission)
+          : undefined;
+        const summaryColor = prefetchedSummary.color
+          ? translateColor(prefetchedSummary.color)
+          : undefined;
+        const summaryMileage =
+          prefetchedSummary.mileageLabel ??
+          undefined;
+        const formattedPrice =
+          typeof prefetchedSummary.price === "number"
+            ? `€${prefetchedSummary.price.toLocaleString()}`
+            : undefined;
 
-      return (
-        <div className="min-h-screen bg-background animate-fade-in">
-          <div className="container-responsive py-6 max-w-[1600px] space-y-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (pageState && pageState.url) {
-                    navigate(pageState.url);
-                  } else {
-                    goBack();
-                  }
-                }}
-                className="h-9 px-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Kthehu te Makinat
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/")}
-                className="h-9 px-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Kryefaqja
-              </Button>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-5">
-              <div className="lg:col-span-3">
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-card">
-                  {prefetchedSummary.image ? (
-                    <img
-                      src={prefetchedSummary.image}
-                      alt={summaryTitle || "Makina"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-                      Po përgatitet imazhi i makinës…
-                    </div>
-                  )}
-                </div>
+        return (
+          <div className="min-h-screen bg-background animate-fade-in">
+            <div className="container-responsive py-6 max-w-[1600px] space-y-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (pageState && pageState.url) {
+                      navigate(pageState.url);
+                    } else {
+                      goBack();
+                    }
+                  }}
+                  className="h-9 px-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Kthehu te Makinat
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/")}
+                  className="h-9 px-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Kryefaqja
+                </Button>
               </div>
-              <div className="lg:col-span-2 space-y-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Po ngarkohet raporti i plotë
-                    </p>
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground">
-                      {summaryTitle}
-                    </h1>
-                    {prefetchedSummary.title &&
-                      prefetchedSummary.title !== summaryTitle && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {prefetchedSummary.title}
+
+              <div className="grid gap-6 lg:grid-cols-5">
+                <div className="lg:col-span-3">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-card">
+                    {prefetchedSummary.image ? (
+                      <img
+                        src={prefetchedSummary.image}
+                        alt={summaryTitle || "Makina"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                        Po përgatitet imazhi i makinës…
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Po ngarkohet raporti i plotë
+                      </p>
+                      <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground">
+                        {summaryTitle}
+                      </h1>
+                      {prefetchedSummary.title &&
+                        prefetchedSummary.title !== summaryTitle && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {prefetchedSummary.title}
+                          </p>
+                        )}
+                      {prefetchedSummary.lot && (
+                        <p className="mt-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                          Lot #{prefetchedSummary.lot}
                         </p>
                       )}
-                    {prefetchedSummary.lot && (
-                      <p className="mt-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Lot #{prefetchedSummary.lot}
-                      </p>
+                    </div>
+
+                    {formattedPrice && (
+                      <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
+                        <span className="text-3xl font-bold text-primary leading-tight">
+                          {formattedPrice}
+                        </span>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Çmimi paraprak
+                        </span>
+                      </div>
                     )}
                   </div>
 
-                  {formattedPrice && (
-                    <div className="hidden lg:flex min-w-[200px] flex-col items-end gap-1 self-start text-right">
-                      <span className="text-3xl font-bold text-primary leading-tight">
-                        {formattedPrice}
-                      </span>
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Çmimi paraprak
-                      </span>
+                    <div className="space-y-3">
+                      {formattedPrice && (
+                        <div className="text-2xl font-semibold text-primary lg:hidden">
+                          {formattedPrice}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+                        {summaryMileage && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Kilometrazhi
+                            </span>
+                            <span>{summaryMileage}</span>
+                          </div>
+                        )}
+                        {summaryFuel && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Karburanti
+                            </span>
+                            <span>{summaryFuel}</span>
+                          </div>
+                        )}
+                        {summaryTransmission && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Transmisioni
+                            </span>
+                            <span>{summaryTransmission}</span>
+                          </div>
+                        )}
+                        {summaryColor && (
+                          <div>
+                            <span className="block font-medium text-foreground">
+                              Ngjyra
+                            </span>
+                            <span>{summaryColor}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                <div className="space-y-3">
-                  {formattedPrice && (
-                    <div className="text-2xl font-semibold text-primary lg:hidden">
-                      {formattedPrice}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
-                    {summaryMileage && (
-                      <div>
-                        <span className="block font-medium text-foreground">
-                          Kilometrazhi
-                        </span>
-                        <span>{summaryMileage}</span>
-                      </div>
-                    )}
-                    {summaryFuel && (
-                      <div>
-                        <span className="block font-medium text-foreground">
-                          Karburanti
-                        </span>
-                        <span>{summaryFuel}</span>
-                      </div>
-                    )}
-                    {summaryTransmission && (
-                      <div>
-                        <span className="block font-medium text-foreground">
-                          Transmisioni
-                        </span>
-                        <span>{summaryTransmission}</span>
-                      </div>
-                    )}
-                    {summaryColor && (
-                      <div>
-                        <span className="block font-medium text-foreground">
-                          Ngjyra
-                        </span>
-                        <span>{summaryColor}</span>
-                      </div>
-                    )}
+                  <div className="rounded-lg border border-border bg-card p-4 text-sm leading-relaxed text-muted-foreground">
+                    Po sjellim informacionin e detajuar nga partnerët tanë.
+                    Kjo zakonisht merr më pak se një sekondë.
                   </div>
-                </div>
-
-                <div className="rounded-lg border border-border bg-card p-4 text-sm leading-relaxed text-muted-foreground">
-                  Po sjellim informacionin e detajuar nga partnerët tanë.
-                  Kjo zakonisht merr më pak se një sekondë.
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      );
-    }
+        );
+      }
 
-    return <CarDetailsSkeleton />;
-  }
+      return <CarDetailsSkeleton />;
+    }
   if (error || !car) {
     return (
       <div className="min-h-screen bg-background animate-fade-in">
@@ -4151,64 +4149,65 @@ const CarDetails = memo(() => {
                         <Expand className="h-4 w-4" />
                       </button>
                     )}
+                </div>
+                {typeof car?.price === "number" && (
+                  <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
+                    <span className="text-xl font-bold text-foreground">
+                      €{car.price.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Deri në Prishtinë pa doganë
+                    </span>
                   </div>
-                  {typeof car?.price === "number" && (
-                    <div className="flex lg:hidden w-full items-center justify-between px-5 py-3 border-t border-border/60 bg-card/80">
-                      <span className="text-xl font-bold text-foreground">
-                        €{car.price.toLocaleString()}
-                      </span>
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                        Deri në Prishtinë pa doganë
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+              </CardContent>
+            </Card>
 
               {/* Desktop Thumbnail Gallery - 6 thumbnails on right side */}
-              {images.length > 1 && (
-                <div
-                  className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
-                  style={{ animationDelay: "200ms" }}
-                >
-                  {images.slice(1, 7).map((image, index) => (
-                    <button
-                      key={index + 1}
-                      onClick={() => {
-                        impact("light");
-                        goToIndex(index + 1, "manual");
-                      }}
-                      className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index + 1
-                        ? "border-primary shadow-lg scale-105"
-                        : "border-border hover:border-primary/50"
-                        }`}
-                      aria-label={`View image ${index + 2}`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
+                {images.length > 1 && (
+                  <div
+                    className="hidden lg:flex lg:flex-col lg:gap-2 animate-fade-in"
+                    style={{ animationDelay: "200ms" }}
+                  >
+                    {images.slice(1, 7).map((image, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => {
+                          impact("light");
+                          goToIndex(index + 1, "manual");
                         }}
-                      />
-                    </button>
-                  ))}
-                  {images.length > 7 && (
-                    <button
-                      onClick={handleGalleryButtonClick}
-                      className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
-                      aria-label="View all images"
-                    >
-                      <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
-                      <span className="text-xs xl:text-sm text-primary font-medium">
-                        +{images.length - 7}
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )}
+                        className={`flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                          selectedImageIndex === index + 1
+                            ? "border-primary shadow-lg scale-105"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        aria-label={`View image ${index + 2}`}
+                      >
+                        <img
+                          src={image}
+                          alt={`${car.year} ${car.make} ${car.model} - Thumbnail ${index + 2}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
+                      </button>
+                    ))}
+                    {images.length > 7 && (
+                      <button
+                        onClick={handleGalleryButtonClick}
+                        className="flex-shrink-0 w-16 h-14 xl:w-20 xl:h-16 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center transition-all duration-200"
+                        aria-label="View all images"
+                      >
+                        <Camera className="h-4 w-4 xl:h-5 xl:w-5 text-primary mb-1" />
+                        <span className="text-xs xl:text-sm text-primary font-medium">
+                          +{images.length - 7}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Mobile Main Image - Full width for mobile */}
@@ -4290,27 +4289,27 @@ const CarDetails = memo(() => {
 
                   {/* Image counter and gallery button - Improved mobile design */}
                   {images.length > 1 && (
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      {/* Mobile gallery button */}
-                      <button
-                        onClick={handleGalleryButtonClick}
-                        className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-3 w-3" />
-                        {selectedImageIndex + 1}/{images.length}
-                      </button>
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        {/* Mobile gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-3 w-3" />
+                          {selectedImageIndex + 1}/{images.length}
+                        </button>
 
-                      {/* Desktop gallery button */}
-                      <button
-                        onClick={handleGalleryButtonClick}
-                        className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                        aria-label={`View all ${images.length} images`}
-                      >
-                        <Camera className="h-4 w-4" />
-                        View Gallery ({images.length})
-                      </button>
-                    </div>
+                        {/* Desktop gallery button */}
+                        <button
+                          onClick={handleGalleryButtonClick}
+                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
+                          aria-label={`View all ${images.length} images`}
+                        >
+                          <Camera className="h-4 w-4" />
+                          View Gallery ({images.length})
+                        </button>
+                      </div>
                   )}
 
                   {/* Lot number badge - Improved positioning */}
@@ -4544,39 +4543,39 @@ const CarDetails = memo(() => {
                                 </Badge>
                               </div>
                             )}
-                        </div>
-                        {usageHighlights.length > 0 && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                            {usageHighlights.map((item) => {
-                              const valueClass =
-                                item.value === "Po"
-                                  ? "text-destructive"
-                                  : item.value === "Jo"
-                                    ? "text-emerald-600"
-                                    : "text-muted-foreground";
-                              return (
-                                <div
-                                  key={item.label}
-                                  className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-3.5"
-                                >
-                                  <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                                    {item.label}
-                                  </span>
-                                  <span
-                                    className={`text-base sm:text-lg font-semibold ${valueClass}`}
-                                  >
-                                    {item.value}
-                                  </span>
-                                  {item.details.length > 0 && (
-                                    <span className="text-xs text-muted-foreground leading-relaxed">
-                                      {item.details.join(" • ")}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
                           </div>
-                        )}
+                          {usageHighlights.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                              {usageHighlights.map((item) => {
+                                const valueClass =
+                                  item.value === "Po"
+                                    ? "text-destructive"
+                                    : item.value === "Jo"
+                                      ? "text-emerald-600"
+                                      : "text-muted-foreground";
+                                return (
+                                  <div
+                                    key={item.label}
+                                    className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/80 p-3 sm:p-3.5"
+                                  >
+                                    <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                                      {item.label}
+                                    </span>
+                                    <span
+                                      className={`text-base sm:text-lg font-semibold ${valueClass}`}
+                                    >
+                                      {item.value}
+                                    </span>
+                                    {item.details.length > 0 && (
+                                      <span className="text-xs text-muted-foreground leading-relaxed">
+                                        {item.details.join(" • ")}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                       </div>
                     )}
 
@@ -4632,14 +4631,6 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Comprehensive Inspection Report */}
-                    <Suspense fallback={<div className="h-64 bg-muted/10 animate-pulse rounded-xl" />}>
-                      <CarInspectionDiagram
-                        inspectionData={
-                          car.inspect?.items || car.details?.inspect?.items || []
-                        }
-                        className="mt-6"
-                      />
-                    </Suspense>
                   </div>
                 )}
               </CardContent>
@@ -4809,15 +4800,15 @@ const CarDetails = memo(() => {
 
         {images.length > 0 && (
           <Suspense fallback={null}>
-            <ImageZoom
-              src={images[selectedImageIndex] ?? car?.image ?? ""}
-              alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-              isOpen={isImageZoomOpen}
-              onClose={handleImageZoomClose}
-              images={images}
-              currentIndex={selectedImageIndex}
-              onImageChange={(index) => goToIndex(index, "manual")}
-            />
+          <ImageZoom
+            src={images[selectedImageIndex] ?? car?.image ?? ""}
+            alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
+            isOpen={isImageZoomOpen}
+            onClose={handleImageZoomClose}
+            images={images}
+            currentIndex={selectedImageIndex}
+            onImageChange={(index) => goToIndex(index, "manual")}
+          />
           </Suspense>
         )}
       </div>
@@ -4827,7 +4818,7 @@ const CarDetails = memo(() => {
           <div className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-background/95 backdrop-blur border-t border-border shadow-[0_-6px_12px_rgba(0,0,0,0.08)]">
             <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="flex-1 min-w-0">
-                <button
+                <button 
                   onClick={() => setIsServicesDialogOpen(true)}
                   className="text-left hover:opacity-80 transition-opacity"
                 >
@@ -4860,7 +4851,7 @@ const CarDetails = memo(() => {
           </div>,
           document.body,
         )}
-
+      
       {/* Specs Dialog */}
       <Dialog open={isSpecsDialogOpen} onOpenChange={setIsSpecsDialogOpen}>
         <DialogContent className="max-w-2xl sm:max-w-3xl max-h-[80vh] overflow-y-auto p-4 sm:p-5">
@@ -4939,7 +4930,7 @@ const CarDetails = memo(() => {
           </div>
         </DialogContent>
       </Dialog>
-
+      
       {/* Services Dialog */}
       <Dialog open={isServicesDialogOpen} onOpenChange={setIsServicesDialogOpen}>
         <DialogContent className="max-w-2xl">
