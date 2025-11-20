@@ -16,12 +16,12 @@ const API_RETRY_BASE_DELAY = 300;
 const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => Promise<any>) => {
   const cacheKey = `${endpoint}-${JSON.stringify(filters)}`;
   const cached = apiCache.get(cacheKey);
-  
+
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     console.log(`📋 Using cached data for ${endpoint}`);
     return cached.data;
   }
-  
+
   const data = await apiCall();
   apiCache.set(cacheKey, { data, timestamp: Date.now() });
   return data;
@@ -599,7 +599,7 @@ export const useSecureAuctionAPI = () => {
         per_page: newFilters.per_page || "200", // Show 200 cars per page
         simple_paginate: "0",
       };
-      
+
       // IMPORTANT: Remove grade_iaai and trim_level from server request - we'll do client-side filtering
       // This prevents backend errors and ensures we get all cars for client-side filtering
       const selectedVariant = newFilters.grade_iaai;
@@ -614,7 +614,7 @@ export const useSecureAuctionAPI = () => {
       let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
-        
+
         filteredCars = filteredCars.filter(car => {
           // Check if car has the selected variant in any of its lots
           if (car.lots && Array.isArray(car.lots)) {
@@ -623,112 +623,112 @@ export const useSecureAuctionAPI = () => {
               if (lot.grade_iaai && lot.grade_iaai.trim() === selectedVariant) {
                 return true;
               }
-              
+
               // Check badge field
               if (lot.details && lot.details.badge && lot.details.badge.trim() === selectedVariant) {
                 return true;
               }
-              
+
               // Check engine name
               if (car.engine && car.engine.name && car.engine.name.trim() === selectedVariant) {
                 return true;
               }
-              
+
               // Check title for variant
               if (car.title && car.title.toLowerCase().includes(selectedVariant.toLowerCase())) {
                 return true;
               }
-              
+
               return false;
             });
           }
           return false;
         });
-        
+
         console.log(`✅ Variant filter "${selectedVariant}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
         console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
-        
+
         filteredCars = filteredCars.filter(car => {
           // Check if car has the selected trim level in any of its lots or title
           if (car.lots && Array.isArray(car.lots)) {
             // Check lots for trim level in badge or grade_iaai
             const hasMatchInLots = car.lots.some(lot => {
               // Check badge field for trim level
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              if (lot.details && lot.details.badge &&
+                lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
                 return true;
               }
-              
+
               // Check grade_iaai field for trim level
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              if (lot.grade_iaai &&
+                lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
                 return true;
               }
-              
+
               return false;
             });
-            
+
             if (hasMatchInLots) return true;
           }
-          
+
           // Check title for trim level
           if (car.title && car.title.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
             return true;
           }
-          
+
           return false;
         });
-        
+
         console.log(`✅ Trim level filter "${selectedTrimLevel}": ${filteredCars.length} cars match out of ${data.data?.length || 0} total`);
       }
 
       // Always use server-side total count regardless of client-side filtering
       // Client-side filtering should not affect the total count or pagination logic
-        const total = data.meta?.total || 0;
-        const lastPage = data.meta?.last_page || 1;
-        const hasMore = page < lastPage;
+      const total = data.meta?.total || 0;
+      const lastPage = data.meta?.last_page || 1;
+      const hasMore = page < lastPage;
 
-        const activeCars = filteredCars.filter(car => !isCarSold(car));
+      const activeCars = filteredCars.filter(car => !isCarSold(car));
 
       console.log(
         `✅ API Success - Fetched ${filteredCars.length} cars from page ${page}, active displayed: ${activeCars.length}`
       );
 
-        startTransition(() => {
-          if (!isCurrentRequest()) {
-            return;
-          }
-          setTotalCount(total);
-          setHasMorePages(hasMore);
+      startTransition(() => {
+        if (!isCurrentRequest()) {
+          return;
+        }
+        setTotalCount(total);
+        setHasMorePages(hasMore);
 
-          if (resetList || page === 1) {
-            setCars(activeCars);
-          } else {
-            setCars((prev) => [...prev, ...activeCars]);
-          }
+        if (resetList || page === 1) {
+          setCars(activeCars);
+        } else {
+          setCars((prev) => [...prev, ...activeCars]);
+        }
 
-          setCurrentPage(page);
-        });
+        setCurrentPage(page);
+      });
 
-        lastSuccessfulSnapshotRef.current = {
+      lastSuccessfulSnapshotRef.current = {
+        cars: activeCars,
+        totalCount: total,
+        hasMorePages: hasMore,
+      };
+
+      if (resetList && isCurrentRequest()) {
+        carsCacheRef.current.set(cacheKey, {
           cars: activeCars,
           totalCount: total,
           hasMorePages: hasMore,
-        };
-
-        if (resetList && isCurrentRequest()) {
-          carsCacheRef.current.set(cacheKey, {
-            cars: activeCars,
-            totalCount: total,
-            hasMorePages: hasMore,
-            timestamp: Date.now(),
-          });
-          pruneCacheMap(carsCacheRef.current);
-        }
+          timestamp: Date.now(),
+        });
+        pruneCacheMap(carsCacheRef.current);
+      }
 
       if (isCurrentRequest()) {
         prefetchCarDetails(activeCars);
@@ -744,7 +744,7 @@ export const useSecureAuctionAPI = () => {
       if (!isCurrentRequest()) {
         return;
       }
-      
+
       if (err.message === "RATE_LIMITED") {
         // Retry once after rate limit
         try {
@@ -771,13 +771,13 @@ export const useSecureAuctionAPI = () => {
         setError(null);
         return;
       }
-      
+
       // Use fallback car data when API fails - but only if no specific brand filter is applied
-      if (newFilters.manufacturer_id && 
-          newFilters.manufacturer_id !== 'all' && 
-          newFilters.manufacturer_id !== '' &&
-          newFilters.manufacturer_id !== undefined &&
-          newFilters.manufacturer_id !== null) {
+      if (newFilters.manufacturer_id &&
+        newFilters.manufacturer_id !== 'all' &&
+        newFilters.manufacturer_id !== '' &&
+        newFilters.manufacturer_id !== undefined &&
+        newFilters.manufacturer_id !== null) {
         console.log("❌ API failed for brand-specific search, not showing fallback cars to avoid test car display");
         setError("Failed to load cars for the selected brand. Please try again.");
         setCars([]);
@@ -785,11 +785,11 @@ export const useSecureAuctionAPI = () => {
         setHasMorePages(false);
         return;
       }
-      
+
       // Use fallback cars when API fails
       console.log("❌ API failed, using fallback cars for pagination testing");
       const fallbackCars = createFallbackCars(newFilters);
-      
+
       if (fallbackCars.length === 0) {
         console.log("❌ No fallback cars available, showing empty state");
         setError("Failed to load cars. Please try again.");
@@ -798,41 +798,41 @@ export const useSecureAuctionAPI = () => {
         setHasMorePages(false);
         return;
       }
-      
+
       // Simulate pagination with fallback data
       const pageSize = parseInt(newFilters.per_page || "200");
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const paginatedCars = fallbackCars.slice(startIndex, endIndex).filter(car => !isCarSold(car));
-      
+
       console.log(
         `✅ Fallback Success - Showing ${paginatedCars.length} cars from page ${page}, total: ${fallbackCars.length}`
       );
-      
-        const fallbackTotal = fallbackCars.length;
-        const fallbackHasMore = endIndex < fallbackCars.length;
 
-        startTransition(() => {
-          if (!isCurrentRequest()) {
-            return;
-          }
-          setTotalCount(fallbackTotal);
-          setHasMorePages(fallbackHasMore);
+      const fallbackTotal = fallbackCars.length;
+      const fallbackHasMore = endIndex < fallbackCars.length;
 
-          if (resetList || page === 1) {
-            setCars(paginatedCars);
-          } else {
-            setCars((prev) => [...prev, ...paginatedCars]);
-          }
+      startTransition(() => {
+        if (!isCurrentRequest()) {
+          return;
+        }
+        setTotalCount(fallbackTotal);
+        setHasMorePages(fallbackHasMore);
 
-          setCurrentPage(page);
-        });
+        if (resetList || page === 1) {
+          setCars(paginatedCars);
+        } else {
+          setCars((prev) => [...prev, ...paginatedCars]);
+        }
 
-        lastSuccessfulSnapshotRef.current = {
-          cars: paginatedCars,
-          totalCount: fallbackTotal,
-          hasMorePages: fallbackHasMore,
-        };
+        setCurrentPage(page);
+      });
+
+      lastSuccessfulSnapshotRef.current = {
+        cars: paginatedCars,
+        totalCount: fallbackTotal,
+        hasMorePages: fallbackHasMore,
+      };
 
       // Clear error since we're showing fallback data
       setError(null);
@@ -846,17 +846,17 @@ export const useSecureAuctionAPI = () => {
   const fetchManufacturers = async (): Promise<Manufacturer[]> => {
     try {
       console.log(`🔍 Fetching all manufacturers`);
-      
+
       // Try to get manufacturers from cache or API
-      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" }, 
+      const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" },
         () => makeSecureAPICall("manufacturers/cars", {
           per_page: "1000",
           simple_paginate: "0"
         })
       );
-      
+
       let manufacturers = data.data || [];
-      
+
       // If we got manufacturers from API, normalize them
       if (manufacturers.length > 0) {
         console.log(`✅ Found ${manufacturers.length} manufacturers from API`);
@@ -872,15 +872,15 @@ export const useSecureAuctionAPI = () => {
         console.log(`⚠️ No manufacturers from API, using fallback data`);
         manufacturers = createFallbackManufacturers();
       }
-      
-      console.log(`🏷️ Retrieved manufacturers:`, 
+
+      console.log(`🏷️ Retrieved manufacturers:`,
         manufacturers.slice(0, 5).map(m => `${m.name} (${m.cars_qty || 0} cars)`));
-      
+
       return manufacturers;
     } catch (err) {
       console.error("❌ Error fetching manufacturers:", err);
       console.log(`🔄 Using fallback manufacturer data`);
-      
+
       // Return fallback data when API fails
       return createFallbackManufacturers();
     }
@@ -895,7 +895,7 @@ export const useSecureAuctionAPI = () => {
           simple_paginate: "0"
         })
       );
-      
+
       let fallbackModels = (fallbackData.data || []).filter((m: any) => m && m.id && m.name);
 
       // Filter models by manufacturer_id (in case API returns extra)
@@ -909,7 +909,7 @@ export const useSecureAuctionAPI = () => {
     } catch (err) {
       console.error("[fetchModels] Error:", err);
       console.log(`🔄 Using fallback model data for manufacturer ${manufacturerId}`);
-      
+
       // Use fallback model data based on manufacturer name - more efficient approach
       try {
         const manufacturers = await fetchManufacturers();
@@ -920,7 +920,7 @@ export const useSecureAuctionAPI = () => {
       } catch (fallbackErr) {
         console.error("Error creating fallback models:", fallbackErr);
       }
-      
+
       return [];
     }
   };
@@ -928,7 +928,7 @@ export const useSecureAuctionAPI = () => {
   const fetchGenerations = async (modelId: string): Promise<Generation[]> => {
     try {
       console.log(`🔍 Fetching generations for model ID: ${modelId}`);
-      
+
       // First try to fetch generations from a dedicated endpoint
       let generationsFromAPI: Generation[] = [];
       try {
@@ -949,81 +949,81 @@ export const useSecureAuctionAPI = () => {
 
       // OPTIMIZED: Use model-specific fallback approach instead of calling all manufacturer APIs
       console.log('🚀 Using optimized model-specific fallback generation data');
-      
+
       // Get model-specific generations by creating a lookup and filtering
       const modelIdNum = parseInt(modelId);
       let generations: Generation[] = [];
-      
+
       // Create a comprehensive fallback generation list and filter by model_id
       const allManufacturerNames = ['BMW', 'Audi', 'Mercedes-Benz', 'Toyota', 'Honda', 'Hyundai', 'Kia', 'Nissan', 'Ford', 'Chevrolet', 'Volkswagen', 'Mazda'];
-      
+
       for (const manufacturerName of allManufacturerNames) {
         const manufacturerGenerations = createFallbackGenerations(manufacturerName);
-        const modelSpecificGenerations = manufacturerGenerations.filter(gen => 
+        const modelSpecificGenerations = manufacturerGenerations.filter(gen =>
           gen.model_id === modelIdNum
         );
-        
+
         if (modelSpecificGenerations.length > 0) {
           console.log(`✅ Found ${modelSpecificGenerations.length} generations for model ${modelId} from ${manufacturerName}`);
           generations = modelSpecificGenerations;
           break;
         }
       }
-      
+
       // If no model-specific generations found, return a minimal fallback
       if (generations.length === 0) {
         console.log(`⚠️ No specific generations found for model ${modelId}, using generic fallback`);
         generations = [
-          { 
-            id: parseInt(modelId) * 1000 + 1, 
-            name: '1st Generation', 
-            from_year: 2010, 
-            to_year: 2018, 
-            cars_qty: 10, 
-            manufacturer_id: undefined, 
-            model_id: modelIdNum 
+          {
+            id: parseInt(modelId) * 1000 + 1,
+            name: '1st Generation',
+            from_year: 2010,
+            to_year: 2018,
+            cars_qty: 10,
+            manufacturer_id: undefined,
+            model_id: modelIdNum
           },
-          { 
-            id: parseInt(modelId) * 1000 + 2, 
-            name: '2nd Generation', 
-            from_year: 2018, 
-            to_year: 2024, 
-            cars_qty: 15, 
-            manufacturer_id: undefined, 
-            model_id: modelIdNum 
+          {
+            id: parseInt(modelId) * 1000 + 2,
+            name: '2nd Generation',
+            from_year: 2018,
+            to_year: 2024,
+            cars_qty: 15,
+            manufacturer_id: undefined,
+            model_id: modelIdNum
           }
         ];
       }
-      
+
       const filteredGenerations = generations.filter(g => g && g.id && g.name);
       filteredGenerations.sort((a, b) => a.name.localeCompare(b.name));
       console.log(`📊 Returning ${filteredGenerations.length} filtered generations for model ${modelId}`);
       return filteredGenerations;
-      
+
     } catch (err) {
       console.error('[fetchGenerations] Error:', err);
       console.log(`🔄 Using minimal fallback generation data for model ${modelId}`);
-      
+
       // Return a minimal set of fallback generations to avoid empty state
       const modelIdNum = parseInt(modelId);
       return [
-        { 
-          id: modelIdNum * 1000 + 1, 
-          name: '1st Generation', 
-          from_year: 2010, 
-          to_year: 2018, 
-          cars_qty: 5, 
-          manufacturer_id: undefined, 
-          model_id: modelIdNum 
+        {
+          id: modelIdNum * 1000 + 1,
+          name: '1st Generation',
+          from_year: 2010,
+          to_year: 2018,
+          cars_qty: 5,
+          manufacturer_id: undefined,
+          model_id: modelIdNum
         },
-        { 
-          id: modelIdNum * 1000 + 2, 
-          name: '2nd Generation', 
-          from_year: 2018, 
-          to_year: 2024, 
-          cars_qty: 8, 
-          manufacturer_id: undefined, 
-          model_id: modelIdNum 
+        {
+          id: modelIdNum * 1000 + 2,
+          name: '2nd Generation',
+          from_year: 2018,
+          to_year: 2024,
+          cars_qty: 8,
+          manufacturer_id: undefined,
+          model_id: modelIdNum
         }
       ];
     }
@@ -1033,7 +1033,7 @@ export const useSecureAuctionAPI = () => {
   const enhanceGenerationsWithCarYears = (apiGenerations: Generation[], cars: Car[]): Generation[] => {
     const yearDataMap = new Map<number, { from_year?: number; to_year?: number; car_count: number }>();
     const currentYear = new Date().getFullYear();
-    
+
     // Extract year data from cars for each generation
     cars.forEach(car => {
       if (car.generation && car.generation.id && car.year) {
@@ -1041,7 +1041,7 @@ export const useSecureAuctionAPI = () => {
         if (car.year >= 1980 && car.year <= currentYear + 1) {
           const genId = car.generation.id;
           const existing = yearDataMap.get(genId);
-          
+
           if (existing) {
             existing.car_count++;
             if (!existing.from_year || car.year < existing.from_year) {
@@ -1064,18 +1064,18 @@ export const useSecureAuctionAPI = () => {
     // Enhance API generations with extracted year data and real generation year data as fallback
     return apiGenerations.map(gen => {
       const yearData = yearDataMap.get(gen.id);
-      
+
       // Try to get real generation year data from our comprehensive database
       let realYearData: { from_year?: number; to_year?: number } | null = null;
       if (gen.manufacturer_id && gen.model_id) {
         // Get manufacturer and model names from car data or API
-        const manufacturerName = cars.find(car => 
+        const manufacturerName = cars.find(car =>
           car.manufacturer && car.manufacturer.id === gen.manufacturer_id
         )?.manufacturer?.name;
-        const modelName = cars.find(car => 
+        const modelName = cars.find(car =>
           car.model && car.model.id === gen.model_id
         )?.model?.name;
-        
+
         if (manufacturerName && modelName && gen.name) {
           realYearData = findGenerationYears(manufacturerName, modelName, gen.name);
           if (realYearData) {
@@ -1083,14 +1083,14 @@ export const useSecureAuctionAPI = () => {
           }
         }
       }
-      
+
       return {
         ...gen,
         // Priority: 1. Valid API data, 2. Real generation data, 3. Car year data
-        from_year: (gen.from_year && gen.from_year >= 1980) ? gen.from_year : 
-                   (realYearData?.from_year || yearData?.from_year),
-        to_year: (gen.to_year && gen.to_year <= currentYear + 1) ? gen.to_year : 
-                 (realYearData?.to_year || yearData?.to_year),
+        from_year: (gen.from_year && gen.from_year >= 1980) ? gen.from_year :
+          (realYearData?.from_year || yearData?.from_year),
+        to_year: (gen.to_year && gen.to_year <= currentYear + 1) ? gen.to_year :
+          (realYearData?.to_year || yearData?.to_year),
         cars_qty: gen.cars_qty || yearData?.car_count || 0
       };
     });
@@ -1160,7 +1160,7 @@ export const useSecureAuctionAPI = () => {
 
   const fetchTrimLevels = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
     const cacheKey = `trim_${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
-    
+
     // Use cache if available
     if (trimLevelsCache[cacheKey]) {
       return trimLevelsCache[cacheKey];
@@ -1168,40 +1168,40 @@ export const useSecureAuctionAPI = () => {
 
     try {
       // Build filters - only include valid values
-      const filters: any = { per_page: '100' }; // Fetch more cars for better trim coverage
+      const filters: any = { per_page: '1000' }; // Fetch more cars for better trim coverage
       if (manufacturerId) filters.manufacturer_id = manufacturerId;
       if (modelId) filters.model_id = modelId;
       if (generationId) filters.generation_id = generationId;
 
       console.log('🔍 Fetching trim levels with filters:', filters);
       const data = await makeSecureAPICall('cars', filters);
-      
+
       const cars = data.data || [];
       console.log('🔍 Found', cars.length, 'cars for trim level extraction');
-      
+
       if (cars.length === 0) {
         const fallback = getFallbackTrimLevels();
         setTrimLevelsCache(prev => ({ ...prev, [cacheKey]: fallback }));
         return fallback;
       }
-      
+
       // Extract unique trim levels from multiple sources
       const trimLevelsMap = new Map<string, number>();
-      
+
       // Define trim level patterns (focusing on actual trim levels, not engine variants)
       const trimLevelPatterns = [
         /\b(premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe|base|standard|limited|special|edition)\b/gi,
         /\b(executive|business|design|style|elegance|dynamic|advance|progressive|sophisticated)\b/gi,
         /\b(ultimate|signature|platinum|diamond|titanium|carbon|black|white|red|blue)\b/gi
       ];
-      
+
       cars.forEach((car: any) => {
         // Primary source: badge from lots details (most reliable for trim levels)
         if (car.lots && Array.isArray(car.lots)) {
           car.lots.forEach((lot: any) => {
             if (lot.details && lot.details.badge && typeof lot.details.badge === 'string' && lot.details.badge.trim()) {
               const badge = lot.details.badge.trim();
-              
+
               // Check if badge matches trim level patterns
               trimLevelPatterns.forEach(pattern => {
                 const matches = badge.toLowerCase().match(pattern);
@@ -1218,22 +1218,22 @@ export const useSecureAuctionAPI = () => {
             }
           });
         }
-        
+
         // Secondary source: grade_iaai field (only if it contains trim-like terms)
         if (car.lots && Array.isArray(car.lots)) {
           car.lots.forEach((lot: any) => {
             if (lot.grade_iaai && typeof lot.grade_iaai === 'string' && lot.grade_iaai.trim()) {
               const grade = lot.grade_iaai.trim();
-              
+
               // Check if grade contains trim level terms (but exclude engine codes)
               trimLevelPatterns.forEach(pattern => {
                 const matches = grade.toLowerCase().match(pattern);
                 if (matches) {
                   matches.forEach(match => {
                     const trimLevel = match.trim().toLowerCase();
-                    if (trimLevel.length > 2 && 
-                        !/^[A-Z]{2,4}$/i.test(trimLevel) && // Not engine codes
-                        !/^\d+\.?\d*$/.test(trimLevel)) { // Not just numbers
+                    if (trimLevel.length > 2 &&
+                      !/^[A-Z]{2,4}$/i.test(trimLevel) && // Not engine codes
+                      !/^\d+\.?\d*$/.test(trimLevel)) { // Not just numbers
                       const capitalizedTrim = trimLevel.charAt(0).toUpperCase() + trimLevel.slice(1);
                       trimLevelsMap.set(capitalizedTrim, (trimLevelsMap.get(capitalizedTrim) || 0) + 1);
                     }
@@ -1243,11 +1243,11 @@ export const useSecureAuctionAPI = () => {
             }
           });
         }
-        
+
         // Tertiary source: extract trim levels from car title
         if (car.title && typeof car.title === 'string') {
           const title = car.title.toLowerCase();
-          
+
           trimLevelPatterns.forEach(pattern => {
             const matches = title.match(pattern);
             if (matches) {
@@ -1274,7 +1274,7 @@ export const useSecureAuctionAPI = () => {
         .sort((a, b) => b.count - a.count); // Sort by popularity
 
       console.log('📊 Extracted trim levels:', trimLevels.length, 'unique trim levels:', trimLevels.slice(0, 10).map(t => `${t.value}(${t.count})`));
-      
+
       // If no trim levels found from API, use fallback
       if (trimLevels.length === 0) {
         console.log('⚠️ No trim levels found from API, using fallback...');
@@ -1282,7 +1282,7 @@ export const useSecureAuctionAPI = () => {
         setTrimLevelsCache(prev => ({ ...prev, [cacheKey]: fallback }));
         return fallback;
       }
-      
+
       const result = trimLevels;
       setTrimLevelsCache(prev => ({ ...prev, [cacheKey]: result }));
       return result;
@@ -1294,16 +1294,87 @@ export const useSecureAuctionAPI = () => {
     }
   };
 
+
+
+  const fetchEngines = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
+    const cacheKey = `engine_${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
+
+    try {
+      // Build filters
+      const filters: any = { per_page: '1000' };
+      if (manufacturerId) filters.manufacturer_id = manufacturerId;
+      if (modelId) filters.model_id = modelId;
+      if (generationId) filters.generation_id = generationId;
+
+      console.log('🔍 Fetching engines with filters:', filters);
+      const data = await makeSecureAPICall('cars', filters);
+
+      const cars = data.data || [];
+      console.log('🔍 Found', cars.length, 'cars for engine extraction');
+
+      if (cars.length === 0) {
+        return [];
+      }
+
+      const enginesMap = new Map<string, number>();
+
+      cars.forEach((car: any) => {
+        // Primary source: engine object
+        if (car.engine && car.engine.name && typeof car.engine.name === 'string' && car.engine.name.trim()) {
+          const engineName = car.engine.name.trim();
+          // Filter out invalid engine names
+          if (engineName.length > 2 && !/^[A-Z]{2,4}$/.test(engineName)) {
+            enginesMap.set(engineName, (enginesMap.get(engineName) || 0) + 1);
+          }
+        }
+
+        // Secondary source: title extraction (similar to grades but focused on engine)
+        if (car.title && typeof car.title === 'string') {
+          const title = car.title.toLowerCase();
+          const enginePatterns = [
+            /\b(\d+\.\d+[L|l]?)\b/gi, // 2.0L, 3.0, etc.
+            /\b(\d+\s*(?:tdi|tfsi|tsi|fsi|cdi|cgi|crdi|vgt|ev|hybrid))\b/gi,
+            /\b(v6|v8|v10|v12)\b/gi
+          ];
+
+          enginePatterns.forEach(pattern => {
+            const matches = title.match(pattern);
+            if (matches) {
+              matches.forEach(match => {
+                const engine = match.trim().toUpperCase();
+                enginesMap.set(engine, (enginesMap.get(engine) || 0) + 1);
+              });
+            }
+          });
+        }
+      });
+
+      const engines = Array.from(enginesMap.entries())
+        .map(([value, count]) => ({
+          value,
+          label: value,
+          count
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      console.log('📊 Extracted engines:', engines.length);
+      return engines;
+    } catch (err) {
+      console.error("❌ Error fetching engines:", err);
+      return [];
+    }
+  };
+
   const getFallbackTrimLevels = (): { value: string; label: string; count?: number }[] => {
     // Extract trim levels from current cars in memory
     const currentTrimLevels = new Set<string>();
-    
+
     const trimLevelPatterns = [
       /\b(premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe|base|standard|limited|special|edition)\b/gi,
       /\b(executive|business|design|style|elegance|dynamic|advance|progressive|sophisticated)\b/gi,
       /\b(ultimate|signature|platinum|diamond|titanium|carbon|black|white|red|blue)\b/gi
     ];
-    
+
     cars.forEach(car => {
       // Check lots for trim levels
       if (car.lots && Array.isArray(car.lots)) {
@@ -1324,7 +1395,7 @@ export const useSecureAuctionAPI = () => {
           }
         });
       }
-      
+
       // Check title for trim levels
       if (car.title && typeof car.title === 'string') {
         const title = car.title.toLowerCase();
@@ -1341,15 +1412,15 @@ export const useSecureAuctionAPI = () => {
         });
       }
     });
-    
+
     console.log('🔍 Actual trim levels found in current car data:', Array.from(currentTrimLevels).sort());
-    
+
     if (currentTrimLevels.size > 0) {
       return Array.from(currentTrimLevels)
         .sort()
         .map(trim => ({ value: trim, label: trim }));
     }
-    
+
     // If no current data, provide comprehensive trim level fallback
     console.log('⚠️ No trim levels found in current data, providing fallback');
     const fallbackTrimLevels = [
@@ -1374,20 +1445,20 @@ export const useSecureAuctionAPI = () => {
       { value: 'Advance', label: 'Advance' },
       { value: 'Progressive', label: 'Progressive' }
     ];
-    
+
     return fallbackTrimLevels;
   };
 
   const fetchGrades = async (manufacturerId?: string, modelId?: string, generationId?: string): Promise<{ value: string; label: string; count?: number }[]> => {
     const cacheKey = `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
-    
+
     // Always return fallback instantly for manufacturer-only filtering for speed
     if (!modelId && !generationId && manufacturerId) {
       const fallback = getFallbackGrades(manufacturerId);
       // Apply categorization to fallback grades
       const categorizedFallback = categorizeAndOrganizeGrades(fallback);
       const organizedFallback = flattenCategorizedGrades(categorizedFallback);
-      
+
       // Start async fetch to update cache but don't wait
       setTimeout(() => {
         if (!gradesCache[cacheKey]) {
@@ -1396,7 +1467,7 @@ export const useSecureAuctionAPI = () => {
       }, 0);
       return organizedFallback;
     }
-    
+
     // Use cache if available
     if (gradesCache[cacheKey]) {
       return gradesCache[cacheKey];
@@ -1409,28 +1480,28 @@ export const useSecureAuctionAPI = () => {
   const _fetchGradesAsync = async (manufacturerId?: string, modelId?: string, generationId?: string, cacheKey?: string): Promise<{ value: string; label: string; count?: number }[]> => {
     try {
       const key = cacheKey || `${manufacturerId || ''}-${modelId || ''}-${generationId || ''}`;
-      
+
       // Build filters - only include valid values
-      const filters: any = { per_page: '200' }; // Increased for better grade coverage
+      const filters: any = { per_page: '1000' }; // Increased for better grade coverage
       if (manufacturerId) filters.manufacturer_id = manufacturerId;
       if (modelId) filters.model_id = modelId;
       if (generationId) filters.generation_id = generationId;
 
       console.log('🔍 Fetching grades with filters:', filters);
       const data = await makeSecureAPICall('cars', filters);
-      
+
       const cars = data.data || [];
       console.log('🔍 Found', cars.length, 'cars for grade extraction');
-      
+
       if (cars.length === 0) {
         const fallback = getFallbackGrades(manufacturerId);
         setGradesCache(prev => ({ ...prev, [key]: fallback }));
         return fallback;
       }
-      
+
       // Extract unique grades from multiple sources (like encar.com approach)
       const gradesMap = new Map<string, number>();
-      
+
       cars.forEach((car: any) => {
         // Primary source: lots array grade_iaai from API
         if (car.lots && Array.isArray(car.lots)) {
@@ -1441,7 +1512,7 @@ export const useSecureAuctionAPI = () => {
             }
           });
         }
-        
+
         // Secondary source: badge from lots details (like encar.com trim levels)
         if (car.lots && Array.isArray(car.lots)) {
           car.lots.forEach((lot: any) => {
@@ -1451,24 +1522,24 @@ export const useSecureAuctionAPI = () => {
             }
           });
         }
-        
+
         // Tertiary source: engine name (only meaningful engine variants)
         if (car.engine && car.engine.name && typeof car.engine.name === 'string' && car.engine.name.trim()) {
           const engineName = car.engine.name.trim();
           // Only include meaningful engine variants (like 45 TDI, 35 TDI)
           // Exclude engine codes (like CSU, DBP) and pure numbers
-          if (engineName.length > 2 && 
-              !/^\d+\.?\d*$/.test(engineName) && // Not just numbers
-              !/^[A-Z]{2,4}$/.test(engineName) && // Not engine codes like CSU, DBP
-              /^(?:\d+\s*)?(?:TDI|TFSI|TSI|FSI|CDI|CGI|AMG|d|i|e|h|hybrid|electric|e-tron|phev)/i.test(engineName)) { // Must contain engine type
+          if (engineName.length > 2 &&
+            !/^\d+\.?\d*$/.test(engineName) && // Not just numbers
+            !/^[A-Z]{2,4}$/.test(engineName) && // Not engine codes like CSU, DBP
+            /^(?:\d+\s*)?(?:TDI|TFSI|TSI|FSI|CDI|CGI|AMG|d|i|e|h|hybrid|electric|e-tron|phev)/i.test(engineName)) { // Must contain engine type
             gradesMap.set(engineName, (gradesMap.get(engineName) || 0) + 1);
           }
         }
-        
+
         // Quaternary source: extract meaningful engine variants from title
         if (car.title && typeof car.title === 'string') {
           const title = car.title.toLowerCase();
-          
+
           // Extract meaningful engine variants (like 45 TDI, 35 TDI)
           const engineVariantPatterns = [
             /\b(\d+\s*(?:tdi|tfsi|tsi|fsi|cdi|cgi))\b/gi, // 45 TDI, 35 TFSI, etc.
@@ -1476,7 +1547,7 @@ export const useSecureAuctionAPI = () => {
             /\b(hybrid|electric|e-tron|phev|ev)\b/gi, // Electric/hybrid
             /\b(premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe)\b/gi // Trim levels
           ];
-          
+
           engineVariantPatterns.forEach(pattern => {
             const matches = title.match(pattern);
             if (matches) {
@@ -1498,23 +1569,23 @@ export const useSecureAuctionAPI = () => {
 
       // Filter out engine codes and non-meaningful variants
       const invalidGrades = new Set(['unknown', 'n/a', 'none', '', 'null', 'undefined', 'basic', 'standard']);
-      
+
       // Function to check if a variant is meaningful (not an engine code)
       const isMeaningfulVariant = (variant: string): boolean => {
         const lowerVariant = variant.toLowerCase();
-        
+
         // Exclude if it's in invalid list
         if (invalidGrades.has(lowerVariant)) return false;
-        
+
         // Exclude engine codes (2-4 letter codes like DLH, DPA, CSU, etc.)
         if (/^[A-Z]{2,4}$/i.test(variant)) return false;
-        
+
         // Exclude combinations of engine codes (like "DLH DPA")
         if (/^[A-Z]{2,4}\s+[A-Z]{2,4}$/i.test(variant)) return false;
-        
+
         // Exclude pure numbers
         if (/^\d+\.?\d*$/.test(variant)) return false;
-        
+
         // Must contain meaningful content (engine types, trim levels, etc.)
         const meaningfulPatterns = [
           /tdi|tfsi|tsi|fsi|cdi|cgi/i, // Engine types
@@ -1523,17 +1594,17 @@ export const useSecureAuctionAPI = () => {
           /premium|luxury|sport|exclusive|elite|prestige|comfort|deluxe/i, // Trim levels
           /\d+\s*(tdi|tfsi|tsi|fsi|cdi|cgi)/i // Number + engine type (like 45 TDI)
         ];
-        
+
         return meaningfulPatterns.some(pattern => pattern.test(variant));
       };
-      
+
       // Debug: Show what's being filtered out
       const allVariants = Array.from(gradesMap.keys());
       const filteredOut = allVariants.filter(variant => !isMeaningfulVariant(variant));
       if (filteredOut.length > 0) {
         console.log('🚫 Filtered out engine codes:', filteredOut);
       }
-      
+
       const rawGrades = Array.from(gradesMap.entries())
         .filter(([value]) => isMeaningfulVariant(value))
         .map(([value, count]) => ({
@@ -1543,13 +1614,13 @@ export const useSecureAuctionAPI = () => {
         }));
 
       console.log('📊 Raw extracted variants:', rawGrades.length, 'unique variants:', rawGrades.slice(0, 10).map(g => `${g.value}(${g.count})`));
-      
+
       // Apply categorization and organization
       const categorizedGrades = categorizeAndOrganizeGrades(rawGrades);
       const organizedGrades = flattenCategorizedGrades(categorizedGrades);
-      
+
       console.log('🗂️ Organized into', categorizedGrades.length, 'categories');
-      
+
       // If no variants found from API, try fallback
       if (organizedGrades.length === 0) {
         console.log('⚠️ No variants found from API, trying fallback...');
@@ -1560,7 +1631,7 @@ export const useSecureAuctionAPI = () => {
         console.log('🔄 Fallback variants:', organizedFallback);
         return organizedFallback;
       }
-      
+
       const result = organizedGrades;
       setGradesCache(prev => ({ ...prev, [key]: result }));
       return result;
@@ -1585,18 +1656,18 @@ export const useSecureAuctionAPI = () => {
     let carsWithGenerations = 0;
     let carsWithoutGenerations = 0;
     const currentYear = new Date().getFullYear();
-    
+
     cars.forEach(car => {
       // Only use generation if it exists in car data
       if (car.generation && car.generation.name && car.generation.id) {
         const generationName = car.generation.name.trim();
         const generationId = car.generation.id;
-        
+
         if (generationName) {
           carsWithGenerations++;
           const key = generationName.toLowerCase();
           const existing = generationsMap.get(key);
-          
+
           if (existing) {
             existing.car_count++;
             // Fixed: Validate that car year is reasonable before using it
@@ -1626,12 +1697,12 @@ export const useSecureAuctionAPI = () => {
         carsWithoutGenerations++;
       }
     });
-    
+
     const generations = Array.from(generationsMap.values())
       .sort((a, b) => a.name.localeCompare(b.name));
-    
+
     console.log(`📊 Cars with generations: ${carsWithGenerations}, Cars without generations: ${carsWithoutGenerations}`);
-    
+
     return generations.map(g => {
       // Try to enhance with real generation year data
       let realYearData: { from_year?: number; to_year?: number } | null = null;
@@ -1641,7 +1712,7 @@ export const useSecureAuctionAPI = () => {
           console.log(`🎯 Found real generation year data for ${g.manufacturer_name} ${g.model_name} ${g.name}: ${realYearData.from_year}-${realYearData.to_year}`);
         }
       }
-      
+
       return {
         ...g,
         // Priority: 1. Car-derived years, 2. Real generation data
@@ -1655,7 +1726,7 @@ export const useSecureAuctionAPI = () => {
   const getFallbackGrades = (manufacturerId?: string): { value: string; label: string; count?: number }[] => {
     // Extract variants from multiple sources (like encar.com approach)
     const currentGrades = new Set<string>();
-    
+
     cars.forEach(car => {
       // Primary source: lots array grade_iaai from API
       if (car.lots && Array.isArray(car.lots)) {
@@ -1665,7 +1736,7 @@ export const useSecureAuctionAPI = () => {
           }
         });
       }
-      
+
       // Secondary source: badge from lots details
       if (car.lots && Array.isArray(car.lots)) {
         car.lots.forEach((lot: any) => {
@@ -1674,30 +1745,30 @@ export const useSecureAuctionAPI = () => {
           }
         });
       }
-      
+
       // Tertiary source: engine name (only meaningful engine variants)
       if (car.engine && car.engine.name && typeof car.engine.name === 'string' && car.engine.name.trim()) {
         const engineName = car.engine.name.trim();
         // Only include meaningful engine variants (like 45 TDI, 35 TDI)
         // Exclude engine codes (like CSU, DBP) and pure numbers
-        if (engineName.length > 2 && 
-            !/^\d+\.?\d*$/.test(engineName) && // Not just numbers
-            !/^[A-Z]{2,4}$/.test(engineName) && // Not engine codes like CSU, DBP
-            /^(?:\d+\s*)?(?:TDI|TFSI|TSI|FSI|CDI|CGI|AMG|d|i|e|h|hybrid|electric|e-tron|phev)/i.test(engineName)) { // Must contain engine type
+        if (engineName.length > 2 &&
+          !/^\d+\.?\d*$/.test(engineName) && // Not just numbers
+          !/^[A-Z]{2,4}$/.test(engineName) && // Not engine codes like CSU, DBP
+          /^(?:\d+\s*)?(?:TDI|TFSI|TSI|FSI|CDI|CGI|AMG|d|i|e|h|hybrid|electric|e-tron|phev)/i.test(engineName)) { // Must contain engine type
           currentGrades.add(engineName);
         }
       }
     });
-    
+
     console.log('🔍 Actual variants found in current car data:', Array.from(currentGrades).sort());
-    
+
     if (currentGrades.size > 0) {
       // Use actual variants from API data
       return Array.from(currentGrades)
         .sort()
         .map(grade => ({ value: grade, label: grade }));
     }
-    
+
     // If no API data, provide comprehensive Korean-style fallback variants
     console.log('⚠️ No API variants found, providing Korean-style fallback variants');
     const koreanVariants = [
@@ -1712,7 +1783,7 @@ export const useSecureAuctionAPI = () => {
       { value: 'hybrid', label: 'Hybrid' },
       { value: 'electric', label: 'Electric' }
     ];
-    
+
     return koreanVariants;
   };
 
@@ -1730,7 +1801,7 @@ export const useSecureAuctionAPI = () => {
       return count;
     } catch (err) {
       console.error(`❌ Error getting count for generation ${generationId}:`, err);
-      
+
       // Fallback: try to get cars and count them manually
       try {
         console.log(`🔄 Trying fallback for generation ${generationId}...`);
@@ -1773,14 +1844,14 @@ export const useSecureAuctionAPI = () => {
   const fetchAllGenerationsForManufacturer = async (manufacturerId: string): Promise<Generation[]> => {
     try {
       console.log(`🔍 Fetching all generations for manufacturer ${manufacturerId}`);
-      
+
       // First get all models for the manufacturer
       const models = await fetchModels(manufacturerId);
       console.log(`📊 Found ${models.length} models, fetching generations for each...`);
-      
+
       const allGenerations: Generation[] = [];
       const generationMap = new Map<number, Generation>();
-      
+
       // Fetch generations for each model
       for (const model of models) {
         try {
@@ -1795,7 +1866,7 @@ export const useSecureAuctionAPI = () => {
           // Silent fallback
         }
       }
-      
+
       // Get real counts by fetching cars for each generation
       const generationsWithRealCounts = await Promise.all(
         allGenerations.map(async (g) => {
@@ -1807,9 +1878,9 @@ export const useSecureAuctionAPI = () => {
               per_page: "1",
               simple_paginate: "1"
             });
-            
+
             const realCount = carData.meta?.total || 0;
-            
+
             return {
               ...g,
               car_count: realCount,
@@ -1824,9 +1895,9 @@ export const useSecureAuctionAPI = () => {
           }
         })
       );
-      
+
       return generationsWithRealCounts.sort((a, b) => a.name.localeCompare(b.name));
-      
+
     } catch (err) {
       return [];
     }
@@ -1844,7 +1915,7 @@ export const useSecureAuctionAPI = () => {
         per_page: "1000", // Increase limit to ensure we get all cars
         simple_paginate: "0",
       };
-      
+
       // Remove grade_iaai and trim_level from server request for client-side filtering
       const selectedVariant = newFilters.grade_iaai;
       const selectedTrimLevel = newFilters.trim_level;
@@ -1858,7 +1929,7 @@ export const useSecureAuctionAPI = () => {
       let filteredCars = data.data || [];
       if (selectedVariant && selectedVariant !== 'all') {
         console.log(`🔍 Applying client-side variant filter: "${selectedVariant}"`);
-        
+
         filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
             return car.lots.some(lot => {
@@ -1884,16 +1955,16 @@ export const useSecureAuctionAPI = () => {
       // Apply client-side trim level filtering if a trim level is selected
       if (selectedTrimLevel && selectedTrimLevel !== 'all') {
         console.log(`🔍 Applying client-side trim level filter: "${selectedTrimLevel}"`);
-        
+
         filteredCars = filteredCars.filter(car => {
           if (car.lots && Array.isArray(car.lots)) {
             const hasMatchInLots = car.lots.some(lot => {
-              if (lot.details && lot.details.badge && 
-                  lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              if (lot.details && lot.details.badge &&
+                lot.details.badge.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
                 return true;
               }
-              if (lot.grade_iaai && 
-                  lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
+              if (lot.grade_iaai &&
+                lot.grade_iaai.toLowerCase().includes(selectedTrimLevel.toLowerCase())) {
                 return true;
               }
               return false;
@@ -1910,10 +1981,10 @@ export const useSecureAuctionAPI = () => {
       const activeCars = filteredCars.filter(car => !isCarSold(car));
       console.log(`✅ Fetched ${filteredCars.length} cars for global sorting (${activeCars.length} active)`);
       return activeCars;
-      
+
     } catch (err: any) {
       console.error("❌ API Error fetching all cars:", err);
-      
+
       if (err.message === "RATE_LIMITED") {
         // Retry once after rate limit
         try {
@@ -1923,17 +1994,17 @@ export const useSecureAuctionAPI = () => {
           console.error("❌ Retry failed:", retryErr);
         }
       }
-      
+
       // Use fallback car data when API fails - but only if no specific brand filter is applied
-      if (newFilters.manufacturer_id && 
-          newFilters.manufacturer_id !== 'all' && 
-          newFilters.manufacturer_id !== '' &&
-          newFilters.manufacturer_id !== undefined &&
-          newFilters.manufacturer_id !== null) {
+      if (newFilters.manufacturer_id &&
+        newFilters.manufacturer_id !== 'all' &&
+        newFilters.manufacturer_id !== '' &&
+        newFilters.manufacturer_id !== undefined &&
+        newFilters.manufacturer_id !== null) {
         console.log("❌ API failed for brand-specific global sorting, not using fallback cars");
         return [];
       }
-      
+
       // Use fallback cars for global sorting when API fails
       console.log("❌ API failed for global sorting, using fallback cars");
       const fallbackCars = createFallbackCars(newFilters);
@@ -1992,6 +2063,7 @@ export const useSecureAuctionAPI = () => {
     fetchKoreaDuplicates,
     fetchGrades,
     fetchTrimLevels,
+    fetchEngines,
     loadMore,
     refreshInventory,
     clearCarsCache,

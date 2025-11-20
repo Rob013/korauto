@@ -79,8 +79,8 @@ const CarCard = memo(({ car }: CarCardProps) => {
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-xs">
                 {car.source_api === 'auctions_api' ? 'Auctions API' :
-                 car.source_api === 'auctionapis' ? 'Auction APIs' :
-                 car.source_api === 'encar' ? 'Encar' : car.source_api}
+                  car.source_api === 'auctionapis' ? 'Auction APIs' :
+                    car.source_api === 'encar' ? 'Encar' : car.source_api}
               </Badge>
               {car.lot_number && (
                 <span className="text-xs text-gray-500">#{car.lot_number}</span>
@@ -121,10 +121,10 @@ const UnifiedCatalog = () => {
   useEffect(() => {
     // Fetch first page from secure API
     fetchSecureCars(1, { per_page: String(Math.max(50, pageSize)) }, true)
-      .catch(() => {});
+      .catch(() => { });
     // Fetch an initial batch from new Auctions API (no full scroll for responsiveness)
     startScroll(5, Math.max(200, pageSize))
-      .catch(() => {});
+      .catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -209,7 +209,14 @@ const UnifiedCatalog = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Katalogu i makinave</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {loading ? 'Duke ngarkuar...' : `${total.toLocaleString()} makina nga të dy API-të`}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Duke ngarkuar...
+              </span>
+            ) : (
+              `${total.toLocaleString()} makina nga të dy API-të`
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">

@@ -4,17 +4,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdaptiveSelect } from '@/components/ui/adaptive-select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  X, 
-  Search, 
-  ChevronDown, 
-  ChevronUp, 
-  Car, 
-  Calendar, 
-  DollarSign, 
-  Settings, 
-  Fuel, 
-  Palette, 
+import {
+  X,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Car,
+  Calendar,
+  DollarSign,
+  Settings,
+  Fuel,
+  Palette,
   MapPin,
   Filter
 } from 'lucide-react';
@@ -132,7 +132,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       const options: Array<{ value: string; label: string }> = [];
       const minYear = data?.yearRange?.min ?? 2000;
       const maxYear = data?.yearRange?.max ?? new Date().getFullYear();
-      
+
       for (let year = minYear; year <= maxYear; year++) {
         options.push({ value: year.toString(), label: year.toString() });
       }
@@ -301,12 +301,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
   // Count active filters for badge
   const activeFiltersCount = useMemo(() => {
-    return Object.entries(filters).filter(([key, value]) => 
-      value !== undefined && 
-      value !== null && 
-      value !== '' && 
-      key !== 'page' && 
-      key !== 'pageSize' && 
+    return Object.entries(filters).filter(([key, value]) =>
+      value !== undefined &&
+      value !== null &&
+      value !== '' &&
+      key !== 'page' &&
+      key !== 'pageSize' &&
       key !== 'sort'
     ).length;
   }, [filters]);
@@ -314,39 +314,39 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   // Get selected filters as chips
   const selectedFilters = useMemo(() => {
     const chips: Array<{ key: string; label: string; value: any }> = [];
-    
+
     if (filters.brand) {
       const brand = data.brands.find(b => b.id === filters.brand);
       chips.push({ key: 'brand', label: 'Marka', value: brand?.name || filters.brand });
     }
-    
+
     if (filters.model) {
       const model = availableModels.find(m => m.id === filters.model);
       chips.push({ key: 'model', label: 'Modeli', value: model?.name || filters.model });
     }
-    
+
     if (filters.fuel) {
       const fuel = data.fuelTypes.find(f => f.id === filters.fuel);
       chips.push({ key: 'fuel', label: 'Karburanti', value: fuel?.name || filters.fuel });
     }
-    
+
     if (filters.transmission) {
       const transmission = data.transmissions.find(t => t.id === filters.transmission);
       chips.push({ key: 'transmission', label: 'Transmisioni', value: transmission?.name || filters.transmission });
     }
-    
+
     if (filters.yearMin || filters.yearMax) {
       const min = filters.yearMin || data.yearRange.min;
       const max = filters.yearMax || data.yearRange.max;
       chips.push({ key: 'year', label: 'Viti', value: min === max ? min.toString() : `${min}-${max}` });
     }
-    
+
     if (filters.priceMin || filters.priceMax) {
       const min = filters.priceMin || data.priceRange.min;
       const max = filters.priceMax || data.priceRange.max;
       chips.push({ key: 'price', label: 'Çmimi', value: `€${min.toLocaleString()}-€${max.toLocaleString()}` });
     }
-    
+
     return chips;
   }, [filters, data, availableModels]);
 
@@ -387,7 +387,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={cn(
         'space-y-4 rounded-xl p-4 backdrop-blur-sm border border-border/50 shadow-lg',
         className
@@ -407,9 +407,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           {activeFiltersCount > 0 && (
             <Badge variant="secondary" className="animate-scale-in">{activeFiltersCount}</Badge>
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onClearFilters}
             className="transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
           >
@@ -423,9 +423,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       {selectedFilters.length > 0 && (
         <div className="flex flex-wrap gap-2 animate-fade-in">
           {selectedFilters.map((chip) => (
-            <Badge 
-              key={chip.key} 
-              variant="default" 
+            <Badge
+              key={chip.key}
+              variant="default"
               className="flex items-center gap-1 animate-scale-in bg-primary/10 hover:bg-primary/20 border border-primary/20 backdrop-blur-sm transition-all duration-200 hover:scale-105"
             >
               <span className="text-xs font-medium">{chip.label}: {chip.value}</span>
@@ -476,7 +476,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div 
+          <div
             className="space-y-4 p-3 bg-muted/30 rounded-lg"
             style={{
               animation: 'fadeIn 0.2s ease-out',
@@ -485,23 +485,23 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
           >
             {/* Brand */}
             <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Car className="h-4 w-4" />
-            Marka
-          </Label>
-          <AdaptiveSelect
-            key={`brand-${filters.brand || 'empty'}`}
-            value={filters.brand || ''}
-            onValueChange={handleBrandChange}
-            placeholder="Zgjidhni markën"
-            className="filter-select bg-background"
-            options={brandOptions}
-            forceNative
-          />
-        </div>
+              <Label className="flex items-center gap-2">
+                <Car className="h-4 w-4" />
+                Marka
+              </Label>
+              <AdaptiveSelect
+                key={`brand-${filters.brand || 'empty'}`}
+                value={filters.brand || ''}
+                onValueChange={handleBrandChange}
+                placeholder="Zgjidhni markën"
+                className="filter-select bg-background"
+                options={brandOptions}
+                forceNative
+              />
+            </div>
 
-        {/* Model (dependent on brand) */}
-        <div className="space-y-2">
+            {/* Model (dependent on brand) */}
+            <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Modeli
@@ -513,16 +513,16 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 disabled={!filters.brand || availableModels.length === 0}
                 placeholder={!filters.brand ? "Zgjidhni markën së pari" : "Zgjidhni modelin"}
                 className="filter-select bg-background"
-            options={(availableModels.length === 0
-              ? [{ value: '', label: 'Nuk ka modele të disponueshme', disabled: true }]
-              : availableModels.map((model) => ({
-                value: model.id,
-                label: `${model.name}${model.count ? ` (${model.count})` : ''}`
-              }))
-            )}
-            forceNative
-          />
-        </div>
+                options={(availableModels.length === 0
+                  ? [{ value: '', label: 'Nuk ka modele të disponueshme', disabled: true }]
+                  : availableModels.map((model) => ({
+                    value: model.id,
+                    label: `${model.name}${model.count ? ` (${model.count})` : ''}`
+                  }))
+                )}
+                forceNative
+              />
+            </div>
 
             {/* Year Range */}
             <div className="space-y-3">
@@ -596,14 +596,14 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
             <Settings className="h-4 w-4 text-primary transition-transform hover:scale-110" />
             <span className="font-medium">Filtrat e Avancuar</span>
           </div>
-          {expandedSections.includes('advanced') ? 
-            <ChevronUp className="h-4 w-4 transition-transform duration-200" /> : 
+          {expandedSections.includes('advanced') ?
+            <ChevronUp className="h-4 w-4 transition-transform duration-200" /> :
             <ChevronDown className="h-4 w-4 transition-transform duration-200" />
           }
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div 
+          <div
             className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30 max-h-[60vh] overflow-y-auto"
             style={{
               animation: 'fadeIn 0.2s ease-out',
@@ -757,7 +757,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
       {/* Loading State */}
       {isLoading && (
-        <div className="text-center text-sm text-muted-foreground transition-opacity animate-pulse">
+        <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground animate-pulse">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           Duke përditësuar filtrat...
         </div>
       )}

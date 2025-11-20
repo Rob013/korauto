@@ -5,12 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdaptiveSelect } from "@/components/ui/adaptive-select";
-import { 
-  Filter, 
-  X, 
-  Loader2, 
-  Search, 
-  ChevronDown, 
+import {
+  Filter,
+  X,
+  Loader2,
+  Search,
+  ChevronDown,
   ChevronUp,
   Car,
   Calendar,
@@ -24,7 +24,7 @@ import {
   Users
 } from "lucide-react";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from '@/constants/carOptions';
-import { useGrades } from "@/hooks/useFiltersData";
+// import { useGrades } from "@/hooks/useFiltersData"; // Removed usage
 import {
   APIFilters,
   sortManufacturers,
@@ -74,6 +74,7 @@ interface EncarStyleFilterProps {
   loadingCounts?: boolean;
   onFetchGrades?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   onFetchTrimLevels?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchEngines?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   isHomepage?: boolean;
   compact?: boolean;
   onSearchCars?: () => void;
@@ -95,27 +96,39 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onToggleAdvanced,
   onFetchGrades,
   onFetchTrimLevels,
+  onFetchEngines,
   isHomepage = false,
   compact = false,
   onSearchCars,
   onCloseFilter
 }) => {
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
+  const [engineOptions, setEngineOptions] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadingTimerRef = useRef<number | null>(null);
-  
-  // Use the grades hook for fetching grades
-  const { data: gradesData, isLoading: isLoadingGrades } = useGrades(filters.model_id);
-  
-  // Map grades data to the format expected by the select
-  const grades = useMemo(() => {
-    if (!gradesData || !Array.isArray(gradesData)) return [];
-    return gradesData.map((grade: any) => ({
-      value: grade.id,
-      label: grade.name,
-      count: grade.car_count
-    }));
-  }, [gradesData]);
+
+  const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
+  const [isLoadingGrades, setIsLoadingGrades] = useState(false);
+
+  // Fetch grades when model changes
+  useEffect(() => {
+    if (filters.manufacturer_id && filters.model_id && onFetchGrades) {
+      setIsLoadingGrades(true);
+      const timeoutId = setTimeout(() => {
+        onFetchGrades(filters.manufacturer_id, filters.model_id)
+          .then(gradeData => {
+            if (Array.isArray(gradeData)) {
+              setGrades(gradeData);
+            }
+          })
+          .finally(() => setIsLoadingGrades(false));
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setGrades([]);
+      setIsLoadingGrades(false);
+    }
+  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
 
   // Show loading only if the update actually takes longer than a threshold to avoid flicker.
   const startLoadingWithDelay = useCallback((delayMs: number = 180) => {
@@ -135,7 +148,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }
     setIsLoading(false);
   }, []);
-  
+
   const [expandedSections, setExpandedSections] = useState<string[]>(compact ? ['basic'] : ['basic', 'advanced']);
 
   // Track if strict filtering mode is enabled - using utility
@@ -262,9 +275,27 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }
   }, [filters.manufacturer_id, filters.model_id, onFetchTrimLevels]);
 
+  // Fetch engines when model changes
+  useEffect(() => {
+    if (filters.manufacturer_id && filters.model_id && onFetchEngines) {
+      const timeoutId = setTimeout(() => {
+        onFetchEngines(filters.manufacturer_id, filters.model_id)
+          .then(engineData => {
+            if (Array.isArray(engineData)) {
+              setEngineOptions(engineData);
+            }
+          });
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setEngineOptions([]);
+    }
+  }, [filters.manufacturer_id, filters.model_id, onFetchEngines]);
+
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => 
-      prev.includes(section) 
+    setExpandedSections(prev =>
+      prev.includes(section)
         ? prev.filter(s => s !== section)
         : [...prev, section]
     );
@@ -276,61 +307,61 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       <Card className="glass-panel border-0 rounded-xl p-6 sm:p-8 space-y-4 w-full max-w-md mx-auto shadow-lg">
         <div className="space-y-2">
           <div className="space-y-1 filter-section">
-          <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-            <Car className="h-2.5 w-2.5" />
-            Marka
-          </Label>
-          <div className="h-4">
-            <span
-              className={`inline-flex items-center gap-1 text-[10px] text-muted-foreground transition-opacity duration-200 ${loadingCounts ? 'opacity-100' : 'opacity-0 invisible'}`}
-            >
-              <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Po përditësohen numrat
-            </span>
+            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+              <Car className="h-2.5 w-2.5" />
+              Marka
+            </Label>
+            <div className="h-4">
+              {loadingCounts && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground animate-pulse">
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                </span>
+              )}
+            </div>
+            <AdaptiveSelect
+              value={filters.manufacturer_id || 'all'}
+              onValueChange={(value) => updateFilter('manufacturer_id', value)}
+              placeholder="Zgjidhni markën"
+              className="filter-control h-8 text-xs"
+              options={manufacturerSelectOptions}
+              forceNative
+            />
           </div>
-          <AdaptiveSelect
-            value={filters.manufacturer_id || 'all'}
-            onValueChange={(value) => updateFilter('manufacturer_id', value)}
-            placeholder="Zgjidhni markën"
-            className="filter-control h-8 text-xs"
-            options={manufacturerSelectOptions}
-            forceNative
-          />
-        </div>
 
-        <div className="space-y-1 filter-section">
-          <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-            <Settings className="h-2.5 w-2.5" />
-            Modeli
-          </Label>
-          <AdaptiveSelect
-            value={filters.model_id || 'all'}
-            onValueChange={(value) => updateFilter('model_id', value)}
-            disabled={!filters.manufacturer_id}
-            placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
-            className="filter-control h-8 text-xs"
-            options={[
-              ...(!(isStrictMode && filters.model_id)
-                ? [{ value: 'all', label: 'Të gjithë modelet' }]
-                : []),
-              ...models
-                .filter(model => model.cars_qty && model.cars_qty > 0)
-                .map(model => {
-                  const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
-                  const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
-                  return {
-                    value: model.id.toString(),
-                    label: `${formattedModelName} (${model.cars_qty})`
-                  };
-                })
-            ]}
-            forceNative
-          />
-        </div>
+          <div className="space-y-1 filter-section">
+            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+              <Settings className="h-2.5 w-2.5" />
+              Modeli
+            </Label>
+            <AdaptiveSelect
+              value={filters.model_id || 'all'}
+              onValueChange={(value) => updateFilter('model_id', value)}
+              disabled={!filters.manufacturer_id}
+              placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+              className="filter-control h-8 text-xs"
+              options={[
+                ...(!(isStrictMode && filters.model_id)
+                  ? [{ value: 'all', label: 'Të gjithë modelet' }]
+                  : []),
+                ...models
+                  .filter(model => model.cars_qty && model.cars_qty > 0)
+                  .map(model => {
+                    const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+                    const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
+                    return {
+                      value: model.id.toString(),
+                      label: `${formattedModelName} (${model.cars_qty})`
+                    };
+                  })
+              ]}
+              forceNative
+            />
+          </div>
 
           {/* Year presets */}
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs text-muted-foreground flex items-center gap-1">
-              Gamë vjetëshe: 
+              Gamë vjetëshe:
               <span className="text-xs text-primary bg-primary/10 px-1 rounded">⚡</span>
             </Label>
             <div className="year-buttons flex flex-wrap gap-1">
@@ -339,9 +370,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   key={preset.label}
                   type="button"
                   variant={
-                    filters.from_year === preset.from.toString() && 
-                    filters.to_year === preset.to.toString() 
-                      ? "default" 
+                    filters.from_year === preset.from.toString() &&
+                      filters.to_year === preset.to.toString()
+                      ? "default"
                       : "outline"
                   }
                   size="sm"
@@ -482,11 +513,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     className="filter-control h-8 text-xs"
                     options={[
                       ...(!(isStrictMode && (filters as any).engine_spec) ? [{ value: 'all', label: 'Të gjithë motorët' }] : []),
-                      ...(engineVariants && engineVariants.length > 0
-                        ? engineVariants.map((engine) => ({ value: engine.value, label: engine.label }))
+                      ...(engineOptions && engineOptions.length > 0
+                        ? engineOptions.map((engine) => ({ value: engine.value, label: engine.label }))
                         : filters.model_id
-                        ? [{ value: 'no-engines', label: 'Nuk u gjetën motorë', disabled: true }]
-                        : [{ value: 'loading', label: 'Zgjidhni modelin së pari', disabled: true }])
+                          ? [{ value: 'no-engines', label: 'Nuk u gjetën motorë', disabled: true }]
+                          : [{ value: 'loading', label: 'Zgjidhni modelin së pari', disabled: true }])
                     ]}
                     forceNative
                   />
@@ -512,109 +543,109 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </div>
 
                 <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Palette className="h-2.5 w-2.5" />
-                     Ngjyra
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.color || 'all'}
-                     onValueChange={(value) => updateFilter('color', value)}
-                     placeholder="Çdo ngjyrë"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       ...(!(isStrictMode && filters.color) ? [{ value: 'all', label: 'Çdo ngjyrë' }] : []),
-                       ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                       }))
-                     ]}
-                     forceNative
-                   />
-                 </div>
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Palette className="h-2.5 w-2.5" />
+                    Ngjyra
+                  </Label>
+                  <AdaptiveSelect
+                    value={filters.color || 'all'}
+                    onValueChange={(value) => updateFilter('color', value)}
+                    placeholder="Çdo ngjyrë"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(!(isStrictMode && filters.color) ? [{ value: 'all', label: 'Çdo ngjyrë' }] : []),
+                      ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                      }))
+                    ]}
+                    forceNative
+                  />
+                </div>
 
-                 <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Fuel className="h-2.5 w-2.5" />
-                     Lloji i karburantit
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.fuel_type || 'all'}
-                     onValueChange={(value) => updateFilter('fuel_type', value)}
-                     placeholder="Çdo lloj"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       ...(!(isStrictMode && filters.fuel_type) ? [{ value: 'all', label: 'Çdo lloj' }] : []),
-                       ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                       }))
-                     ]}
-                     forceNative
-                   />
-                 </div>
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Fuel className="h-2.5 w-2.5" />
+                    Lloji i karburantit
+                  </Label>
+                  <AdaptiveSelect
+                    value={filters.fuel_type || 'all'}
+                    onValueChange={(value) => updateFilter('fuel_type', value)}
+                    placeholder="Çdo lloj"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(!(isStrictMode && filters.fuel_type) ? [{ value: 'all', label: 'Çdo lloj' }] : []),
+                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                      }))
+                    ]}
+                    forceNative
+                  />
+                </div>
 
-                 <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                   <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                     <Settings className="h-2.5 w-2.5" />
-                     Transmisioni
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.transmission || 'all'}
-                     onValueChange={(value) => updateFilter('transmission', value)}
-                     placeholder="Çdo transmision"
-                     className="filter-control h-8 text-xs"
-                     options={[
-                       ...(!(isStrictMode && filters.transmission) ? [{ value: 'all', label: 'Çdo transmision' }] : []),
-                       ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
-                         value: id.toString(),
-                         label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                       }))
-                     ]}
-                     forceNative
-                   />
-                 </div>
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Settings className="h-2.5 w-2.5" />
+                    Transmisioni
+                  </Label>
+                  <AdaptiveSelect
+                    value={filters.transmission || 'all'}
+                    onValueChange={(value) => updateFilter('transmission', value)}
+                    placeholder="Çdo transmision"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(!(isStrictMode && filters.transmission) ? [{ value: 'all', label: 'Çdo transmision' }] : []),
+                      ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                      }))
+                    ]}
+                    forceNative
+                  />
+                </div>
 
-                  <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                      <Car className="h-2.5 w-2.5" />
-                      Lloji i trupit
-                    </Label>
-                    <AdaptiveSelect
-                      value={filters.body_type || 'all'}
-                      onValueChange={(value) => updateFilter('body_type', value)}
-                      placeholder="Çdo lloj"
-                      className="filter-control h-8 text-xs"
-                      options={[
-                        ...(!(isStrictMode && filters.body_type) ? [{ value: 'all', label: 'Çdo lloj' }] : []),
-                        ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
-                          value: id.toString(),
-                          label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                        }))
-                      ]}
-                      forceNative
-                    />
-                  </div>
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Car className="h-2.5 w-2.5" />
+                    Lloji i trupit
+                  </Label>
+                  <AdaptiveSelect
+                    value={filters.body_type || 'all'}
+                    onValueChange={(value) => updateFilter('body_type', value)}
+                    placeholder="Çdo lloj"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(!(isStrictMode && filters.body_type) ? [{ value: 'all', label: 'Çdo lloj' }] : []),
+                      ...Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+                        value: id.toString(),
+                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
+                      }))
+                    ]}
+                    forceNative
+                  />
+                </div>
 
-                  <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                    <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-                      <Users className="h-2.5 w-2.5" />
-                      Numri i ulëseve
-                    </Label>
-                    <AdaptiveSelect
-                      value={filters.seats_count || 'all'}
-                      onValueChange={(value) => updateFilter('seats_count', value)}
-                      placeholder="Çdo numër"
-                      className="filter-control h-8 text-xs"
-                      options={[
-                        ...(!(isStrictMode && filters.seats_count) ? [{ value: 'all', label: 'Çdo numër' }] : []),
-                        ...[2, 4, 5, 6, 7, 8].map((seats) => ({
-                          value: seats.toString(),
-                          label: `${seats} ulëse`
-                        }))
-                      ]}
-                      forceNative
-                    />
-                  </div>
+                <div className="space-y-1 filter-section" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                  <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
+                    <Users className="h-2.5 w-2.5" />
+                    Numri i ulëseve
+                  </Label>
+                  <AdaptiveSelect
+                    value={filters.seats_count || 'all'}
+                    onValueChange={(value) => updateFilter('seats_count', value)}
+                    placeholder="Çdo numër"
+                    className="filter-control h-8 text-xs"
+                    options={[
+                      ...(!(isStrictMode && filters.seats_count) ? [{ value: 'all', label: 'Çdo numër' }] : []),
+                      ...[2, 4, 5, 6, 7, 8].map((seats) => ({
+                        value: seats.toString(),
+                        label: `${seats} ulëse`
+                      }))
+                    ]}
+                    forceNative
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -650,11 +681,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           <Filter className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
-        <Button 
+        <Button
           type="button"
-          variant="outline" 
-          size="sm" 
-          onClick={onClearFilters} 
+          variant="outline"
+          size="sm"
+          onClick={onClearFilters}
           disabled={isLoading}
           className="text-xs"
         >
@@ -686,7 +717,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 <span
                   className={`inline-flex h-4 items-center gap-1 text-[10px] text-muted-foreground transition-opacity duration-200 ${loadingCounts ? 'opacity-100' : 'opacity-0 invisible'}`}
                 >
-                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Po përditësohen numrat
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
                 </span>
               </div>
               <AdaptiveSelect
@@ -781,7 +812,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     </Badge>
                   )}
                 </Label>
-                
+
                 <div className="mt-2">
                   <Label className="text-xs text-muted-foreground mb-2 block">Vitet:</Label>
                   <div className="flex flex-wrap gap-1">
@@ -790,9 +821,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         key={preset.label}
                         type="button"
                         variant={
-                          filters.from_year === preset.from.toString() && 
-                          filters.to_year === preset.to.toString() 
-                            ? "default" 
+                          filters.from_year === preset.from.toString() &&
+                            filters.to_year === preset.to.toString()
+                            ? "default"
                             : "outline"
                         }
                         size="sm"
@@ -849,23 +880,45 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 </div>
               </div>
 
-                 <div className="space-y-2">
-                   <Label className="text-sm font-medium flex items-center gap-2">
-                     <Cog className="h-3 w-3" />
-                     Grada/Motori
-                   </Label>
-                   <AdaptiveSelect
-                     value={filters.grade_iaai || 'all'}
-                     onValueChange={(value) => updateFilter('grade_iaai', value)}
-                     disabled={!filters.model_id || isLoadingGrades}
-                     placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"}
-                     options={[
-                       ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha gradat' }] : []),
-                       ...grades.map((grade) => ({ value: grade.value, label: grade.label }))
-                     ]}
-                     forceNative
-                   />
-               </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Cog className="h-3 w-3" />
+                  Grada/Motori
+                </Label>
+                <AdaptiveSelect
+                  value={filters.grade_iaai || 'all'}
+                  onValueChange={(value) => updateFilter('grade_iaai', value)}
+                  disabled={!filters.model_id || isLoadingGrades}
+                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"}
+                  options={[
+                    ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha gradat' }] : []),
+                    ...grades.map((grade) => ({ value: grade.value, label: grade.label }))
+                  ]}
+                  forceNative
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Settings className="h-3 w-3" />
+                  Motori
+                </Label>
+                <AdaptiveSelect
+                  value={(filters as any).engine_spec || 'all'}
+                  onValueChange={(value) => updateFilter('engine_spec', value)}
+                  disabled={!filters.model_id}
+                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : "Zgjidhni motorin"}
+                  options={[
+                    ...(!(isStrictMode && (filters as any).engine_spec) ? [{ value: 'all', label: 'Të gjithë motorët' }] : []),
+                    ...(engineOptions && engineOptions.length > 0
+                      ? engineOptions.map((engine) => ({ value: engine.value, label: engine.label }))
+                      : filters.model_id
+                        ? [{ value: 'no-engines', label: 'Nuk u gjetën motorë', disabled: true }]
+                        : [{ value: 'loading', label: 'Zgjidhni modelin së pari', disabled: true }])
+                  ]}
+                  forceNative
+                />
+              </div>
             </div>
 
             {/* Color, Fuel, Transmission, Body Type */}
