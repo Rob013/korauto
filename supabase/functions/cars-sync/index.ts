@@ -837,7 +837,7 @@ Deno.serve(async (req) => {
     page++;
     
     // Rate limiting between pages
-    if (hasMorePages && page <= maxPagesForIncremental) {
+    if (hasMorePages && page <= maxPages) {
       await sleep(syncType === 'full' ? 300 : 100);
     }
   }
