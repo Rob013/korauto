@@ -84,6 +84,15 @@
   transform: scale(1.02);
 }
 
+/* Prevent auto-zoom on touch/click */
+* {
+  touch-action: manipulation;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
 /* Smooth scroll behavior */
 html {
   scroll-behavior: smooth;
