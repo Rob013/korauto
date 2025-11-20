@@ -485,7 +485,7 @@ const buildCarCacheRecord = ({ listCar, detailedCar, detailPayload, syncBatchId,
     original_api_data: detailPayload || detailedCar || listCar || {},
     last_api_response: detailPayload || detailedCar || listCar || {},
     last_api_sync: nowIso,
-    last_updated_source: lot?.domain?.name ?? fallbackLot?.domain?.name ?? 'external',
+    last_updated_source: nowIso, // Fixed: This should be a timestamp, not a string
     sync_batch_id: syncBatchId,
     sync_metadata: {
       sync_type: syncType,
@@ -723,16 +723,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch ALL active cars from API - NO LIMIT for full sync
-    const perPage = 100; // Increased batch size for faster sync
+    // Fetch ALL active cars from API and update database
+    const perPage = 100; // Process 100 cars per page
     
     let page = 1;
-    let totalSynced = 0;
+    let totalUpdated = 0;
+    let totalUpdated = 0;
     let encarCount = 0;
     let kbchachaCount = 0;
     let hasMorePages = true;
     const syncBatchId = `${syncType}-${Date.now()}`;
-    const maxPages = syncType === 'full' ? 100000 : 10; // Full: fetch all pages, Incremental: 10 pages
+    const maxPages = syncType === 'full' ? 100000 : 10; // Full: ALL pages, Incremental: 10 pages
+    
+    console.log(`🚀 Starting ${syncType} sync - Will fetch up to ${maxPages === 100000 ? 'ALL' : maxPages} pages from API`);
   
   while (hasMorePages && page <= maxPages) {
     console.log(`📄 Fetching page ${page} (${syncType === 'full' ? 'Full sync - fetching ALL pages' : `Incremental - max ${maxPages} pages`})...`);
@@ -791,6 +794,13 @@ Deno.serve(async (req) => {
                 encarCount++;
               }
 
+              // Check if car exists to track new vs updated
+              const { data: existingCar } = await supabaseClient
+                .from('cars_cache')
+                .select('id')
+                .eq('id', cacheRecord.id)
+                .single();
+
               const { error } = await supabaseClient
                 .from('cars_cache')
                 .upsert(cacheRecord, { 
@@ -802,6 +812,9 @@ Deno.serve(async (req) => {
                 console.error(`❌ Error upserting car ${car.id}:`, error);
               } else {
                 totalSynced++;
+                if (existingCar) {
+                  totalUpdated++;
+                }
               }
             } catch (err) {
               console.error(`❌ Error processing car ${car.id}:`, err);
@@ -829,19 +842,25 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Get total counts from database
+  // Get total active cars count from database
   const { count: totalCarsInDb } = await supabaseClient
     .from('cars_cache')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .not('sale_status', 'in', '(sold,archived)')
+    .gt('price_cents', 0);
 
-  console.log(`✅ Sync complete! Synced: ${totalSynced} (Encar: ${encarCount}, KB Chachacha: ${kbchachaCount})`);
-  console.log(`📊 Total cars in database: ${totalCarsInDb}`);
+  console.log(`✅ Sync complete!`);
+  console.log(`   - Total synced/updated: ${totalSynced} cars (${totalUpdated} updated, ${totalSynced - totalUpdated} new)`);
+  console.log(`   - Encar: ${encarCount}, KB Chachacha: ${kbchachaCount}`);
+  console.log(`   - Total active cars in database: ${totalCarsInDb}`);
 
   return new Response(
     JSON.stringify({
       success: true,
-      message: `Successfully synced ${totalSynced} cars`,
+      message: `Successfully synced ${totalSynced} cars (${totalUpdated} updated, ${totalSynced - totalUpdated} new)`,
       totalSynced,
+      totalUpdated,
+      totalNew: totalSynced - totalUpdated,
       encarCount,
       kbchachaCount,
       totalInDatabase: totalCarsInDb,
