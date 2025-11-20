@@ -1118,3 +1118,208 @@ img[height] {
     will-change: auto;
   }
 }
+/* ============================================================================
+   FILTER PANEL PERFORMANCE OPTIMIZATIONS
+   ============================================================================ */
+
+/* Filter panel container optimizations */
+.filter-section {
+  /* Prevent unnecessary repaints */
+  contain: layout style;
+  /* Optimize rendering */
+  isolation: isolate;
+  /* Smooth transitions */
+  transition: opacity var(--motion-duration-fast) var(--motion-easing-smooth);
+}
+
+/* Filter controls - optimized for 120fps */
+.filter-control {
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  /* Only transition what's needed */
+  transition: border-color var(--motion-duration-fast) var(--motion-easing-smooth),
+              background-color var(--motion-duration-fast) var(--motion-easing-smooth),
+              box-shadow var(--motion-duration-fast) var(--motion-easing-smooth);
+  /* Remove will-change by default */
+  will-change: unset;
+}
+
+.filter-control:focus,
+.filter-control:hover {
+  /* Add will-change only when needed */
+  will-change: border-color, box-shadow;
+}
+
+.filter-control:not(:focus):not(:hover) {
+  /* Clean up after interaction */
+  will-change: auto;
+}
+
+/* Filter label - consistent styling */
+.filter-label {
+  /* Prevent text selection flicker */
+  user-select: none;
+  -webkit-user-select: none;
+  /* Smooth font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glass panel effect for filters */
+.glass-panel {
+  /* Enhanced glass morphism */
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8),
+    hsl(var(--card) / 0.6)
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  /* Smooth borders */
+  border: 1px solid hsl(var(--border) / 0.3);
+  /* Optimized shadow */
+  box-shadow: 0 4px 12px -2px hsl(var(--foreground) / 0.08),
+              0 2px 4px -1px hsl(var(--foreground) / 0.04);
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+/* Expandable filter sections */
+@keyframes filterExpand {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translate3d(0, -10px, 0);
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes filterCollapse {
+  from {
+    opacity: 1;
+    max-height: 2000px;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+/* Filter select dropdown optimizations */
+select.filter-control,
+.filter-select select {
+  /* Optimize rendering */
+  appearance: none;
+  -webkit-appearance: none;
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  /* Prevent font size zoom on iOS */
+  font-size: max(16px, 1rem);
+}
+
+/* Loading state for filters - no layout shift */
+.filter-section .loading-indicator {
+  /* Fixed height to prevent layout shift */
+  min-height: 1rem;
+  /* Smooth fade */
+  transition: opacity var(--motion-duration-fast) var(--motion-easing-smooth);
+}
+
+/* Mobile filter panel optimizations */
+@media (max-width: 768px) {
+  .filter-section {
+    /* Tighter containment on mobile */
+    contain: strict;
+  }
+  
+  .filter-control {
+    /* Instant response on mobile */
+    transition-duration: var(--motion-duration-instant);
+  }
+  
+  /* Prevent zoom on input focus */
+  .filter-control,
+  .filter-control input,
+  .filter-control select {
+    font-size: 16px !important;
+  }
+}
+
+/* Performance: Reduce paints during filter updates */
+.filter-panel-updating .filter-section:not(.active-filter) {
+  /* Reduce paint during updates */
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Year preset buttons */
+.year-buttons button {
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  /* Quick transitions */
+  transition: all var(--motion-duration-fast) var(--motion-easing-smooth);
+}
+
+.year-buttons button:active {
+  /* Instant feedback */
+  transform: scale3d(0.95, 0.95, 1);
+  transition-duration: var(--motion-duration-instant);
+}
+
+/* Advanced filters collapsible section */
+.filter-section-collapsible {
+  /* Smooth collapse/expand */
+  overflow: hidden;
+  transition: max-height var(--motion-duration-medium) var(--motion-easing-smooth),
+              opacity var(--motion-duration-medium) var(--motion-easing-smooth);
+}
+
+/* Filter badge animations */
+.filter-badge {
+  /* Hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  /* Smooth scale */
+  transition: transform var(--motion-duration-fast) var(--motion-easing-smooth);
+}
+
+.filter-badge:hover {
+  transform: scale3d(1.05, 1.05, 1);
+}
+
+/* Prevent filter panel layout shift */
+.filter-panel-container {
+  /* CSS containment */
+  contain: layout;
+  /* Fixed min-height prevents layout shift during loading */
+  min-height: 400px;
+}
+
+/* Desktop hover effects for filter controls */
+@media (hover: hover) and (pointer: fine) {
+  .filter-control:hover {
+    /* Subtle lift effect */
+    transform: translate3d(0, -1px, 0);
+    /* Enhanced shadow */
+    box-shadow: 0 2px 4px -1px hsl(var(--foreground) / 0.1);
+  }
+}
+
+/* Optimize filter animations for high refresh rate */
+@media (min-resolution: 2dppx) and (prefers-reduced-motion: no-preference) {
+  .filter-control,
+  .filter-section,
+  .year-buttons button {
+    /* Smoother on high-DPI screens */
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
