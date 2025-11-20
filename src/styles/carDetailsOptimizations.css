@@ -49,7 +49,6 @@
 /* Hardware acceleration for smoother animations */
 .gpu-accelerate {
   transform: translateZ(0);
-  will-change: transform, opacity;
 }
 
 /* Optimize thumbnail grid rendering */
@@ -64,7 +63,6 @@
 }
 
 .image-swipe-wrapper {
-  will-change: transform;
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -80,7 +78,6 @@
 /* Optimize button hover effects */
 .optimized-button {
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-  will-change: transform;
 }
 
 .optimized-button:hover {
