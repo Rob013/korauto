@@ -11,7 +11,7 @@ export const useCachedCars = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [hasMorePages, setHasMorePages] = useState(false);
 
-  // Fetch paginated cars from cache with filters
+  // Fetch paginated cars from cache with filters - SHOW ALL AVAILABLE CARS
   const fetchCars = useCallback(async (appliedFilters: APIFilters = {}, page: number = 1, pageSize: number = 200): Promise<any[]> => {
     try {
       setLoading(true);
@@ -24,8 +24,8 @@ export const useCachedCars = () => {
         .from('cars_cache')
         .select('*', { count: 'exact' })
         .not('sale_status', 'in', '(sold,archived)')  // Filter out sold/archived cars
-        .not('price_cents', 'is', null)  // Only cars with prices
-        .gt('price_cents', 0);  // Price must be greater than 0
+        .not('price_cents', 'is', null)  // Only cars with valid prices
+        .gt('price_cents', 0);  // Price must be positive
 
       // Apply filters - map API filter names to cache column names
       if (appliedFilters.manufacturer_id) {
@@ -78,12 +78,14 @@ export const useCachedCars = () => {
         return [];
       }
 
+      console.log(`✅ Fetched ${data?.length || 0} cars (page ${page}) out of ${count || 0} total available cars`);
+
       // Transform cars (they're already filtered in the query)
       const transformed = (data || []).map(transformCachedCarRecord);
 
       setCars(transformed);
-      setTotalCount(count || transformed.length);
-      setHasMorePages((count || 0) > transformed.length);
+      setTotalCount(count || 0);
+      setHasMorePages((count || 0) > (page * pageSize));
 
       return transformed;
     } catch (err) {
@@ -163,7 +165,7 @@ export const useCachedCars = () => {
   }, []);
   const fetchAllCars = useCallback(async (appliedFilters: APIFilters = {}): Promise<any[]> => {
     try {
-      console.log('Fetching all cars for global sorting with filters:', appliedFilters);
+      console.log('📊 Fetching all available cars for global sorting with filters:', appliedFilters);
       
       let query = supabase
         .from('cars_cache')
@@ -209,19 +211,20 @@ export const useCachedCars = () => {
         query = query.eq('color', appliedFilters.color);
       }
 
-      // Order and limit to prevent timeout
+      // Order and limit for global sorting - fetch more cars for better sorting
       query = query
         .order('rank_score', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false })
-        .limit(1000);  // Limit to 1000 for global sorting
+        .limit(5000);  // Increased limit for better global sorting coverage
 
       const { data, error: fetchError } = await query;
 
       if (fetchError) {
-        console.error('Error fetching all cars:', fetchError);
+        console.error('❌ Error fetching all cars:', fetchError);
         return [];
       }
 
+      console.log(`✅ Fetched ${data?.length || 0} cars for global sorting`);
       return (data || []).map(transformCachedCarRecord);
     } catch (err) {
       console.error('Failed to fetch all cars:', err);

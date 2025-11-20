@@ -723,8 +723,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch ALL active cars from API - no page limit
-    const perPage = 100; // Increased from 50 for faster sync
+    // Fetch ALL active cars from API - NO LIMIT for full sync
+    const perPage = 100; // Increased batch size for faster sync
     
     let page = 1;
     let totalSynced = 0;
@@ -732,10 +732,10 @@ Deno.serve(async (req) => {
     let kbchachaCount = 0;
     let hasMorePages = true;
     const syncBatchId = `${syncType}-${Date.now()}`;
-    const maxPagesForIncremental = syncType === 'full' ? Infinity : 10; // Full: unlimited, Incremental: 10 pages
+    const maxPages = syncType === 'full' ? 100000 : 10; // Full: fetch all pages, Incremental: 10 pages
   
-  while (hasMorePages && page <= maxPagesForIncremental) {
-    console.log(`📄 Fetching page ${page}/${maxPagesForIncremental === Infinity ? '∞' : maxPagesForIncremental}...`);
+  while (hasMorePages && page <= maxPages) {
+    console.log(`📄 Fetching page ${page} (${syncType === 'full' ? 'Full sync - fetching ALL pages' : `Incremental - max ${maxPages} pages`})...`);
     
     // Fetch all active cars without domain filter to get both Encar and KB Chachacha
     // Use minutes parameter to get recently updated cars
@@ -761,7 +761,7 @@ Deno.serve(async (req) => {
         break;
       }
 
-      console.log(`🔄 Processing ${cars.length} cars from page ${page}... (Total synced: ${totalSynced})`);
+      console.log(`🔄 Processing ${cars.length} cars from page ${page}... (Total synced so far: ${totalSynced})`);
 
         // Process cars in parallel batches for better performance
         const batchSize = 10;
