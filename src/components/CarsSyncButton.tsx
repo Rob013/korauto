@@ -30,9 +30,9 @@ export const CarsSyncButton = ({ syncType = 'full', onSyncComplete }: CarsSyncBu
       console.log('✅ Sync completed:', data);
       
       toast({
-        title: "Sync Completed",
-        description: `Successfully synced ${data.totalSynced} cars from API (Total: ${data.totalInDatabase} cars in database)`,
-        duration: 5000,
+        title: "Sync Completed Successfully",
+        description: `Synced ${data.totalSynced} cars (${data.totalNew || 0} new, ${data.totalUpdated || 0} updated). Total active: ${data.totalInDatabase} cars`,
+        duration: 6000,
       });
 
       // Call completion callback instead of reloading
