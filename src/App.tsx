@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, useEffect, ReactNode, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { InstallPrompt } from "./components/InstallPrompt";
+
 import { useResourcePreloader } from "./hooks/useResourcePreloader";
 import { AccessibilityEnhancer } from "./utils/accessibilityEnhancer";
 import { StatusRefreshProvider } from "./components/StatusRefreshProvider";
@@ -66,7 +66,7 @@ const PageSkeleton = () => (
           </div>
         </div>
       </header>
-      
+
       {/* Content skeleton */}
       <main className="container-responsive py-8">
         <div className="space-y-6">
@@ -198,7 +198,7 @@ const App = () => {
 
   // Check admin status for performance monitoring
   const { isAdmin } = useAdminCheck();
-  
+
   // Check if mobile to hide performance widget
   const isMobile = useIsMobile();
 
@@ -311,17 +311,17 @@ const App = () => {
                 </BrowserRouter>
                 <TopLoadingBar />
               </GlobalProgressProvider>
-            <InstallPrompt />
-            <CacheUpdateNotification />
-            <IOSEnhancer />
-            {/* Performance Monitor for admin users only, hidden on mobile */}
-            {isAdmin && !isMobile && (
-              <PerformanceMonitor showDetails={false} />
-            )}
-          </TooltipProvider>
-        </StatusRefreshProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+
+              <CacheUpdateNotification />
+              <IOSEnhancer />
+              {/* Performance Monitor for admin users only, hidden on mobile */}
+              {isAdmin && !isMobile && (
+                <PerformanceMonitor showDetails={false} />
+              )}
+            </TooltipProvider>
+          </StatusRefreshProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </AppErrorBoundary>
   );
 };

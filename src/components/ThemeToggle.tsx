@@ -13,34 +13,15 @@ export function ThemeToggle() {
   return (
     <Button
       type="button"
-      variant="outline"
-      size="sm"
+      variant="ghost"
+      size="icon"
       onClick={handleToggle}
-      aria-label={`Kalo në temën ${isDark ? "të lehtë" : "të errët"}`}
-      className="relative inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1.5 text-xs font-semibold shadow-sm hover:shadow-lg transition-all duration-300"
+      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+      className="relative h-9 w-9 rounded-full hover:bg-accent/10 transition-colors"
     >
-      <Sun
-        className={`h-4 w-4 transition-all duration-300 ${
-          isDark ? "text-muted-foreground opacity-50" : "text-amber-500"
-        }`}
-      />
-      <div className="relative h-5 w-10 rounded-full bg-muted/70 dark:bg-slate-800 shadow-inner">
-        <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full shadow transition-transform duration-300 ${
-            isDark
-              ? "translate-x-5 bg-slate-900"
-              : "translate-x-1 bg-amber-400"
-          }`}
-        />
-      </div>
-      <Moon
-        className={`h-4 w-4 transition-all duration-300 ${
-          isDark ? "text-indigo-200" : "text-muted-foreground opacity-50"
-        }`}
-      />
-      <span className="hidden sm:inline text-[11px] uppercase tracking-wide text-muted-foreground">
-        {isDark ? "Natë" : "Ditë"}
-      </span>
+      <Sun className={`absolute h-5 w-5 rotate-0 scale-100 transition-all duration-300 ${isDark ? "-rotate-90 scale-0" : ""}`} />
+      <Moon className={`absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 ${isDark ? "rotate-0 scale-100" : ""}`} />
+      <span className="sr-only">Toggle theme</span>
     </Button>
   );
 }
