@@ -92,9 +92,99 @@ const PRECISE_MARKER_POSITIONS: Record<string, { x: number; y: number }> = {
   rr_wheel: { x: 610, y: 510 }
 };
 
-export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({ 
-  inspectionData = [], 
-  className = "" 
+const normalizeForMatching = (input: string) => {
+  if (!input) return "";
+  let normalized = input.toString().toLowerCase();
+
+  const replacements = [
+    { pattern: /좌|왼/g, value: " left " },
+    { pattern: /우|오/g, value: " right " },
+    { pattern: /앞|전/g, value: " front " },
+    { pattern: /뒤|후/g, value: " rear " },
+    { pattern: /도어/g, value: " door " },
+    { pattern: /휀다|펜더/g, value: " fender " },
+    { pattern: /쿼터/g, value: " quarter " },
+    { pattern: /범퍼/g, value: " bumper " },
+    { pattern: /트렁크/g, value: " trunk " },
+    { pattern: /보닛|본넷|후드/g, value: " hood " },
+    { pattern: /루프|지붕/g, value: " roof " },
+    { pattern: /휠하우스/g, value: " wheel house " },
+    { pattern: /사이드\s*실|사이드실/g, value: " side sill " },
+    { pattern: /라디에이터/g, value: " radiator " },
+    { pattern: /서포트/g, value: " support " },
+    { pattern: /\bfl\b/g, value: " front left " },
+    { pattern: /\bfr\b/g, value: " front right " },
+    { pattern: /\brl\b/g, value: " rear left " },
+    { pattern: /\brr\b/g, value: " rear right " },
+    { pattern: /\blh\b/g, value: " left " },
+    { pattern: /\brh\b/g, value: " right " },
+    { pattern: /\bqtr\b/g, value: " quarter " },
+    { pattern: /\bfrm\b/g, value: " front member " },
+    { pattern: /\brrm\b/g, value: " rear member " },
+    { pattern: /panl/g, value: " panel " },
+  ];
+
+  replacements.forEach(({ pattern, value }) => {
+    normalized = normalized.replace(pattern, value);
+  });
+
+  normalized = normalized
+    .replace(/(front|rear)(door|fender|quarter|bumper|panel|floor)/g, "$1 $2")
+    .replace(/(left|right)(door|fender|quarter|sill|panel)/g, "$1 $2")
+    .replace(
+      /(door|fender|quarter|bumper|panel|sill|wheel)(left|right)/g,
+      "$1 $2",
+    );
+
+  normalized = normalized
+    .replace(/[_-]/g, " ")
+    .replace(/\(.*?\)/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return normalized;
+};
+
+const aliasMatchers: Array<{ pattern: RegExp; key: string }> = [
+  { pattern: /(front\s*)?door.*(left|\blh\b)/i, key: "front_left_door" },
+  { pattern: /(front\s*)?door.*(right|\brh\b)/i, key: "front_right_door" },
+  { pattern: /rear\s*door.*(left|\blh\b)/i, key: "rear_left_door" },
+  { pattern: /rear\s*door.*(right|\brh\b)/i, key: "rear_right_door" },
+  {
+    pattern: /(quarter\s*panel|quarter).*\b(left|lh)\b/i,
+    key: "left_quarter",
+  },
+  {
+    pattern: /(quarter\s*panel|quarter).*\b(right|rh)\b/i,
+    key: "right_quarter",
+  },
+  { pattern: /(front\s*)?fender.*(left|\blh\b)/i, key: "left_fender" },
+  { pattern: /(front\s*)?fender.*(right|\brh\b)/i, key: "right_fender" },
+  { pattern: /(좌|왼).*(앞|전).*(도어)/, key: "front_left_door" },
+  { pattern: /(우|오).*(앞|전).*(도어)/, key: "front_right_door" },
+  { pattern: /(좌|왼).*(뒤|후).*(도어)/, key: "rear_left_door" },
+  { pattern: /(우|오).*(뒤|후).*(도어)/, key: "rear_right_door" },
+  { pattern: /(좌|왼).*(쿼터|휀다|펜더)/, key: "left_quarter" },
+  { pattern: /(우|오).*(쿼터|휀다|펜더)/, key: "right_quarter" },
+  { pattern: /(앞|전).*(범퍼)/, key: "front_bumper" },
+  { pattern: /(뒤|후).*(범퍼)/, key: "rear_bumper" },
+  { pattern: /(루프|지붕)/, key: "roof" },
+  { pattern: /(트렁크)/, key: "trunk" },
+  { pattern: /(사이드\s*실|사이드실).*(좌|왼)/, key: "side_sill_left" },
+  { pattern: /(사이드\s*실|사이드실).*(우|오)/, key: "side_sill_right" },
+  { pattern: /(휠하우스).*(뒤|후).*(좌|왼)/, key: "rl_wheel" },
+  { pattern: /(휠하우스).*(뒤|후).*(우|오)/, key: "rr_wheel" },
+  { pattern: /(휠하우스).*(앞|전).*(좌|왼)/, key: "fl_wheel" },
+  { pattern: /(휠하우스).*(앞|전).*(우|오)/, key: "fr_wheel" },
+  { pattern: /(앞|전).*(보닛|본넷|후드)/, key: "hood" },
+  { pattern: /(radiator|support)/i, key: "front_bumper" },
+  { pattern: /(cowl|카울)/i, key: "windshield" },
+];
+
+export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = React.memo(({
+  inspectionData = [],
+  className = ""
 }) => {
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
@@ -137,7 +227,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   // Enhanced car parts mapped to the actual diagram image positions
   const carParts = useMemo<CarPart[]>(() => {
     const parts: CarPart[] = [
-    // Hood (top center of car)
+      // Hood (top center of car)
       {
         id: 'hood',
         name: 'Kapak',
@@ -145,84 +235,84 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         path: 'M 240 60 L 400 60 Q 410 60 410 70 L 410 180 Q 410 190 400 190 L 240 190 Q 230 190 230 180 L 230 70 Q 230 60 240 60 Z',
         labelPos: { x: 320, y: 120 }
       },
-    // Front Bumper
-    {
-      id: 'front_bumper',
-      name: 'Bamper Para',
-      nameEn: 'F. Bumper',
-      path: 'M 220 20 L 420 20 Q 435 20 435 35 L 435 55 Q 435 60 420 60 L 220 60 Q 205 60 205 55 L 205 35 Q 205 20 220 20 Z',
-      labelPos: { x: 320, y: 40 }
-    },
-    // Windshield
-    {
-      id: 'windshield',
-      name: 'Xham Para',
-      nameEn: 'Windshield',
-      path: 'M 250 195 L 390 195 Q 400 195 400 205 L 400 235 L 250 235 Q 240 235 240 225 L 240 205 Q 240 195 250 195 Z',
-      labelPos: { x: 320, y: 215 }
-    },
-    // Left Front Door
-    {
-      id: 'front_left_door',
-      name: 'Derë Para Majtas',
-      nameEn: 'L Front',
-      path: 'M 150 195 L 235 195 L 235 310 L 150 310 Q 140 310 140 300 L 140 205 Q 140 195 150 195 Z',
-      labelPos: { x: 185, y: 250 },
-      markerPos: { x: 185, y: 255 }
-    },
-    // Right Front Door
-    {
-      id: 'front_right_door',
-      name: 'Derë Para Djathtas',
-      nameEn: 'R Front',
-      path: 'M 405 195 L 495 195 Q 505 195 505 205 L 505 300 Q 505 310 495 310 L 405 310 L 405 195 Z',
-      labelPos: { x: 450, y: 250 },
-      markerPos: { x: 450, y: 255 }
-    },
-    // Roof
-    {
-      id: 'roof',
-      name: 'Çati',
-      nameEn: 'Roof',
-      path: 'M 245 240 L 395 240 L 395 370 L 245 370 L 245 240 Z',
-      labelPos: { x: 320, y: 305 }
-    },
-    // Left Rear Door
-    {
-      id: 'rear_left_door',
-      name: 'Derë Prapa Majtas',
-      nameEn: 'L Rear',
-      path: 'M 140 315 L 235 315 L 235 430 L 140 430 Q 130 430 130 420 L 130 325 Q 130 315 140 315 Z',
-      labelPos: { x: 185, y: 370 },
-      markerPos: { x: 185, y: 375 }
-    },
-    // Right Rear Door
-    {
-      id: 'rear_right_door',
-      name: 'Derë Prapa Djathtas',
-      nameEn: 'R Rear',
-      path: 'M 405 315 L 510 315 Q 520 315 520 325 L 520 420 Q 520 430 510 430 L 405 430 L 405 315 Z',
-      labelPos: { x: 455, y: 370 },
-      markerPos: { x: 455, y: 375 }
-    },
-    // Rear Glass
-    {
-      id: 'rear_glass',
-      name: 'Xham Prapa',
-      nameEn: 'R. Glass',
-      path: 'M 245 375 L 395 375 L 395 415 Q 395 425 385 425 L 255 425 Q 245 425 245 415 L 245 375 Z',
-      labelPos: { x: 320, y: 400 }
-    },
-    // Trunk
-    {
-      id: 'trunk',
-      name: 'Bagazh',
-      nameEn: 'Trunk',
-      path: 'M 240 430 L 400 430 Q 410 430 410 440 L 410 540 Q 410 550 400 550 L 240 550 Q 230 550 230 540 L 230 440 Q 230 430 240 430 Z',
-      labelPos: { x: 320, y: 485 },
-      markerPos: { x: 320, y: 490 }
-    },
-    // Rear Bumper
+      // Front Bumper
+      {
+        id: 'front_bumper',
+        name: 'Bamper Para',
+        nameEn: 'F. Bumper',
+        path: 'M 220 20 L 420 20 Q 435 20 435 35 L 435 55 Q 435 60 420 60 L 220 60 Q 205 60 205 55 L 205 35 Q 205 20 220 20 Z',
+        labelPos: { x: 320, y: 40 }
+      },
+      // Windshield
+      {
+        id: 'windshield',
+        name: 'Xham Para',
+        nameEn: 'Windshield',
+        path: 'M 250 195 L 390 195 Q 400 195 400 205 L 400 235 L 250 235 Q 240 235 240 225 L 240 205 Q 240 195 250 195 Z',
+        labelPos: { x: 320, y: 215 }
+      },
+      // Left Front Door
+      {
+        id: 'front_left_door',
+        name: 'Derë Para Majtas',
+        nameEn: 'L Front',
+        path: 'M 150 195 L 235 195 L 235 310 L 150 310 Q 140 310 140 300 L 140 205 Q 140 195 150 195 Z',
+        labelPos: { x: 185, y: 250 },
+        markerPos: { x: 185, y: 255 }
+      },
+      // Right Front Door
+      {
+        id: 'front_right_door',
+        name: 'Derë Para Djathtas',
+        nameEn: 'R Front',
+        path: 'M 405 195 L 495 195 Q 505 195 505 205 L 505 300 Q 505 310 495 310 L 405 310 L 405 195 Z',
+        labelPos: { x: 450, y: 250 },
+        markerPos: { x: 450, y: 255 }
+      },
+      // Roof
+      {
+        id: 'roof',
+        name: 'Çati',
+        nameEn: 'Roof',
+        path: 'M 245 240 L 395 240 L 395 370 L 245 370 L 245 240 Z',
+        labelPos: { x: 320, y: 305 }
+      },
+      // Left Rear Door
+      {
+        id: 'rear_left_door',
+        name: 'Derë Prapa Majtas',
+        nameEn: 'L Rear',
+        path: 'M 140 315 L 235 315 L 235 430 L 140 430 Q 130 430 130 420 L 130 325 Q 130 315 140 315 Z',
+        labelPos: { x: 185, y: 370 },
+        markerPos: { x: 185, y: 375 }
+      },
+      // Right Rear Door
+      {
+        id: 'rear_right_door',
+        name: 'Derë Prapa Djathtas',
+        nameEn: 'R Rear',
+        path: 'M 405 315 L 510 315 Q 520 315 520 325 L 520 420 Q 520 430 510 430 L 405 430 L 405 315 Z',
+        labelPos: { x: 455, y: 370 },
+        markerPos: { x: 455, y: 375 }
+      },
+      // Rear Glass
+      {
+        id: 'rear_glass',
+        name: 'Xham Prapa',
+        nameEn: 'R. Glass',
+        path: 'M 245 375 L 395 375 L 395 415 Q 395 425 385 425 L 255 425 Q 245 425 245 415 L 245 375 Z',
+        labelPos: { x: 320, y: 400 }
+      },
+      // Trunk
+      {
+        id: 'trunk',
+        name: 'Bagazh',
+        nameEn: 'Trunk',
+        path: 'M 240 430 L 400 430 Q 410 430 410 440 L 410 540 Q 410 550 400 550 L 240 550 Q 230 550 230 540 L 230 440 Q 230 430 240 430 Z',
+        labelPos: { x: 320, y: 485 },
+        markerPos: { x: 320, y: 490 }
+      },
+      // Rear Bumper
       {
         id: 'rear_bumper',
         name: 'Bamper Prapa',
@@ -247,65 +337,65 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         labelPos: { x: 455, y: 320 },
         markerPos: { x: 455, y: 323 }
       },
-    // Left Front Fender
-    {
-      id: 'left_fender',
-      name: 'Paranicë Majtas',
-      nameEn: 'L Fender',
-      path: 'M 140 70 L 225 70 L 225 185 L 140 185 Q 130 185 130 175 L 130 80 Q 130 70 140 70 Z',
-      labelPos: { x: 175, y: 125 }
-    },
-    // Right Front Fender
-    {
-      id: 'right_fender',
-      name: 'Paranicë Djathtas',
-      nameEn: 'R Fender',
-      path: 'M 415 70 L 510 70 Q 520 70 520 80 L 520 175 Q 520 185 510 185 L 415 185 L 415 70 Z',
-      labelPos: { x: 465, y: 125 }
-    },
-    // Left Quarter Panel
-    {
-      id: 'left_quarter',
-      name: 'Panel Prapa Majtas',
-      nameEn: 'L Quarter',
-      path: 'M 130 435 L 225 435 L 225 545 L 130 545 Q 120 545 120 535 L 120 445 Q 120 435 130 435 Z',
-      labelPos: { x: 170, y: 490 },
-      markerPos: { x: 170, y: 495 }
-    },
-    // Right Quarter Panel
-    {
-      id: 'right_quarter',
-      name: 'Panel Prapa Djathtas',
-      nameEn: 'R Quarter',
-      path: 'M 415 435 L 520 435 Q 530 435 530 445 L 530 535 Q 530 545 520 545 L 415 545 L 415 435 Z',
-      labelPos: { x: 470, y: 490 },
-      markerPos: { x: 470, y: 495 }
-    },
-    // Front Left Wheel
-    {
-      id: 'fl_wheel',
-      name: 'Rrota Para Majtas',
-      nameEn: 'FL Wheel',
-      path: 'M 30 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 30, y: 90 }
-    },
-    // Front Right Wheel
-    {
-      id: 'fr_wheel',
-      name: 'Rrota Para Djathtas',
-      nameEn: 'FR Wheel',
-      path: 'M 610 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 610, y: 90 }
-    },
-    // Rear Left Wheel
-    {
-      id: 'rl_wheel',
-      name: 'Rrota Prapa Majtas',
-      nameEn: 'RL Wheel',
-      path: 'M 30 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
-      labelPos: { x: 30, y: 510 }
-    },
-    // Rear Right Wheel
+      // Left Front Fender
+      {
+        id: 'left_fender',
+        name: 'Paranicë Majtas',
+        nameEn: 'L Fender',
+        path: 'M 140 70 L 225 70 L 225 185 L 140 185 Q 130 185 130 175 L 130 80 Q 130 70 140 70 Z',
+        labelPos: { x: 175, y: 125 }
+      },
+      // Right Front Fender
+      {
+        id: 'right_fender',
+        name: 'Paranicë Djathtas',
+        nameEn: 'R Fender',
+        path: 'M 415 70 L 510 70 Q 520 70 520 80 L 520 175 Q 520 185 510 185 L 415 185 L 415 70 Z',
+        labelPos: { x: 465, y: 125 }
+      },
+      // Left Quarter Panel
+      {
+        id: 'left_quarter',
+        name: 'Panel Prapa Majtas',
+        nameEn: 'L Quarter',
+        path: 'M 130 435 L 225 435 L 225 545 L 130 545 Q 120 545 120 535 L 120 445 Q 120 435 130 435 Z',
+        labelPos: { x: 170, y: 490 },
+        markerPos: { x: 170, y: 495 }
+      },
+      // Right Quarter Panel
+      {
+        id: 'right_quarter',
+        name: 'Panel Prapa Djathtas',
+        nameEn: 'R Quarter',
+        path: 'M 415 435 L 520 435 Q 530 435 530 445 L 530 535 Q 530 545 520 545 L 415 545 L 415 435 Z',
+        labelPos: { x: 470, y: 490 },
+        markerPos: { x: 470, y: 495 }
+      },
+      // Front Left Wheel
+      {
+        id: 'fl_wheel',
+        name: 'Rrota Para Majtas',
+        nameEn: 'FL Wheel',
+        path: 'M 30 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+        labelPos: { x: 30, y: 90 }
+      },
+      // Front Right Wheel
+      {
+        id: 'fr_wheel',
+        name: 'Rrota Para Djathtas',
+        nameEn: 'FR Wheel',
+        path: 'M 610 90 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+        labelPos: { x: 610, y: 90 }
+      },
+      // Rear Left Wheel
+      {
+        id: 'rl_wheel',
+        name: 'Rrota Prapa Majtas',
+        nameEn: 'RL Wheel',
+        path: 'M 30 510 m -25, 0 a 25,25 0 1,0 50,0 a 25,25 0 1,0 -50,0',
+        labelPos: { x: 30, y: 510 }
+      },
+      // Rear Right Wheel
       {
         id: 'rr_wheel',
         name: 'Rrota Prapa Djathtas',
@@ -327,37 +417,28 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   }, []);
 
   // Helper: evaluate if an item's title targets a given part id
+  // Helper: evaluate if an item's title targets a given part id
   const titleMatchesPart = useCallback((title: string, partId: string) => {
-    const t = title.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!title) return false;
 
-    // Strict regex-based mappings to avoid false positives
-    const patterns: Array<{ re: RegExp; id: string }> = [
-      // Doors
-      { re: /(front\s*)?door.*(left|\blh\b)/i, id: 'front_left_door' },
-      { re: /(front\s*)?door.*(right|\brh\b)/i, id: 'front_right_door' },
-      { re: /rear\s*door.*(left|\blh\b)/i, id: 'rear_left_door' },
-      { re: /rear\s*door.*(right|\brh\b)/i, id: 'rear_right_door' },
-      // Quarters and wheel house
-      { re: /(quarter\s*panel|quarter).*\b(left|lh)\b/i, id: 'left_quarter' },
-      { re: /(quarter\s*panel|quarter).*\b(right|rh)\b/i, id: 'right_quarter' },
-      { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(left|lh)\b/i, id: 'left_quarter' },
-      { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(right|rh)\b/i, id: 'right_quarter' },
-      // Side sills
-      { re: /(side\s*sill|sill).*\b(left|lh)\b/i, id: 'side_sill_left' },
-      { re: /(side\s*sill|sill).*\b(right|rh)\b/i, id: 'side_sill_right' },
-      // Bumpers
-      { re: /front\s*bumper/i, id: 'front_bumper' },
-      { re: /rear\s*bumper/i, id: 'rear_bumper' },
-      // Trunk floor
-      { re: /trunk\s*floor/i, id: 'trunk' },
-      // Fenders
-      { re: /(front\s*)?fender.*\b(left|lh)\b/i, id: 'left_fender' },
-      { re: /(front\s*)?fender.*\b(right|rh)\b/i, id: 'right_fender' },
-    ];
+    // Try to find a match using the alias matchers
+    const normalized = normalizeForMatching(title);
 
-    const matched = patterns.find((m) => m.re.test(t));
-    if (!matched) return false;
-    return matched.id === partId;
+    // Check direct alias match
+    for (const { pattern, key } of aliasMatchers) {
+      if (key === partId) {
+        if (pattern.test(normalized) || pattern.test(title)) {
+          return true;
+        }
+      }
+    }
+
+    // Fallback to simple inclusion if no specific alias matched
+    // This helps with cases not covered by aliases but having the part name
+    const partName = partId.replace(/_/g, " ").toLowerCase();
+    if (normalized.includes(partName)) return true;
+
+    return false;
   }, []);
 
   const partStatusMap = useMemo(() => {
@@ -445,72 +526,72 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     [partStatusMap]
   );
 
-const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
-  if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
+  const getStatusColor = (statuses: Array<{ code: string; title: string }>) => {
+    if (statuses.length === 0) return 'hsl(142 76% 36%)'; // Green
 
-  // Check status codes and titles (Korean and English)
-  const hasExchange = statuses.some(
-    (s) => s.code === 'X' || 
-           s.code === 'N' || // N = Nderruar (Albanian for exchanged)
-           s.title?.toLowerCase().includes('교환') || 
-           s.title?.toLowerCase().includes('exchange') ||
-           s.title?.toLowerCase().includes('replacement') ||
-           s.title?.toLowerCase().includes('replaced')
-  );
-  const hasWelding = statuses.some(
-    (s) => s.code === 'W' || 
-           s.code === 'S' || // S = Saldim (Albanian for welding)
-           s.title?.toLowerCase().includes('용접') || 
-           s.title?.toLowerCase().includes('weld') ||
-           s.title?.toLowerCase().includes('sheet metal')
-  );
-  const hasRepair = statuses.some(
-    (s) => s.code === 'A' || 
-           s.code === 'R' || // R = Riparuar (Albanian for repaired)
-           s.title?.toLowerCase().includes('수리') || 
-           s.title?.toLowerCase().includes('repair')
-  );
-  const hasCorrosion = statuses.some(
-    (s) => s.code === 'U' || 
-           s.code === 'K' || // K = Korrozion (Albanian for corrosion)
-           s.title?.toLowerCase().includes('부식') || 
-           s.title?.toLowerCase().includes('corr')
-  );
-  const hasScratch = statuses.some(
-    (s) => s.code === 'S' || 
-           s.title?.toLowerCase().includes('흠집') || 
-           s.title?.toLowerCase().includes('scratch')
-  );
+    // Check status codes and titles (Korean and English)
+    const hasExchange = statuses.some(
+      (s) => s.code === 'X' ||
+        s.code === 'N' || // N = Nderruar (Albanian for exchanged)
+        s.title?.toLowerCase().includes('교환') ||
+        s.title?.toLowerCase().includes('exchange') ||
+        s.title?.toLowerCase().includes('replacement') ||
+        s.title?.toLowerCase().includes('replaced')
+    );
+    const hasWelding = statuses.some(
+      (s) => s.code === 'W' ||
+        s.code === 'S' || // S = Saldim (Albanian for welding)
+        s.title?.toLowerCase().includes('용접') ||
+        s.title?.toLowerCase().includes('weld') ||
+        s.title?.toLowerCase().includes('sheet metal')
+    );
+    const hasRepair = statuses.some(
+      (s) => s.code === 'A' ||
+        s.code === 'R' || // R = Riparuar (Albanian for repaired)
+        s.title?.toLowerCase().includes('수리') ||
+        s.title?.toLowerCase().includes('repair')
+    );
+    const hasCorrosion = statuses.some(
+      (s) => s.code === 'U' ||
+        s.code === 'K' || // K = Korrozion (Albanian for corrosion)
+        s.title?.toLowerCase().includes('부식') ||
+        s.title?.toLowerCase().includes('corr')
+    );
+    const hasScratch = statuses.some(
+      (s) => s.code === 'S' ||
+        s.title?.toLowerCase().includes('흠집') ||
+        s.title?.toLowerCase().includes('scratch')
+    );
 
-  // RED for critical replacements/exchanges
-  if (hasExchange) return 'hsl(0 84% 60%)';
-  // BLUE for welding
-  if (hasWelding) return 'hsl(217 91% 60%)';
-  // ORANGE for repairs and corrosion
-  if (hasRepair || hasCorrosion) return 'hsl(25 95% 53%)';
-  // YELLOW for scratches
-  if (hasScratch) return 'hsl(48 96% 53%)';
+    // RED for critical replacements/exchanges
+    if (hasExchange) return 'hsl(0 84% 60%)';
+    // BLUE for welding
+    if (hasWelding) return 'hsl(217 91% 60%)';
+    // ORANGE for repairs and corrosion
+    if (hasRepair || hasCorrosion) return 'hsl(25 95% 53%)';
+    // YELLOW for scratches
+    if (hasScratch) return 'hsl(48 96% 53%)';
 
-  return 'hsl(142 76% 36%)'; // Green
-};
+    return 'hsl(142 76% 36%)'; // Green
+  };
 
-const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
-  if (statuses.length === 0) return 'Pjesë normale';
+  const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
+    if (statuses.length === 0) return 'Pjesë normale';
 
-  const hasExchange = statuses.some((s) => s.code === 'X');
-  const hasWelding = statuses.some((s) => s.code === 'W');
-  const hasRepair = statuses.some((s) => s.code === 'A');
-  const hasCorrosion = statuses.some((s) => s.code === 'U');
-  const hasScratch = statuses.some((s) => s.code === 'S');
+    const hasExchange = statuses.some((s) => s.code === 'X');
+    const hasWelding = statuses.some((s) => s.code === 'W');
+    const hasRepair = statuses.some((s) => s.code === 'A');
+    const hasCorrosion = statuses.some((s) => s.code === 'U');
+    const hasScratch = statuses.some((s) => s.code === 'S');
 
-  if (hasExchange) return 'Pjesë e zëvendësuar (Rreth i kuq)';
-  if (hasWelding) return 'Saldim i kryer (Rreth blu)';
-  if (hasRepair) return 'Pjesë e riparuar (Rreth portokalli)';
-  if (hasCorrosion) return 'Ndryshk i vogël (Rreth portokalli)';
-  if (hasScratch) return 'Gërvishje (Rreth i verdhë)';
+    if (hasExchange) return 'Pjesë e zëvendësuar (Rreth i kuq)';
+    if (hasWelding) return 'Saldim i kryer (Rreth blu)';
+    if (hasRepair) return 'Pjesë e riparuar (Rreth portokalli)';
+    if (hasCorrosion) return 'Ndryshk i vogël (Rreth portokalli)';
+    if (hasScratch) return 'Gërvishje (Rreth i verdhë)';
 
-  return 'Pjesë normale';
-};
+    return 'Pjesë normale';
+  };
 
   const issueCount = useMemo(() => {
     if (!inspectionData || inspectionData.length === 0) {
@@ -652,7 +733,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 <AlertTriangle className="h-4 w-4" />
                 Statistika
               </h4>
-    <div className="space-y-1.5">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-destructive/10">
                   <span className="text-xs flex items-center gap-1">
                     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold shadow-sm">N</span>
@@ -665,28 +746,28 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold shadow-sm">S</span>
                     Saldime
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(217 91% 60%)', color: 'white'}}>{issueCount.welds}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(217 91% 60%)', color: 'white' }}>{issueCount.welds}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{ backgroundColor: 'hsl(25 95% 53% / 0.1)' }}>
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>R</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{ backgroundColor: 'hsl(25 95% 53%)' }}>R</span>
                     Riparime
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.repairs}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(25 95% 53%)', color: 'white' }}>{issueCount.repairs}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(25 95% 53% / 0.1)'}}>
+                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{ backgroundColor: 'hsl(25 95% 53% / 0.1)' }}>
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(25 95% 53%)'}}>K</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{ backgroundColor: 'hsl(25 95% 53%)' }}>K</span>
                     Korrozion
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(25 95% 53%)', color: 'white'}}>{issueCount.corrosion}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(25 95% 53%)', color: 'white' }}>{issueCount.corrosion}</Badge>
                 </div>
-                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{backgroundColor: 'hsl(142 76% 36% / 0.12)'}}>
+                <div className="flex items-center justify-between p-1.5 rounded-lg" style={{ backgroundColor: 'hsl(142 76% 36% / 0.12)' }}>
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{backgroundColor: 'hsl(142 76% 36%)'}}>O</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{ backgroundColor: 'hsl(142 76% 36%)' }}>O</span>
                     Zona të paprekura
                   </span>
-                  <Badge className="font-mono text-xs" style={{backgroundColor: 'hsl(142 76% 36%)', color: 'white'}}>{issueCount.good}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(142 76% 36%)', color: 'white' }}>{issueCount.good}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -697,14 +778,20 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
         {/* Center - Car Diagram */}
         <div className="lg:col-span-2 flex flex-col items-center justify-center gap-4 p-4">
           <div className="relative w-full max-w-md">
-            <img src={carDiagramTop} alt="Car Top View" className="w-full h-auto rounded-lg" />
-            <svg viewBox="0 0 640 630" className="absolute inset-0 w-full h-full"  style={{pointerEvents: 'none'}}>
+            <img
+              src={carDiagramTop}
+              alt="Car Top View"
+              className="w-full h-auto rounded-lg"
+              loading="lazy"
+              decoding="async"
+            />
+            <svg viewBox="0 0 640 630" className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
               <defs>
                 <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                   <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
               </defs>
@@ -714,7 +801,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 const color = getStatusColor(statuses);
                 const isHovered = hoveredPart === part.id;
                 const isSelected = selectedPart === part.id;
-                
+
                 return (
                   <g key={part.id}>
                     <path
@@ -753,92 +840,92 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                             codes.includes('S') ||
                             lowTitles.some((t) => t.includes('scratch') || t.includes('흠집'));
 
-                            const hasPositive = statuses.some((status) => {
-                              const code = (status.code || "").toString().toUpperCase();
-                              if (POSITIVE_STATUS_CODES.has(code)) {
-                                return true;
-                              }
-                              const title = (status.title || "").toString().toLowerCase();
-                              return POSITIVE_STATUS_KEYWORDS.some((keyword) =>
-                                title.includes(keyword),
-                              );
-                            });
-
-                            const shouldShowOnlyPositive =
-                              hasPositive &&
-                              !hasExchange &&
-                              !hasWeld &&
-                              !hasRepair &&
-                              !hasCorrosion &&
-                              !hasScratch;
-
-                            // Collect all markers to display
-                            const markers: Array<{ char: string; color: string }> = [];
-                            
-                            if (hasExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
-                            if (hasWeld) markers.push({ char: 'S', color: 'hsl(217 91% 60%)' });
-                            if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
-                            if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
-                            if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
-                            if (shouldShowOnlyPositive) {
-                              markers.push({ char: 'O', color: 'hsl(142 76% 36%)' });
+                          const hasPositive = statuses.some((status) => {
+                            const code = (status.code || "").toString().toUpperCase();
+                            if (POSITIVE_STATUS_CODES.has(code)) {
+                              return true;
                             }
+                            const title = (status.title || "").toString().toLowerCase();
+                            return POSITIVE_STATUS_KEYWORDS.some((keyword) =>
+                              title.includes(keyword),
+                            );
+                          });
 
-                            const n = markers.length;
-                            const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
-                            const spacing = markerSizing.spacing;
+                          const shouldShowOnlyPositive =
+                            hasPositive &&
+                            !hasExchange &&
+                            !hasWeld &&
+                            !hasRepair &&
+                            !hasCorrosion &&
+                            !hasScratch;
 
-                            return markers.map((m, idx) => {
-                              const offset = (idx - (n - 1) / 2) * spacing;
-                              const cx = base.x + offset;
-                              const cy =
-                                base.y +
-                                (n > 2 ? (idx % 2 === 0 ? -markerSizing.verticalOffset : markerSizing.verticalOffset) : 0);
+                          // Collect all markers to display
+                          const markers: Array<{ char: string; color: string }> = [];
 
-                              return (
-                                <g key={`${part.id}-mrk-${idx}`}>
-                                  {/* Outer glow for better visibility */}
-                                  <circle
-                                    cx={cx}
-                                    cy={cy}
-                                    r={markerSizing.outerRadius}
-                                    fill={m.color}
-                                    fillOpacity={0.2}
-                                    filter="url(#glow)"
-                                  />
-                                  {/* Main marker */}
-                                  <circle
-                                    cx={cx}
-                                    cy={cy}
-                                    r={markerSizing.radius}
-                                    fill={m.color}
-                                    fillOpacity={0.45}
-                                    stroke={m.color}
-                                    strokeWidth={markerSizing.strokeWidth}
-                                    filter={isHovered || isSelected ? "url(#glow)" : undefined}
-                                    className="transition-all duration-200"
-                                  />
-                                  <text
-                                    x={cx}
-                                    y={cy}
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    fontSize={markerSizing.fontSize}
-                                    fontWeight={800}
-                                    fill="white"
-                                    className="pointer-events-none select-none"
-                                    style={{
-                                      textShadow: "1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)",
-                                      paintOrder: "stroke fill",
-                                    }}
-                                    stroke={m.color}
-                                    strokeWidth="0.75"
-                                  >
-                                    {m.char}
-                                  </text>
-                                </g>
-                              );
-                            });
+                          if (hasExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
+                          if (hasWeld) markers.push({ char: 'S', color: 'hsl(217 91% 60%)' });
+                          if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
+                          if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
+                          if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
+                          if (shouldShowOnlyPositive) {
+                            markers.push({ char: 'O', color: 'hsl(142 76% 36%)' });
+                          }
+
+                          const n = markers.length;
+                          const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
+                          const spacing = markerSizing.spacing;
+
+                          return markers.map((m, idx) => {
+                            const offset = (idx - (n - 1) / 2) * spacing;
+                            const cx = base.x + offset;
+                            const cy =
+                              base.y +
+                              (n > 2 ? (idx % 2 === 0 ? -markerSizing.verticalOffset : markerSizing.verticalOffset) : 0);
+
+                            return (
+                              <g key={`${part.id}-mrk-${idx}`}>
+                                {/* Outer glow for better visibility */}
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={markerSizing.outerRadius}
+                                  fill={m.color}
+                                  fillOpacity={0.2}
+                                  filter="url(#glow)"
+                                />
+                                {/* Main marker */}
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={markerSizing.radius}
+                                  fill={m.color}
+                                  fillOpacity={0.45}
+                                  stroke={m.color}
+                                  strokeWidth={markerSizing.strokeWidth}
+                                  filter={isHovered || isSelected ? "url(#glow)" : undefined}
+                                  className="transition-all duration-200"
+                                />
+                                <text
+                                  x={cx}
+                                  y={cy}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  fontSize={markerSizing.fontSize}
+                                  fontWeight={800}
+                                  fill="white"
+                                  className="pointer-events-none select-none"
+                                  style={{
+                                    textShadow: "1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)",
+                                    paintOrder: "stroke fill",
+                                  }}
+                                  stroke={m.color}
+                                  strokeWidth="0.75"
+                                >
+                                  {m.char}
+                                </text>
+                              </g>
+                            );
+                          });
                         })()}
                       </>
                     )}
@@ -860,17 +947,23 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                 );
               })}
             </svg>
-            
+
             {hoveredPart && !selectedPart && (
               <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-foreground/90 text-background px-3 py-1.5 rounded-lg text-xs shadow-lg backdrop-blur-sm z-10">
                 {carParts.find(p => p.id === hoveredPart)?.name} - Kliko për detaje
               </div>
             )}
           </div>
-          
+
           {/* Bottom view diagram */}
           <div className="relative w-full max-w-md">
-            <img src={carDiagramBottom} alt="Pamja poshtë e makinës" className="w-full h-auto rounded-lg" />
+            <img
+              src={carDiagramBottom}
+              alt="Pamja poshtë e makinës"
+              className="w-full h-auto rounded-lg"
+              loading="lazy"
+              decoding="async"
+            />
             <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
               Pamja nga poshtë
             </div>
@@ -898,7 +991,7 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
                   if (statuses.length === 0) {
                     return (
                       <div className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4" style={{color: 'hsl(142 76% 36%)'}} />
+                        <CheckCircle className="h-4 w-4" style={{ color: 'hsl(142 76% 36%)' }} />
                         <span className="text-muted-foreground">Pjesë normale</span>
                       </div>
                     );
@@ -935,6 +1028,8 @@ const getStatusText = (statuses: Array<{ code: string; title: string }>) => {
       </div>
     </div>
   );
-};
+});
 
 export default CarInspectionDiagram;
+
+CarInspectionDiagram.displayName = "CarInspectionDiagram";
