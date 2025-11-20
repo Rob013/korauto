@@ -125,11 +125,7 @@ const DealerInfoSection = lazy(() =>
   })),
 );
 
-const CarInspectionDiagram = lazy(() =>
-  import("@/components/CarInspectionDiagram").then((module) => ({
-    default: module.CarInspectionDiagram,
-  })),
-);
+
 
 // Fallback mapping moved to data/koreaOptionFallbacks.ts
 
@@ -4632,14 +4628,7 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Comprehensive Inspection Report */}
-                    <Suspense fallback={<div className="h-64 bg-muted/10 animate-pulse rounded-xl" />}>
-                      <CarInspectionDiagram
-                        inspectionData={
-                          car.inspect?.items || car.details?.inspect?.items || []
-                        }
-                        className="mt-6"
-                      />
-                    </Suspense>
+
                   </div>
                 )}
               </CardContent>

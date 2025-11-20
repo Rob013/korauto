@@ -643,10 +643,18 @@ body.car-details-page .smartsupp-widget-container {
   animation: smoothPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Ensure a consistent spin animation across browsers */
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 
@@ -654,6 +662,7 @@ body.car-details-page .smartsupp-widget-container {
   .animate-spin { animation: spin 0.7s linear infinite; will-change: transform; display: inline-block; }
   .animate-spin-fast { animation: spin 0.6s linear infinite; }
   .animate-spin-slow { animation: spin 1.2s linear infinite; }
+  .animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
   .loading-icon { display: inline-block; pointer-events: none; }
   svg.animate-spin { will-change: transform; }
 }
