@@ -620,7 +620,7 @@ Deno.serve(async (req) => {
                 car_data: raw,
                 lot_data: lotData,
                 last_api_sync: new Date().toISOString(),
-                sale_status: lotStatus === 3 ? 'sold' : (lotStatus === 2 ? 'pending' : 'active')
+                sale_status: (lotStatus as number) === 3 ? 'sold' : ((lotStatus as number) === 2 ? 'pending' : 'active')
               } as any;
 
               const { error } = await supabaseClient
@@ -727,7 +727,7 @@ Deno.serve(async (req) => {
     const perPage = 100; // Process 100 cars per page
     
     let page = 1;
-    let totalUpdated = 0;
+    let totalSynced = 0;
     let totalUpdated = 0;
     let encarCount = 0;
     let kbchachaCount = 0;
