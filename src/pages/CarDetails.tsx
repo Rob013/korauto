@@ -125,6 +125,11 @@ const DealerInfoSection = lazy(() =>
   })),
 );
 
+const CarInspectionDiagram = lazy(() =>
+  import("@/components/CarInspectionDiagram").then((module) => ({
+    default: module.CarInspectionDiagram,
+  })),
+);
 
 
 // Fallback mapping moved to data/koreaOptionFallbacks.ts
@@ -3201,6 +3206,7 @@ const CarDetails = memo(() => {
     };
 
     const loadCar = async () => {
+      // Show prefetched data immediately if available
       const sessionData = restoreCarFromSession();
       if (sessionData) {
         setCar(sessionData);
@@ -3216,6 +3222,7 @@ const CarDetails = memo(() => {
 
       let shouldBackgroundRefresh = false;
 
+      // Reduced timeout from 200ms to 100ms for faster display
       const quickCacheResult = await Promise.race([
         cachePromise
           .then((data) => {
@@ -3225,7 +3232,7 @@ const CarDetails = memo(() => {
             return data;
           })
           .catch(() => null),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 200)),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 100)),
       ]);
 
       const apiPromise = fetchFromApi({
@@ -4628,6 +4635,18 @@ const CarDetails = memo(() => {
                     )}
 
                     {/* Comprehensive Inspection Report */}
+                    {(car.inspect?.items || car.details?.inspect?.items) && (
+                      <div className="mt-6">
+                        <Suspense fallback={
+                          <div className="h-96 bg-gradient-to-br from-muted/40 to-muted/20 animate-pulse rounded-xl border border-border/40" />
+                        }>
+                          <CarInspectionDiagram
+                            inspectionData={car.inspect?.items || car.details?.inspect?.items || []}
+                            className="mt-4"
+                          />
+                        </Suspense>
+                      </div>
+                    )}
 
                   </div>
                 )}
