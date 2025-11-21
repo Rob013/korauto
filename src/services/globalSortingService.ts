@@ -36,7 +36,7 @@ export class GlobalSortingService {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}:${value}`)
       .join('|');
-    
+
     return `${filterKey}__${sortBy}`;
   }
 
@@ -86,15 +86,15 @@ export class GlobalSortingService {
     }
 
     console.log(`🔄 Applying global sorting to ${allCars.length} cars with sort option: ${sortBy}`);
-    
+
     // Apply chronological ranking to all cars
     const result = applyChronologicalRanking(allCars, sortBy, carsPerPage);
-    
+
     // Cache the result
     this.cacheResult(filters, sortBy, result);
-    
+
     console.log(`✅ Global sorting complete: ${result.totalCars} cars ranked across ${result.totalPages} pages`);
-    
+
     return result;
   }
 
@@ -133,7 +133,10 @@ export class GlobalSortingService {
       // Apply grade filter if specified
       if (filters.grade_iaai && filters.grade_iaai !== 'all') {
         const carGrade = car.lots?.[0]?.grade_iaai || '';
-        if (carGrade.toLowerCase() !== filters.grade_iaai.toLowerCase()) {
+        const carGradeLower = typeof carGrade === 'string' ? carGrade.toLowerCase() : '';
+        const filterGradeLower = typeof filters.grade_iaai === 'string' ? filters.grade_iaai.toLowerCase() : '';
+
+        if (carGradeLower !== filterGradeLower) {
           return false;
         }
       }

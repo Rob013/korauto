@@ -1491,7 +1491,9 @@ const EquipmentOptionsSection = memo(
 EquipmentOptionsSection.displayName = "EquipmentOptionsSection";
 const CarDetails = memo(() => {
   // Translation functions for Albanian
-  const translateTransmission = (transmission: string): string => {
+  const translateTransmission = (transmission: string | null | undefined): string => {
+    if (!transmission) return '';
+
     const transmissionMap: Record<string, string> = {
       automatic: "automatik",
       manual: "manual",
@@ -1499,9 +1501,13 @@ const CarDetails = memo(() => {
       semiautomatic: "gjysëm automatik",
       "automated manual": "manual i automatizuar",
     };
-    return transmissionMap[transmission?.toLowerCase()] || transmission;
+
+    const key = typeof transmission === 'string' ? transmission.toLowerCase() : '';
+    return transmissionMap[key] || transmission;
   };
-  const translateColor = (color: string): string => {
+  const translateColor = (color: string | null | undefined): string => {
+    if (!color) return '';
+
     const colorMap: Record<string, string> = {
       black: "zi",
       white: "bardhë",
@@ -1509,13 +1515,11 @@ const CarDetails = memo(() => {
       gray: "gri",
       red: "kuq",
       blue: "blu",
-      silver: "argjend",
       green: "jeshil",
-      yellow: "verdh",
-      brown: "kafe",
+      yellow: "verdhë",
       orange: "portokalli",
-      purple: "vjollcë",
-      pink: "rozë",
+      brown: "kafe",
+      silver: "argjend",
       gold: "ar",
       beige: "bezhë",
       "dark blue": "blu i errët",
@@ -1523,7 +1527,9 @@ const CarDetails = memo(() => {
       "dark green": "jeshil i errët",
       "light green": "jeshil i çelët",
     };
-    return colorMap[color?.toLowerCase()] || color;
+
+    const key = typeof color === 'string' ? color.toLowerCase() : '';
+    return colorMap[key] || color;
   };
   const { id: lot } = useParams<{
     id: string;
