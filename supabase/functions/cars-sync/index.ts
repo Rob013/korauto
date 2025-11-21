@@ -498,17 +498,42 @@ Deno.serve(async (req) => {
     );
 
     console.log('🚀 Starting cars sync...');
-    
+
     const API_KEY = 'd00985c77981fe8d26be16735f932ed1';
     const API_BASE_URL = 'https://auctionsapi.com/api';
-    
+
     // Parse request body for action type
     const requestBody = await req.json().catch(() => ({ action: 'status_refresh' }));
     const syncAction = requestBody.action || 'status_refresh';
     const syncType = requestBody.type || 'incremental'; // 'incremental' or 'full'
-    
-    console.log(`📋 Sync action: ${syncAction}, type: ${syncType}`);
-    
+    const isScheduled = requestBody.scheduled === true;
+
+    console.log(`📋 Sync action: ${syncAction}, type: ${syncType}, scheduled: ${isScheduled}`);
+
+    // Create a sync log entry
+    let syncLogId: string | null = null;
+    if (syncAction === 'status_refresh' || syncAction === 'prefetch_cars') {
+      const { data: logData, error: logError } = await supabaseClient
+        .from('cars_sync_log')
+        .insert({
+          sync_type: syncType,
+          status: 'running',
+          metadata: {
+            action: syncAction,
+            scheduled: isScheduled,
+            timestamp: new Date().toISOString()
+          }
+        })
+        .select('id')
+        .single();
+
+      if (!logError && logData) {
+        syncLogId = logData.id;
+        console.log(`📝 Created sync log entry: ${syncLogId}`);
+      }
+    }
+
+
     // Utility: fetch with graceful fallback
     const fetchWithCors = async (url: string): Promise<Response> => {
       return await fetch(url, { method: 'GET' });
@@ -710,20 +735,20 @@ Deno.serve(async (req) => {
       );
     }
 
-      // For status refresh, do a quick incremental sync
-      const pagesLimit = syncType === 'full' ? 500 : 1; // Full sync: 500 pages, Incremental: 1 page
-      const perPage = 50;
-      
-      let page = 1;
-      let totalSynced = 0;
-      let encarCount = 0;
-      let kbchachaCount = 0;
-      let hasMorePages = true;
-      const syncBatchId = `${syncType}-${Date.now()}`;
-    
+    // For status refresh, do a quick incremental sync
+    const pagesLimit = syncType === 'full' ? 500 : 1; // Full sync: 500 pages, Incremental: 1 page
+    const perPage = 50;
+
+    let page = 1;
+    let totalSynced = 0;
+    let encarCount = 0;
+    let kbchachaCount = 0;
+    let hasMorePages = true;
+    const syncBatchId = `${syncType}-${Date.now()}`;
+
     while (hasMorePages && page <= pagesLimit) {
       console.log(`📄 Fetching page ${page}...`);
-      
+
       // Fetch all cars without domain filter to get both Encar and KB Chachacha
       const response = await fetch(`${API_BASE_URL}/cars?per_page=${perPage}&page=${page}&simple_paginate=0`, {
         headers: {
@@ -739,67 +764,67 @@ Deno.serve(async (req) => {
 
       const data = await response.json();
       const cars: Car[] = data.data || [];
-      
+
       if (cars.length === 0) {
         console.log('✅ No more cars to sync');
         hasMorePages = false;
         break;
       }
 
-        console.log(`🔄 Processing ${cars.length} cars from page ${page}...`);
+      console.log(`🔄 Processing ${cars.length} cars from page ${page}...`);
 
-        // Process cars in batches
-        const batchSize = syncType === 'full' ? 5 : 10;
-        for (let i = 0; i < cars.length; i += batchSize) {
-          const batch = cars.slice(i, i + batchSize);
-          
-          for (const car of batch) {
-            try {
-              const { car: detailedCar, raw } = await fetchCarDetail(API_BASE_URL, API_KEY, car.id.toString());
-              if (!detailedCar) {
-                console.warn(`⚠️ Detail data unavailable for car ${car.id}, using list data only.`);
-              }
+      // Process cars in batches
+      const batchSize = syncType === 'full' ? 5 : 10;
+      for (let i = 0; i < cars.length; i += batchSize) {
+        const batch = cars.slice(i, i + batchSize);
 
-              const cacheRecord = buildCarCacheRecord({
-                listCar: car,
-                detailedCar,
-                detailPayload: raw,
-                syncBatchId,
-                syncType,
+        for (const car of batch) {
+          try {
+            const { car: detailedCar, raw } = await fetchCarDetail(API_BASE_URL, API_KEY, car.id.toString());
+            if (!detailedCar) {
+              console.warn(`⚠️ Detail data unavailable for car ${car.id}, using list data only.`);
+            }
+
+            const cacheRecord = buildCarCacheRecord({
+              listCar: car,
+              detailedCar,
+              detailPayload: raw,
+              syncBatchId,
+              syncType,
+            });
+
+            const sourceSite = String(cacheRecord.source_site || '').toLowerCase();
+            if (sourceSite.includes('kbchacha')) {
+              kbchachaCount++;
+            } else {
+              encarCount++;
+            }
+
+            const { error } = await supabaseClient
+              .from('cars_cache')
+              .upsert(cacheRecord, {
+                onConflict: 'id',
+                ignoreDuplicates: false
               });
 
-              const sourceSite = String(cacheRecord.source_site || '').toLowerCase();
-              if (sourceSite.includes('kbchacha')) {
-                kbchachaCount++;
-              } else {
-                encarCount++;
-              }
-
-              const { error } = await supabaseClient
-                .from('cars_cache')
-                .upsert(cacheRecord, { 
-                  onConflict: 'id',
-                  ignoreDuplicates: false 
-                });
-
-              if (error) {
-                console.error(`❌ Error upserting car ${car.id}:`, error);
-              } else {
-                totalSynced++;
-              }
-
-              await sleep(syncType === 'full' ? 200 : 75);
-            } catch (err) {
-              console.error(`❌ Error processing car ${car.id}:`, err);
+            if (error) {
+              console.error(`❌ Error upserting car ${car.id}:`, error);
+            } else {
+              totalSynced++;
             }
+
+            await sleep(syncType === 'full' ? 200 : 75);
+          } catch (err) {
+            console.error(`❌ Error processing car ${car.id}:`, err);
           }
         }
+      }
 
       // Check if there are more pages
       const hasNext = data.meta?.current_page < data.meta?.last_page;
       hasMorePages = hasNext;
       page++;
-      
+
       // Wait 2 seconds between page requests to avoid rate limiting
       if (hasMorePages && page <= pagesLimit) {
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -814,6 +839,25 @@ Deno.serve(async (req) => {
     console.log(`✅ Sync complete! Synced: ${totalSynced} (Encar: ${encarCount}, KB Chachacha: ${kbchachaCount})`);
     console.log(`📊 Total cars in database: ${totalCarsInDb}`);
 
+    // Update sync log with completion
+    if (syncLogId) {
+      await supabaseClient
+        .from('cars_sync_log')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          cars_synced: totalSynced,
+          metadata: {
+            action: syncAction,
+            scheduled: isScheduled,
+            encar_count: encarCount,
+            kbchacha_count: kbchachaCount,
+            total_in_db: totalCarsInDb
+          }
+        })
+        .eq('id', syncLogId);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -822,25 +866,26 @@ Deno.serve(async (req) => {
         encarCount,
         kbchachaCount,
         totalInDatabase: totalCarsInDb,
-        syncType
+        syncType,
+        syncLogId
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
 
   } catch (error) {
     console.error('❌ Cars sync failed:', error);
-    
+
     return new Response(
       JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       }),
-      { 
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
