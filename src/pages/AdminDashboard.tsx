@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import AuthLogin from "@/components/AuthLogin";
 import { CarsSyncButton } from "@/components/CarsSyncButton";
+import { FullSyncButton } from "@/components/FullSyncButton";
 import AdminCarSearch from "@/components/AdminCarSearch";
 import { CookieManagementDashboard } from "@/components/CookieManagementDashboard";
 import PerformanceAuditWidget from "@/components/PerformanceAuditWidget";
@@ -721,8 +722,9 @@ const AdminDashboard = () => {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold truncate">Admin Dashboard</h1>
             <p className="text-xs sm:text-sm text-muted-foreground truncate">{user.email}</p>
-            <div className="mt-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               <CarsSyncButton />
+              <FullSyncButton />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
