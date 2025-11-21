@@ -210,20 +210,22 @@ Deno.serve(async (req) => {
     // Check for force parameter to override stuck syncs
     const forceSync = url.searchParams.get('force') === 'true'
 
-    // Clean up stuck syncs older than 15 minutes (more aggressive)
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+    // Clean up stuck syncs older than 3 minutes (aggressive cleanup)
+    const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString()
     const { error: cleanupError } = await supabase
       .from('sync_status')
       .update({ 
         status: 'failed', 
-        error_message: 'Sync timeout - cleaned up automatically after 15 minutes',
+        error_message: 'Sync timeout - cleaned up automatically after 3 minutes',
         completed_at: new Date().toISOString()
       })
       .eq('status', 'running')
-      .lt('started_at', fifteenMinutesAgo)
+      .lt('started_at', threeMinutesAgo)
 
     if (cleanupError) {
       console.warn('⚠️ Error cleaning up stuck syncs:', cleanupError)
+    } else {
+      console.log('✅ Cleaned up any stuck syncs older than 3 minutes')
     }
 
     // Check for existing running sync (unless force flag is set)
@@ -295,6 +297,7 @@ Deno.serve(async (req) => {
     let totalCarsProcessed = 0
     let totalArchivedProcessed = 0
     const errors: string[] = []
+    let syncSuccess = false
 
     try {
       // ✅ Step 1: Process active cars from /api/cars endpoint
@@ -550,6 +553,7 @@ Deno.serve(async (req) => {
       }
 
       // Complete sync
+      syncSuccess = true
       const completedAt = new Date().toISOString()
       await supabase
         .from('sync_status')
@@ -615,6 +619,22 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
+    } finally {
+      // Ensure sync is never left in running state
+      if (!syncSuccess) {
+        console.log('🔄 Finally block: Ensuring sync is not stuck in running state...')
+        await supabase
+          .from('sync_status')
+          .update({
+            status: 'failed',
+            completed_at: new Date().toISOString(),
+            error_message: 'Sync did not complete successfully - cleaned up in finally block',
+            cars_processed: totalCarsProcessed,
+            archived_lots_processed: totalArchivedProcessed
+          })
+          .eq('id', syncRecord.id)
+          .eq('status', 'running') // Only update if still running
+      }
     }
 
   } catch (error) {
