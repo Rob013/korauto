@@ -36,7 +36,7 @@ export interface APIFilters {
 export interface Car {
   id: string;
   title?: string;
-  lots?: Array<{ grade_iaai?: string; [key: string]: unknown }>;
+  lots?: Array<{ grade_iaai?: string;[key: string]: unknown }>;
   engine?: { name?: string };
   [key: string]: unknown;
 }
@@ -66,7 +66,7 @@ export const extractEngineSpecs = (title: string): string[] => {
     // Mercedes style: 220d, 300 CDI
     /\b(\d{3}[dh]?)\s*(CDI|diesel|petrol)?\b/gi,
   ];
-  
+
   patterns.forEach(pattern => {
     const matches = title.match(pattern);
     if (matches) {
@@ -78,7 +78,7 @@ export const extractEngineSpecs = (title: string): string[] => {
       });
     }
   });
-  
+
   return engines;
 };
 
@@ -92,7 +92,7 @@ export const extractGradesFromTitle = (title: string): string[] => {
     /\b(\d+\.?\d*)\s*(?:diesel|petrol|benzin|hybrid|electric)\b/gi, // Full fuel type words
     /\b(\d+\.?\d*)\s*(?:turbo|liter?|l)\s*(?:diesel|petrol|gasoline|hybrid|electric)?\b/gi, // Engine displacement and turbo
   ];
-  
+
   patterns.forEach(pattern => {
     const matches = title.match(pattern);
     if (matches) {
@@ -103,14 +103,14 @@ export const extractGradesFromTitle = (title: string): string[] => {
           .replace(/\bl\b/g, 'liter')
           .replace(/\bgas(oline)?\b/g, 'petrol')
           .replace(/(\d+\.?\d*)\s*(tdi|tfsi|fsi|tsi|cdi|diesel|petrol|gasoline|hybrid|electric|turbo|liter)/gi, '$1 $2');
-        
+
         if (normalized && !grades.includes(normalized)) {
           grades.push(normalized);
         }
       });
     }
   });
-  
+
   return grades;
 };
 
@@ -119,27 +119,29 @@ export const extractGradesFromTitle = (title: string): string[] => {
  */
 export const extractCarGrades = (car: Car): string[] => {
   const carGrades: string[] = [];
-  
+
+  if (!car) return carGrades;
+
   // Extract grades from lots (primary source)
   if (car.lots && Array.isArray(car.lots)) {
-    car.lots.forEach((lot: { grade_iaai?: string; [key: string]: unknown }) => {
+    car.lots.forEach((lot: { grade_iaai?: string;[key: string]: unknown }) => {
       if (lot.grade_iaai) {
         carGrades.push(lot.grade_iaai.trim().toLowerCase());
       }
     });
   }
-  
+
   // Extract grades from title
   if (car.title) {
     const titleGrades = extractGradesFromTitle(car.title);
     carGrades.push(...titleGrades.map(g => g.toLowerCase()));
   }
-  
+
   // Extract grades from engine field
   if (car.engine && car.engine.name) {
     carGrades.push(car.engine.name.trim().toLowerCase());
   }
-  
+
   return carGrades;
 };
 
@@ -147,28 +149,30 @@ export const extractCarGrades = (car: Car): string[] => {
  * Checks if a car matches a grade filter - STRICT matching
  */
 export const matchesGradeFilter = (car: Car, gradeFilter: string): boolean => {
+  if (!car) return false;
+
   if (!gradeFilter || gradeFilter === 'all') {
     return true;
   }
 
   const filterGrade = gradeFilter.toLowerCase().trim();
   const carGrades = extractCarGrades(car);
-  
+
   // STRICT matching - exact match or filter is contained in car grade
   return carGrades.some(grade => {
     const gradeNormalized = grade.toLowerCase().trim();
-    
+
     // Exact match (highest priority)
     if (gradeNormalized === filterGrade) return true;
-    
+
     // Car grade contains the filter (e.g., "2.0 TDI quattro" contains "2.0 TDI")
     if (gradeNormalized.includes(filterGrade)) return true;
-    
+
     // Remove spaces for comparison (e.g., "2.0TDI" matches "2.0 TDI")
     const gradeNoSpaces = gradeNormalized.replace(/\s+/g, '');
     const filterNoSpaces = filterGrade.replace(/\s+/g, '');
     if (gradeNoSpaces === filterNoSpaces || gradeNoSpaces.includes(filterNoSpaces)) return true;
-    
+
     return false;
   });
 };
@@ -178,15 +182,18 @@ export const matchesGradeFilter = (car: Car, gradeFilter: string): boolean => {
  */
 export const extractUniqueEngineSpecs = (cars: Car[]): Array<{ value: string; label: string; count: number }> => {
   const engineCounts = new Map<string, number>();
-  
+
+  if (!Array.isArray(cars)) return [];
+
   cars.forEach(car => {
+    if (!car) return;
     if (car.title) {
       const engines = extractEngineSpecs(car.title);
       engines.forEach(engine => {
         engineCounts.set(engine, (engineCounts.get(engine) || 0) + 1);
       });
     }
-    
+
     // Also check engine field
     if (car.engine && car.engine.name) {
       const engines = extractEngineSpecs(car.engine.name);
@@ -195,7 +202,7 @@ export const extractUniqueEngineSpecs = (cars: Car[]): Array<{ value: string; la
       });
     }
   });
-  
+
   // Convert to array and sort by count (most common first)
   return Array.from(engineCounts.entries())
     .map(([engine, count]) => ({
@@ -210,40 +217,42 @@ export const extractUniqueEngineSpecs = (cars: Car[]): Array<{ value: string; la
  * Checks if a car matches an engine specification filter - STRICT matching
  */
 export const matchesEngineFilter = (car: Car, engineFilter: string): boolean => {
+  if (!car) return false;
+
   if (!engineFilter || engineFilter === 'all') {
     return true;
   }
 
   const filterEngine = engineFilter.toLowerCase().trim();
   const carEngines: string[] = [];
-  
+
   // Extract from title
   if (car.title) {
     const titleEngines = extractEngineSpecs(car.title);
     carEngines.push(...titleEngines.map(e => e.toLowerCase()));
   }
-  
+
   // Extract from engine field
   if (car.engine && car.engine.name) {
     const engineFieldSpecs = extractEngineSpecs(car.engine.name);
     carEngines.push(...engineFieldSpecs.map(e => e.toLowerCase()));
   }
-  
+
   // STRICT matching - exact match or car engine contains filter
   return carEngines.some(engine => {
     const engineNormalized = engine.toLowerCase().trim();
-    
+
     // Exact match (highest priority)
     if (engineNormalized === filterEngine) return true;
-    
+
     // Car engine contains filter (e.g., "520d xDrive" contains "520d")
     if (engineNormalized.includes(filterEngine)) return true;
-    
+
     // Remove spaces for comparison
     const engineNoSpaces = engineNormalized.replace(/\s+/g, '');
     const filterNoSpaces = filterEngine.replace(/\s+/g, '');
     if (engineNoSpaces === filterNoSpaces || engineNoSpaces.includes(filterNoSpaces)) return true;
-    
+
     return false;
   });
 };
@@ -253,9 +262,11 @@ export const matchesEngineFilter = (car: Car, engineFilter: string): boolean => 
  * Also filters out cars without real pricing data
  */
 export const applyGradeFilter = (cars: Car[], gradeFilter?: string): Car[] => {
+  if (!Array.isArray(cars)) return [];
+
   // First filter out cars without real pricing data
-  const carsWithRealPricing = cars.filter(hasRealPricing);
-  
+  const carsWithRealPricing = cars.filter(car => car && hasRealPricing(car));
+
   if (!gradeFilter || gradeFilter === 'all') {
     return carsWithRealPricing;
   }
@@ -268,13 +279,13 @@ export const applyGradeFilter = (cars: Car[], gradeFilter?: string): Car[] => {
  */
 export const normalizeFilters = (filters: APIFilters): APIFilters => {
   const normalized: APIFilters = {};
-  
+
   Object.entries(filters).forEach(([key, value]) => {
     if (value !== undefined && value !== '' && value !== 'all' && value !== 'any') {
       normalized[key as keyof APIFilters] = value;
     }
   });
-  
+
   return normalized;
 };
 
@@ -284,14 +295,14 @@ export const normalizeFilters = (filters: APIFilters): APIFilters => {
 export const filtersToURLParams = (filters: APIFilters): URLSearchParams => {
   const params = new URLSearchParams();
   const normalizedFilters = normalizeFilters(filters);
-  
+
   Object.entries(normalizedFilters).forEach(([key, value]) => {
     if (value !== undefined && value !== '') {
       // Properly encode grade filter for URL
       params.set(key, key === 'grade_iaai' ? encodeURIComponent(value) : value);
     }
   });
-  
+
   return params;
 };
 
@@ -300,14 +311,14 @@ export const filtersToURLParams = (filters: APIFilters): URLSearchParams => {
  */
 export const urlParamsToFilters = (searchParams: URLSearchParams): APIFilters => {
   const filters: APIFilters = {};
-  
+
   searchParams.forEach((value, key) => {
     if (value && value !== 'undefined') {
       // Properly decode grade filter from URL
       filters[key as keyof APIFilters] = key === 'grade_iaai' ? decodeURIComponent(value) : value;
     }
   });
-  
+
   return filters;
 };
 
@@ -324,7 +335,7 @@ export const hasActiveFilters = (filters: APIFilters): boolean => {
  */
 export const isYearRangeChange = (newFilters: APIFilters, currentFilters: APIFilters): boolean => {
   return (
-    newFilters.from_year !== currentFilters.from_year || 
+    newFilters.from_year !== currentFilters.from_year ||
     newFilters.to_year !== currentFilters.to_year
   ) && (newFilters.from_year || newFilters.to_year);
 };
@@ -356,7 +367,7 @@ export const getFallbackGrades = (manufacturerId: string): Array<{ value: string
     '5': ['1.0 turbo', '1.5 turbo', '2.0 petrol', '1.6 diesel', '2.0 diesel'], // Ford
     '6': ['1.4 turbo', '1.8 petrol', '2.0 petrol', '1.6 diesel'], // Chevrolet
   };
-  
+
   return (fallbacks[manufacturerId] || []).map(grade => ({ value: grade, label: grade }));
 };
 
@@ -371,7 +382,7 @@ export const getManufacturerCategory = (manufacturerName: string): { priority: n
       priority: 1
     },
     korean: {
-      name: 'Korean Brands', 
+      name: 'Korean Brands',
       brands: ['Hyundai', 'Kia', 'Genesis'],
       priority: 2
     },
@@ -396,7 +407,7 @@ export const getManufacturerCategory = (manufacturerName: string): { priority: n
       priority: 6
     },
     italian: {
-      name: 'Italian Brands', 
+      name: 'Italian Brands',
       brands: ['Fiat', 'Alfa Romeo'],
       priority: 7
     },
@@ -407,7 +418,7 @@ export const getManufacturerCategory = (manufacturerName: string): { priority: n
     }
   };
 
-  const categoryEntry = Object.values(categories).find(category => 
+  const categoryEntry = Object.values(categories).find(category =>
     category.brands.includes(manufacturerName.trim())
   );
 
@@ -420,31 +431,31 @@ export const getManufacturerCategory = (manufacturerName: string): { priority: n
 /**
  * Sorts manufacturers by category and car count
  */
-export const sortManufacturers = (manufacturers: Array<{ 
-  id: number; 
-  name: string; 
-  cars_qty?: number; 
-  car_count?: number 
+export const sortManufacturers = (manufacturers: Array<{
+  id: number;
+  name: string;
+  cars_qty?: number;
+  car_count?: number
 }>): Array<{ id: number; name: string; cars_qty?: number; car_count?: number }> => {
   // Brands to exclude from the dropdown
   const excludedBrands = [
-    'Daewoo', 'Daihatsu', 'Saab', 'Isuzu', 'BAIC', 
-    'Jeis Mobility', 'Ineos', 'IVECO', 'Mitsuoka', 
+    'Daewoo', 'Daihatsu', 'Saab', 'Isuzu', 'BAIC',
+    'Jeis Mobility', 'Ineos', 'IVECO', 'Mitsuoka',
     'Buick', 'International', 'Mercury'
   ];
-  
+
   return manufacturers
     .filter(m => {
       // Ensure manufacturer has valid data from API
-      const isValid = m.id && 
-             m.name && 
-             typeof m.name === 'string' && 
-             m.name.trim().length > 0 &&
-             (m.cars_qty && m.cars_qty > 0);
-      
+      const isValid = m.id &&
+        m.name &&
+        typeof m.name === 'string' &&
+        m.name.trim().length > 0 &&
+        (m.cars_qty && m.cars_qty > 0);
+
       // Exclude specific brands
       const isNotExcluded = !excludedBrands.includes(m.name.trim());
-      
+
       return isValid && isNotExcluded;
     })
     .sort((a, b) => {
@@ -454,7 +465,7 @@ export const sortManufacturers = (manufacturers: Array<{
       if (aCount !== bCount) {
         return bCount - aCount;
       }
-      
+
       // If same count, sort alphabetically
       return a.name.trim().localeCompare(b.name.trim());
     });
@@ -489,11 +500,11 @@ export const generateYearPresets = (currentYear?: number) => {
  * Checks if strict filtering mode should be enabled
  */
 export const isStrictFilterMode = (filters: APIFilters): boolean => {
-  return !!(filters.manufacturer_id || filters.model_id || 
-            filters.color || filters.fuel_type || filters.transmission || 
-            filters.from_year || filters.to_year || filters.buy_now_price_from || 
-            filters.buy_now_price_to || filters.odometer_from_km || filters.odometer_to_km ||
-            filters.seats_count || filters.max_accidents || filters.grade_iaai || filters.search);
+  return !!(filters.manufacturer_id || filters.model_id ||
+    filters.color || filters.fuel_type || filters.transmission ||
+    filters.from_year || filters.to_year || filters.buy_now_price_from ||
+    filters.buy_now_price_to || filters.odometer_from_km || filters.odometer_to_km ||
+    filters.seats_count || filters.max_accidents || filters.grade_iaai || filters.search);
 };
 
 /**

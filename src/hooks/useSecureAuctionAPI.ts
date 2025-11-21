@@ -745,6 +745,19 @@ export const useSecureAuctionAPI = () => {
         return;
       }
 
+      // Handle 404 as empty result (some APIs return 404 for no results)
+      if (err?.message === 'API 404') {
+        console.log('ℹ️ API returned 404 (No Results), showing empty state');
+        startTransition(() => {
+          setCars([]);
+          setTotalCount(0);
+          setHasMorePages(false);
+          setCurrentPage(1);
+        });
+        setError(null);
+        return;
+      }
+
       if (err.message === "RATE_LIMITED") {
         // Retry once after rate limit
         try {
@@ -792,7 +805,12 @@ export const useSecureAuctionAPI = () => {
 
       if (fallbackCars.length === 0) {
         console.log("❌ No fallback cars available, showing empty state");
-        setError("Failed to load cars. Please try again.");
+        // If searching, just show empty state without error
+        if (newFilters.search) {
+          setError(null);
+        } else {
+          setError("Failed to load cars. Please try again.");
+        }
         setCars([]);
         setTotalCount(0);
         setHasMorePages(false);
