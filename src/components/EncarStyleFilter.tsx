@@ -150,6 +150,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, []);
 
   const [expandedSections, setExpandedSections] = useState<string[]>(compact ? ['basic'] : ['basic', 'advanced']);
+  const activeFiltersCount = useMemo(() => {
+    const hasValue = (value: unknown) => value !== undefined && value !== null && value !== '' && value !== 'all';
+    return Object.entries(filters || {}).filter(([key, value]) => key !== 'sort' && hasValue(value)).length;
+  }, [filters]);
 
   // Track if strict filtering mode is enabled - using utility
   const isStrictMode = useMemo(() => isStrictFilterMode(filters), [filters]);
@@ -293,59 +297,103 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <Card className="glass-panel border-0 rounded-xl p-6 sm:p-8 space-y-4 w-full max-w-md mx-auto shadow-lg">
-        <div className="space-y-2">
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Car className="h-2.5 w-2.5" />
-              Marka
-            </Label>
-            <div className="h-4">
-              {loadingCounts && (
-                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-                  <span className="animate-pulse">Updating...</span>
-                </span>
-              )}
+      <Card className="glass-panel border border-border/60 rounded-2xl p-5 sm:p-6 space-y-5 w-full max-w-xl mx-auto shadow-xl bg-gradient-to-b from-background via-background/95 to-muted/60">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+              <Filter className="h-4 w-4" />
             </div>
-            <AdaptiveSelect
-              value={filters.manufacturer_id || 'all'}
-              onValueChange={(value) => updateFilter('manufacturer_id', value)}
-              placeholder="Zgjidhni markën"
-              className="filter-control h-8 text-xs"
-              options={manufacturerSelectOptions}
-              forceNative
-            />
+            <div className="space-y-0.5">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Paneli i filtrave</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base">Gjej makinën perfekte</h3>
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="px-2 py-0 h-5 text-[11px] bg-primary/10 text-primary border-primary/20">
+                    {activeFiltersCount} aktive
+                  </Badge>
+                )}
+              </div>
+            </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClearFilters}
+              className="h-8 px-2 text-xs border border-border/60 bg-muted/50 hover:bg-muted"
+            >
+              <X className="mr-1 h-3 w-3" />
+              Fshij
+            </Button>
+            {onCloseFilter && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full border border-border/60 bg-background/80"
+                onClick={onCloseFilter}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
 
-          <div className="space-y-1 filter-section">
-            <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
-              <Settings className="h-2.5 w-2.5" />
-              Modeli
-            </Label>
-            <AdaptiveSelect
-              value={filters.model_id || 'all'}
-              onValueChange={(value) => updateFilter('model_id', value)}
-              disabled={!filters.manufacturer_id}
-              placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
-              className="filter-control h-8 text-xs"
-              options={[
-                ...(!(isStrictMode && filters.model_id)
-                  ? [{ value: 'all', label: 'Të gjithë modelet' }]
-                  : []),
-                ...models
-                  .filter(model => model.cars_qty && model.cars_qty > 0)
-                  .map(model => {
-                    const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
-                    const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
-                    return {
-                      value: model.id.toString(),
-                      label: `${formattedModelName} (${model.cars_qty})`
-                    };
-                  })
-              ]}
-              forceNative
-            />
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2 filter-section rounded-xl border border-border/50 bg-background/80 p-3 shadow-sm">
+              <Label className="filter-label text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+                <Car className="h-3 w-3" />
+                Marka
+              </Label>
+              <div className="h-4">
+                {loadingCounts && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                    <span className="animate-pulse">Updating...</span>
+                  </span>
+                )}
+              </div>
+              <AdaptiveSelect
+                value={filters.manufacturer_id || 'all'}
+                onValueChange={(value) => updateFilter('manufacturer_id', value)}
+                placeholder="Zgjidhni markën"
+                className="filter-control h-10 text-sm"
+                options={manufacturerSelectOptions}
+                forceNative
+              />
+            </div>
+
+            <div className="space-y-2 filter-section rounded-xl border border-border/50 bg-background/80 p-3 shadow-sm">
+              <Label className="filter-label text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+                <Settings className="h-3 w-3" />
+                Modeli
+              </Label>
+              <AdaptiveSelect
+                value={filters.model_id || 'all'}
+                onValueChange={(value) => updateFilter('model_id', value)}
+                disabled={!filters.manufacturer_id}
+                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                className="filter-control h-10 text-sm"
+                options={[
+                  ...(!(isStrictMode && filters.model_id)
+                    ? [{ value: 'all', label: 'Të gjithë modelet' }]
+                    : []),
+                  ...models
+                    .filter(model => model.cars_qty && model.cars_qty > 0)
+                    .map(model => {
+                      const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+                      const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
+                      return {
+                        value: model.id.toString(),
+                        label: `${formattedModelName} (${model.cars_qty})`
+                      };
+                    })
+                ]}
+                forceNative
+              />
+            </div>
           </div>
 
           {/* Year presets */}
