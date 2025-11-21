@@ -3947,7 +3947,7 @@ const CarDetails = memo(() => {
                       <OptimizedCarImage
                         src={images[selectedImageIndex]}
                         alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500 group-hover:scale-105`}
+                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500`}
                         style={imageSwipeStyle}
                         aspectRatio="aspect-[4/3]"
                         priority={selectedImageIndex === 0}
