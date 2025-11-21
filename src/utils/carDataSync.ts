@@ -161,6 +161,7 @@ export const syncCarDataToCache = async (carData: any): Promise<boolean> => {
         lot_data,
         original_api_data: carData,
         last_api_sync: new Date().toISOString(),
+        last_updated_source: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'id'

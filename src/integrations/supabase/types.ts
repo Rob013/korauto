@@ -631,6 +631,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cars_sync_log: {
+        Row: {
+          cars_archived: number | null
+          cars_synced: number | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          started_at: string | null
+          status: string | null
+          sync_type: string
+        }
+        Insert: {
+          cars_archived?: number | null
+          cars_synced?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string | null
+          sync_type: string
+        }
+        Update: {
+          cars_archived?: number | null
+          cars_synced?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string | null
+          sync_type?: string
+        }
+        Relationships: []
+      }
       favorite_cars: {
         Row: {
           car_id: string
@@ -1201,6 +1240,7 @@ export type Database = {
     }
     Functions: {
       anonymize_old_inspection_requests: { Args: never; Returns: number }
+      archive_sold_cars: { Args: never; Returns: number }
       bulk_merge_from_staging: { Args: never; Returns: Json }
       cars_filtered_count: { Args: { p_filters?: Json }; Returns: number }
       cars_global_sort_page: {
@@ -1363,6 +1403,8 @@ export type Database = {
         Args: { checkpoint_data: Json; sync_id: string }
         Returns: undefined
       }
+      scheduled_cars_maintenance: { Args: never; Returns: Json }
+      trigger_cars_sync: { Args: never; Returns: undefined }
       update_sold_car_status: { Args: never; Returns: undefined }
     }
     Enums: {

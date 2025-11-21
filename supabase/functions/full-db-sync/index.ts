@@ -208,6 +208,7 @@ function buildCarRecord(detailedCar: any, listCar: any) {
         car_data: car,
         lot_data: lot,
         last_api_sync: new Date().toISOString(),
+        last_updated_source: new Date().toISOString(),
         updated_at: new Date().toISOString()
     }
 }
