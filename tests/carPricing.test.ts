@@ -76,26 +76,26 @@ describe('Car Pricing Utilities', () => {
   });
 
   describe('calculateFinalPriceEUR', () => {
-    it('should convert USD to EUR with 2500 EUR markup', () => {
-      // 15000 USD * 0.92 + 2500 = 13800 + 2500 = 16300 EUR
-      expect(calculateFinalPriceEUR(15000, 0.92)).toBe(16300);
+    it('should convert USD to EUR with 2350 EUR markup', () => {
+      // 15000 USD * 0.92 + 2350 = 13800 + 2350 = 16150 EUR
+      expect(calculateFinalPriceEUR(15000, 0.92)).toBe(16150);
     });
 
     it('should handle different exchange rates', () => {
-      // 20000 USD * 0.85 + 2500 = 17000 + 2500 = 19500 EUR
-      expect(calculateFinalPriceEUR(20000, 0.85)).toBe(19500);
+      // 20000 USD * 0.85 + 2350 = 17000 + 2350 = 19350 EUR
+      expect(calculateFinalPriceEUR(20000, 0.85)).toBe(19350);
     });
 
     it('should work with default fallback price', () => {
-      // 25000 USD * 0.87 + 2500 = 21750 + 2500 = 24250 EUR
-      expect(calculateFinalPriceEUR(25000, 0.87)).toBe(24250);
+      // 25000 USD * 0.87 + 2350 = 21750 + 2350 = 24100 EUR
+      expect(calculateFinalPriceEUR(25000, 0.87)).toBe(24100);
     });
   });
 
   describe('isDefaultPrice', () => {
     it('should return true for the default calculated EUR price', () => {
-      // 25000 USD * 0.87 + 2500 = 21750 + 2500 = 24250 EUR
-      expect(isDefaultPrice(24250)).toBe(true);
+      // 25000 USD * 0.87 + 2350 = 21750 + 2350 = 24100 EUR
+      expect(isDefaultPrice(24100)).toBe(true);
     });
 
     it('should return false for other prices', () => {

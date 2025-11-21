@@ -328,7 +328,11 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
   // Helper: evaluate if an item's title targets a given part id
   const titleMatchesPart = useCallback((title: string, partId: string) => {
-    const t = title.toLowerCase().replace(/\s+/g, ' ').trim();
+    const t = (title ?? "")
+      .toString()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
 
     // Strict regex-based mappings to avoid false positives
     const patterns: Array<{ re: RegExp; id: string }> = [
