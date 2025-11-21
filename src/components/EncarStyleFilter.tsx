@@ -218,22 +218,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const manufacturerOptions = useMemo(() => {
     const options = prioritizedManufacturers.map((manufacturer: Manufacturer) => {
       const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
+      const count = manufacturer.cars_qty || manufacturer.car_count || 0;
+
       return {
         value: manufacturer.id.toString(),
-        label: (
-          <div className="flex items-center gap-2 py-1">
-            <img
-              src={logoUrl}
-              alt={manufacturer.name}
-              className="w-6 h-6 object-contain flex-shrink-0 rounded bg-white dark:bg-white p-0.5 ring-1 ring-border"
-              loading="eager"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-            <span className="font-medium text-sm">{manufacturer.name} ({manufacturer.cars_qty || manufacturer.car_count || 0})</span>
-          </div>
-        ),
+        label: `${manufacturer.name} (${count})`,
         icon: logoUrl
       };
     });
@@ -313,8 +302,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
             </Label>
             <div className="h-4">
               {loadingCounts && (
-                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground animate-pulse">
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                  <span className="animate-pulse">Updating...</span>
                 </span>
               )}
             </div>
@@ -487,7 +477,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     value={filters.grade_iaai || 'all'}
                     onValueChange={(value) => updateFilter('grade_iaai', value)}
                     disabled={!filters.model_id || isLoadingGrades}
-                    placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gjeneratën"}
+                    placeholder={!filters.manufacturer_id ? "Select brand first" : !filters.model_id ? "Select model first" : isLoadingGrades ? "Loading..." : "Select generation"}
                     className="filter-control h-8 text-xs"
                     options={[
                       ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha gjeneratat' }] : []),
@@ -509,7 +499,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     value={(filters as any).engine_spec || 'all'}
                     onValueChange={(value) => updateFilter('engine_spec', value)}
                     disabled={!filters.model_id}
-                    placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : "Zgjidhni motorin"}
+                    placeholder={!filters.manufacturer_id ? "Select brand first" : !filters.model_id ? "Select model first" : "Select engine"}
                     className="filter-control h-8 text-xs"
                     options={[
                       ...(!(isStrictMode && (filters as any).engine_spec) ? [{ value: 'all', label: 'Të gjithë motorët' }] : []),
@@ -715,9 +705,10 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Marka</Label>
                 <span
-                  className={`inline-flex h-4 items-center gap-1 text-[10px] text-muted-foreground transition-opacity duration-200 ${loadingCounts ? 'opacity-100' : 'opacity-0 invisible'}`}
+                  className={`inline-flex h-4 items-center gap-1.5 text-[10px] text-muted-foreground transition-opacity duration-200 ${loadingCounts ? 'opacity-100' : 'opacity-0 invisible'}`}
                 >
                   <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                  <span className="font-medium">Updating...</span>
                 </span>
               </div>
               <AdaptiveSelect
@@ -735,7 +726,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 value={filters.model_id || 'all'}
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
                 className="filter-control"
                 options={[
                   ...(!(isStrictMode && filters.model_id)
@@ -889,7 +880,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   value={filters.grade_iaai || 'all'}
                   onValueChange={(value) => updateFilter('grade_iaai', value)}
                   disabled={!filters.model_id || isLoadingGrades}
-                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : isLoadingGrades ? "Po ngarkon..." : "Zgjidhni gradën"}
+                  placeholder={!filters.manufacturer_id ? "Select brand first" : !filters.model_id ? "Select model first" : isLoadingGrades ? "Loading..." : "Select generation"}
                   options={[
                     ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha gradat' }] : []),
                     ...grades.map((grade) => ({ value: grade.value, label: grade.label }))
@@ -907,7 +898,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                   value={(filters as any).engine_spec || 'all'}
                   onValueChange={(value) => updateFilter('engine_spec', value)}
                   disabled={!filters.model_id}
-                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën" : !filters.model_id ? "Zgjidhni modelin" : "Zgjidhni motorin"}
+                  placeholder={!filters.manufacturer_id ? "Select brand first" : !filters.model_id ? "Select model first" : "Select engine"}
                   options={[
                     ...(!(isStrictMode && (filters as any).engine_spec) ? [{ value: 'all', label: 'Të gjithë motorët' }] : []),
                     ...(engineOptions && engineOptions.length > 0

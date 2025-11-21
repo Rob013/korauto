@@ -1362,12 +1362,12 @@ const EncarCatalog = ({
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm">
               {loading ? (
-                <span className="inline-flex items-center gap-2">
+                <span className="inline-flex items-center gap-2 animate-pulse">
                   <Loader2
-                    className="h-4 w-4 text-primary loading-spinner"
+                    className="h-4 w-4 text-primary animate-spin"
                     aria-hidden="true"
                   />
-                  Duke ngarkuar...
+                  <span className="font-medium">Loading...</span>
                 </span>
               ) : (
                 <>

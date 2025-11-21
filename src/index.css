@@ -79,6 +79,20 @@ html.theme-transitioning *::after {
   }
 }
 
+@keyframes pulse-subtle {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.92;
+    transform: scale(0.98);
+  }
+}
+
 .loading-spinner {
   animation: korauto-spin 0.9s linear infinite;
   transform-origin: center;
