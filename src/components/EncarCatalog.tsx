@@ -1235,7 +1235,6 @@ const EncarCatalog = ({
             onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onFetchGrades={fetchGrades}
             onFetchTrimLevels={fetchTrimLevels}
-            compact={true}
             onSearchCars={() => {
               console.log("Search button clicked, isMobile:", isMobile);
               // Apply search/filters with current sort preference - fetch from ALL sources
