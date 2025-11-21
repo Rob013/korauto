@@ -5,6 +5,7 @@ import { fetchCachedCars, triggerInventoryRefresh, shouldUseCachedPrime, isCarSo
 import { findGenerationYears } from "@/data/generationYears";
 import { categorizeAndOrganizeGrades, flattenCategorizedGrades } from '../utils/grade-categorization';
 import { getBrandLogo } from '@/data/brandLogos';
+import { fallbackCars as staticFallbackCars, fallbackManufacturers as staticFallbackManufacturers, fallbackModels as staticFallbackModels, fallbackGenerations as staticFallbackGenerations } from "@/data/fallbackData";
 
 // Simple cache to prevent redundant API calls
 const apiCache = new Map<string, { data: any; timestamp: number }>();
@@ -27,28 +28,389 @@ const getCachedApiCall = async (endpoint: string, filters: any, apiCall: () => P
   return data;
 };
 
+const FALLBACK_IMAGE_PLACEHOLDER = "/images/car-placeholder.jpg";
+
+const normalizeFilterValue = (value: unknown): string => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === "string") {
+    return value.trim().toLowerCase();
+  }
+  return "";
+};
+
+const parseNumericFilter = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value) && value !== 0) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "all") {
+      return undefined;
+    }
+    const numeric = Number(trimmed);
+    if (!Number.isNaN(numeric) && numeric !== 0) {
+      return numeric;
+    }
+  }
+  return undefined;
+};
+
+const getBuyNowValue = (car: any): number =>
+  Number(car?.lots?.[0]?.buy_now ?? car?.buy_now ?? 0);
+
+const getOdometerValue = (car: any): number =>
+  Number(car?.lots?.[0]?.odometer?.km ?? car?.odometer?.km ?? 0);
+
+const getAccidentCount = (car: any): number => {
+  const rawValue =
+    car?.insurance_v2?.accidentCnt ??
+    car?.insurance?.accident_history ??
+    car?.insurance?.accidentHistory;
+
+  if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
+    return rawValue;
+  }
+  if (typeof rawValue === "string") {
+    const numeric = Number(rawValue);
+    if (!Number.isNaN(numeric)) {
+      return numeric;
+    }
+  }
+  return 0;
+};
+
+const hasSpecificManufacturerFilter = (value: unknown): boolean => {
+  const normalized = normalizeFilterValue(value);
+  return Boolean(
+    normalized &&
+      normalized !== "all" &&
+      normalized !== "0" &&
+      normalized !== "null" &&
+      normalized !== "undefined",
+  );
+};
+
+const normalizeImages = (images: any) => {
+  if (
+    images &&
+    Array.isArray(images.normal) &&
+    images.normal.length > 0
+  ) {
+    return {
+      normal: images.normal,
+      big:
+        Array.isArray(images.big) && images.big.length > 0
+          ? images.big
+          : images.normal,
+    };
+  }
+  return {
+    normal: [FALLBACK_IMAGE_PLACEHOLDER],
+    big: [FALLBACK_IMAGE_PLACEHOLDER],
+  };
+};
+
+const cloneFallbackCar = (car: any) => {
+  const clone = JSON.parse(JSON.stringify(car));
+
+  if (!Array.isArray(clone.lots)) {
+    clone.lots = [];
+  }
+  if (clone.lots.length === 0 && clone.lot) {
+    clone.lots = [clone.lot];
+  }
+  if (clone.lots.length === 0) {
+    clone.lots = [
+      {
+        id: `${clone.id || "fallback"}-lot`,
+        lot: clone.lot_number || "fallback",
+        buy_now: clone.buy_now ?? 0,
+        final_bid: clone.final_bid ?? 0,
+        currency: "USD",
+        grade_iaai: clone.details?.badge || "",
+        odometer: clone.odometer ?? { km: 0 },
+        images: normalizeImages(clone.images),
+        details: {
+          badge: clone.details?.badge || "",
+          color: clone.color?.name || "",
+          seats_count: clone.details?.seats_count || 5,
+        },
+        damage: { main: "None", second: "None" },
+        keys_available: true,
+        status: clone.status ?? "live",
+        sale_status: clone.sale_status ?? "live",
+        domain: clone.domain ?? { name: "encar" },
+        source: clone.source ?? "encar",
+      },
+    ];
+  }
+
+  clone.lot = clone.lots[0];
+  clone.images = normalizeImages(clone.images);
+
+  if (!clone.odometer && clone.lot?.odometer) {
+    clone.odometer = clone.lot.odometer;
+  }
+  if (!clone.buy_now) {
+    clone.buy_now = clone.lot?.buy_now ?? 0;
+  }
+  if (!clone.price) {
+    clone.price = clone.buy_now;
+  }
+  if (!clone.source) {
+    clone.source = clone.lot?.source ?? "encar";
+  }
+  if (!clone.domain) {
+    clone.domain = clone.lot?.domain ?? { name: "encar" };
+  }
+
+  return clone;
+};
+
+const findManufacturerIdByName = (manufacturerName?: string | null) => {
+  const normalized = normalizeFilterValue(manufacturerName);
+  if (!normalized) {
+    return null;
+  }
+  const entry = staticFallbackManufacturers.find(
+    (manufacturer) => normalizeFilterValue(manufacturer.name) === normalized,
+  );
+  return entry?.id ?? null;
+};
+
 // Create fallback car data for testing when API is not available
-export const createFallbackCars = (_filters: any = {}): any[] => {
-  console.warn("createFallbackCars called after mock data removal – returning empty array.");
-  return [];
+export const createFallbackCars = (filters: any = {}): any[] => {
+  if (hasSpecificManufacturerFilter(filters?.manufacturer_id)) {
+    return [];
+  }
+
+  let filteredCars = [...staticFallbackCars];
+
+  const modelId = parseNumericFilter(filters?.model_id);
+  if (typeof modelId === "number") {
+    filteredCars = filteredCars.filter(
+      (car) => Number(car?.model?.id) === modelId,
+    );
+  }
+
+  const generationId = parseNumericFilter(filters?.generation_id);
+  if (typeof generationId === "number") {
+    filteredCars = filteredCars.filter(
+      (car) => Number(car?.generation?.id) === generationId,
+    );
+  }
+
+  const colorFilter = normalizeFilterValue(filters?.color);
+  if (colorFilter) {
+    filteredCars = filteredCars.filter(
+      (car) => normalizeFilterValue(car?.color?.name) === colorFilter,
+    );
+  }
+
+  const fuelFilter = normalizeFilterValue(filters?.fuel_type);
+  if (fuelFilter) {
+    filteredCars = filteredCars.filter(
+      (car) => normalizeFilterValue(car?.fuel_type || car?.fuel) === fuelFilter,
+    );
+  }
+
+  const transmissionFilter = normalizeFilterValue(filters?.transmission);
+  if (transmissionFilter) {
+    filteredCars = filteredCars.filter(
+      (car) =>
+        normalizeFilterValue(car?.transmission?.name) === transmissionFilter,
+    );
+  }
+
+  const bodyTypeFilter = normalizeFilterValue(filters?.body_type);
+  if (bodyTypeFilter) {
+    filteredCars = filteredCars.filter(
+      (car) =>
+        normalizeFilterValue(car?.body_type?.name || car?.body_type) ===
+        bodyTypeFilter,
+    );
+  }
+
+  const minYear = parseNumericFilter(filters?.from_year);
+  if (typeof minYear === "number") {
+    filteredCars = filteredCars.filter((car) => Number(car?.year) >= minYear);
+  }
+
+  const maxYear = parseNumericFilter(filters?.to_year);
+  if (typeof maxYear === "number") {
+    filteredCars = filteredCars.filter((car) => Number(car?.year) <= maxYear);
+  }
+
+  const minPrice = parseNumericFilter(filters?.buy_now_price_from);
+  if (typeof minPrice === "number") {
+    filteredCars = filteredCars.filter(
+      (car) => getBuyNowValue(car) >= minPrice,
+    );
+  }
+
+  const maxPrice = parseNumericFilter(filters?.buy_now_price_to);
+  if (typeof maxPrice === "number") {
+    filteredCars = filteredCars.filter(
+      (car) => getBuyNowValue(car) <= maxPrice,
+    );
+  }
+
+  const minOdometer = parseNumericFilter(filters?.odometer_from_km);
+  if (typeof minOdometer === "number") {
+    filteredCars = filteredCars.filter(
+      (car) => getOdometerValue(car) >= minOdometer,
+    );
+  }
+
+  const maxOdometer = parseNumericFilter(filters?.odometer_to_km);
+  if (typeof maxOdometer === "number") {
+    filteredCars = filteredCars.filter(
+      (car) => getOdometerValue(car) <= maxOdometer,
+    );
+  }
+
+  const seatsFilter = parseNumericFilter(filters?.seats_count);
+  if (typeof seatsFilter === "number") {
+    filteredCars = filteredCars.filter((car) => {
+      const seats =
+        car?.details?.seats_count ?? car?.lots?.[0]?.details?.seats_count;
+      return seats === seatsFilter;
+    });
+  }
+
+  const maxAccidents = parseNumericFilter((filters as any)?.max_accidents);
+  if (typeof maxAccidents === "number") {
+    filteredCars = filteredCars.filter(
+      (car) => getAccidentCount(car) <= maxAccidents,
+    );
+  }
+
+  const gradeFilter = normalizeFilterValue(filters?.grade_iaai);
+  if (gradeFilter && gradeFilter !== "all") {
+    filteredCars = filteredCars.filter((car) => {
+      const gradeCandidates = [
+        car?.details?.badge,
+        car?.engine?.name,
+        car?.title,
+        ...(car?.lots || []).map((lot: any) => lot?.grade_iaai),
+        ...(car?.lots || []).map((lot: any) => lot?.details?.badge),
+      ].filter(Boolean);
+      return gradeCandidates.some((candidate: string) =>
+        normalizeFilterValue(candidate).includes(gradeFilter),
+      );
+    });
+  }
+
+  const trimFilter = normalizeFilterValue(filters?.trim_level);
+  if (trimFilter && trimFilter !== "all") {
+    filteredCars = filteredCars.filter((car) =>
+      normalizeFilterValue(car?.details?.badge).includes(trimFilter),
+    );
+  }
+
+  const engineFilter = normalizeFilterValue((filters as any)?.engine_spec);
+  if (engineFilter) {
+    filteredCars = filteredCars.filter((car) =>
+      normalizeFilterValue(car?.engine?.name).includes(engineFilter),
+    );
+  }
+
+  const searchTerm =
+    typeof filters?.search === "string"
+      ? filters.search.trim().toLowerCase()
+      : "";
+  if (searchTerm) {
+    filteredCars = filteredCars.filter((car) => {
+      const haystack = [
+        car?.title,
+        car?.manufacturer?.name,
+        car?.model?.name,
+        car?.details?.badge,
+        car?.lot_number,
+        car?.vin,
+      ]
+        .filter(Boolean)
+        .map((value) => value.toString().toLowerCase())
+        .join(" ");
+      return haystack.includes(searchTerm);
+    });
+  }
+
+  const sortBy = normalizeFilterValue(filters?.sort_by);
+  if (sortBy) {
+    const direction = normalizeFilterValue(filters?.sort_direction) === "asc" ? 1 : -1;
+    if (sortBy === "price" || sortBy === "buy_now") {
+      filteredCars = [...filteredCars].sort(
+        (a, b) => (getBuyNowValue(a) - getBuyNowValue(b)) * direction,
+      );
+    } else if (sortBy === "year" || sortBy === "recently_added") {
+      filteredCars = [...filteredCars].sort(
+        (a, b) => (Number(a?.year) - Number(b?.year)) * direction,
+      );
+    } else if (sortBy === "odometer") {
+      filteredCars = [...filteredCars].sort(
+        (a, b) => (getOdometerValue(a) - getOdometerValue(b)) * direction,
+      );
+    } else {
+      filteredCars = [...filteredCars];
+    }
+  } else {
+    filteredCars = [...filteredCars];
+  }
+
+  return filteredCars.map(cloneFallbackCar);
 };
 
 // Create fallback generation data for testing when API is not available
-export const createFallbackGenerations = (_manufacturerName: string): Generation[] => {
-  console.warn("createFallbackGenerations called after mock data removal – returning empty array.");
-  return [];
+export const createFallbackGenerations = (manufacturerName: string): Generation[] => {
+  const manufacturerId = findManufacturerIdByName(manufacturerName);
+  if (!manufacturerId) {
+    return [];
+  }
+
+  return staticFallbackGenerations
+    .filter((generation) => generation.manufacturer_id === manufacturerId)
+    .map((generation) => ({
+      id: generation.id,
+      name: generation.name,
+      manufacturer_id: generation.manufacturer_id,
+      model_id: generation.model_id,
+      from_year: generation.from_year,
+      to_year: generation.to_year,
+      car_count: generation.cars_qty,
+      cars_qty: generation.cars_qty,
+    }));
 };
 
 // Create fallback model data for testing when API is not available
-export const createFallbackModels = (_manufacturerName: string): Model[] => {
-  console.warn("createFallbackModels called after mock data removal – returning empty array.");
-  return [];
+export const createFallbackModels = (manufacturerName: string): Model[] => {
+  const manufacturerId = findManufacturerIdByName(manufacturerName);
+  if (!manufacturerId) {
+    return [];
+  }
+
+  return staticFallbackModels
+    .filter((model) => model.manufacturer_id === manufacturerId)
+    .map((model) => ({
+      id: model.id,
+      name: model.name,
+      car_count: model.car_count,
+      cars_qty: model.cars_qty,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 };
 
 // Create fallback manufacturer data without logos
 export const createFallbackManufacturers = () => {
-  console.warn("createFallbackManufacturers called after mock data removal – returning empty array.");
-  return [];
+  return staticFallbackManufacturers.map((manufacturer) => ({
+    id: manufacturer.id,
+    name: manufacturer.name,
+    cars_qty: manufacturer.cars_qty,
+    car_count: manufacturer.car_count,
+    image: manufacturer.image || getBrandLogo(manufacturer.name),
+  }));
 };
 
 
