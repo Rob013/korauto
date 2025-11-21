@@ -58,3 +58,6 @@ verify_jwt = false
 
 [functions.cars-sync]
 verify_jwt = false
+
+[functions.full-db-sync]
+verify_jwt = false
