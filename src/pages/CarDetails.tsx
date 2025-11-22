@@ -3008,8 +3008,8 @@ const CarDetails = memo(() => {
           }
         } else if (!baselineDetails) {
           if (!background) {
+            setError("Car not found in API response");
             setLoading(false);
-            navigate("/catalog");
           }
           return;
         }

@@ -4,7 +4,7 @@ import { trackPageView } from "@/utils/analytics";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import { formatMileage } from "@/utils/mileageFormatter";
-import { InspectionDiagramPanel } from "@/components/InspectionDiagramPanel";
+import CarInspectionDiagram from "@/components/CarInspectionDiagram";
 import { InspectionItemList } from "@/components/InspectionItemList";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { DrivingInformationPanel } from "@/components/DrivingInformationPanel";
@@ -2860,50 +2860,27 @@ const CarInspectionReport = () => {
           Kthehu te makinat
         </Button>
         <Tabs defaultValue="diagram" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
             <TabsTrigger
-              value="diagram"
+              value="inspection"
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
               <FileText className="h-4 w-4 text-primary" />
-              <span>Diagrami i Inspektimit</span>
+              <span>Inspektimi & Mjeti</span>
             </TabsTrigger>
             <TabsTrigger
-              value="driving"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-            >
-              <Car className="h-4 w-4 text-primary" />
-              <span>Informacioni i Vozitjes</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="vehicle-history"
+              value="history"
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
               <Clock className="h-4 w-4 text-primary" />
-              <span>Historia e Mjetit</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="exterior"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-            >
-              <Car className="h-4 w-4 text-primary" />
               <span>Historia e Përdorimit</span>
             </TabsTrigger>
             <TabsTrigger
               value="insurance"
-              className="flex items-start justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium text-left whitespace-normal leading-tight min-h-[48px]"
-            >
-              <AlertTriangle className="h-4 w-4 text-primary" />
-              <span className="text-left leading-tight whitespace-normal">
-                Aksidentet & Sigurimi
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="attention"
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <span>Historia e Vëmendjes</span>
+              <AlertTriangle className="h-4 w-4 text-primary" />
+              <span>Aksidentet & Sigurimi</span>
             </TabsTrigger>
             <TabsTrigger
               value="options"
@@ -2912,16 +2889,9 @@ const CarInspectionReport = () => {
               <Cog className="h-4 w-4 text-primary" />
               <span>Pajisjet & Opsionet</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="warranty"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-            >
-              <Shield className="h-4 w-4 text-primary" />
-              <span>Garancioni</span>
-            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="diagram" className="space-y-4">
+          <TabsContent value="inspection" className="space-y-4">
             {/* Redesigned Inspection Diagram matching Korean format */}
             <div className="space-y-4">
               <Card className="border border-primary/20 bg-primary/5 backdrop-blur-sm">
@@ -2970,9 +2940,10 @@ const CarInspectionReport = () => {
                 </CardContent>
               </Card>
 
-              {/* Two-panel diagram with "within" and "out" views */}
-              <InspectionDiagramPanel
-                outerInspectionData={inspectionOuterData}
+              {/* Encar-style Car Inspection Diagram */}
+              <CarInspectionDiagram
+                inspectionData={car?.encarInspection?.outers || []}
+                className="my-6"
               />
               <div className="mt-8">
                 <InspectionItemList inspectionData={car.encarInspection} />
@@ -3063,6 +3034,126 @@ const CarInspectionReport = () => {
                 </Card>
               )}
             </div>
+
+            {/* Vehicle History Panel (Consolidated) */}
+            <VehicleHistoryPanel
+              manufacturer={car?.encarVehicle?.category?.manufacturerName || car?.make}
+              model={car?.encarVehicle?.category?.modelName || car?.model}
+              rating={car?.encarVehicle?.category?.gradeName}
+              yearOfManufacture={car?.year || (car?.encarVehicle?.category?.formYear ? parseInt(car.encarVehicle.category.formYear) : undefined)}
+              mileage={car?.encarVehicle?.spec?.mileage || car?.mileageKm || car?.odometer?.km}
+              productionDate={car?.encarRecord?.firstDate || car?.firstRegistration}
+              countryOfOrigin={car?.encarVehicle?.category?.domestic ? 'Korea' : 'E importuar'}
+              use={car?.encarRecord?.use || car?.encarRecordSummary?.use || 'Personale'}
+              newCarPrice={car?.encarVehicle?.category?.originPrice}
+              newCarReleasePrice={car?.encarVehicle?.category?.originPrice}
+              fuel={car?.encarVehicle?.spec?.fuelName || car?.fuel}
+              cityFuelConsumption="Nuk ka informacion"
+              highwayFuelConsumption="Nuk ka informacion"
+            />
+
+            {/* Warranty Card (Consolidated) */}
+            <Card className="shadow-md border-border/80">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-xl">Garancioni KORAUTO</CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Përmbledhje e mbulimit të garancionit për automjetet tona
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
+                <p>
+                  Nëse pas inspektimit në Kosovë automjeti rezulton me defekte
+                  në aksident ne pjesen e jashtme dhe brendshme motor,
+                  transmision apo manipulim kilometrazhi , shitësi mban
+                  përgjegjësi. Për pjesët harxhueshme nuk ofrohet garanci dhe
+                  nuk mbahet përgjegjësi.
+                </p>
+
+                <p>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</p>
+
+                <h3 className="font-semibold text-foreground">
+                  I. Pjesë të Pa-Konsumueshme (të mbuluara nga garancia)
+                </h3>
+                <p>
+                  Këto pjesë mbulohen vetëm në rast defekti të brendshëm teknik,
+                  jo konsum normal:
+                </p>
+                <p>- Motori (blloku, koka e cilindrit, pistonët, boshtet)</p>
+                <p>
+                  - Transmisioni (manual ose automatik, përjashtuar kuplungu dhe
+                  volanti)
+                </p>
+                <p>- Diferenciali dhe boshtet e fuqisë</p>
+                <p>- ECU, alternatori, starteri</p>
+                <p>- Kompresori i AC, kondensatori, avulluesi</p>
+                <p>- Airbagët, rripat e sigurimit</p>
+                <p>- Struktura e karrocerisë dhe shasia</p>
+
+                <h3 className="font-semibold text-foreground">
+                  II. Pjesë të Konsumueshme (të përjashtuara nga garancia)
+                </h3>
+                <p>
+                  Të gjitha pjesët e mëposhtme janë konsumueshme dhe
+                  përjashtohen nga garancia:
+                </p>
+
+                <p>• Kuplungu dhe pjesët përreth:</p>
+                <p> - Disku i kuplungut</p>
+                <p> - Pllaka e presionit</p>
+                <p> - Rulja e lirimit (lageri i lirimit)</p>
+                <p> - Volanti (rrota e masës, DMF)</p>
+                <p> - Rrotulla amortizuese / amortizues torsional</p>
+
+                <p>• Sistemi i Frenimit:</p>
+                <p> - Diskat e frenave, blloqet (pads), këpucët e frenimit</p>
+                <p> - Lëngu i frenave</p>
+
+                <p>• Filtrat & Lëngjet:</p>
+                <p> - Filtri i vajit, ajrit, kabinës, karburantit</p>
+                <p> - Vaji i motorit, antifrizi, vaji i transmisionit</p>
+                <p> - Lëngu i larjes së xhamave</p>
+
+                <p>• Suspensioni & Drejtimi:</p>
+                <p> - Amortizatorët (vaj, vula, konsumim)</p>
+                <p> - Bushingët, nyjet e topit, lidhëset stabilizuese</p>
+
+                <p>• Rrotat & Energjia:</p>
+                <p> - Velgjat (fellnet), gomat, balancimi, rregullimi i drejtimit</p>
+                <p> - Bateria 12V, llambat, siguresat</p>
+
+                <p>• Të tjera Konsumueshme:</p>
+                <p> - Fshirëset e xhamave, spërkatësit</p>
+                <p> - Buzhitë e ndezjes dhe buzhitë inkandeshente</p>
+                <p>
+                  {" "}
+                  - Rripat (serpentine, timing sipas intervalit të prodhuesit)
+                </p>
+                <p> - Tubat gome, vulat, garniturat</p>
+
+                <h3 className="font-semibold text-foreground">III. Kushtet</h3>
+                <p>
+                  - Garancia mbulon vetëm defekte teknike jo të lidhura me
+                  konsumim normal.
+                </p>
+                <p>
+                  - Për makinat e përdorura, të gjitha pjesët konsumueshme janë
+                  të përjashtuara pa përjashtim.
+                </p>
+                <p>- Mirëmbajtja e rregullt është përgjegjësi e klientit.</p>
+
+                <div className="pt-1">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/garancioni")}
+                  >
+                    Shiko faqen e plotë të garancionit
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Insurance History & Mechanical System Tab */}
@@ -3625,111 +3716,20 @@ const CarInspectionReport = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="warranty" className="space-y-4">
-            <Card className="shadow-md border-border/80">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">Garancioni KORAUTO</CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Përmbledhje e mbulimit të garancionit për automjetet tona
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
-                <p>
-                  Nëse pas inspektimit në Kosovë automjeti rezulton me defekte
-                  në aksident ne pjesen e jashtme dhe brendshme motor,
-                  transmision apo manipulim kilometrazhi , shitësi mban
-                  përgjegjësi. Për pjesët harxhueshme nuk ofrohet garanci dhe
-                  nuk mbahet përgjegjësi.
-                </p>
 
-                <p>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</p>
 
-                <h3 className="font-semibold text-foreground">
-                  I. Pjesë të Pa-Konsumueshme (të mbuluara nga garancia)
-                </h3>
-                <p>
-                  Këto pjesë mbulohen vetëm në rast defekti të brendshëm teknik,
-                  jo konsum normal:
-                </p>
-                <p>- Motori (blloku, koka e cilindrit, pistonët, boshtet)</p>
-                <p>
-                  - Transmisioni (manual ose automatik, përjashtuar kuplungu dhe
-                  volanti)
-                </p>
-                <p>- Diferenciali dhe boshtet e fuqisë</p>
-                <p>- ECU, alternatori, starteri</p>
-                <p>- Kompresori i AC, kondensatori, avulluesi</p>
-                <p>- Airbagët, rripat e sigurimit</p>
-                <p>- Struktura e karrocerisë dhe shasia</p>
-
-                <h3 className="font-semibold text-foreground">
-                  II. Pjesë të Konsumueshme (të përjashtuara nga garancia)
-                </h3>
-                <p>
-                  Të gjitha pjesët e mëposhtme janë konsumueshme dhe
-                  përjashtohen nga garancia:
-                </p>
-
-                <p>• Kuplungu dhe pjesët përreth:</p>
-                <p> - Disku i kuplungut</p>
-                <p> - Pllaka e presionit</p>
-                <p> - Rulja e lirimit (lageri i lirimit)</p>
-                <p> - Volanti (rrota e masës, DMF)</p>
-                <p> - Rrotulla amortizuese / amortizues torsional</p>
-
-                <p>• Sistemi i Frenimit:</p>
-                <p> - Diskat e frenave, blloqet (pads), këpucët e frenimit</p>
-                <p> - Lëngu i frenave</p>
-
-                <p>• Filtrat & Lëngjet:</p>
-                <p> - Filtri i vajit, ajrit, kabinës, karburantit</p>
-                <p> - Vaji i motorit, antifrizi, vaji i transmisionit</p>
-                <p> - Lëngu i larjes së xhamave</p>
-
-                <p>• Suspensioni & Drejtimi:</p>
-                <p> - Amortizatorët (vaj, vula, konsumim)</p>
-                <p> - Bushingët, nyjet e topit, lidhëset stabilizuese</p>
-
-                <p>• Rrotat & Energjia:</p>
-                <p> - Velgjat (fellnet), gomat, balancimi, rregullimi i drejtimit</p>
-                <p> - Bateria 12V, llambat, siguresat</p>
-
-                <p>• Të tjera Konsumueshme:</p>
-                <p> - Fshirëset e xhamave, spërkatësit</p>
-                <p> - Buzhitë e ndezjes dhe buzhitë inkandeshente</p>
-                <p>
-                  {" "}
-                  - Rripat (serpentine, timing sipas intervalit të prodhuesit)
-                </p>
-                <p> - Tubat gome, vulat, garniturat</p>
-
-                <h3 className="font-semibold text-foreground">III. Kushtet</h3>
-                <p>
-                  - Garancia mbulon vetëm defekte teknike jo të lidhura me
-                  konsumim normal.
-                </p>
-                <p>
-                  - Për makinat e përdorura, të gjitha pjesët konsumueshme janë
-                  të përjashtuara pa përjashtim.
-                </p>
-                <p>- Mirëmbajtja e rregullt është përgjegjësi e klientit.</p>
-
-                <div className="pt-1">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/garancioni")}
-                  >
-                    Shiko faqen e plotë të garancionit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="exterior" className="space-y-4">
+          <TabsContent value="history" className="space-y-4">
+            <DrivingInformationPanel
+              ownershipHistory={
+                car?.encarRecord?.ownerChanges?.map((change: any, index: number) => ({
+                  fromDate: change || '',
+                  toDate: index < (car?.encarRecord?.ownerChanges?.length || 0) - 1 ? car?.encarRecord?.ownerChanges?.[index + 1] : undefined,
+                  location: car?.encarVehicle?.contact?.address || 'E panjohur',
+                  ownerType: index === 0 ? 'individual' : 'individual',
+                  distanceKm: Math.floor((car?.mileageKm || 0) / (car?.encarRecord?.ownerChangeCnt || 1))
+                })) || []
+              }
+            />
             <Card className="shadow-md border-border/80">
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -3909,44 +3909,7 @@ const CarInspectionReport = () => {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* New: Driving Information Tab */}
-          <TabsContent value="driving" className="space-y-4">
-            <DrivingInformationPanel
-              ownershipHistory={
-                car?.encarRecord?.ownerChanges?.map((change: any, index: number) => ({
-                  fromDate: change || '',
-                  toDate: index < (car?.encarRecord?.ownerChanges?.length || 0) - 1 ? car?.encarRecord?.ownerChanges?.[index + 1] : undefined,
-                  location: car?.encarVehicle?.contact?.address || 'E panjohur',
-                  ownerType: index === 0 ? 'individual' : 'individual',
-                  distanceKm: Math.floor((car?.mileageKm || 0) / (car?.encarRecord?.ownerChangeCnt || 1))
-                })) || []
-              }
-            />
-          </TabsContent>
-
-          {/* New: Vehicle History Tab */}
-          <TabsContent value="vehicle-history" className="space-y-4">
-            <VehicleHistoryPanel
-              manufacturer={car?.encarVehicle?.category?.manufacturerName || car?.make}
-              model={car?.encarVehicle?.category?.modelName || car?.model}
-              rating={car?.encarVehicle?.category?.gradeName}
-              yearOfManufacture={car?.year || (car?.encarVehicle?.category?.formYear ? parseInt(car.encarVehicle.category.formYear) : undefined)}
-              mileage={car?.encarVehicle?.spec?.mileage || car?.mileageKm || car?.odometer?.km}
-              productionDate={car?.encarRecord?.firstDate || car?.firstRegistration}
-              countryOfOrigin={car?.encarVehicle?.category?.domestic ? 'Korea' : 'E importuar'}
-              use={car?.encarRecord?.use || car?.encarRecordSummary?.use || 'Personale'}
-              newCarPrice={car?.encarVehicle?.category?.originPrice}
-              newCarReleasePrice={car?.encarVehicle?.category?.originPrice}
-              fuel={car?.encarVehicle?.spec?.fuelName || car?.fuel}
-              cityFuelConsumption="Nuk ka informacion"
-              highwayFuelConsumption="Nuk ka informacion"
-            />
-          </TabsContent>
-
-          {/* New: Attention History Tab */}
-          <TabsContent value="attention" className="space-y-4">
+            {/* Attention History Panel (Consolidated) */}
             <AttentionHistoryPanel
               recalls={[]}
               insuranceGap={{
@@ -3970,6 +3933,12 @@ const CarInspectionReport = () => {
               }}
             />
           </TabsContent>
+
+
+
+
+
+
         </Tabs>
 
         <Separator />
