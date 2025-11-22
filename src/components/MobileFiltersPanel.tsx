@@ -94,8 +94,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     return (
         <div className="h-full flex flex-col bg-white dark:bg-gray-900">
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-                <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 pb-6">
+                <div className="space-y-4">
 
                     {/* Brand */}
                     <div>
@@ -261,17 +261,17 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
+            <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-3 space-y-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur supports-[backdrop-filter]:backdrop-blur-md pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
                 <Button
                     onClick={onApply}
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold text-base"
+                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-semibold text-base"
                 >
                     Apliko Filtrat
                 </Button>
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
-                    className="w-full h-12 font-semibold text-base"
+                    className="w-full h-11 font-semibold text-base"
                 >
                     <X className="h-5 w-5 mr-2" />
                     Pastro të gjitha
