@@ -34,6 +34,7 @@ interface MobileFiltersPanelProps {
     onFiltersChange: (filters: any) => void;
     onClearFilters: () => void;
     onApply: () => void;
+    onManufacturerChange?: (manufacturerId: string) => void;
 }
 
 const FUEL_TYPES: Record<string, number> = {
@@ -84,7 +85,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     filterCounts,
     onFiltersChange,
     onClearFilters,
-    onApply
+    onApply,
+    onManufacturerChange
 }) => {
 
     const [showAdvanced, setShowAdvanced] = useState(false);
@@ -94,6 +96,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
         if (key === 'manufacturer_id') {
             onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
+            // Trigger model fetching for selected manufacturer
+            if (onManufacturerChange) {
+                onManufacturerChange(actualValue || '');
+            }
         } else {
             onFiltersChange({ ...filters, [key]: actualValue });
         }
@@ -162,7 +168,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     const subLabelClass = "block text-xs text-gray-500 dark:text-gray-400 mb-1";
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-white dark:bg-gray-900 z-50 overflow-hidden">
+        <div className="fixed inset-0 flex flex-col bg-white dark:bg-gray-900 z-50 overflow-hidden touch-action-manipulation">
             {/* Header */}
             <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <div className="px-4 py-3">
@@ -173,7 +179,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}>
                 <div className="px-4 py-4 space-y-5">
 
                     {/* BASIC FILTERS */}

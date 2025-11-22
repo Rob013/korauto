@@ -1233,6 +1233,7 @@ const EncarCatalog = ({
                 }
               }, 100);
             }}
+            onManufacturerChange={handleManufacturerChange}
           />
         ) : (
           <div className="p-3">
