@@ -1,5 +1,6 @@
 import React, { useState, memo, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -79,6 +80,7 @@ interface EncarStyleFilterProps {
   compact?: boolean;
   onSearchCars?: () => void;
   onCloseFilter?: () => void;
+  className?: string;
 }
 
 const EncarStyleFilter = memo<EncarStyleFilterProps>(({
@@ -100,7 +102,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   isHomepage = false,
   compact = false,
   onSearchCars,
-  onCloseFilter
+  onCloseFilter,
+  className
 }) => {
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [engineOptions, setEngineOptions] = useState<{ value: string; label: string; count?: number }[]>([]);
@@ -298,7 +301,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <Card className="relative border-0 rounded-2xl p-6 sm:p-8 space-y-5 w-full max-w-md mx-auto backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 ring-1 ring-gray-200/50 dark:ring-white/10">
+      <Card className={cn("relative border-0 rounded-2xl p-4 sm:p-8 space-y-3 sm:space-y-5 w-full max-w-md mx-auto backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 ring-1 ring-gray-200/50 dark:ring-white/10", className)}>
         <div className="space-y-4">
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
@@ -670,7 +673,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Catalog style - expanded with sections
   return (
-    <Card className="relative border-0 rounded-2xl p-5 space-y-5 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-xl shadow-gray-200/30 dark:shadow-black/30 ring-1 ring-gray-200/50 dark:ring-white/10">
+    <Card className={cn("relative border-0 rounded-2xl p-5 space-y-5 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-xl shadow-gray-200/30 dark:shadow-black/30 ring-1 ring-gray-200/50 dark:ring-white/10", className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-primary" />
