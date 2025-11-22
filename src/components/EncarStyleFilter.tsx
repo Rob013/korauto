@@ -222,7 +222,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     const options = prioritizedManufacturers
       .filter((manufacturer: Manufacturer) => {
         const count = manufacturer.cars_qty || manufacturer.car_count || 0;
-        return count > 0; // Only show manufacturers with cars
+        // Show if count > 0 OR if count data hasn't loaded yet (undefined)
+        const shouldShow = count > 0 || (manufacturer.cars_qty === undefined && manufacturer.car_count === undefined);
+        return shouldShow;
       })
       .map((manufacturer: Manufacturer) => {
         const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
@@ -230,7 +232,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
         return {
           value: manufacturer.id.toString(),
-          label: `${manufacturer.name} (${count})`,
+          label: `${manufacturer.name}${count > 0 ? ` (${count})` : ''}`,
           icon: logoUrl
         };
       });
@@ -300,6 +302,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Compact mode for sidebar
   if (compact) {
+    console.log('EncarStyleFilter compact mode:', {
+      manufacturersCount: manufacturers.length,
+      modelsCount: models.length,
+      hasFilters: !!filters,
+      filterKeys: Object.keys(filters)
+    });
     return (
       <Card className={cn("relative border-0 rounded-2xl p-4 sm:p-8 space-y-3 sm:space-y-5 w-full max-w-md mx-auto backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 ring-1 ring-gray-200/50 dark:ring-white/10", className)}>
         <div className="space-y-4 text-foreground min-h-[400px] bg-white dark:bg-gray-900">
