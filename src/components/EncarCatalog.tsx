@@ -105,6 +105,7 @@ const EncarCatalog = ({
   const [isApplyingFilters, startApplyingFilters] = useTransition();
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
+  const filterCountsCache = useRef<Map<string, any>>(new Map());
 
   // Initialize showFilters - always open on desktop, closed on mobile
   const [showFilters, setShowFilters] = useState(() => {
@@ -133,6 +134,18 @@ const EncarCatalog = ({
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
   const normalizedCurrentFilters = useMemo(() => normalizeFilters(filters || {}), [filters]);
+  const filtersForCounts = useMemo(() => {
+    const normalized = normalizeFilters(filters || {});
+    // Filter counts are independent of pagination/sorting
+    const { page, per_page, sort_by, ...rest } = normalized as any;
+    return rest;
+  }, [filters]);
+  const manufacturersSignature = useMemo(() => {
+    return manufacturers.map((m) => `${m.id}:${m.name || ''}:${m.cars_qty ?? m.car_count ?? ''}`).join('|');
+  }, [manufacturers]);
+  const filterCountsKey = useMemo(() => {
+    return JSON.stringify({ filters: filtersForCounts, manufacturers: manufacturersSignature });
+  }, [filtersForCounts, manufacturersSignature]);
   const currentFiltersSignature = useMemo(() => JSON.stringify(normalizedCurrentFilters), [normalizedCurrentFilters]);
   const scheduleFetchCars = useMemo(
     () => catalogDebounce((page: number, nextFilters: APIFilters, resetList: boolean) => {
@@ -1012,35 +1025,61 @@ const EncarCatalog = ({
     };
   }, []); // Remove dependencies to prevent unnecessary re-binding
 
-  // OPTIMIZED: Load filter counts with reduced API calls and better debouncing
+  // OPTIMIZED: Load filter counts with caching and reduced API calls
   useEffect(() => {
+    if (!manufacturers.length) return;
+
+    let isCancelled = false;
+
     const loadFilterCounts = async () => {
-      if (manufacturers.length > 0) {
-        setLoadingCounts(true);
-        try {
-          const counts = await fetchFilterCounts(filters, manufacturers);
+      const cached = filterCountsCache.current.get(filterCountsKey);
+      if (cached) {
+        setFilterCounts(cached);
+        return;
+      }
+
+      setLoadingCounts(true);
+      try {
+        const counts = await fetchFilterCounts(filtersForCounts, manufacturers);
+        if (!isCancelled) {
+          filterCountsCache.current.set(filterCountsKey, counts);
           setFilterCounts(counts);
-        } catch (error) {
+        }
+      } catch (error) {
+        if (!isCancelled) {
           console.error('Error loading filter counts:', error);
-        } finally {
+        }
+      } finally {
+        if (!isCancelled) {
           setLoadingCounts(false);
         }
       }
     };
 
-    // PERFORMANCE: Longer debounce and only load when necessary
-    const timeoutId = setTimeout(loadFilterCounts, 500);
-    return () => clearTimeout(timeoutId);
-  }, [filters, manufacturers.length]); // Only depend on manufacturers.length, not the full array
+    // PERFORMANCE: Faster debounce and memoized cache key
+    const timeoutId = setTimeout(loadFilterCounts, 350);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [filterCountsKey, filtersForCounts, manufacturers, manufacturersSignature]);
 
   // OPTIMIZED: Load initial counts only once when manufacturers are first loaded
   useEffect(() => {
     const loadInitialCounts = async () => {
       if (manufacturers.length > 0 && !filterCounts) {
         // Only load if not already loaded
+        const initialKey = JSON.stringify({ filters: {}, manufacturers: manufacturersSignature });
+        const cached = filterCountsCache.current.get(initialKey);
+        if (cached) {
+          setFilterCounts(cached);
+          return;
+        }
+
         setLoadingCounts(true);
         try {
           const counts = await fetchFilterCounts({}, manufacturers);
+          filterCountsCache.current.set(initialKey, counts);
           setFilterCounts(counts);
         } catch (error) {
           console.error('Error loading initial filter counts:', error);
@@ -1050,7 +1089,7 @@ const EncarCatalog = ({
       }
     };
     loadInitialCounts();
-  }, [manufacturers.length]); // Only run when manufacturers are first loaded
+  }, [manufacturers.length, manufacturersSignature, filterCounts]); // Only run when manufacturers are first loaded
 
   // Calculate total pages based on actual total count
   useEffect(() => {
