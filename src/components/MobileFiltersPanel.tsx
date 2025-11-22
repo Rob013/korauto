@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { APIFilters, sortManufacturers } from "@/utils/catalog-filter";
 import { sortBrandsWithPriority } from "@/utils/brandOrdering";
 
@@ -112,10 +112,23 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         handleChange('to_year', to.toString());
     };
 
+    const selectedManufacturer = useMemo(() => (
+        filters.manufacturer_id
+            ? manufacturersList.find(m => m.id.toString() === filters.manufacturer_id)
+            : undefined
+    ), [filters.manufacturer_id, manufacturersList]);
+
+    const selectedManufacturerLogo = useMemo(() => {
+        if (!selectedManufacturer) return undefined;
+        if (selectedManufacturer.image) return selectedManufacturer.image;
+        const encodedName = encodeURIComponent(selectedManufacturer.name);
+        return `https://auctionsapi.com/images/brands/${encodedName}.svg`;
+    }, [selectedManufacturer]);
+
     return (
-        <div className="h-full flex flex-col bg-white dark:bg-gray-900 max-w-xl mx-auto">
+        <div className="h-full flex flex-col bg-white dark:bg-gray-900 max-w-lg w-full mx-auto text-sm">
             {/* Compact header with state indicators */}
-            <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 border-b border-gray-200/80 dark:border-gray-800/80 px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md">
+            <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 border-b border-gray-200/80 dark:border-gray-800/80 px-3 py-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md">
                 <div className="flex items-center justify-between gap-2">
                     <div>
                         <p className="text-sm font-semibold leading-tight text-gray-900 dark:text-gray-100">Filtrat</p>
@@ -142,18 +155,34 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-3 pb-4">
-                <div className="space-y-3">
+            <div className="flex-1 overflow-y-auto px-3 pb-3 pt-2">
+                <div className="space-y-2.5">
 
                     {/* Brand */}
                     <div>
-                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        <label className="block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100">
                             Marka
                         </label>
+                        {selectedManufacturer && (
+                            <div className="flex items-center gap-2 mb-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 px-2.5 py-2">
+                                <div className="h-7 w-7 flex items-center justify-center rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                    <img
+                                        src={selectedManufacturerLogo}
+                                        alt={selectedManufacturer.name}
+                                        className="h-6 w-6 object-contain"
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{selectedManufacturer.name}</p>
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Markë e zgjedhur</p>
+                                </div>
+                            </div>
+                        )}
                         <select
                             value={filters.manufacturer_id || ''}
                             onChange={(e) => handleChange('manufacturer_id', e.target.value)}
-                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Të gjitha markat</option>
                             {manufacturersList.slice(0, priorityCount).map(m => {
@@ -180,14 +209,14 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
                     {/* Model */}
                     <div>
-                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        <label className="block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100">
                             Modeli
                         </label>
                         <select
                             value={filters.model_id || ''}
                             onChange={(e) => handleChange('model_id', e.target.value)}
                             disabled={!filters.manufacturer_id}
-                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+                            className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
                         >
                             <option value="">
                                 {filters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
@@ -202,7 +231,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
                     {/* Year Range */}
                     <div>
-                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        <label className="block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100">
                             Viti
                         </label>
                         <div className="flex flex-wrap gap-2 mb-2">
@@ -249,13 +278,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 </Button>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-2 gap-2">
                             <div>
                                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Nga</label>
                                 <select
                                     value={filters.from_year || ''}
                                     onChange={(e) => handleChange('from_year', e.target.value)}
-                                    className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                                 >
                                     <option value="">Çdo vit</option>
                                     {years.map(y => (
@@ -268,7 +297,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 <select
                                     value={filters.to_year || ''}
                                     onChange={(e) => handleChange('to_year', e.target.value)}
-                                    className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                                 >
                                     <option value="">Çdo vit</option>
                                     {years.map(y => (
@@ -281,59 +310,59 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
                     {/* Mileage */}
                     <div>
-                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        <label className="block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100">
                             Kilometrazha (KM)
                         </label>
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-2 gap-2">
                             <input
                                 type="number"
                                 placeholder="Nga"
                                 value={filters.odometer_from_km || ''}
                                 onChange={(e) => handleChange('odometer_from_km', e.target.value)}
-                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                             <input
                                 type="number"
                                 placeholder="Deri"
                                 value={filters.odometer_to_km || ''}
                                 onChange={(e) => handleChange('odometer_to_km', e.target.value)}
-                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                         </div>
                     </div>
 
                     {/* Price */}
                     <div>
-                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        <label className="block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100">
                             Çmimi (EUR)
                         </label>
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-2 gap-2">
                             <input
                                 type="number"
                                 placeholder="Nga"
                                 value={filters.buy_now_price_from || ''}
                                 onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
-                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                             <input
                                 type="number"
                                 placeholder="Deri"
                                 value={filters.buy_now_price_to || ''}
                                 onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
-                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                         </div>
                     </div>
 
                     {/* Fuel Type */}
                     <div>
-                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        <label className="block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100">
                             Lloji i karburantit
                         </label>
                         <select
                             value={filters.fuel_type || ''}
                             onChange={(e) => handleChange('fuel_type', e.target.value)}
-                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Çdo lloj</option>
                             {Object.entries(FUEL_TYPES).map(([name, id]) => (
@@ -346,13 +375,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
                     {/* Transmission */}
                     <div>
-                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        <label className="block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100">
                             Transmisioni
                         </label>
                         <select
                             value={filters.transmission || ''}
                             onChange={(e) => handleChange('transmission', e.target.value)}
-                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="w-full h-10 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Çdo transmision</option>
                             {Object.entries(TRANSMISSIONS).map(([name, id]) => (
@@ -367,18 +396,26 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 px-3 py-2 flex gap-2 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur supports-[backdrop-filter]:backdrop-blur-md pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+            <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 px-3 py-2 flex gap-2 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur supports-[backdrop-filter]:backdrop-blur-md pb-[calc(0.4rem+env(safe-area-inset-bottom,0px))]">
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
-                    className="h-11 px-3 w-2/5 font-semibold text-sm"
+                    className="h-10 px-3 w-[32%] font-semibold text-sm"
                 >
                     <X className="h-5 w-5 mr-1.5" />
                     Pastro
                 </Button>
                 <Button
                     onClick={onApply}
-                    className="h-11 px-4 flex-1 bg-primary hover:bg-primary/90 text-white font-semibold text-base"
+                    variant="secondary"
+                    className="h-10 px-3 w-[30%] font-semibold text-sm gap-1.5"
+                >
+                    <Search className="h-5 w-5" />
+                    Kërko
+                </Button>
+                <Button
+                    onClick={onApply}
+                    className="h-10 px-4 flex-1 bg-primary hover:bg-primary/90 text-white font-semibold text-base"
                 >
                     Apliko Filtrat
                 </Button>
