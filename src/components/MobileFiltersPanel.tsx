@@ -163,16 +163,16 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i);
 
-    const inputClass = "w-full h-11 px-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent";
-    const labelClass = "block text-sm font-semibold mb-1.5 text-gray-900 dark:text-gray-100";
-    const subLabelClass = "block text-xs text-gray-500 dark:text-gray-400 mb-1";
+    const inputClass = "w-full h-10 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent";
+    const labelClass = "block text-xs font-semibold mb-1 text-gray-900 dark:text-gray-100";
+    const subLabelClass = "block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5";
 
     return (
         <div className="fixed inset-0 flex flex-col bg-white dark:bg-gray-900 z-50 overflow-hidden touch-action-manipulation">
             {/* Header */}
             <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                <div className="px-4 py-3">
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                <div className="px-4 py-2.5">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
                         Filtrat e Kërkimit
                     </h2>
                 </div>
@@ -180,11 +180,11 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}>
-                <div className="px-4 py-4 space-y-5">
+                <div className="px-3 py-3 space-y-2.5">
 
                     {/* BASIC FILTERS */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-primary uppercase tracking-wide">
+                    <div className="space-y-2.5">
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-wide">
                             Filtrat Bazë
                         </h3>
 
@@ -327,22 +327,22 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                     {/* ADVANCED FILTERS TOGGLE */}
                     <button
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="w-full flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        className="w-full flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
                     >
-                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                             Filtrat Avancuar
                         </span>
                         {showAdvanced ? (
-                            <ChevronUp className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                            <ChevronUp className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                         ) : (
-                            <ChevronDown className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                            <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                         )}
                     </button>
 
                     {/* ADVANCED FILTERS */}
                     {showAdvanced && (
-                        <div className="space-y-4">
-                            <h3 className="text-sm font-bold text-primary uppercase tracking-wide">
+                        <div className="space-y-2.5">
+                            <h3 className="text-xs font-bold text-primary uppercase tracking-wide">
                                 Më shumë opcione
                             </h3>
 
@@ -508,20 +508,20 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-2 shadow-lg">
+            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2 shadow-lg">
                 <Button
                     onClick={onApply}
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold text-base flex items-center justify-center gap-2"
+                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-bold text-sm flex items-center justify-center gap-2"
                 >
-                    <Search className="h-5 w-5" />
+                    <Search className="h-4 w-4" />
                     Kërko Makinat
                 </Button>
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
-                    className="w-full h-11 font-semibold text-sm"
+                    className="w-full h-9 font-semibold text-xs"
                 >
-                    <X className="h-4 w-4 mr-2" />
+                    <X className="h-3.5 w-3.5 mr-1.5" />
                     Pastro të gjitha filtrat
                 </Button>
             </div>
