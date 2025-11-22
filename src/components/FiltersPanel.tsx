@@ -46,6 +46,22 @@ interface FiltersPanelProps {
   compact?: boolean;
 }
 
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 
 
 const FiltersPanel: React.FC<FiltersPanelProps> = ({
@@ -57,8 +73,25 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   className,
   compact = false,
 }) => {
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Debounce search term with 250ms delay as specified
+  const debouncedSearchTerm = useDebounce(searchTerm, 250);
+
+  // Update search filter when debounced term changes
+  useEffect(() => {
+    try {
+      if (debouncedSearchTerm !== filters.search) {
+        onFiltersChange({ search: debouncedSearchTerm || undefined });
+      }
+      setValidationError(null);
+    } catch (error) {
+      console.error('Error updating search filter:', error);
+      setValidationError('Gabim në kërkim');
+    }
+  }, [debouncedSearchTerm, filters.search, onFiltersChange]);
 
   const currentYearRange = useMemo(() => {
     try {
@@ -219,9 +252,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
     if (!filters.brand) return [];
-    return data.models
-      .filter(model => model.brandId === filters.brand)
-      .filter(model => model.count === undefined || model.count > 0);
+    return data.models.filter(model => model.brandId === filters.brand);
   }, [data.models, filters.brand]);
 
   // Validate filters
@@ -238,27 +269,25 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     [data.brands]
   );
   const brandOptions = useMemo(() => {
-    const options = orderedBrands
-      .filter(brand => brand.count === undefined || brand.count > 0)
-      .map((brand) => ({
-        value: brand.id,
-        label: (
-          <span className="flex items-center gap-2">
-            {brand.image && (
-              <img
-                src={brand.image}
-                alt={brand.name}
-                className="h-4 w-4 rounded bg-white object-contain p-0.5 ring-1 ring-border dark:bg-white"
-              />
-            )}
-            <span>
-              {brand.name}
-              {brand.count ? ` (${brand.count})` : ''}
-            </span>
+    const options = orderedBrands.map((brand) => ({
+      value: brand.id,
+      label: (
+        <span className="flex items-center gap-2">
+          {brand.image && (
+            <img
+              src={brand.image}
+              alt={brand.name}
+              className="h-4 w-4 rounded bg-white object-contain p-0.5 ring-1 ring-border dark:bg-white"
+            />
+          )}
+          <span>
+            {brand.name}
+            {brand.count ? ` (${brand.count})` : ''}
           </span>
-        ),
-        icon: brand.image
-      }));
+        </span>
+      ),
+      icon: brand.image
+    }));
 
     if (priorityBrandCount > 0 && priorityBrandCount < options.length) {
       return [
