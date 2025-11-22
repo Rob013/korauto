@@ -36,17 +36,17 @@ export const VehicleHistoryPanel: React.FC<VehicleHistoryPanelProps> = ({
     className = ""
 }) => {
     const formatPrice = (price: number | undefined) => {
-        if (!price) return "No information";
-        return `${(price / 10000).toFixed(1)} million won`;
+        if (!price) return "Nuk ka informacion";
+        return `${(price / 10000).toFixed(1)} milionë won`;
     };
 
     const formatDate = (dateStr: string | undefined): string => {
-        if (!dateStr) return "No information";
+        if (!dateStr) return "Nuk ka informacion";
 
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return dateStr;
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            return date.toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
         } catch {
             return dateStr;
         }
@@ -67,7 +67,7 @@ export const VehicleHistoryPanel: React.FC<VehicleHistoryPanelProps> = ({
                 <span>{label}</span>
             </div>
             <div className="text-sm font-medium text-right">
-                {value || "No information"}
+                {value || "Nuk ka informacion"}
             </div>
         </div>
     );
@@ -77,7 +77,7 @@ export const VehicleHistoryPanel: React.FC<VehicleHistoryPanelProps> = ({
             <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
                     <Car className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Vehicle history information</h3>
+                    <h3 className="text-lg font-semibold">Informacioni i historisë së mjetit</h3>
                 </div>
                 {manufacturer && model && (
                     <p className="text-2xl font-bold text-primary">
@@ -95,29 +95,29 @@ export const VehicleHistoryPanel: React.FC<VehicleHistoryPanelProps> = ({
                 <CardContent className="p-0 divide-y divide-border">
                     {/* Basic Information */}
                     <div className="p-4">
-                        <h4 className="font-semibold mb-3 text-sm">Basic Information</h4>
+                        <h4 className="font-semibold mb-3 text-sm">Informacioni bazë</h4>
                         <div className="space-y-0">
                             <InfoRow
-                                label="manufacturing company"
+                                label="Kompania prodhuese"
                                 value={manufacturer}
                                 icon={Factory}
                             />
                             <InfoRow
-                                label="model name"
+                                label="Emri i modelit"
                                 value={model}
                                 icon={Car}
                             />
                             <InfoRow
-                                label="rating"
+                                label="Vlerësimi"
                                 value={rating}
                             />
                             <InfoRow
-                                label="Year of manufacture"
-                                value={yearOfManufacture ? `${yearOfManufacture}/01 (${yearOfManufacture} model)` : undefined}
+                                label="Viti i prodhimit"
+                                value={yearOfManufacture ? `${yearOfManufacture}/01 (modeli ${yearOfManufacture})` : undefined}
                                 icon={Calendar}
                             />
                             <InfoRow
-                                label="mileage"
+                                label="Kilometrazha"
                                 value={mileage ? `${mileage.toLocaleString()}km` : undefined}
                                 icon={Gauge}
                             />
@@ -126,29 +126,29 @@ export const VehicleHistoryPanel: React.FC<VehicleHistoryPanelProps> = ({
 
                     {/* Shipping Information */}
                     <div className="p-4">
-                        <h4 className="font-semibold mb-3 text-sm">Shipping Information</h4>
+                        <h4 className="font-semibold mb-3 text-sm">Informacioni i dërgesës</h4>
                         <div className="space-y-0">
                             <InfoRow
-                                label="Production date"
+                                label="Data e prodhimit"
                                 value={formatDate(productionDate)}
                                 icon={Calendar}
                             />
                             <InfoRow
-                                label="Country of origin"
+                                label="Vendi i origjinës"
                                 value={countryOfOrigin}
                                 icon={MapPin}
                             />
                             <InfoRow
-                                label="use"
+                                label="Përdorimi"
                                 value={use}
                             />
                             <InfoRow
-                                label="New car price"
+                                label="Çmimi i makinës së re"
                                 value={formatPrice(newCarPrice)}
                                 icon={DollarSign}
                             />
                             <InfoRow
-                                label="New car release price"
+                                label="Çmimi i lëshimit të makinës së re"
                                 value={formatPrice(newCarReleasePrice)}
                             />
                         </div>
@@ -157,19 +157,19 @@ export const VehicleHistoryPanel: React.FC<VehicleHistoryPanelProps> = ({
                     {/* Fuel & Consumption */}
                     {(fuel || cityFuelConsumption || highwayFuelConsumption) && (
                         <div className="p-4">
-                            <h4 className="font-semibold mb-3 text-sm">Fuel Information</h4>
+                            <h4 className="font-semibold mb-3 text-sm">Informacioni i karburantit</h4>
                             <div className="space-y-0">
                                 <InfoRow
-                                    label="fuel"
+                                    label="Karburanti"
                                     value={fuel}
                                     icon={Fuel}
                                 />
                                 <InfoRow
-                                    label="City fuel consumption rate"
+                                    label="Konsumi i karburantit në qytet"
                                     value={cityFuelConsumption}
                                 />
                                 <InfoRow
-                                    label="Highway fuel consumption rate"
+                                    label="Konsumi i karburantit në autostradë"
                                     value={highwayFuelConsumption}
                                 />
                             </div>
@@ -181,9 +181,9 @@ export const VehicleHistoryPanel: React.FC<VehicleHistoryPanelProps> = ({
             {/* Notice */}
             <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                 <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                    ⚠️ <strong>caution</strong>
+                    ⚠️ <strong>Kujdes</strong>
                     <br />
-                    While related parts may have been repaired or replaced, the actual work may differ. For more accurate vehicle accident history, please refer to the performance inspection record below.
+                    Ndërsa pjesët e lidhura mund të jenë riparuar ose zëvendësuar, puna aktuale mund të ndryshojë. Për histori më të saktë të aksidenteve të automjetit, ju lutemi referojuni regjistrimit të inspektimit të performancës më poshtë.
                 </p>
             </div>
         </div>

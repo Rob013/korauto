@@ -16,16 +16,16 @@ interface DrivingInformationPanelProps {
 }
 
 const formatDate = (dateStr: string | undefined, monthYearOnly = false): string => {
-    if (!dateStr) return "Present";
+    if (!dateStr) return "Aktual";
 
     try {
         const date = new Date(dateStr);
         if (isNaN(date.getTime())) return dateStr;
 
         if (monthYearOnly) {
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            return date.toLocaleDateString('sq-AL', { year: 'numeric', month: 'long' });
         }
-        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return date.toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
     } catch {
         return dateStr;
     }
@@ -41,7 +41,7 @@ const translateOwnerType = (type: string): string => {
         'corporation': 'Kompani',
         'company': 'Kompani',
         'business': 'Biznes',
-        'rental': 'Qira',
+        'rental': 'Me qira',
         'lease': 'Leasing',
     };
 
@@ -78,10 +78,10 @@ export const DrivingInformationPanel: React.FC<DrivingInformationPanelProps> = (
         <div className={className}>
             {/* Header */}
             <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-1">Driving information</h3>
+                <h3 className="text-lg font-semibold mb-1">Informacioni i vozitjes</h3>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
-                    <span>{totalDistance.toLocaleString()} km total distance driven</span>
+                    <span>{totalDistance.toLocaleString()} km distancë totale e vozitjes</span>
                 </div>
             </div>
 
@@ -107,7 +107,7 @@ export const DrivingInformationPanel: React.FC<DrivingInformationPanelProps> = (
                                             </span>
                                             {isActive && (
                                                 <Badge variant="default" className="text-xs">
-                                                    In operation
+                                                    Në operim
                                                 </Badge>
                                             )}
                                         </div>
@@ -148,7 +148,7 @@ export const DrivingInformationPanel: React.FC<DrivingInformationPanelProps> = (
                 <Card>
                     <CardContent className="p-6">
                         <p className="text-sm text-muted-foreground text-center">
-                            This vehicle has no history of changing its purpose!
+                            Kjo makinë nuk ka histori të ndryshimit të qëllimit të përdorimit!
                         </p>
                     </CardContent>
                 </Card>
