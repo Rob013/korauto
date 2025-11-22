@@ -3918,7 +3918,7 @@ const CarInspectionReport = () => {
                 car?.encarRecord?.ownerChanges?.map((change: any, index: number) => ({
                   fromDate: change || '',
                   toDate: index < (car?.encarRecord?.ownerChanges?.length || 0) - 1 ? car?.encarRecord?.ownerChanges?.[index + 1] : undefined,
-                  location: car?.encarVehicle?.contact?.address || 'Unknown',
+                  location: car?.encarVehicle?.contact?.address || 'E panjohur',
                   ownerType: index === 0 ? 'individual' : 'individual',
                   distanceKm: Math.floor((car?.mileageKm || 0) / (car?.encarRecord?.ownerChangeCnt || 1))
                 })) || []
@@ -3935,13 +3935,13 @@ const CarInspectionReport = () => {
               yearOfManufacture={car?.year || (car?.encarVehicle?.category?.formYear ? parseInt(car.encarVehicle.category.formYear) : undefined)}
               mileage={car?.encarVehicle?.spec?.mileage || car?.mileageKm || car?.odometer?.km}
               productionDate={car?.encarRecord?.firstDate || car?.firstRegistration}
-              countryOfOrigin={car?.encarVehicle?.category?.domestic ? 'Korea' : 'Imported'}
-              use={car?.encarRecord?.use || car?.encarRecordSummary?.use || 'Personal'}
+              countryOfOrigin={car?.encarVehicle?.category?.domestic ? 'Korea' : 'E importuar'}
+              use={car?.encarRecord?.use || car?.encarRecordSummary?.use || 'Personale'}
               newCarPrice={car?.encarVehicle?.category?.originPrice}
               newCarReleasePrice={car?.encarVehicle?.category?.originPrice}
               fuel={car?.encarVehicle?.spec?.fuelName || car?.fuel}
-              cityFuelConsumption="No information"
-              highwayFuelConsumption="No information"
+              cityFuelConsumption="Nuk ka informacion"
+              highwayFuelConsumption="Nuk ka informacion"
             />
           </TabsContent>
 
