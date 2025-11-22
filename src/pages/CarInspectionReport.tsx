@@ -3067,6 +3067,23 @@ const CarInspectionReport = () => {
 
           {/* Insurance History & Mechanical System Tab */}
           <TabsContent value="insurance" className="space-y-4">
+            {/* New Encar-style Insurance/Maintenance Panel */}
+            <InsuranceMaintenancePanel
+              insuranceClaims={car?.encarRecord?.accidents?.map((acc: any) => ({
+                date: acc.date || '',
+                type: acc.type === '1' ? 'my_damage' : acc.type === '2' ? 'other_damage' : 'estimate',
+                costParts: acc.partCost,
+                costService: acc.laborCost,
+                costCoating: acc.paintingCost,
+                description: `Insurance benefit: ${acc.insuranceBenefit || 0} KRW`
+              })) || []}
+              maintenanceRecords={[]}
+            />
+
+            {/* Separator */}
+            <Separator className="my-6" />
+
+            {/* Original insurance content below */}
             <Card className="shadow-md border-border/80">
               <CardHeader className="pb-3 md:pb-4">
                 <div className="flex items-center gap-2 md:gap-3">
@@ -3897,49 +3914,59 @@ const CarInspectionReport = () => {
           {/* New: Driving Information Tab */}
           <TabsContent value="driving" className="space-y-4">
             <DrivingInformationPanel
-              ownershipHistory={(car as any)?.encarRecord?.drives || (car as any)?.ownershipHistory || []}
+              ownershipHistory={
+                car?.encarRecord?.ownerChanges?.map((change: any, index: number) => ({
+                  fromDate: change || '',
+                  toDate: index < (car?.encarRecord?.ownerChanges?.length || 0) - 1 ? car?.encarRecord?.ownerChanges?.[index + 1] : undefined,
+                  location: car?.encarVehicle?.contact?.address || 'Unknown',
+                  ownerType: index === 0 ? 'individual' : 'individual',
+                  distanceKm: Math.floor((car?.mileageKm || 0) / (car?.encarRecord?.ownerChangeCnt || 1))
+                })) || []
+              }
             />
           </TabsContent>
 
           {/* New: Vehicle History Tab */}
           <TabsContent value="vehicle-history" className="space-y-4">
             <VehicleHistoryPanel
-              manufacturer={car?.make || (car as any)?.encarVehicle?.manufacturer}
-              model={car?.model || (car as any)?.encarVehicle?.modelName}
-              rating={(car as any)?.encarVehicle?.rating}
-              yearOfManufacture={car?.year}
-              mileage={car?.mileageKm || car?.odometer?.km}
-              productionDate={car?.firstRegistration || (car as any)?.encarVehicle?.productionDate}
-              countryOfOrigin={(car as any)?.encarVehicle?.countryOfOrigin}
-              use={(car as any)?.encarVehicle?.use}
-              newCarPrice={(car as any)?.encarVehicle?.newCarPrice}
-              newCarReleasePrice={(car as any)?.encarVehicle?.newCarReleasePrice}
-              fuel={car?.fuel || (car as any)?.encarVehicle?.fuel}
-              cityFuelConsumption={(car as any)?.encarVehicle?.cityFuelConsumption}
-              highwayFuelConsumption={(car as any)?.encarVehicle?.highwayFuelConsumption}
+              manufacturer={car?.encarVehicle?.category?.manufacturerName || car?.make}
+              model={car?.encarVehicle?.category?.modelName || car?.model}
+              rating={car?.encarVehicle?.category?.gradeName}
+              yearOfManufacture={car?.year || (car?.encarVehicle?.category?.formYear ? parseInt(car.encarVehicle.category.formYear) : undefined)}
+              mileage={car?.encarVehicle?.spec?.mileage || car?.mileageKm || car?.odometer?.km}
+              productionDate={car?.encarRecord?.firstDate || car?.firstRegistration}
+              countryOfOrigin={car?.encarVehicle?.category?.domestic ? 'Korea' : 'Imported'}
+              use={car?.encarRecord?.use || car?.encarRecordSummary?.use || 'Personal'}
+              newCarPrice={car?.encarVehicle?.category?.originPrice}
+              newCarReleasePrice={car?.encarVehicle?.category?.originPrice}
+              fuel={car?.encarVehicle?.spec?.fuelName || car?.fuel}
+              cityFuelConsumption="No information"
+              highwayFuelConsumption="No information"
             />
           </TabsContent>
 
           {/* New: Attention History Tab */}
           <TabsContent value="attention" className="space-y-4">
             <AttentionHistoryPanel
-              recalls={(car as any)?.encarRecordSummary?.recallStatus?.map((r: any) => ({
-                title: r.title || r.name,
-                status: r.status,
-                count: 1
-              })) || []}
+              recalls={[]}
               insuranceGap={{
-                exists: (car as any)?.encarRecordSummary?.insuranceGapExists || false,
-                periods: (car as any)?.encarRecordSummary?.insuranceGapPeriods
+                exists: !!(car?.encarRecord?.notJoinDate1 || car?.encarRecord?.notJoinDate2 || car?.encarRecord?.notJoinDate3),
+                periods: [
+                  car?.encarRecord?.notJoinDate1,
+                  car?.encarRecord?.notJoinDate2,
+                  car?.encarRecord?.notJoinDate3,
+                  car?.encarRecord?.notJoinDate4,
+                  car?.encarRecord?.notJoinDate5
+                ].filter(Boolean) as string[]
               }}
               specialUsage={{
-                totalLoss: (car?.encarRecordSummary as any)?.totalLossCnt > 0,
-                flooding: (car as any)?.encarRecordSummary?.flooding,
-                theft: (car as any)?.encarRecordSummary?.theft,
-                commercial: (car as any)?.encarRecordSummary?.commercialUse,
-                taxi: (car as any)?.encarRecordSummary?.taxiUse,
-                police: (car as any)?.encarRecordSummary?.policeUse,
-                rental: (car as any)?.encarRecordSummary?.rentalUse
+                totalLoss: (car?.encarRecordSummary?.totalLossCnt || 0) > 0,
+                flooding: (car?.encarRecordSummary?.floodTotalLossCnt || 0) > 0,
+                theft: (car?.encarRecordSummary?.robberCnt || 0) > 0,
+                commercial: car?.encarRecord?.use?.toLowerCase().includes('business') || false,
+                taxi: car?.encarRecord?.use?.toLowerCase().includes('taxi') || false,
+                police: false,
+                rental: car?.encarRecord?.use?.toLowerCase().includes('rental') || false
               }}
             />
           </TabsContent>
