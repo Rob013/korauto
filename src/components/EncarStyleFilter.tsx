@@ -549,10 +549,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     className="filter-control h-8 text-xs"
                     options={[
                       ...(!(isStrictMode && filters.color) ? [{ value: 'all', label: 'Çdo ngjyrë' }] : []),
-                      ...Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
-                        value: id.toString(),
-                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                      }))
+                      ...Object.entries(COLOR_OPTIONS)
+                        .filter(([_, id]) => !filterCounts?.colors || (filterCounts.colors[id] || 0) > 0)
+                        .map(([name, id]) => ({
+                          value: id.toString(),
+                          label: `${name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}${filterCounts?.colors?.[id] ? ` (${filterCounts.colors[id]})` : ''}`
+                        }))
                     ]}
                     forceNative
                   />
@@ -570,10 +572,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     className="filter-control h-8 text-xs"
                     options={[
                       ...(!(isStrictMode && filters.fuel_type) ? [{ value: 'all', label: 'Çdo lloj' }] : []),
-                      ...Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
-                        value: id.toString(),
-                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                      }))
+                      ...Object.entries(FUEL_TYPE_OPTIONS)
+                        .filter(([_, id]) => !filterCounts?.fuelTypes || (filterCounts.fuelTypes[id] || 0) > 0)
+                        .map(([name, id]) => ({
+                          value: id.toString(),
+                          label: `${name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}${filterCounts?.fuelTypes?.[id] ? ` (${filterCounts.fuelTypes[id]})` : ''}`
+                        }))
                     ]}
                     forceNative
                   />
@@ -591,10 +595,12 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                     className="filter-control h-8 text-xs"
                     options={[
                       ...(!(isStrictMode && filters.transmission) ? [{ value: 'all', label: 'Çdo transmision' }] : []),
-                      ...Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
-                        value: id.toString(),
-                        label: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')
-                      }))
+                      ...Object.entries(TRANSMISSION_OPTIONS)
+                        .filter(([_, id]) => !filterCounts?.transmissions || (filterCounts.transmissions[id] || 0) > 0)
+                        .map(([name, id]) => ({
+                          value: id.toString(),
+                          label: `${name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ')}${filterCounts?.transmissions?.[id] ? ` (${filterCounts.transmissions[id]})` : ''}`
+                        }))
                     ]}
                     forceNative
                   />

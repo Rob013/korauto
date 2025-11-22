@@ -46,21 +46,7 @@ interface FiltersPanelProps {
   compact?: boolean;
 }
 
-const useDebounce = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
 
 const FiltersPanel: React.FC<FiltersPanelProps> = ({
   filters,
@@ -71,25 +57,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   className,
   compact = false,
 }) => {
-  const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  // Debounce search term with 250ms delay as specified
-  const debouncedSearchTerm = useDebounce(searchTerm, 250);
-
-  // Update search filter when debounced term changes
-  useEffect(() => {
-    try {
-      if (debouncedSearchTerm !== filters.search) {
-        onFiltersChange({ search: debouncedSearchTerm || undefined });
-      }
-      setValidationError(null);
-    } catch (error) {
-      console.error('Error updating search filter:', error);
-      setValidationError('Gabim në kërkim');
-    }
-  }, [debouncedSearchTerm, filters.search, onFiltersChange]);
 
   const currentYearRange = useMemo(() => {
     try {
@@ -250,7 +219,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
     if (!filters.brand) return [];
-    return data.models.filter(model => model.brandId === filters.brand);
+    return data.models
+      .filter(model => model.brandId === filters.brand)
+      .filter(model => model.count === undefined || model.count > 0);
   }, [data.models, filters.brand]);
 
   // Validate filters
@@ -267,25 +238,27 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     [data.brands]
   );
   const brandOptions = useMemo(() => {
-    const options = orderedBrands.map((brand) => ({
-      value: brand.id,
-      label: (
-        <span className="flex items-center gap-2">
-          {brand.image && (
-            <img
-              src={brand.image}
-              alt={brand.name}
-              className="h-4 w-4 rounded bg-white object-contain p-0.5 ring-1 ring-border dark:bg-white"
-            />
-          )}
-          <span>
-            {brand.name}
-            {brand.count ? ` (${brand.count})` : ''}
+    const options = orderedBrands
+      .filter(brand => brand.count === undefined || brand.count > 0)
+      .map((brand) => ({
+        value: brand.id,
+        label: (
+          <span className="flex items-center gap-2">
+            {brand.image && (
+              <img
+                src={brand.image}
+                alt={brand.name}
+                className="h-4 w-4 rounded bg-white object-contain p-0.5 ring-1 ring-border dark:bg-white"
+              />
+            )}
+            <span>
+              {brand.name}
+              {brand.count ? ` (${brand.count})` : ''}
+            </span>
           </span>
-        </span>
-      ),
-      icon: brand.image
-    }));
+        ),
+        icon: brand.image
+      }));
 
     if (priorityBrandCount > 0 && priorityBrandCount < options.length) {
       return [
@@ -442,24 +415,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </div>
       )}
 
-      {/* Search */}
-      <div className="space-y-2">
-        <Label htmlFor="search" className="flex items-center gap-2 font-medium">
-          <Search className="h-4 w-4" />
-          Kërko
-        </Label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors" />
-          <Input
-            id="search"
-            type="text"
-            placeholder="Kërko makinat..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-background/60 backdrop-blur-sm border-border/50 focus:border-primary transition-all duration-200"
-          />
-        </div>
-      </div>
+
 
       {/* Basic Filters Section */}
       <div className="space-y-3">
@@ -623,10 +579,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 onValueChange={(value) => onFiltersChange({ fuel: value })}
                 placeholder="Zgjidhni karburantin"
                 className="filter-select bg-background"
-                options={data.fuelTypes.map((fuel) => ({
-                  value: fuel.id,
-                  label: `${fuel.name}${fuel.count ? ` (${fuel.count})` : ''}`
-                }))}
+                options={data.fuelTypes
+                  .filter(fuel => fuel.count === undefined || fuel.count > 0)
+                  .map((fuel) => ({
+                    value: fuel.id,
+                    label: `${fuel.name}${fuel.count ? ` (${fuel.count})` : ''}`
+                  }))}
                 forceNative
               />
             </div>
@@ -643,10 +601,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 onValueChange={(value) => onFiltersChange({ transmission: value })}
                 placeholder="Zgjidhni transmisionin"
                 className="filter-select bg-background"
-                options={data.transmissions.map((transmission) => ({
-                  value: transmission.id,
-                  label: `${transmission.name}${transmission.count ? ` (${transmission.count})` : ''}`
-                }))}
+                options={data.transmissions
+                  .filter(transmission => transmission.count === undefined || transmission.count > 0)
+                  .map((transmission) => ({
+                    value: transmission.id,
+                    label: `${transmission.name}${transmission.count ? ` (${transmission.count})` : ''}`
+                  }))}
                 forceNative
               />
             </div>
@@ -692,10 +652,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 onValueChange={(value) => onFiltersChange({ bodyType: value })}
                 placeholder="Zgjidhni llojin e trupit"
                 className="filter-select bg-background"
-                options={data.bodyTypes.map((bodyType) => ({
-                  value: bodyType.id,
-                  label: `${bodyType.name}${bodyType.count ? ` (${bodyType.count})` : ''}`
-                }))}
+                options={data.bodyTypes
+                  .filter(bodyType => bodyType.count === undefined || bodyType.count > 0)
+                  .map((bodyType) => ({
+                    value: bodyType.id,
+                    label: `${bodyType.name}${bodyType.count ? ` (${bodyType.count})` : ''}`
+                  }))}
                 forceNative
               />
             </div>
@@ -712,10 +674,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 onValueChange={(value) => onFiltersChange({ color: value })}
                 placeholder="Zgjidhni ngjyrën"
                 className="filter-select bg-background"
-                options={data.colors.map((color) => ({
-                  value: color.id,
-                  label: `${color.name}${color.count ? ` (${color.count})` : ''}`
-                }))}
+                options={data.colors
+                  .filter(color => color.count === undefined || color.count > 0)
+                  .map((color) => ({
+                    value: color.id,
+                    label: `${color.name}${color.count ? ` (${color.count})` : ''}`
+                  }))}
                 forceNative
               />
             </div>
@@ -732,10 +696,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 onValueChange={(value) => onFiltersChange({ location: value })}
                 placeholder="Zgjidhni vendndodhjen"
                 className="filter-select bg-background"
-                options={data.locations.map((location) => ({
-                  value: location.id,
-                  label: `${location.name}${location.count ? ` (${location.count})` : ''}`
-                }))}
+                options={data.locations
+                  .filter(location => location.count === undefined || location.count > 0)
+                  .map((location) => ({
+                    value: location.id,
+                    label: `${location.name}${location.count ? ` (${location.count})` : ''}`
+                  }))}
                 forceNative
               />
             </div>
