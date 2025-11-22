@@ -447,11 +447,15 @@ export const sortManufacturers = (manufacturers: Array<{
   return manufacturers
     .filter(m => {
       // Ensure manufacturer has valid data from API
+      const count = m.cars_qty ?? m.car_count;
+      const hasCountData = m.cars_qty !== undefined || m.car_count !== undefined;
+      const hasValidCount = hasCountData ? (count || 0) > 0 : true;
+
       const isValid = m.id &&
         m.name &&
         typeof m.name === 'string' &&
         m.name.trim().length > 0 &&
-        (m.cars_qty && m.cars_qty > 0);
+        hasValidCount;
 
       // Exclude specific brands
       const isNotExcluded = !excludedBrands.includes(m.name.trim());
@@ -460,8 +464,8 @@ export const sortManufacturers = (manufacturers: Array<{
     })
     .sort((a, b) => {
       // Sort by car count (descending) - brands with most cars on top
-      const aCount = a.cars_qty || 0;
-      const bCount = b.cars_qty || 0;
+      const aCount = a.cars_qty ?? a.car_count ?? 0;
+      const bCount = b.cars_qty ?? b.car_count ?? 0;
       if (aCount !== bCount) {
         return bCount - aCount;
       }
