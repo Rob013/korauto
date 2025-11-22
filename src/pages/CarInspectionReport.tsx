@@ -2873,14 +2873,14 @@ const CarInspectionReport = () => {
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
               <Car className="h-4 w-4 text-primary" />
-              <span>Driving Information</span>
+              <span>Informacioni i Vozitjes</span>
             </TabsTrigger>
             <TabsTrigger
               value="vehicle-history"
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
               <Clock className="h-4 w-4 text-primary" />
-              <span>Vehicle History</span>
+              <span>Historia e Mjetit</span>
             </TabsTrigger>
             <TabsTrigger
               value="exterior"
@@ -2903,7 +2903,7 @@ const CarInspectionReport = () => {
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <span>Attention History</span>
+              <span>Historia e Vëmendjes</span>
             </TabsTrigger>
             <TabsTrigger
               value="options"

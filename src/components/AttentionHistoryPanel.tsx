@@ -70,18 +70,18 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
 
     const hasInsuranceGap = insuranceGap?.exists;
     const insuranceGapText = hasInsuranceGap
-        ? (insuranceGap?.periods?.length ? `${insuranceGap.periods.length} periods` : 'There is')
-        : "doesn't exist";
+        ? (insuranceGap?.periods?.length ? `${insuranceGap.periods.length} periudha` : 'Ka')
+        : "Nuk ekziston";
 
     return (
         <div className={className}>
             <div className="mb-4">
                 <div className="flex items-center gap-2 mb-1">
                     <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                    <h3 className="text-lg font-semibold">Attention history</h3>
+                    <h3 className="text-lg font-semibold">Historia e vëmendjes</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Important vehicle history alerts and special usage information
+                    Alarme të rëndësishme të historisë së mjetit dhe informacione të përdorimit special
                 </p>
             </div>
 
@@ -90,8 +90,8 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                 <AttentionItem
                     icon={Wrench}
                     iconColor={hasRecalls ? "bg-red-100 dark:bg-red-900/30 text-red-600" : "bg-gray-100 dark:bg-gray-800 text-gray-600"}
-                    title="🔧 Recall required"
-                    status={hasRecalls ? `${recallCount} cases` : "doesn't exist"}
+                    title="🔧 Recall i kërkuar"
+                    status={hasRecalls ? `${recallCount} raste` : "Nuk ekziston"}
                     statusColor={hasRecalls ? "red" : "default"}
                 />
 
@@ -107,7 +107,7 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                                             <div>
                                                 <p className="font-medium">{recall.title}</p>
                                                 {recall.status && (
-                                                    <p className="text-xs text-muted-foreground">Status: {recall.status}</p>
+                                                    <p className="text-xs text-muted-foreground">Statusi: {recall.status}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -122,7 +122,7 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                 <AttentionItem
                     icon={Shield}
                     iconColor={hasInsuranceGap ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600" : "bg-gray-100 dark:bg-gray-800 text-gray-600"}
-                    title="⚠️ Period of non-subscription to car insurance"
+                    title="⚠️ Periudha e mosabonimit në sigurim automjeti"
                     status={insuranceGapText}
                     statusColor={hasInsuranceGap ? "yellow" : "default"}
                 />
@@ -131,8 +131,8 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                 <AttentionItem
                     icon={AlertCircle}
                     iconColor={specialUsage?.totalLoss ? "bg-red-100 dark:bg-red-900/30 text-red-600" : "bg-gray-100 dark:bg-gray-800 text-gray-600"}
-                    title="🚨 Total loss, flooding, theft"
-                    status={specialUsage?.totalLoss || specialUsage?.flooding || specialUsage?.theft ? "exists" : "doesn't exist"}
+                    title="🚨 Humbje totale, përmbytje, vjedhje"
+                    status={specialUsage?.totalLoss || specialUsage?.flooding || specialUsage?.theft ? "Ekziston" : "Nuk ekziston"}
                     statusColor={specialUsage?.totalLoss || specialUsage?.flooding || specialUsage?.theft ? "red" : "default"}
                 />
 
@@ -140,8 +140,8 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                 <AttentionItem
                     icon={Car}
                     iconColor={specialUsage?.taxi || specialUsage?.commercial ? "bg-gray-100 dark:bg-gray-800 text-gray-600" : "bg-gray-100 dark:bg-gray-800 text-gray-600"}
-                    title="🚕 For commercial use such as taxis"
-                    status={specialUsage?.taxi || specialUsage?.commercial ? "exists" : "doesn't exist"}
+                    title="🚕 Për përdorim komercial si taksi"
+                    status={specialUsage?.taxi || specialUsage?.commercial ? "Ekziston" : "Nuk ekziston"}
                     statusColor={specialUsage?.taxi || specialUsage?.commercial ? "yellow" : "default"}
                 />
 
@@ -149,8 +149,8 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                 <AttentionItem
                     icon={Shield}
                     iconColor={specialUsage?.police ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600" : "bg-gray-100 dark:bg-gray-800 text-gray-600"}
-                    title="🚔 Police cars, etc."
-                    status={specialUsage?.police ? "exists" : "doesn't exist"}
+                    title="🚔 Makina të policisë, etj."
+                    status={specialUsage?.police ? "Ekziston" : "Nuk ekziston"}
                     statusColor={specialUsage?.police ? "yellow" : "default"}
                 />
 
@@ -158,8 +158,8 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                 <AttentionItem
                     icon={DollarSign}
                     iconColor={specialUsage?.rental ? "bg-orange-100 dark:bg-orange-900/30 text-orange-600" : "bg-gray-100 dark:bg-gray-800 text-gray-600"}
-                    title="🚗 For rental purposes such as rental cars"
-                    status={specialUsage?.rental ? "exists" : "doesn't exist"}
+                    title="🚗 Për qëllime qiraje si makina me qira"
+                    status={specialUsage?.rental ? "Ekziston" : "Nuk ekziston"}
                     statusColor={specialUsage?.rental ? "yellow" : "default"}
                 />
             </div>
@@ -169,8 +169,8 @@ export const AttentionHistoryPanel: React.FC<AttentionHistoryPanelProps> = ({
                 <div className="flex gap-2">
                     <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-blue-800 dark:text-blue-200">
-                        <p className="font-semibold mb-1">Maintenance history items are information provided through the Ministry of Land, Infrastructure and Transport and the Insurance Development Institute.</p>
-                        <p>While related parts maybe have been repaired or replaced, the actual work may differ. For more accurate vehicle accident history, please refer to the performance inspection record below.</p>
+                        <p className="font-semibold mb-1">Artikujt e historisë së mirëmbajtjes janë informacion i dhënë përmes Ministrisë së Tokës, Infrastrukturës dhe Transportit dhe Institutit të Zhvillimit të Sigurimit.</p>
+                        <p>Ndërsa pjesët e lidhura mund të jenë riparuar ose zëvendësuar, puna aktuale mund të ndryshojë. Për histori më të saktë të aksidenteve të automjetit, ju lutemi referojuni regjistrimit të inspektimit të performancës më poshtë.</p>
                     </div>
                 </div>
             </div>

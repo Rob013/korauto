@@ -34,7 +34,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return dateStr;
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            return date.toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
         } catch {
             return dateStr;
         }
@@ -48,11 +48,11 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
     const getClaimTypeLabel = (type: string): { label: string; color: string } => {
         switch (type) {
             case 'my_damage':
-                return { label: 'Insurance claim (damage to my car)', color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' };
+                return { label: 'Pretendimi i sigurimit (dëmtimi i makinës sime)', color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' };
             case 'other_damage':
-                return { label: 'Insurance processing (other car damage)', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' };
+                return { label: 'Përpunimi i sigurimit (dëmtimi i makinës tjetër)', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' };
             case 'estimate':
-                return { label: 'Estimate only', color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' };
+                return { label: 'Vetëm vlerësim', color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' };
             default:
                 return { label: type, color: 'bg-gray-100 dark:bg-gray-800 text-gray-700' };
         }
@@ -61,7 +61,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
     const getMonthYear = (dateStr: string): string => {
         try {
             const date = new Date(dateStr);
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            return date.toLocaleDateString('sq-AL', { year: 'numeric', month: 'long' });
         } catch {
             return dateStr;
         }
@@ -77,19 +77,19 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
         <div className={className}>
             {/* Header */}
             <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-1">Insurance/Maintenance History</h3>
+                <h3 className="text-lg font-semibold mb-1">Historia e Sigurimit/Mirëmbajtjes</h3>
                 <p className="text-sm text-muted-foreground">
-                    A total of {allRecords.length} cases
+                    Gjithsej {allRecords.length} raste
                 </p>
             </div>
 
             {/* Sorting tabs */}
             <div className="flex gap-4 mb-4 pb-2 border-b border-border">
                 <button className="text-sm font-medium pb-2 border-b-2 border-primary">
-                    Chronological order
+                    Renditja kronologjike
                 </button>
                 <button className="text-sm text-muted-foreground pb-2">
-                    Sort by item
+                    Rendit sipas artikullit
                 </button>
             </div>
 
@@ -99,7 +99,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                     <Card>
                         <CardContent className="p-6 text-center">
                             <p className="text-sm text-muted-foreground">
-                                No insurance or maintenance records available
+                                Nuk ka regjistrime të sigurimit ose mirëmbajtjes të disponueshme
                             </p>
                         </CardContent>
                     </Card>
@@ -133,7 +133,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                                             {/* Date of occurrence */}
                                             <div className="flex items-center gap-2 mb-3 text-sm">
                                                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-muted-foreground">Date of occurrence:</span>
+                                                <span className="text-muted-foreground">Data e ndodhjes:</span>
                                                 <span className="font-medium">{formatDate(claim.date)}</span>
                                             </div>
 
@@ -141,16 +141,16 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                                             <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 space-y-2">
                                                 <div className="grid grid-cols-2 gap-2 text-sm">
                                                     <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">part</span>
+                                                        <span className="text-muted-foreground">Pjesë</span>
                                                         <span className="font-mono">{formatCurrency(claim.costParts)}</span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">public service</span>
+                                                        <span className="text-muted-foreground">Shërbim publik</span>
                                                         <span className="font-mono">{formatCurrency(claim.costService)}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-between text-sm pt-2 border-t border-border">
-                                                    <span className="text-muted-foreground">coating</span>
+                                                    <span className="text-muted-foreground">Veshje</span>
                                                     <span className="font-mono">{formatCurrency(claim.costCoating)}</span>
                                                 </div>
                                             </div>
@@ -158,7 +158,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                                             {/* Total */}
                                             {totalCost > 0 && (
                                                 <div className="mt-3 flex items-center justify-between text-sm">
-                                                    <span className="font-semibold">Total Cost:</span>
+                                                    <span className="font-semibold">Kosto totale:</span>
                                                     <span className="text-lg font-bold text-primary">
                                                         {formatCurrency(totalCost)}
                                                     </span>
@@ -174,7 +174,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
 
                                             {/* Note */}
                                             <p className="mt-3 text-xs text-muted-foreground">
-                                                In the case of individual repairs with insurance money received directly, there may be no cost for parts, labor, or painting.
+                                                Në rastin e riparimeve individuale me para të sigurimit të marra drejtpërdrejt, mund të mos ketë kosto për pjesë, punë ose lyerje.
                                             </p>
                                         </div>
                                     </CardContent>
@@ -199,7 +199,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                                             <div className="flex items-center gap-2 mb-3">
                                                 <Wrench className="h-4 w-4 text-blue-600" />
                                                 <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                                    General maintenance
+                                                    Mirëmbajtje e përgjithshme
                                                 </Badge>
                                             </div>
 
@@ -215,7 +215,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                                             {/* Cost if available */}
                                             {maintenance.cost && (
                                                 <div className="mt-3 flex items-center justify-between">
-                                                    <span className="text-sm text-muted-foreground">Cost:</span>
+                                                    <span className="text-sm text-muted-foreground">Kostoja:</span>
                                                     <span className="font-mono font-semibold">
                                                         {formatCurrency(maintenance.cost)}
                                                     </span>
@@ -235,10 +235,10 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                 <div className="flex gap-2">
                     <FileText className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-yellow-800 dark:text-yellow-200">
-                        <p className="font-semibold mb-1">Maintenance history items are information provided through the Ministry of Land, Infrastructure and Transport and the Insurance Development Institute.</p>
-                        <p>While related parts may have been repaired or replaced, the actual work may differ. For more accurate vehicle accident history, please refer to the performance inspection record below.</p>
+                        <p className="font-semibold mb-1">Artikujt e historisë së mirëmbajtjes janë informacion i dhënë përmes Ministrisë së Tokës, Infrastrukturës dhe Transportit dhe Institutit të Zhvillimit të Sigurimit.</p>
+                        <p>Ndërsa pjesët e lidhura mund të jenë riparuar ose zëvendësuar, puna aktuale mund të ndryshojë. Për histori më të saktë të aksidenteve të automjetit, ju lutemi referojuni regjistrimit të inspektimit të performancës më poshtë.</p>
                         <button className="mt-2 text-blue-600 dark:text-blue-400 underline font-medium">
-                            View performance inspection records
+                            Shiko regjistrat e inspektimit të performancës
                         </button>
                     </div>
                 </div>
