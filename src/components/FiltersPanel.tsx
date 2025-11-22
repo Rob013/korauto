@@ -400,25 +400,22 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       }}
     >
       {/* Header with active filters count */}
-      <div className="flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-300">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 leading-tight">
-          <Filter className="h-5 w-5 text-primary transition-all duration-300 hover:scale-110 hover:rotate-12" />
+          <Filter className="h-5 w-5 text-primary transition-transform hover:scale-110" />
           <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
         </div>
         <div className="flex items-center gap-2 whitespace-nowrap">
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="animate-in zoom-in duration-200">{activeFiltersCount}</Badge>
+            <Badge variant="secondary" className="animate-scale-in">{activeFiltersCount}</Badge>
           )}
           <Button
             variant="outline"
             size="sm"
             onClick={onClearFilters}
-            className="transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 active:scale-95"
-            style={{
-              willChange: 'transform, background-color, color'
-            }}
+            className="transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
           >
-            <X className="h-3 w-3 mr-1 transition-transform duration-200 group-hover:rotate-90" />
+            <X className="h-3 w-3 mr-1" />
             Pastro të gjitha
           </Button>
         </div>
@@ -426,26 +423,19 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
       {/* Selected filters chips */}
       {selectedFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2 animate-in slide-in-from-left-2 fade-in duration-300">
-          {selectedFilters.map((chip, index) => (
+        <div className="flex flex-wrap gap-2 animate-fade-in">
+          {selectedFilters.map((chip) => (
             <Badge
               key={chip.key}
               variant="default"
-              className="flex items-center gap-1 bg-primary/10 hover:bg-primary/20 border border-primary/20 backdrop-blur-sm transition-all duration-200 hover:scale-105 active:scale-95 animate-in zoom-in"
-              style={{
-                animationDelay: `${index * 50}ms`,
-                willChange: 'transform'
-              }}
+              className="flex items-center gap-1 animate-scale-in bg-primary/10 hover:bg-primary/20 border border-primary/20 backdrop-blur-sm transition-all duration-200 hover:scale-105"
             >
               <span className="text-xs font-medium">{chip.label}: {chip.value}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto w-auto p-0 hover:bg-transparent transition-all duration-200 hover:scale-110 hover:rotate-90"
+                className="h-auto w-auto p-0 hover:bg-transparent transition-transform hover:scale-110"
                 onClick={() => removeFilter(chip.key)}
-                style={{
-                  willChange: 'transform'
-                }}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -461,28 +451,21 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         <Button
           variant="ghost"
           onClick={() => toggleSection('basic')}
-          className="w-full justify-between p-2 h-auto transition-all duration-200 hover:bg-muted/50 active:scale-[0.98]"
-          style={{
-            willChange: 'transform, background-color'
-          }}
+          className="w-full justify-between p-2 h-auto"
         >
           <div className="flex items-center gap-2">
-            <Car className="h-4 w-4 text-primary transition-transform duration-200" 
-                 style={{ transform: expandedSections.includes('basic') ? 'scale(1.1)' : 'scale(1)' }} />
+            <Car className="h-4 w-4 text-primary" />
             <span className="font-medium">Filtrat Bazë</span>
           </div>
-          <div className="transition-transform duration-300" 
-               style={{ transform: expandedSections.includes('basic') ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-            <ChevronDown className="h-4 w-4" />
-          </div>
+          {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
         {expandedSections.includes('basic') && (
           <div
-            className="space-y-4 p-3 bg-muted/30 rounded-lg animate-in slide-in-from-top-2 fade-in duration-200"
+            className="space-y-4 p-3 bg-muted/30 rounded-lg"
             style={{
-              willChange: 'transform, opacity',
-              backfaceVisibility: 'hidden'
+              animation: 'fadeIn 0.2s ease-out',
+              willChange: 'contents'
             }}
           >
             {/* Brand */}
@@ -592,28 +575,24 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         <Button
           variant="ghost"
           onClick={() => toggleSection('advanced')}
-          className="w-full justify-between p-2 h-auto hover:bg-muted/50 backdrop-blur-sm border border-border/30 transition-all duration-200 active:scale-[0.98]"
-          style={{
-            willChange: 'transform, background-color'
-          }}
+          className="w-full justify-between p-2 h-auto hover:bg-muted/50 backdrop-blur-sm border border-border/30 transition-all duration-200"
         >
           <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-primary transition-transform hover:scale-110" 
-                      style={{ transform: expandedSections.includes('advanced') ? 'scale(1.1)' : 'scale(1)' }} />
+            <Settings className="h-4 w-4 text-primary transition-transform hover:scale-110" />
             <span className="font-medium">Filtrat e Avancuar</span>
           </div>
-          <div className="transition-transform duration-300" 
-               style={{ transform: expandedSections.includes('advanced') ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-            <ChevronDown className="h-4 w-4" />
-          </div>
+          {expandedSections.includes('advanced') ?
+            <ChevronUp className="h-4 w-4 transition-transform duration-200" /> :
+            <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+          }
         </Button>
 
         {expandedSections.includes('advanced') && (
           <div
-            className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30 max-h-[60vh] overflow-y-auto animate-in slide-in-from-top-2 fade-in duration-200"
+            className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30 max-h-[60vh] overflow-y-auto"
             style={{
-              willChange: 'transform, opacity',
-              backfaceVisibility: 'hidden',
+              animation: 'fadeIn 0.2s ease-out',
+              willChange: 'contents',
               scrollBehavior: 'smooth'
             }}
           >

@@ -301,18 +301,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <Card 
-        className={cn(
-          "relative border-0 rounded-2xl p-4 sm:p-8 space-y-3 sm:space-y-5 w-full max-w-md mx-auto backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 ring-1 ring-gray-200/50 dark:ring-white/10",
-          "animate-in slide-in-from-bottom-4 fade-in duration-300",
-          className
-        )}
-        style={{
-          willChange: 'transform, opacity',
-          backfaceVisibility: 'hidden',
-          perspective: '1000px'
-        }}
-      >
+      <Card className={cn("relative border-0 rounded-2xl p-4 sm:p-8 space-y-3 sm:space-y-5 w-full max-w-md mx-auto backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 ring-1 ring-gray-200/50 dark:ring-white/10", className)}>
         <div className="space-y-4">
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
@@ -374,7 +363,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <span className="text-xs text-primary bg-primary/10 px-1 rounded">⚡</span>
             </Label>
             <div className="year-buttons flex flex-wrap gap-1">
-              {yearRangePresets.slice(0, 4).map((preset, index) => (
+              {yearRangePresets.slice(0, 4).map((preset) => (
                 <Button
                   key={preset.label}
                   type="button"
@@ -385,11 +374,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       : "outline"
                   }
                   size="sm"
-                  className="h-6 px-2 text-xs transition-all duration-200 hover:scale-105 active:scale-95 animate-in"
-                  style={{
-                    willChange: 'transform',
-                    animationDelay: `${index * 50}ms`
-                  }}
+                  className="h-6 px-2 text-xs"
                   onClick={() => handleYearRangePreset(preset)}
                 >
                   {preset.label}
@@ -675,10 +660,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               }
             }}
             disabled={isLoading}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-            style={{
-              willChange: 'transform'
-            }}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             size="lg"
           >
             <Search className="h-5 w-5 mr-2" />
@@ -703,12 +685,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           size="sm"
           onClick={onClearFilters}
           disabled={isLoading}
-          className="text-xs transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
-          style={{
-            willChange: 'transform'
-          }}
+          className="text-xs"
         >
-          {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1 transition-transform duration-200 group-hover:rotate-90" />}
+          {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <X className="h-3 w-3 mr-1" />}
           Pastro të gjitha
         </Button>
       </div>
