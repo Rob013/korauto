@@ -99,14 +99,50 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         }
     };
 
-    // Get manufacturers with counts
-    const manufacturersList = manufacturers
-        .filter(m => (m.cars_qty || m.car_count || 0) > 0 || m.cars_qty === undefined)
-        .map(m => ({
-            id: m.id,
-            name: m.name,
-            count: m.cars_qty || m.car_count || 0
-        }));
+    // Popular brands (in order)
+    const POPULAR_BRANDS = ['AUDI', 'MERCEDES-BENZ', 'VOLKSWAGEN', 'BMW'];
+
+    // Get manufacturers with counts, sorted with popular brands first
+    const manufacturersList = React.useMemo(() => {
+        const allManufacturers = manufacturers
+            .filter(m => (m.cars_qty || m.car_count || 0) > 0 || m.cars_qty === undefined)
+            .map(m => ({
+                id: m.id,
+                name: m.name,
+                count: m.cars_qty || m.car_count || 0
+            }));
+
+        // Separate popular and other brands
+        const popular: typeof allManufacturers = [];
+        const others: typeof allManufacturers = [];
+
+        allManufacturers.forEach(m => {
+            const normalizedName = m.name.toUpperCase().replace(/\s+/g, '-');
+            if (POPULAR_BRANDS.some(p => normalizedName.includes(p) || p.includes(normalizedName))) {
+                popular.push(m);
+            } else {
+                others.push(m);
+            }
+        });
+
+        // Sort popular brands by POPULAR_BRANDS order
+        popular.sort((a, b) => {
+            const aIndex = POPULAR_BRANDS.findIndex(p =>
+                a.name.toUpperCase().replace(/\s+/g, '-').includes(p) ||
+                p.includes(a.name.toUpperCase().replace(/\s+/g, '-'))
+            );
+            const bIndex = POPULAR_BRANDS.findIndex(p =>
+                b.name.toUpperCase().replace(/\s+/g, '-').includes(p) ||
+                p.includes(b.name.toUpperCase().replace(/\s+/g, '-'))
+            );
+            return aIndex - bIndex;
+        });
+
+        // Sort others by car count (highest first)
+        others.sort((a, b) => b.count - a.count);
+
+        return { popular, others };
+    }, [manufacturers]);
 
     // Get models for selected manufacturer
     const modelsList = filters.manufacturer_id
@@ -155,7 +191,18 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 className={inputClass}
                             >
                                 <option value="">Të gjitha markat</option>
-                                {manufacturersList.map(m => (
+                                {/* Popular Brands */}
+                                {manufacturersList.popular.map(m => (
+                                    <option key={m.id} value={m.id}>
+                                        {m.name} {m.count > 0 ? `(${m.count})` : ''}
+                                    </option>
+                                ))}
+                                {/* Separator */}
+                                {manufacturersList.popular.length > 0 && manufacturersList.others.length > 0 && (
+                                    <option disabled>──────────</option>
+                                )}
+                                {/* Other Brands */}
+                                {manufacturersList.others.map(m => (
                                     <option key={m.id} value={m.id}>
                                         {m.name} {m.count > 0 ? `(${m.count})` : ''}
                                     </option>
@@ -452,9 +499,6 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         </div>
                     )}
                 </div>
-
-                {/* Bottom padding for fixed buttons */}
-                <div className="h-32"></div>
             </div>
 
             {/* Fixed Bottom Buttons */}
