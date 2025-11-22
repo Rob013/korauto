@@ -302,7 +302,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   if (compact) {
     return (
       <Card className={cn("relative border-0 rounded-2xl p-4 sm:p-8 space-y-3 sm:space-y-5 w-full max-w-md mx-auto backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 ring-1 ring-gray-200/50 dark:ring-white/10", className)}>
-        <div className="space-y-4">
+        <div className="space-y-4 bg-background/95 dark:bg-background/95 rounded-lg p-3 -m-3">
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
               <Car className="h-2.5 w-2.5" />
