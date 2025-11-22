@@ -1,9 +1,6 @@
-import React, { useMemo } from 'react';
-import { Label } from "@/components/ui/label";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AdaptiveSelect } from "@/components/ui/adaptive-select";
-import { Car, Calendar, Gauge, DollarSign, Settings, Fuel, X } from "lucide-react";
+import { X } from "lucide-react";
 import { APIFilters } from "@/utils/catalog-filter";
 
 interface Manufacturer {
@@ -38,7 +35,7 @@ interface MobileFiltersPanelProps {
     onApply: () => void;
 }
 
-const FUEL_TYPE_OPTIONS: Record<string, number> = {
+const FUEL_TYPES: Record<string, number> = {
     'Benzinë': 1,
     'Dizel': 2,
     'Hibrid': 3,
@@ -46,7 +43,7 @@ const FUEL_TYPE_OPTIONS: Record<string, number> = {
     'Gaz': 5
 };
 
-const TRANSMISSION_OPTIONS: Record<string, number> = {
+const TRANSMISSIONS: Record<string, number> = {
     'Automatik': 1,
     'Manual': 2,
     'CVT': 3
@@ -62,8 +59,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     onApply
 }) => {
 
-    const updateFilter = (key: string, value: string) => {
-        const actualValue = value === 'all' || value === '' ? undefined : value;
+    const handleChange = (key: string, value: string) => {
+        const actualValue = value === '' || value === 'all' ? undefined : value;
 
         if (key === 'manufacturer_id') {
             onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
@@ -72,224 +69,211 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         }
     };
 
-    // Manufacturer options with counts
-    const manufacturerOptions = useMemo(() => {
-        const options = manufacturers
-            .filter(m => {
-                const count = m.cars_qty || m.car_count || 0;
-                return count > 0 || (m.cars_qty === undefined && m.car_count === undefined);
-            })
-            .map(m => ({
-                value: m.id.toString(),
-                label: `${m.name}${m.cars_qty || m.car_count ? ` (${m.cars_qty || m.car_count})` : ''}`
-            }));
-
-        return [{ value: 'all', label: 'Të gjitha markat' }, ...options];
-    }, [manufacturers]);
-
-    // Model options with counts
-    const modelOptions = useMemo(() => {
-        if (!filters.manufacturer_id) return [{ value: 'all', label: 'Zgjidhni markën së pari' }];
-
-        const filteredModels = models
-            .filter(m => (m.cars_qty || 0) > 0)
-            .map(m => ({
-                value: m.id.toString(),
-                label: `${m.name}${m.cars_qty ? ` (${m.cars_qty})` : ''}`
-            }));
-
-        return [{ value: 'all', label: 'Të gjithë modelet' }, ...filteredModels];
-    }, [models, filters.manufacturer_id]);
-
-    // Fuel type options with counts
-    const fuelTypeOptions = useMemo(() => {
-        const options = Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
-            value: id.toString(),
-            label: `${name}${filterCounts?.fuelTypes?.[id] ? ` (${filterCounts.fuelTypes[id]})` : ''}`
+    // Get manufacturers with counts
+    const manufacturersList = manufacturers
+        .filter(m => (m.cars_qty || m.car_count || 0) > 0 || m.cars_qty === undefined)
+        .map(m => ({
+            id: m.id,
+            name: m.name,
+            count: m.cars_qty || m.car_count || 0
         }));
-        return [{ value: 'all', label: 'Çdo lloj' }, ...options];
-    }, [filterCounts]);
 
-    // Transmission options with counts
-    const transmissionOptions = useMemo(() => {
-        const options = Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
-            value: id.toString(),
-            label: `${name}${filterCounts?.transmissions?.[id] ? ` (${filterCounts.transmissions[id]})` : ''}`
-        }));
-        return [{ value: 'all', label: 'Çdo transmision' }, ...options];
-    }, [filterCounts]);
+    // Get models for selected manufacturer
+    const modelsList = filters.manufacturer_id
+        ? models.filter(m => (m.cars_qty || 0) > 0).map(m => ({
+            id: m.id,
+            name: m.name,
+            count: m.cars_qty || 0
+        }))
+        : [];
 
-    // Year options
+    // Generate years
     const currentYear = new Date().getFullYear();
-    const yearOptions = useMemo(() => {
-        const years = [];
-        for (let year = currentYear; year >= 2000; year--) {
-            years.push({ value: year.toString(), label: year.toString() });
-        }
-        return [{ value: 'all', label: 'Çdo vit' }, ...years];
-    }, [currentYear]);
+    const years = Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i);
 
     return (
-        <div className="flex flex-col h-full bg-background">
-            {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+                <div className="space-y-6">
 
-                {/* Brand */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                        <Car className="h-4 w-4 text-primary" />
-                        Marka
-                    </Label>
-                    <AdaptiveSelect
-                        value={filters.manufacturer_id || 'all'}
-                        onValueChange={(value) => updateFilter('manufacturer_id', value)}
-                        options={manufacturerOptions}
-                        className="w-full"
-                        forceNative
-                    />
-                </div>
+                    {/* Brand */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                            Marka
+                        </label>
+                        <select
+                            value={filters.manufacturer_id || ''}
+                            onChange={(e) => handleChange('manufacturer_id', e.target.value)}
+                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                            <option value="">Të gjitha markat</option>
+                            {manufacturersList.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name} {m.count > 0 ? `(${m.count})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                {/* Model */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-primary" />
-                        Modeli
-                    </Label>
-                    <AdaptiveSelect
-                        value={filters.model_id || 'all'}
-                        onValueChange={(value) => updateFilter('model_id', value)}
-                        options={modelOptions}
-                        disabled={!filters.manufacturer_id}
-                        className="w-full"
-                        forceNative
-                    />
-                </div>
+                    {/* Model */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                            Modeli
+                        </label>
+                        <select
+                            value={filters.model_id || ''}
+                            onChange={(e) => handleChange('model_id', e.target.value)}
+                            disabled={!filters.manufacturer_id}
+                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+                        >
+                            <option value="">
+                                {filters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
+                            </option>
+                            {modelsList.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name} {m.count > 0 ? `(${m.count})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                {/* Year Range */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-primary" />
-                        Viti
-                    </Label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Nga</Label>
-                            <AdaptiveSelect
-                                value={filters.from_year || 'all'}
-                                onValueChange={(value) => updateFilter('from_year', value)}
-                                options={yearOptions}
-                                className="w-full"
-                                forceNative
+                    {/* Year Range */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                            Viti
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Nga</label>
+                                <select
+                                    value={filters.from_year || ''}
+                                    onChange={(e) => handleChange('from_year', e.target.value)}
+                                    className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                >
+                                    <option value="">Çdo vit</option>
+                                    {years.map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Deri</label>
+                                <select
+                                    value={filters.to_year || ''}
+                                    onChange={(e) => handleChange('to_year', e.target.value)}
+                                    className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                >
+                                    <option value="">Çdo vit</option>
+                                    {years.map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mileage */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                            Kilometrazha (KM)
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <input
+                                type="number"
+                                placeholder="Nga"
+                                value={filters.odometer_from_km || ''}
+                                onChange={(e) => handleChange('odometer_from_km', e.target.value)}
+                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                            <input
+                                type="number"
+                                placeholder="Deri"
+                                value={filters.odometer_to_km || ''}
+                                onChange={(e) => handleChange('odometer_to_km', e.target.value)}
+                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                         </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Deri</Label>
-                            <AdaptiveSelect
-                                value={filters.to_year || 'all'}
-                                onValueChange={(value) => updateFilter('to_year', value)}
-                                options={yearOptions}
-                                className="w-full"
-                                forceNative
+                    </div>
+
+                    {/* Price */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                            Çmimi (EUR)
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <input
+                                type="number"
+                                placeholder="Nga"
+                                value={filters.buy_now_price_from || ''}
+                                onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
+                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                            <input
+                                type="number"
+                                placeholder="Deri"
+                                value={filters.buy_now_price_to || ''}
+                                onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
+                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                         </div>
                     </div>
-                </div>
 
-                {/* Mileage */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                        <Gauge className="h-4 w-4 text-primary" />
-                        Kilometrazha (KM)
-                    </Label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Input
-                            type="number"
-                            placeholder="Nga"
-                            value={filters.odometer_from_km || ''}
-                            onChange={(e) => updateFilter('odometer_from_km', e.target.value)}
-                            className="w-full"
-                        />
-                        <Input
-                            type="number"
-                            placeholder="Deri"
-                            value={filters.odometer_to_km || ''}
-                            onChange={(e) => updateFilter('odometer_to_km', e.target.value)}
-                            className="w-full"
-                        />
+                    {/* Fuel Type */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                            Lloji i karburantit
+                        </label>
+                        <select
+                            value={filters.fuel_type || ''}
+                            onChange={(e) => handleChange('fuel_type', e.target.value)}
+                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                            <option value="">Çdo lloj</option>
+                            {Object.entries(FUEL_TYPES).map(([name, id]) => (
+                                <option key={id} value={id}>
+                                    {name} {filterCounts?.fuelTypes?.[id] ? `(${filterCounts.fuelTypes[id]})` : ''}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                </div>
 
-                {/* Price */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-primary" />
-                        Çmimi (EUR)
-                    </Label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Input
-                            type="number"
-                            placeholder="Nga"
-                            value={filters.buy_now_price_from || ''}
-                            onChange={(e) => updateFilter('buy_now_price_from', e.target.value)}
-                            className="w-full"
-                        />
-                        <Input
-                            type="number"
-                            placeholder="Deri"
-                            value={filters.buy_now_price_to || ''}
-                            onChange={(e) => updateFilter('buy_now_price_to', e.target.value)}
-                            className="w-full"
-                        />
+                    {/* Transmission */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                            Transmisioni
+                        </label>
+                        <select
+                            value={filters.transmission || ''}
+                            onChange={(e) => handleChange('transmission', e.target.value)}
+                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                            <option value="">Çdo transmision</option>
+                            {Object.entries(TRANSMISSIONS).map(([name, id]) => (
+                                <option key={id} value={id}>
+                                    {name} {filterCounts?.transmissions?.[id] ? `(${filterCounts.transmissions[id]})` : ''}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                </div>
 
-                {/* Fuel Type */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                        <Fuel className="h-4 w-4 text-primary" />
-                        Lloji i karburantit
-                    </Label>
-                    <AdaptiveSelect
-                        value={filters.fuel_type || 'all'}
-                        onValueChange={(value) => updateFilter('fuel_type', value)}
-                        options={fuelTypeOptions}
-                        className="w-full"
-                        forceNative
-                    />
-                </div>
-
-                {/* Transmission */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-primary" />
-                        Transmisioni
-                    </Label>
-                    <AdaptiveSelect
-                        value={filters.transmission || 'all'}
-                        onValueChange={(value) => updateFilter('transmission', value)}
-                        options={transmissionOptions}
-                        className="w-full"
-                        forceNative
-                    />
                 </div>
             </div>
 
-            {/* Fixed bottom buttons */}
-            <div className="border-t bg-background p-4 space-y-2">
+            {/* Fixed Bottom Buttons */}
+            <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
                 <Button
                     onClick={onApply}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                    size="lg"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold text-base"
                 >
                     Apliko Filtrat
                 </Button>
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
-                    className="w-full"
-                    size="lg"
+                    className="w-full h-12 font-semibold text-base"
                 >
-                    <X className="h-4 w-4 mr-2" />
+                    <X className="h-5 w-5 mr-2" />
                     Pastro të gjitha
                 </Button>
             </div>
