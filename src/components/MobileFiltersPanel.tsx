@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { APIFilters } from "@/utils/catalog-filter";
+import { APIFilters, sortManufacturers } from "@/utils/catalog-filter";
+import { sortBrandsWithPriority } from "@/utils/brandOrdering";
 
 interface Manufacturer {
     id: number;
@@ -58,8 +59,6 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     onClearFilters,
     onApply
 }) => {
-    const [manufacturerSearch, setManufacturerSearch] = useState("");
-
     const handleChange = (key: string, value: string) => {
         const actualValue = value === '' || value === 'all' ? undefined : value;
 
@@ -71,15 +70,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     };
 
     // Get manufacturers with counts
-    const manufacturersList = useMemo(() => (
-        manufacturers
-            .filter(m => (m.cars_qty || m.car_count || 0) > 0 || m.cars_qty === undefined)
-            .map(m => ({
-                id: m.id,
-                name: m.name,
-                count: m.cars_qty || m.car_count || 0
-            }))
-    ), [manufacturers]);
+    const { sorted: manufacturersList, priorityCount } = useMemo(() => {
+        const sortedByCount = sortManufacturers(manufacturers);
+        return sortBrandsWithPriority(sortedByCount, {
+            getCount: (brand) => brand.cars_qty ?? brand.car_count ?? 0,
+            priorityKeys: ["audi", "mercedes", "mercedesbenz", "volkswagen", "vw", "bmw"]
+        });
+    }, [manufacturers]);
 
     // Get models for selected manufacturer
     const modelsList = useMemo(() => (
@@ -101,12 +98,6 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     const activeFiltersCount = useMemo(() => {
         return Object.entries(filters || {}).filter(([, value]) => value !== undefined && value !== "").length;
     }, [filters]);
-
-    const filteredManufacturers = useMemo(() => {
-        if (!manufacturerSearch.trim()) return manufacturersList;
-        const query = manufacturerSearch.toLowerCase();
-        return manufacturersList.filter(({ name }) => name.toLowerCase().includes(query));
-    }, [manufacturerSearch, manufacturersList]);
 
     const handleYearPreset = (from: number, to: number) => {
         handleChange('from_year', from.toString());
@@ -151,24 +142,31 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
                             Marka
                         </label>
-                        <input
-                            type="search"
-                            placeholder="Kërko markën"
-                            value={manufacturerSearch}
-                            onChange={(e) => setManufacturerSearch(e.target.value)}
-                            className="w-full h-10 px-3 mb-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
                         <select
                             value={filters.manufacturer_id || ''}
                             onChange={(e) => handleChange('manufacturer_id', e.target.value)}
                             className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Të gjitha markat</option>
-                            {filteredManufacturers.map(m => (
-                                <option key={m.id} value={m.id}>
-                                    {m.name} {m.count > 0 ? `(${m.count})` : ''}
-                                </option>
-                            ))}
+                            {manufacturersList.slice(0, priorityCount).map(m => {
+                                const count = m.cars_qty ?? m.car_count ?? 0;
+                                return (
+                                    <option key={m.id} value={m.id}>
+                                        {m.name} {count > 0 ? `(${count})` : ''}
+                                    </option>
+                                );
+                            })}
+                            {priorityCount > 0 && priorityCount < manufacturersList.length && (
+                                <option disabled value="separator-priority-brands">Marka të tjera</option>
+                            )}
+                            {manufacturersList.slice(priorityCount).map(m => {
+                                const count = m.cars_qty ?? m.car_count ?? 0;
+                                return (
+                                    <option key={m.id} value={m.id}>
+                                        {m.name} {count > 0 ? `(${count})` : ''}
+                                    </option>
+                                );
+                            })}
                         </select>
                     </div>
 
@@ -220,12 +218,12 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             </Button>
                             <Button
                                 type="button"
-                                variant={(filters.from_year === "2015" && !filters.to_year) ? "default" : "outline"}
+                                variant={(filters.from_year === "2016" && !filters.to_year) ? "default" : "outline"}
                                 size="sm"
                                 className="h-8 px-3 text-xs"
-                                onClick={() => handleChange('from_year', '2015')}
+                                onClick={() => handleChange('from_year', '2016')}
                             >
-                                2015+
+                                2016+
                             </Button>
                             {(filters.from_year || filters.to_year) && (
                                 <Button
