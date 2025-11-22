@@ -7,6 +7,10 @@ import { formatMileage } from "@/utils/mileageFormatter";
 import { InspectionDiagramPanel } from "@/components/InspectionDiagramPanel";
 import { InspectionItemList } from "@/components/InspectionItemList";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
+import { DrivingInformationPanel } from "@/components/DrivingInformationPanel";
+import { VehicleHistoryPanel } from "@/components/VehicleHistoryPanel";
+import { AttentionHistoryPanel } from "@/components/AttentionHistoryPanel";
+import { InsuranceMaintenancePanel } from "@/components/InsuranceMaintenancePanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -2856,13 +2860,27 @@ const CarInspectionReport = () => {
           Kthehu te makinat
         </Button>
         <Tabs defaultValue="diagram" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
             <TabsTrigger
               value="diagram"
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
               <FileText className="h-4 w-4 text-primary" />
               <span>Diagrami i Inspektimit</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="driving"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <Car className="h-4 w-4 text-primary" />
+              <span>Driving Information</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="vehicle-history"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <Clock className="h-4 w-4 text-primary" />
+              <span>Vehicle History</span>
             </TabsTrigger>
             <TabsTrigger
               value="exterior"
@@ -2879,6 +2897,13 @@ const CarInspectionReport = () => {
               <span className="text-left leading-tight whitespace-normal">
                 Aksidentet & Sigurimi
               </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="attention"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <span>Attention History</span>
             </TabsTrigger>
             <TabsTrigger
               value="options"
@@ -3867,6 +3892,56 @@ const CarInspectionReport = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* New: Driving Information Tab */}
+          <TabsContent value="driving" className="space-y-4">
+            <DrivingInformationPanel
+              ownershipHistory={(car as any)?.encarRecord?.drives || (car as any)?.ownershipHistory || []}
+            />
+          </TabsContent>
+
+          {/* New: Vehicle History Tab */}
+          <TabsContent value="vehicle-history" className="space-y-4">
+            <VehicleHistoryPanel
+              manufacturer={car?.make || (car as any)?.encarVehicle?.manufacturer}
+              model={car?.model || (car as any)?.encarVehicle?.modelName}
+              rating={(car as any)?.encarVehicle?.rating}
+              yearOfManufacture={car?.year}
+              mileage={car?.mileageKm || car?.odometer?.km}
+              productionDate={car?.firstRegistration || (car as any)?.encarVehicle?.productionDate}
+              countryOfOrigin={(car as any)?.encarVehicle?.countryOfOrigin}
+              use={(car as any)?.encarVehicle?.use}
+              newCarPrice={(car as any)?.encarVehicle?.newCarPrice}
+              newCarReleasePrice={(car as any)?.encarVehicle?.newCarReleasePrice}
+              fuel={car?.fuel || (car as any)?.encarVehicle?.fuel}
+              cityFuelConsumption={(car as any)?.encarVehicle?.cityFuelConsumption}
+              highwayFuelConsumption={(car as any)?.encarVehicle?.highwayFuelConsumption}
+            />
+          </TabsContent>
+
+          {/* New: Attention History Tab */}
+          <TabsContent value="attention" className="space-y-4">
+            <AttentionHistoryPanel
+              recalls={(car as any)?.encarRecordSummary?.recallStatus?.map((r: any) => ({
+                title: r.title || r.name,
+                status: r.status,
+                count: 1
+              })) || []}
+              insuranceGap={{
+                exists: (car as any)?.encarRecordSummary?.insuranceGapExists || false,
+                periods: (car as any)?.encarRecordSummary?.insuranceGapPeriods
+              }}
+              specialUsage={{
+                totalLoss: (car?.encarRecordSummary as any)?.totalLossCnt > 0,
+                flooding: (car as any)?.encarRecordSummary?.flooding,
+                theft: (car as any)?.encarRecordSummary?.theft,
+                commercial: (car as any)?.encarRecordSummary?.commercialUse,
+                taxi: (car as any)?.encarRecordSummary?.taxiUse,
+                police: (car as any)?.encarRecordSummary?.policeUse,
+                rental: (car as any)?.encarRecordSummary?.rentalUse
+              }}
+            />
           </TabsContent>
         </Tabs>
 
