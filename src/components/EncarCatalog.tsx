@@ -130,6 +130,37 @@ const EncarCatalog = ({
   });
   const [hasSelectedCategories, setHasSelectedCategories] = useState(false);
 
+  // Catalog metadata (brands, models, generations) should be defined before any memoized
+  // computations that depend on them to avoid temporal dead zone errors during render.
+  const [manufacturers, setManufacturers] = useState<{
+    id: number;
+    name: string;
+    car_count?: number;
+    cars_qty?: number;
+    image?: string;
+  }[]>(createFallbackManufacturers()); // Initialize with fallback data immediately
+
+  const [models, setModels] = useState<{
+    id: number;
+    name: string;
+    car_count?: number;
+    cars_qty?: number;
+  }[]>([]);
+  const [generations, setGenerations] = useState<{
+    id: number;
+    name: string;
+    manufacturer_id?: number;
+    model_id?: number;
+    from_year?: number;
+    to_year?: number;
+    cars_qty?: number;
+  }[]>([]);
+  const [filterCounts, setFilterCounts] = useState<any>(null);
+  const [loadingCounts, setLoadingCounts] = useState(false);
+  const [highlightedCarId, setHighlightedCarId] = useState<string | null>(null);
+  const [loadedPages, setLoadedPages] = useState(1);
+  const [isRestoringState, setIsRestoringState] = useState(false);
+
   // Use ref for tracking fetch progress to avoid triggering re-renders
   const fetchingSortRef = useRef(false);
   const lastSortParamsRef = useRef('');
@@ -299,34 +330,6 @@ const EncarCatalog = ({
   );
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [manufacturers, setManufacturers] = useState<{
-    id: number;
-    name: string;
-    car_count?: number;
-    cars_qty?: number;
-    image?: string;
-  }[]>(createFallbackManufacturers()); // Initialize with fallback data immediately
-
-  const [models, setModels] = useState<{
-    id: number;
-    name: string;
-    car_count?: number;
-    cars_qty?: number;
-  }[]>([]);
-  const [generations, setGenerations] = useState<{
-    id: number;
-    name: string;
-    manufacturer_id?: number;
-    model_id?: number;
-    from_year?: number;
-    to_year?: number;
-    cars_qty?: number;
-  }[]>([]);
-  const [filterCounts, setFilterCounts] = useState<any>(null);
-  const [loadingCounts, setLoadingCounts] = useState(false);
-  const [highlightedCarId, setHighlightedCarId] = useState<string | null>(null);
-  const [loadedPages, setLoadedPages] = useState(1);
-  const [isRestoringState, setIsRestoringState] = useState(false);
 
   // Ref for the main container to handle scroll restoration
   const containerRef = useRef<HTMLDivElement>(null);
