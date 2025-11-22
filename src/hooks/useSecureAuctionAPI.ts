@@ -480,6 +480,7 @@ export const useSecureAuctionAPI = () => {
     hasMorePages,
     fetchCars,
     fetchAllCars,
+    fetchManufacturers,
     filters,
     setFilters,
     loadMore,

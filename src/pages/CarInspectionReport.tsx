@@ -2942,7 +2942,19 @@ const CarInspectionReport = () => {
 
               {/* Encar-style Car Inspection Diagram */}
               <CarInspectionDiagram
-                inspectionData={car?.encarInspection?.outers || []}
+                inspectionData={(car?.encarInspection?.outers || [])
+                  .filter((item) => item.type?.code && item.type?.title)
+                  .map((item) => ({
+                    type: {
+                      code: item.type!.code!,
+                      title: item.type!.title!
+                    },
+                    statusTypes: (item.statusTypes || []).map((st) => ({
+                      code: st.code || '',
+                      title: st.title || ''
+                    })),
+                    attributes: item.attributes || []
+                  }))}
                 className="my-6"
               />
               <div className="mt-8">

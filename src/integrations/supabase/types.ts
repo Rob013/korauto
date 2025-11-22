@@ -320,6 +320,7 @@ export type Database = {
           model: string
           modifications: string | null
           mot_expiry: string | null
+          odometer: Json | null
           original_api_data: Json | null
           previous_owners: number | null
           price: number | null
@@ -409,6 +410,7 @@ export type Database = {
           model: string
           modifications?: string | null
           mot_expiry?: string | null
+          odometer?: Json | null
           original_api_data?: Json | null
           previous_owners?: number | null
           price?: number | null
@@ -498,6 +500,7 @@ export type Database = {
           model?: string
           modifications?: string | null
           mot_expiry?: string | null
+          odometer?: Json | null
           original_api_data?: Json | null
           previous_owners?: number | null
           price?: number | null
@@ -628,6 +631,45 @@ export type Database = {
           transmission?: string | null
           vin?: string | null
           year?: number | null
+        }
+        Relationships: []
+      }
+      cars_sync_log: {
+        Row: {
+          cars_archived: number | null
+          cars_synced: number | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          started_at: string | null
+          status: string | null
+          sync_type: string
+        }
+        Insert: {
+          cars_archived?: number | null
+          cars_synced?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string | null
+          sync_type: string
+        }
+        Update: {
+          cars_archived?: number | null
+          cars_synced?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string | null
+          sync_type?: string
         }
         Relationships: []
       }
@@ -1197,10 +1239,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      cars_manufacturer_model_stats: {
+        Row: {
+          avg_price: number | null
+          car_count: number | null
+          manufacturer_name: string | null
+          max_price: number | null
+          min_price: number | null
+          model_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       anonymize_old_inspection_requests: { Args: never; Returns: number }
+      archive_sold_cars: { Args: never; Returns: number }
       bulk_merge_from_staging: { Args: never; Returns: Json }
       cars_filtered_count: { Args: { p_filters?: Json }; Returns: number }
       cars_global_sort_page: {
@@ -1348,6 +1401,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       map_complete_api_data: { Args: { api_record: Json }; Returns: Json }
       mark_missing_inactive: { Args: never; Returns: Json }
+      refresh_car_stats: { Args: never; Returns: undefined }
       remove_old_sold_cars: { Args: never; Returns: undefined }
       save_precise_sync_checkpoint: {
         Args: {
@@ -1363,6 +1417,8 @@ export type Database = {
         Args: { checkpoint_data: Json; sync_id: string }
         Returns: undefined
       }
+      scheduled_cars_maintenance: { Args: never; Returns: Json }
+      trigger_cars_sync: { Args: never; Returns: undefined }
       update_sold_car_status: { Args: never; Returns: undefined }
     }
     Enums: {
