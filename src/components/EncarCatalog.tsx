@@ -14,6 +14,7 @@ import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
 import FiltersPanel from "@/components/FiltersPanel";
+import { MobileFiltersPanel } from "@/components/MobileFiltersPanel";
 import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from "@/constants/carOptions";
 import { AISearchBar } from "@/components/AISearchBar";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
@@ -1198,26 +1199,16 @@ const EncarCatalog = ({
       </div>
 
       <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
-        <div className={`${isMobile ? 'p-3' : ''}`}>
-          <EncarStyleFilter
+        {isMobile ? (
+          <MobileFiltersPanel
             filters={filters}
             manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
             models={models}
-            engineVariants={engineVariants}
             filterCounts={filterCounts}
-            loadingCounts={loadingCounts}
             onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
-            onManufacturerChange={handleManufacturerChange}
-            onModelChange={handleModelChange}
-            showAdvanced={showAdvancedFilters}
-            onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            onFetchGrades={fetchGrades}
-            onFetchTrimLevels={fetchTrimLevels}
-            compact={true}
-            onSearchCars={() => {
-              console.log("Search button clicked, isMobile:", isMobile);
-              // Apply search/filters with current sort preference - fetch from ALL sources
+            onApply={() => {
+              console.log("Apply filters clicked, isMobile:", isMobile);
               const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
               const searchFilters = effectiveSort ? {
                 ...filters,
@@ -1229,39 +1220,86 @@ const EncarCatalog = ({
               };
               fetchCars(1, searchFilters, true);
 
-              // Close filter panel on mobile only; keep open on desktop
-              if (isMobile) {
-                setShowFilters(false);
-                setHasExplicitlyClosed(true);
-              }
+              // Close filter panel on mobile
+              setShowFilters(false);
+              setHasExplicitlyClosed(true);
 
               // Additional CSS force close as backup
-              if (isMobile) {
-                setTimeout(() => {
-                  const filterPanel = document.querySelector('[data-filter-panel]');
-                  if (filterPanel) {
-                    (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                    (filterPanel as HTMLElement).style.visibility = 'hidden';
-                  }
-                }, 100);
-              }
-            }} onCloseFilter={() => {
-              console.log("Close filter called, isMobile:", isMobile);
-              // Close the filter panel on mobile only; keep open on desktop
-              if (isMobile) {
-                setShowFilters(false);
-                setHasExplicitlyClosed(true);
-              }
+              setTimeout(() => {
+                const filterPanel = document.querySelector('[data-filter-panel]');
+                if (filterPanel) {
+                  (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                  (filterPanel as HTMLElement).style.visibility = 'hidden';
+                }
+              }, 100);
             }}
-            onFetchEngines={fetchEngines}
-            className={isMobile ? "!shadow-none !border-none !rounded-none !max-w-none !mx-0 !w-full !p-2" : ""}
           />
+        ) : (
+          <div className="p-3">
+            <EncarStyleFilter
+              filters={filters}
+              manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
+              models={models}
+              engineVariants={engineVariants}
+              filterCounts={filterCounts}
+              loadingCounts={loadingCounts}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              onManufacturerChange={handleManufacturerChange}
+              onModelChange={handleModelChange}
+              showAdvanced={showAdvancedFilters}
+              onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              onFetchGrades={fetchGrades}
+              onFetchTrimLevels={fetchTrimLevels}
+              compact={true}
+              onSearchCars={() => {
+                console.log("Search button clicked, isMobile:", isMobile);
+                // Apply search/filters with current sort preference - fetch from ALL sources
+                const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
+                const searchFilters = effectiveSort ? {
+                  ...filters,
+                  per_page: "200",
+                  sort_by: effectiveSort
+                } : {
+                  ...filters,
+                  per_page: "200"
+                };
+                fetchCars(1, searchFilters, true);
 
-          {/* Mobile Apply/Close Filters Button - Enhanced */}
-          {isMobile && <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
-            {/* Apply/Close button removed per Issue #3 */}
-          </div>}
-        </div>
+                // Close filter panel on mobile only; keep open on desktop
+                if (isMobile) {
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true);
+                }
+
+                // Additional CSS force close as backup
+                if (isMobile) {
+                  setTimeout(() => {
+                    const filterPanel = document.querySelector('[data-filter-panel]');
+                    if (filterPanel) {
+                      (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                      (filterPanel as HTMLElement).style.visibility = 'hidden';
+                    }
+                  }, 100);
+                }
+              }} onCloseFilter={() => {
+                console.log("Close filter called, isMobile:", isMobile);
+                // Close the filter panel on mobile only; keep open on desktop
+                if (isMobile) {
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true);
+                }
+              }}
+              onFetchEngines={fetchEngines}
+              className={isMobile ? "!shadow-none !border-none !rounded-none !max-w-none !mx-0 !w-full !p-2" : ""}
+            />
+
+            {/* Mobile Apply/Close Filters Button - Enhanced */}
+            {isMobile && <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
+              {/* Apply/Close button removed per Issue #3 */}
+            </div>}
+          </div>
+        )}
       </div>
     </div>
 
