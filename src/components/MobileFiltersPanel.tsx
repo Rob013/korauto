@@ -113,22 +113,22 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     };
 
     return (
-        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+        <div className="h-full flex flex-col bg-white dark:bg-gray-900 max-w-xl mx-auto">
             {/* Compact header with state indicators */}
-            <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 border-b border-gray-200/80 dark:border-gray-800/80 px-4 py-3 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md">
-                <div className="flex items-center justify-between gap-3">
+            <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 border-b border-gray-200/80 dark:border-gray-800/80 px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md">
+                <div className="flex items-center justify-between gap-2">
                     <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Filtrat</p>
+                        <p className="text-sm font-semibold leading-tight text-gray-900 dark:text-gray-100">Filtrat</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{activeFiltersCount} filtra aktivë</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <Button
                             onClick={onClearFilters}
                             variant="outline"
-                            size="sm"
-                            className="h-8 px-3 text-xs"
+                            size="icon"
+                            className="h-8 w-8 text-xs"
                         >
-                            Pastro
+                            <X className="h-4 w-4" />
                         </Button>
                         <Button
                             onClick={onApply}
@@ -142,8 +142,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-4 pb-6">
-                <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 pb-4">
+                <div className="space-y-3">
 
                     {/* Brand */}
                     <div>
@@ -153,7 +153,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <select
                             value={filters.manufacturer_id || ''}
                             onChange={(e) => handleChange('manufacturer_id', e.target.value)}
-                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Të gjitha markat</option>
                             {manufacturersList.slice(0, priorityCount).map(m => {
@@ -187,7 +187,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             value={filters.model_id || ''}
                             onChange={(e) => handleChange('model_id', e.target.value)}
                             disabled={!filters.manufacturer_id}
-                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
                         >
                             <option value="">
                                 {filters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
@@ -205,7 +205,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
                             Viti
                         </label>
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-2">
                             <Button
                                 type="button"
                                 variant={(filters.from_year === `${currentYear - 1}` && filters.to_year === `${currentYear}`) ? "default" : "outline"}
@@ -249,13 +249,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 </Button>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2.5">
                             <div>
                                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Nga</label>
                                 <select
                                     value={filters.from_year || ''}
                                     onChange={(e) => handleChange('from_year', e.target.value)}
-                                    className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                                 >
                                     <option value="">Çdo vit</option>
                                     {years.map(y => (
@@ -268,7 +268,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 <select
                                     value={filters.to_year || ''}
                                     onChange={(e) => handleChange('to_year', e.target.value)}
-                                    className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                                 >
                                     <option value="">Çdo vit</option>
                                     {years.map(y => (
@@ -284,20 +284,20 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
                             Kilometrazha (KM)
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2.5">
                             <input
                                 type="number"
                                 placeholder="Nga"
                                 value={filters.odometer_from_km || ''}
                                 onChange={(e) => handleChange('odometer_from_km', e.target.value)}
-                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                             <input
                                 type="number"
                                 placeholder="Deri"
                                 value={filters.odometer_to_km || ''}
                                 onChange={(e) => handleChange('odometer_to_km', e.target.value)}
-                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                         </div>
                     </div>
@@ -307,20 +307,20 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
                             Çmimi (EUR)
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2.5">
                             <input
                                 type="number"
                                 placeholder="Nga"
                                 value={filters.buy_now_price_from || ''}
                                 onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
-                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                             <input
                                 type="number"
                                 placeholder="Deri"
                                 value={filters.buy_now_price_to || ''}
                                 onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
-                                className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                         </div>
                     </div>
@@ -333,7 +333,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <select
                             value={filters.fuel_type || ''}
                             onChange={(e) => handleChange('fuel_type', e.target.value)}
-                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Çdo lloj</option>
                             {Object.entries(FUEL_TYPES).map(([name, id]) => (
@@ -352,7 +352,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <select
                             value={filters.transmission || ''}
                             onChange={(e) => handleChange('transmission', e.target.value)}
-                            className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                            className="w-full h-11 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Çdo transmision</option>
                             {Object.entries(TRANSMISSIONS).map(([name, id]) => (
@@ -367,20 +367,20 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Fixed Bottom Buttons */}
-            <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-3 space-y-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur supports-[backdrop-filter]:backdrop-blur-md pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
-                <Button
-                    onClick={onApply}
-                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-semibold text-base"
-                >
-                    Apliko Filtrat
-                </Button>
+            <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 px-3 py-2 flex gap-2 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur supports-[backdrop-filter]:backdrop-blur-md pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
-                    className="w-full h-11 font-semibold text-base"
+                    className="h-11 px-3 w-2/5 font-semibold text-sm"
                 >
-                    <X className="h-5 w-5 mr-2" />
-                    Pastro të gjitha
+                    <X className="h-5 w-5 mr-1.5" />
+                    Pastro
+                </Button>
+                <Button
+                    onClick={onApply}
+                    className="h-11 px-4 flex-1 bg-primary hover:bg-primary/90 text-white font-semibold text-base"
+                >
+                    Apliko Filtrat
                 </Button>
             </div>
         </div>

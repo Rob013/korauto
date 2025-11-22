@@ -1,3 +1,5 @@
+import { safeToLowerCase } from "@/utils/safeStringOps";
+
 export interface BrandLike {
   id: string | number;
   name: string;
@@ -20,8 +22,9 @@ interface SortOptions<T> {
   priorityKeys?: string[];
 }
 
-const normalizeBrandName = (name: string): string => {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+const normalizeBrandName = (name: string | null | undefined): string => {
+  const normalized = safeToLowerCase(name);
+  return normalized.replace(/[^a-z0-9]/g, "");
 };
 
 export interface SortedBrandsResult<T extends BrandLike> {

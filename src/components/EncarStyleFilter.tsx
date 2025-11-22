@@ -35,6 +35,7 @@ import {
 } from '@/utils/catalog-filter';
 import { sortBrandsWithPriority } from '@/utils/brandOrdering';
 import { formatModelName } from '@/utils/modelNameFormatter';
+import { safeToLowerCase } from "@/utils/safeStringOps";
 
 interface Manufacturer {
   id: number;
@@ -213,7 +214,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const { sorted: prioritizedManufacturers, priorityCount: prioritizedManufacturerCount } = useMemo(() => {
     const excludedBrands = ['mitsubishi', 'alfa romeo', 'alfa-romeo', 'acura', 'mazda', 'dongfeng', 'lotus'];
     const baseList = sortManufacturers(manufacturers).filter(manufacturer =>
-      !excludedBrands.includes((manufacturer.name || '').toLowerCase())
+      !excludedBrands.includes(safeToLowerCase(manufacturer.name))
     );
     return sortBrandsWithPriority(baseList);
   }, [manufacturers]);
