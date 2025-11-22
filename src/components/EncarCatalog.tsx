@@ -13,6 +13,8 @@ import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels,
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
+import FiltersPanel from "@/components/FiltersPanel";
+import { COLOR_OPTIONS, FUEL_TYPE_OPTIONS, TRANSMISSION_OPTIONS, BODY_TYPE_OPTIONS } from "@/constants/carOptions";
 import { AISearchBar } from "@/components/AISearchBar";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
@@ -1158,6 +1160,80 @@ const EncarCatalog = ({
       clearStateOnNavigation();
     };
   }, []);
+  // Adapter for FiltersPanel (Old Mobile Filter)
+  const filtersPanelData = useMemo(() => ({
+    brands: manufacturers.map(m => ({
+      id: m.id.toString(),
+      name: m.name,
+      count: filterCounts?.manufacturers?.[m.id] || m.car_count,
+      image: m.image
+    })),
+    models: models.map(m => ({
+      id: m.id.toString(),
+      name: m.name,
+      brandId: filters.manufacturer_id || '',
+      count: filterCounts?.models?.[m.id] || m.car_count
+    })),
+    fuelTypes: Object.entries(FUEL_TYPE_OPTIONS).map(([name, id]) => ({
+      id: id.toString(),
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      count: filterCounts?.fuelTypes?.[id]
+    })),
+    transmissions: Object.entries(TRANSMISSION_OPTIONS).map(([name, id]) => ({
+      id: id.toString(),
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      count: filterCounts?.transmissions?.[id]
+    })),
+    bodyTypes: Object.entries(BODY_TYPE_OPTIONS).map(([name, id]) => ({
+      id: id.toString(),
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      count: 0
+    })),
+    colors: Object.entries(COLOR_OPTIONS).map(([name, id]) => ({
+      id: id.toString(),
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      count: filterCounts?.colors?.[id]
+    })),
+    locations: [],
+    yearRange: { min: 2000, max: new Date().getFullYear() },
+    priceRange: { min: 0, max: 100000 },
+    mileageRange: { min: 0, max: 300000 }
+  }), [manufacturers, models, filterCounts, filters.manufacturer_id]);
+
+  const handleFiltersPanelChange = useCallback((newFilters: any) => {
+    const apiFilters: any = { ...filters };
+    if (newFilters.brand !== undefined) apiFilters.manufacturer_id = newFilters.brand;
+    if (newFilters.model !== undefined) apiFilters.model_id = newFilters.model;
+    if (newFilters.yearMin !== undefined) apiFilters.from_year = newFilters.yearMin?.toString();
+    if (newFilters.yearMax !== undefined) apiFilters.to_year = newFilters.yearMax?.toString();
+    if (newFilters.priceMin !== undefined) apiFilters.buy_now_price_from = newFilters.priceMin?.toString();
+    if (newFilters.priceMax !== undefined) apiFilters.buy_now_price_to = newFilters.priceMax?.toString();
+    if (newFilters.mileageMin !== undefined) apiFilters.odometer_from_km = newFilters.mileageMin?.toString();
+    if (newFilters.mileageMax !== undefined) apiFilters.odometer_to_km = newFilters.mileageMax?.toString();
+    if (newFilters.fuel !== undefined) apiFilters.fuel_type = newFilters.fuel;
+    if (newFilters.transmission !== undefined) apiFilters.transmission = newFilters.transmission;
+    if (newFilters.search !== undefined) apiFilters.search = newFilters.search;
+
+    // Remove undefined values
+    Object.keys(apiFilters).forEach(key => apiFilters[key] === undefined && delete apiFilters[key]);
+
+    handleFiltersChange(apiFilters);
+  }, [filters, handleFiltersChange]);
+
+  const filtersPanelState = useMemo(() => ({
+    brand: filters.manufacturer_id,
+    model: filters.model_id,
+    yearMin: filters.from_year ? parseInt(filters.from_year) : undefined,
+    yearMax: filters.to_year ? parseInt(filters.to_year) : undefined,
+    priceMin: filters.buy_now_price_from ? parseInt(filters.buy_now_price_from) : undefined,
+    priceMax: filters.buy_now_price_to ? parseInt(filters.buy_now_price_to) : undefined,
+    mileageMin: filters.odometer_from_km ? parseInt(filters.odometer_from_km) : undefined,
+    mileageMax: filters.odometer_to_km ? parseInt(filters.odometer_to_km) : undefined,
+    fuel: filters.fuel_type,
+    transmission: filters.transmission,
+    search: filters.search
+  }), [filters]);
+
   return <div className="flex min-h-screen bg-background">
     {/* Collapsible Filter Sidebar - Optimized for mobile */}
     <div ref={filterPanelRef} data-filter-panel className={`
@@ -1195,71 +1271,73 @@ const EncarCatalog = ({
 
       <div className={`flex-1 ${isMobile ? 'overflow-y-auto mobile-filter-content mobile-filter-compact safe-area-inset-bottom safe-area-inset-left safe-area-inset-right' : ''}`}>
         <div className={`${isMobile ? 'p-3' : ''}`}>
-          <EncarStyleFilter
-            filters={filters}
-            manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
-            models={models}
-            engineVariants={engineVariants}
-            filterCounts={filterCounts}
-            loadingCounts={loadingCounts}
-            onFiltersChange={handleFiltersChange}
-            onClearFilters={handleClearFilters}
-            onManufacturerChange={handleManufacturerChange}
-            onModelChange={handleModelChange}
-            showAdvanced={showAdvancedFilters}
-            onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            onFetchGrades={fetchGrades}
-            onFetchTrimLevels={fetchTrimLevels}
-            compact={true}
-            onSearchCars={() => {
-              console.log("Search button clicked, isMobile:", isMobile);
-              // Apply search/filters with current sort preference - fetch from ALL sources
-              const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
-              const searchFilters = effectiveSort ? {
-                ...filters,
-                per_page: "200",
-                sort_by: effectiveSort
-              } : {
-                ...filters,
-                per_page: "200"
-              };
-              fetchCars(1, searchFilters, true);
+          {isMobile ? (
+            <FiltersPanel
+              filters={filtersPanelState}
+              data={filtersPanelData}
+              onFiltersChange={handleFiltersPanelChange}
+              onClearFilters={handleClearFilters}
+              className="h-full border-none shadow-none bg-transparent p-0"
+              compact={true}
+            />
+          ) : (
+            <EncarStyleFilter
+              filters={filters}
+              manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
+              models={models}
+              engineVariants={engineVariants}
+              filterCounts={filterCounts}
+              loadingCounts={loadingCounts}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              onManufacturerChange={handleManufacturerChange}
+              onModelChange={handleModelChange}
+              showAdvanced={showAdvancedFilters}
+              onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              onFetchGrades={fetchGrades}
+              onFetchTrimLevels={fetchTrimLevels}
+              compact={true}
+              onSearchCars={() => {
+                console.log("Search button clicked, isMobile:", isMobile);
+                // Apply search/filters with current sort preference - fetch from ALL sources
+                const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
+                const searchFilters = effectiveSort ? {
+                  ...filters,
+                  per_page: "200",
+                  sort_by: effectiveSort
+                } : {
+                  ...filters,
+                  per_page: "200"
+                };
+                fetchCars(1, searchFilters, true);
 
-              // Close filter panel on mobile only; keep open on desktop
-              if (isMobile) {
-                setShowFilters(false);
-                setHasExplicitlyClosed(true);
-              }
+                // Close filter panel on mobile only; keep open on desktop
+                if (isMobile) {
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true);
+                }
 
-              // Additional CSS force close as backup
-              if (isMobile) {
-                setTimeout(() => {
-                  const filterPanel = document.querySelector('[data-filter-panel]');
-                  if (filterPanel) {
-                    (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                    (filterPanel as HTMLElement).style.visibility = 'hidden';
-                  }
-                }, 100);
-              }
-            }} onCloseFilter={() => {
-              console.log("Close filter called, isMobile:", isMobile);
-              // Close the filter panel on mobile only; keep open on desktop
-              if (isMobile) {
-                setShowFilters(false);
-                setHasExplicitlyClosed(true);
-              }
-
-              // Additional CSS force close as backup
-              if (isMobile) {
-                setTimeout(() => {
-                  const filterPanel = document.querySelector('[data-filter-panel]');
-                  if (filterPanel) {
-                    (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
-                    (filterPanel as HTMLElement).style.visibility = 'hidden';
-                  }
-                }, 100);
-              }
-            }} onFetchEngines={fetchEngines} />
+                // Additional CSS force close as backup
+                if (isMobile) {
+                  setTimeout(() => {
+                    const filterPanel = document.querySelector('[data-filter-panel]');
+                    if (filterPanel) {
+                      (filterPanel as HTMLElement).style.transform = 'translateX(-100%)';
+                      (filterPanel as HTMLElement).style.visibility = 'hidden';
+                    }
+                  }, 100);
+                }
+              }} onCloseFilter={() => {
+                console.log("Close filter called, isMobile:", isMobile);
+                // Close the filter panel on mobile only; keep open on desktop
+                if (isMobile) {
+                  setShowFilters(false);
+                  setHasExplicitlyClosed(true);
+                }
+              }}
+              onFetchEngines={fetchEngines}
+            />
+          )}
 
           {/* Mobile Apply/Close Filters Button - Enhanced */}
           {isMobile && <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
