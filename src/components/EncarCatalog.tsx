@@ -1254,7 +1254,7 @@ const EncarCatalog = ({
               }
             }}
             onFetchEngines={fetchEngines}
-            className={isMobile ? "bg-transparent shadow-none border-none p-0" : ""}
+            className={isMobile ? "!bg-transparent !shadow-none !border-none" : ""}
           />
 
           {/* Mobile Apply/Close Filters Button - Enhanced */}
