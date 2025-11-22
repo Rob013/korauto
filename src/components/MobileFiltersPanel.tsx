@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { APIFilters } from "@/utils/catalog-filter";
@@ -58,6 +58,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     onClearFilters,
     onApply
 }) => {
+    const [manufacturerSearch, setManufacturerSearch] = useState("");
 
     const handleChange = (key: string, value: string) => {
         const actualValue = value === '' || value === 'all' ? undefined : value;
@@ -70,29 +71,77 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     };
 
     // Get manufacturers with counts
-    const manufacturersList = manufacturers
-        .filter(m => (m.cars_qty || m.car_count || 0) > 0 || m.cars_qty === undefined)
-        .map(m => ({
-            id: m.id,
-            name: m.name,
-            count: m.cars_qty || m.car_count || 0
-        }));
+    const manufacturersList = useMemo(() => (
+        manufacturers
+            .filter(m => (m.cars_qty || m.car_count || 0) > 0 || m.cars_qty === undefined)
+            .map(m => ({
+                id: m.id,
+                name: m.name,
+                count: m.cars_qty || m.car_count || 0
+            }))
+    ), [manufacturers]);
 
     // Get models for selected manufacturer
-    const modelsList = filters.manufacturer_id
-        ? models.filter(m => (m.cars_qty || 0) > 0).map(m => ({
-            id: m.id,
-            name: m.name,
-            count: m.cars_qty || 0
-        }))
-        : [];
+    const modelsList = useMemo(() => (
+        filters.manufacturer_id
+            ? models
+                .filter(m => (m.cars_qty || 0) > 0)
+                .map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    count: m.cars_qty || 0
+                }))
+            : []
+    ), [filters.manufacturer_id, models]);
 
     // Generate years
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i);
+    const years = useMemo(() => Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i), [currentYear]);
+
+    const activeFiltersCount = useMemo(() => {
+        return Object.entries(filters || {}).filter(([, value]) => value !== undefined && value !== "").length;
+    }, [filters]);
+
+    const filteredManufacturers = useMemo(() => {
+        if (!manufacturerSearch.trim()) return manufacturersList;
+        const query = manufacturerSearch.toLowerCase();
+        return manufacturersList.filter(({ name }) => name.toLowerCase().includes(query));
+    }, [manufacturerSearch, manufacturersList]);
+
+    const handleYearPreset = (from: number, to: number) => {
+        handleChange('from_year', from.toString());
+        handleChange('to_year', to.toString());
+    };
 
     return (
         <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+            {/* Compact header with state indicators */}
+            <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 border-b border-gray-200/80 dark:border-gray-800/80 px-4 py-3 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Filtrat</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{activeFiltersCount} filtra aktivë</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={onClearFilters}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs"
+                        >
+                            Pastro
+                        </Button>
+                        <Button
+                            onClick={onApply}
+                            size="sm"
+                            className="h-8 px-3 text-xs"
+                        >
+                            Apliko
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-4 pb-6">
                 <div className="space-y-4">
@@ -102,13 +151,20 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
                             Marka
                         </label>
+                        <input
+                            type="search"
+                            placeholder="Kërko markën"
+                            value={manufacturerSearch}
+                            onChange={(e) => setManufacturerSearch(e.target.value)}
+                            className="w-full h-10 px-3 mb-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
                         <select
                             value={filters.manufacturer_id || ''}
                             onChange={(e) => handleChange('manufacturer_id', e.target.value)}
                             className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                         >
                             <option value="">Të gjitha markat</option>
-                            {manufacturersList.map(m => (
+                            {filteredManufacturers.map(m => (
                                 <option key={m.id} value={m.id}>
                                     {m.name} {m.count > 0 ? `(${m.count})` : ''}
                                 </option>
@@ -143,6 +199,50 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
                             Viti
                         </label>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                            <Button
+                                type="button"
+                                variant={(filters.from_year === `${currentYear - 1}` && filters.to_year === `${currentYear}`) ? "default" : "outline"}
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={() => handleYearPreset(currentYear - 1, currentYear)}
+                            >
+                                {currentYear - 1} - {currentYear}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={(filters.from_year === `${currentYear - 4}` && filters.to_year === `${currentYear}`) ? "default" : "outline"}
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={() => handleYearPreset(currentYear - 4, currentYear)}
+                            >
+                                5 vitet e fundit
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={(filters.from_year === "2015" && !filters.to_year) ? "default" : "outline"}
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={() => handleChange('from_year', '2015')}
+                            >
+                                2015+
+                            </Button>
+                            {(filters.from_year || filters.to_year) && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs text-muted-foreground"
+                                    onClick={() => {
+                                        handleChange('from_year', '');
+                                        handleChange('to_year', '');
+                                    }}
+                                >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Reseto
+                                </Button>
+                            )}
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Nga</label>
