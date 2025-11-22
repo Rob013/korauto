@@ -75,7 +75,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
 
       // 1. First search in cached cars (fastest) - Enhanced with exact and partial matches
       console.log('🔍 Searching cached database...');
-      
+
       // Enhanced search: exact matches first, then partial matches
       const searchQueries = [
         // Exact matches (highest priority)
@@ -84,14 +84,14 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
           .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
           .or(`api_id.eq.${term},lot_number.eq.${term},vin.eq.${term}`)
           .limit(5),
-        
+
         // Partial matches with ilike (secondary priority)
         supabase
           .from('cars_cache')
           .select('api_id, make, model, year, vin, lot_number, car_data, price, mileage, color, fuel, transmission')
           .or(`api_id.ilike.%${term}%,vin.ilike.%${term}%,lot_number.ilike.%${term}%`)
           .limit(8),
-          
+
         // Additional broad search including make/model if term is longer
         ...(term.length >= 4 ? [
           supabase
@@ -104,7 +104,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
 
       const cachedResults = await Promise.all(searchQueries);
       const allCachedCars: CachedCarData[] = [];
-      
+
       // Combine results from all queries, removing duplicates
       cachedResults.forEach(({ data: cars, error }) => {
         if (!error && cars && cars.length > 0) {
@@ -126,7 +126,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         const cachedCarResults = allCachedCars.map((car: CachedCarData) => {
           const carData = car.car_data as Record<string, any>;
           const lot = carData?.lots?.[0];
-          
+
           return {
             id: car.api_id,
             year: car.year,
@@ -150,7 +150,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
 
       // 2. Comprehensive API search across all data sources
       console.log('🔍 Searching across all API data sources...');
-      
+
       // Define multiple search methods for comprehensive coverage
       const searchMethods = [
         // Direct car ID search
@@ -210,16 +210,16 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         try {
           console.log(`🔍 Trying ${searchMethod.method}...`);
 
-          const response = await supabase.functions.invoke('secure-cars-api', {
+          const response = await supabase.functions.invoke('supabase-cars-api', {
             body: searchMethod.payload
           });
 
           if (!response.error && response.data) {
             let apiResults: CarSearchResult[] = [];
-            
+
             // Handle different response formats
             let carData = null;
-            
+
             if (response.data.data && Array.isArray(response.data.data)) {
               // If it's a search result with data array
               carData = response.data.data;
@@ -237,7 +237,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
             if (carData && Array.isArray(carData)) {
               console.log(`✅ Found ${carData.length} results via ${searchMethod.method}`);
               apiSearchSuccessful = true;
-              
+
               apiResults = carData.map((car: Record<string, any>) => {
                 const lot = car.lots?.[0];
                 return {
@@ -277,7 +277,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
       }
 
       // Remove duplicates based on ID and sort by relevance
-      const uniqueResults = allResults.filter((result, index, self) => 
+      const uniqueResults = allResults.filter((result, index, self) =>
         index === self.findIndex(r => r.id === result.id)
       );
 
@@ -288,12 +288,12 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
         const bIdMatch = (b.id || '').toString().toLowerCase() === termLower;
         const aLotMatch = (a.lot_number || '').toString().toLowerCase() === termLower;
         const bLotMatch = (b.lot_number || '').toString().toLowerCase() === termLower;
-        
+
         if (aIdMatch && !bIdMatch) return -1;
         if (!aIdMatch && bIdMatch) return 1;
         if (aLotMatch && !bLotMatch) return -1;
         if (!aLotMatch && bLotMatch) return 1;
-        
+
         return 0;
       });
 
@@ -310,11 +310,11 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
           acc[car.source] = (acc[car.source] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
-        
+
         const sourceText = Object.entries(sourceBreakdown)
           .map(([source, count]) => `${count} from ${source === 'cached' ? 'database' : 'live API'}`)
           .join(', ');
-        
+
         toast({
           title: 'Search completed successfully',
           description: `Found ${sortedResults.length} car${sortedResults.length !== 1 ? 's' : ''}: ${sourceText}`,
@@ -337,7 +337,7 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
   // Handle search input with debouncing
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);
-    
+
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
@@ -479,8 +479,8 @@ const AdminCarSearch: React.FC<AdminCarSearchProps> = ({ className = '' }) => {
                                       VIN: {car.vin.slice(-6)}
                                     </Badge>
                                   )}
-                                  <Badge 
-                                    variant={car.source === 'cached' ? 'default' : 'secondary'} 
+                                  <Badge
+                                    variant={car.source === 'cached' ? 'default' : 'secondary'}
                                     className="text-xs"
                                   >
                                     {car.source === 'cached' ? '💾 Cached' : '🌐 Live API'}

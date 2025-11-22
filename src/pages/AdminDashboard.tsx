@@ -42,9 +42,9 @@ import ApiInfoDashboard from "@/components/ApiInfoDashboard";
 import { openCarDetailsInNewTab } from "@/utils/navigation";
 
 // Lazy load heavy admin components
-const AdminSyncDashboard = lazy(() => 
-  import("@/components/AdminSyncDashboard").then(module => ({ 
-    default: module.AdminSyncDashboard 
+const AdminSyncDashboard = lazy(() =>
+  import("@/components/AdminSyncDashboard").then(module => ({
+    default: module.AdminSyncDashboard
   }))
 );
 
@@ -440,10 +440,10 @@ const AdminDashboard = () => {
         avgSessionTime:
           uniqueVisitors > 0
             ? `${Math.round(
-                (totalPageViews / uniqueVisitors) * 2.3
-              )}m ${Math.round(
-                (((totalPageViews / uniqueVisitors) * 2.3) % 1) * 60
-              )}s`
+              (totalPageViews / uniqueVisitors) * 2.3
+            )}m ${Math.round(
+              (((totalPageViews / uniqueVisitors) * 2.3) % 1) * 60
+            )}s`
             : "0m 0s",
         bounceRate: realBounceRate,
         topPages,
@@ -577,7 +577,7 @@ const AdminDashboard = () => {
         console.log(`🔍 Trying ${searchMethod.method}...`);
 
         const response = await fetch(
-          `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/secure-cars-api`,
+          `https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/supabase-cars-api`,
           {
             method: "POST",
             headers: {
@@ -619,9 +619,8 @@ const AdminDashboard = () => {
             // Create detailed car info for the toast
             const lot = carData.lots?.[0];
             const carInfoText = `${carData.year} ${carData.manufacturer?.name} ${carData.model?.name}`;
-            const lotInfo = `Lot: ${lot?.lot} | Price: $${
-              lot?.buy_now?.toLocaleString() || "N/A"
-            }`;
+            const lotInfo = `Lot: ${lot?.lot} | Price: $${lot?.buy_now?.toLocaleString() || "N/A"
+              }`;
             const mileageInfo = lot?.odometer?.km
               ? `| ${lot.odometer.km.toLocaleString()} km`
               : "";
@@ -914,7 +913,7 @@ const AdminDashboard = () => {
                                     {request.customer_email}
                                   </p>
                                 </div>
-                                <Badge 
+                                <Badge
                                   className={`${getStatusColor(request.status)} text-[10px] shrink-0`}
                                 >
                                   {request.status}
@@ -987,7 +986,7 @@ const AdminDashboard = () => {
                         <div className="text-lg font-bold text-blue-900 dark:text-blue-100">{analytics.totalPageViews.toLocaleString()}</div>
                         <div className="text-xs text-blue-700 dark:text-blue-300">24h: {analytics.viewsLast24h.toLocaleString()}</div>
                       </div>
-                      
+
                       <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
                         <div className="flex items-center gap-2 mb-1">
                           <Users className="h-3 w-3 text-green-600" />
@@ -1728,8 +1727,8 @@ const AdminDashboard = () => {
                 <CardContent className="py-6">
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                      <strong>📊 Analytics Setup:</strong> No analytics data found. 
-                      Analytics tracking is configured and ready to capture real user data 
+                      <strong>📊 Analytics Setup:</strong> No analytics data found.
+                      Analytics tracking is configured and ready to capture real user data
                       as visitors interact with the website.
                     </p>
                   </div>

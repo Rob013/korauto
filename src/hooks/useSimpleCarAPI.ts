@@ -56,8 +56,8 @@ export const useSimpleCarAPI = () => {
       console.log('🔄 Fetching cars from API');
       setLastFetchTime(now);
 
-      const { data, error: functionError } = await supabase.functions.invoke('secure-cars-api', {
-        body: { 
+      const { data, error: functionError } = await supabase.functions.invoke('supabase-cars-api', {
+        body: {
           endpoint: 'cars',
           filters: {
             page: '1',
@@ -82,7 +82,7 @@ export const useSimpleCarAPI = () => {
       }
 
       const response: SimpleAPIResponse = data;
-      
+
       if (response.data && response.data.length > 0) {
         setCars(response.data);
         console.log(`✅ Fetched ${response.data.length} cars successfully`);

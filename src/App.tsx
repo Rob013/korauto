@@ -23,6 +23,7 @@ import { GlobalProgressProvider } from "./contexts/ProgressContext";
 import { TopLoadingBar } from "./components/TopLoadingBar";
 import { NavigationProgressListener } from "./components/NavigationProgressListener";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
+import { SeasonalDecorations } from "./components/SeasonalDecorations";
 
 // Lazy load all pages for better code splitting
 const Index = lazyWithPreload(() => import("./pages/Index"));
@@ -313,6 +314,7 @@ const App = () => {
               </GlobalProgressProvider>
 
               <CacheUpdateNotification />
+              <SeasonalDecorations />
               <IOSEnhancer />
               {/* Performance Monitor for admin users only, hidden on mobile */}
               {isAdmin && !isMobile && (

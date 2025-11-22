@@ -10,7 +10,7 @@ export const useManufacturers = () => {
         .select('*')
         .eq('is_active', true)
         .order('name');
-      
+
       if (error) throw error;
       return data;
     },
@@ -23,12 +23,12 @@ export const useModels = (manufacturerId?: string) => {
     queryKey: ['models', manufacturerId],
     queryFn: async () => {
       if (!manufacturerId) return [];
-      
+
       const { data, error } = await supabase
         .rpc('get_models_by_manufacturer', {
           p_manufacturer_id: manufacturerId
         });
-      
+
       if (error) throw error;
       return data;
     },
@@ -42,16 +42,16 @@ export const useGrades = (modelId?: string) => {
     queryKey: ['grades', modelId],
     queryFn: async () => {
       if (!modelId) return [];
-      
-      const { data, error } = await supabase.functions.invoke('secure-cars-api', {
+
+      const { data, error } = await supabase.functions.invoke('supabase-cars-api', {
         body: {
           endpoint: `generations/${modelId}`,
           filters: {}
         }
       });
-      
+
       if (error) throw error;
-      
+
       // Map API response to expected format
       const generations = data?.data || [];
       return generations.map((g: any) => ({
@@ -70,12 +70,12 @@ export const useTrims = (modelId?: string) => {
     queryKey: ['trims', modelId],
     queryFn: async () => {
       if (!modelId) return [];
-      
+
       const { data, error } = await supabase
         .rpc('get_trims_by_model', {
           p_model_id: modelId
         });
-      
+
       if (error) throw error;
       return data;
     },

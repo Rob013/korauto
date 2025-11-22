@@ -85,7 +85,7 @@ import {
   ShieldCheck,
   Power,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 
@@ -95,7 +95,7 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { fallbackCars } from "@/data/fallbackData";
 import { getBrandLogo, getBrandLogoVariants } from "@/data/brandLogos";
 import { formatMileage } from "@/utils/mileageFormatter";
-import { transformCachedCarRecord } from "@/services/carCache";
+
 import {
   fetchEncarsVehicle,
   type EncarsVehicleResponse,
@@ -2737,48 +2737,7 @@ const CarDetails = memo(() => {
       return sessionCar;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from("cars_cache")
-        .select(`
-          *,
-          car_data,
-          lot_data,
-          images,
-          high_res_images,
-          inspection_report,
-          features,
-          original_api_data,
-          accident_history,
-          damage_primary,
-          damage_secondary,
-          service_history,
-          warranty_info,
-          previous_owners
-        `)
-        .or(`lot_number.eq.${lot},api_id.eq.${lot}`)
-        .maybeSingle();
-
-      if (error) {
-        console.warn("Failed to load cached car", error);
-        return null;
-      }
-
-      if (data) {
-        const cachedCar = transformCachedCarRecord(data);
-        const lotData = cachedCar?.lots?.[0];
-        const details = buildCarDetails(cachedCar, lotData);
-        if (details) {
-          setCar(details);
-          setLoading(false);
-          cacheHydratedRef.current = true;
-          persistCarToSession(String(lot), details);
-          return details;
-        }
-      }
-    } catch (cacheError) {
-      console.warn("Cache hydration failed", cacheError);
-    }
+    return null;
 
     return null;
   }, [buildCarDetails, lot, persistCarToSession, restoreCarFromSession]);

@@ -9,7 +9,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Grid3X3, List } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels } from "@/hooks/useSecureAuctionAPI";
+import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels, fetchManufacturers, fetchModels, fetchGenerations, fetchAllGenerationsForManufacturer, fetchFilterCounts, fetchGrades, fetchTrimLevels, fetchEngines } from "@/hooks/useSecureAuctionAPI";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
@@ -25,7 +25,7 @@ import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
 // TODO: Migrate this component to use useCarsQuery and fetchCarsWithKeyset 
@@ -51,27 +51,15 @@ const EncarCatalog = ({
   const {
     cars,
     setCars,
-    // ✅ Import setCars
     loading,
     error,
     totalCount,
     setTotalCount,
-    // ✅ Import setTotalCount for optimized filtering
     hasMorePages,
     fetchCars,
     fetchAllCars,
-    // ✅ Import new function for global sorting
     filters,
     setFilters,
-    fetchManufacturers,
-    fetchModels,
-    fetchGenerations,
-    fetchAllGenerationsForManufacturer,
-    // ✅ Import new function
-    fetchFilterCounts,
-    fetchGrades,
-    fetchTrimLevels,
-    fetchEngines,
     loadMore,
     refreshInventory,
     clearCarsCache
@@ -163,7 +151,8 @@ const EncarCatalog = ({
   }, [isMobile]);
 
   useEffect(() => {
-    refreshInventory(60);
+    const cleanup = refreshInventory(300); // Refresh every 5 minutes
+    return cleanup;
   }, [refreshInventory]);
 
   // Memoized helper function to extract grades from title - now using utility
@@ -272,14 +261,10 @@ const EncarCatalog = ({
     }
 
     // Priority 2: Recently added cars by default
-    // Catalog always shows fresh inventory from API sorted by recently_added
-
-    // Priority 3: Regular sorted cars (recently added by default)
-    // For server-side pagination, use all sorted results without client-side slicing
-    // Server already provides the correct page data with 'recently_added' sort by default
+    // Catalog shows fresh inventory from API sorted by recently_added
     console.log(`📄 Using sorted cars for page ${currentPage}: ${sortedResults.length} cars (including AuctionsAPI grid) (sort: ${sortBy || 'recently_added'})`);
     return sortedResults;
-  }, [showAllCars, allCarsData, sortedAllCarsResults, sortBy, isGlobalSortingReady, shouldUseGlobalSorting, getCarsForCurrentPage, currentPage, globalSortingState.currentSortBy, isDefaultState, hasUserSelectedSort, sortedResults]);
+  }, [showAllCars, allCarsData, sortedAllCarsResults, sortBy, isGlobalSortingReady, shouldUseGlobalSorting, getCarsForCurrentPage, currentPage, globalSortingState.currentSortBy, sortedResults]);
 
   const {
     currentValue: smoothCarsToDisplay,
@@ -974,20 +959,10 @@ const EncarCatalog = ({
     const link = (import.meta as any).env?.VITE_AUCTIONS_GRID_LINK as string | undefined;
     if (link) {
       fetchFromLink(link, 10, 100).catch(() => { });
-      // Trigger cloud import to persist and count
-      fetch('https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/cars-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'grid_link', link, limit: 100, pages: 50 })
-      }).then(r => r.json()).then((res) => {
-        if (res?.success) {
-          console.log(`☁️ Cloud import done: imported ${res.imported} (KBC: ${res.kbchachaCount}, Encar: ${res.encarCount})`);
-          toast({ title: 'Shtim i të dhënave', description: `U shtuan ${res.imported} makina nga linku`, duration: 4000 });
-        }
-      }).catch(() => { });
     } else {
       fetchGrid(3, 100).catch(() => { });
     }
+
   }, []);
 
   // Debug: Count how many KB Chachacha cars are added via grid (not present in secure list)
@@ -1433,7 +1408,7 @@ const EncarCatalog = ({
               "transition-all duration-300 motion-safe:transition-opacity motion-reduce:transition-none",
               viewMode === "list"
                 ? "flex flex-col gap-2 sm:gap-3"
-                : "grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 px-1 sm:px-2",
+                : "grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-1 sm:px-2",
               (isFilterLoading || loading || isCarsTransitioning) && "opacity-80",
             )}
           >

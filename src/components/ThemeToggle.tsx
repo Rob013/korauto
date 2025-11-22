@@ -14,13 +14,13 @@ export function ThemeToggle() {
       type="button"
       onClick={handleToggle}
       aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-      className="group relative h-8 w-14 rounded-full bg-muted/50 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-muted/70 hover:border-border/50 hover:scale-105"
+      className="group relative h-9 w-16 rounded-full bg-muted/50 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-muted/70 hover:border-border/50 hover:scale-105"
     >
       {/* Sliding indicator */}
       <div
-        className={`absolute top-0.5 h-7 w-7 rounded-full bg-gradient-to-br transition-all duration-300 ease-out shadow-sm ${isDark
-            ? "right-0.5 from-slate-700 to-slate-900"
-            : "left-0.5 from-amber-400 to-orange-500"
+        className={`absolute top-1 h-7 w-7 rounded-full bg-gradient-to-br transition-all duration-300 ease-out shadow-sm ${isDark
+          ? "right-1 from-slate-700 to-slate-900"
+          : "left-1 from-amber-400 to-orange-500"
           }`}
       />
 

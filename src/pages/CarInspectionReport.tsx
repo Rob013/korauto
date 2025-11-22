@@ -5,6 +5,7 @@ import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useKoreaOptions } from "@/hooks/useKoreaOptions";
 import { formatMileage } from "@/utils/mileageFormatter";
 import { InspectionDiagramPanel } from "@/components/InspectionDiagramPanel";
+import { InspectionItemList } from "@/components/InspectionItemList";
 import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -436,21 +437,21 @@ const statusValueRegexTranslations: Array<{
   pattern: RegExp;
   translation: string;
 }> = [
-  { pattern: /minor leak/i, translation: "Rrjedhje e vogël" },
-  { pattern: /leak/i, translation: "Rrjedhje" },
-  { pattern: /replace|replacement/i, translation: "Kërkon zëvendësim" },
-  { pattern: /repair/i, translation: "Kërkon riparim" },
-  { pattern: /abnormal/i, translation: "Jo normale" },
-  { pattern: /noise/i, translation: "Zhurmë" },
-  { pattern: /stain/i, translation: "Njollë" },
-  { pattern: /contamin/i, translation: "Kontaminim" },
-  { pattern: /damage|damaged/i, translation: "Dëmtuar" },
-  { pattern: /broken/i, translation: "Thyer" },
-  { pattern: /crack/i, translation: "Çarje" },
-  { pattern: /worn/i, translation: "I konsumuar" },
-  { pattern: /vibration/i, translation: "Vibrim" },
-  { pattern: /no\s+(issue|issues|problem|problems)/i, translation: "Pa probleme" },
-];
+    { pattern: /minor leak/i, translation: "Rrjedhje e vogël" },
+    { pattern: /leak/i, translation: "Rrjedhje" },
+    { pattern: /replace|replacement/i, translation: "Kërkon zëvendësim" },
+    { pattern: /repair/i, translation: "Kërkon riparim" },
+    { pattern: /abnormal/i, translation: "Jo normale" },
+    { pattern: /noise/i, translation: "Zhurmë" },
+    { pattern: /stain/i, translation: "Njollë" },
+    { pattern: /contamin/i, translation: "Kontaminim" },
+    { pattern: /damage|damaged/i, translation: "Dëmtuar" },
+    { pattern: /broken/i, translation: "Thyer" },
+    { pattern: /crack/i, translation: "Çarje" },
+    { pattern: /worn/i, translation: "I konsumuar" },
+    { pattern: /vibration/i, translation: "Vibrim" },
+    { pattern: /no\s+(issue|issues|problem|problems)/i, translation: "Pa probleme" },
+  ];
 
 const meaninglessStatusStrings = new Set([
   "",
@@ -560,11 +561,11 @@ const accidentValueRegexTranslations: Array<{
   pattern: RegExp;
   translation: string;
 }> = [
-  { pattern: /exist/i, translation: "Ekziston" },
-  { pattern: /not exist/i, translation: "Nuk ekziston" },
-  { pattern: /available/i, translation: "E disponueshme" },
-  { pattern: /unavailable/i, translation: "E padisponueshme" },
-];
+    { pattern: /exist/i, translation: "Ekziston" },
+    { pattern: /not exist/i, translation: "Nuk ekziston" },
+    { pattern: /available/i, translation: "E disponueshme" },
+    { pattern: /unavailable/i, translation: "E padisponueshme" },
+  ];
 
 const meaninglessAccidentStrings = new Set([
   "",
@@ -1084,26 +1085,26 @@ const CarInspectionReport = () => {
         throw mapEncarsRequiredError(vehicleResult.reason);
       }
 
-        const encarVehicle = vehicleResult.value;
+      const encarVehicle = vehicleResult.value;
 
-        const encarInspection =
-          inspectionResult.status === "fulfilled"
-            ? inspectionResult.value
-            : undefined;
-        if (inspectionResult.status === "rejected") {
-          logEncarsOptionalFailure("inspection", inspectionResult.reason);
-        }
+      const encarInspection =
+        inspectionResult.status === "fulfilled"
+          ? inspectionResult.value
+          : undefined;
+      if (inspectionResult.status === "rejected") {
+        logEncarsOptionalFailure("inspection", inspectionResult.reason);
+      }
 
-        const encarRecordSummary =
-          recordSummaryResult.status === "fulfilled"
-            ? recordSummaryResult.value
-            : undefined;
-        if (recordSummaryResult.status === "rejected") {
-          logEncarsOptionalFailure(
-            "record summary",
-            recordSummaryResult.reason,
-          );
-        }
+      const encarRecordSummary =
+        recordSummaryResult.status === "fulfilled"
+          ? recordSummaryResult.value
+          : undefined;
+      if (recordSummaryResult.status === "rejected") {
+        logEncarsOptionalFailure(
+          "record summary",
+          recordSummaryResult.reason,
+        );
+      }
 
       let encarRecord: EncarsRecordOpenResponse | undefined;
       try {
@@ -1167,11 +1168,10 @@ const CarInspectionReport = () => {
         encarRecord.carInfoChanges.forEach((change, idx) =>
           usageHistoryEntries.push({
             description: `Ndryshim targash ${idx + 1}`,
-            value: `${change.carNo ?? "-"}${
-              change.date
-                ? ` (${formatDisplayDate(change.date) ?? change.date})`
-                : ""
-            }`,
+            value: `${change.carNo ?? "-"}${change.date
+              ? ` (${formatDisplayDate(change.date) ?? change.date})`
+              : ""
+              }`,
           }),
         );
       }
@@ -1222,12 +1222,12 @@ const CarInspectionReport = () => {
         carInfoUse2s: encarRecord?.carInfoUse2s,
       };
 
-        const inspectInner = flattenEncarsInners(encarInspection?.inners);
-        const accidentSummary = buildAccidentSummaryFromEncars(
-          encarInspection?.master,
-        );
+      const inspectInner = flattenEncarsInners(encarInspection?.inners);
+      const accidentSummary = buildAccidentSummaryFromEncars(
+        encarInspection?.master,
+      );
 
-        const transformed: InspectionReportCar = {
+      const transformed: InspectionReportCar = {
         id: (encarVehicle?.vehicleId ?? lot).toString(),
         lot,
         make: encarVehicle?.category?.manufacturerName,
@@ -1239,9 +1239,8 @@ const CarInspectionReport = () => {
           : undefined,
         title:
           encarVehicle?.category?.gradeName ??
-          `${encarVehicle?.category?.manufacturerName ?? ""} ${
-            encarVehicle?.category?.modelName ?? ""
-          }`.trim(),
+          `${encarVehicle?.category?.manufacturerName ?? ""} ${encarVehicle?.category?.modelName ?? ""
+            }`.trim(),
         image,
         priceEUR,
         mileageKm: encarVehicle?.spec?.mileage,
@@ -1263,16 +1262,16 @@ const CarInspectionReport = () => {
         damage:
           encarInspection?.outers && encarInspection.outers.length > 0
             ? {
-                main: encarInspection.outers
-                  .filter((outer) =>
-                    outer.statusTypes?.some(
-                      (status) => status.code?.toUpperCase() === "X",
-                    ),
-                  )
-                  .map((outer) => outer.type?.title)
-                  .filter(Boolean)
-                  .join(", "),
-              }
+              main: encarInspection.outers
+                .filter((outer) =>
+                  outer.statusTypes?.some(
+                    (status) => status.code?.toUpperCase() === "X",
+                  ),
+                )
+                .map((outer) => outer.type?.title)
+                .filter(Boolean)
+                .join(", "),
+            }
             : null,
         insurance: insuranceDetails,
         insurance_v2: insuranceV2,
@@ -1309,25 +1308,25 @@ const CarInspectionReport = () => {
         encarRecordSummary: encarRecordSummary ?? undefined,
       };
 
-        setCar(transformed);
-        cacheHydratedRef.current = true;
-        persistReportToSession(String(lot), transformed);
+      setCar(transformed);
+      cacheHydratedRef.current = true;
+      persistReportToSession(String(lot), transformed);
+      setLoading(false);
+    } catch (error) {
+      console.error("Nuk u arrit të ngarkohej raporti i inspektimit:", error);
+      if (!background) {
+        setError(getEncarsDisplayErrorMessage(error));
+        setCar(null);
         setLoading(false);
-      } catch (error) {
-        console.error("Nuk u arrit të ngarkohej raporti i inspektimit:", error);
-        if (!background) {
-          setError(getEncarsDisplayErrorMessage(error));
-          setCar(null);
-          setLoading(false);
-        } else {
-          console.warn(
-            "Background inspection report refresh failed",
-            error,
-          );
-        }
-      } finally {
-        clearTimeout(timeoutId);
+      } else {
+        console.warn(
+          "Background inspection report refresh failed",
+          error,
+        );
       }
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }, [convertKRWtoEUR, lot, persistReportToSession]);
 
   useEffect(() => {
@@ -1388,138 +1387,138 @@ const CarInspectionReport = () => {
       }
     };
 
-      [
-        car?.details?.inspect_outer,
-        car?.inspect?.outer,
-        car?.inspect?.inspect_outer,
-        (car as any)?.details?.inspect?.outer,
-        (car as any)?.details?.outer,
-        car?.encarInspection?.outers,
-      ].forEach(collectItems);
+    [
+      car?.details?.inspect_outer,
+      car?.inspect?.outer,
+      car?.inspect?.inspect_outer,
+      (car as any)?.details?.inspect?.outer,
+      (car as any)?.details?.outer,
+      car?.encarInspection?.outers,
+    ].forEach(collectItems);
 
-      const plainOuterSources: Array<Record<string, unknown> | undefined> = [
-        (car?.inspect?.outer as Record<string, unknown> | undefined),
-        (car?.inspect?.inspect_outer as Record<string, unknown> | undefined),
-        (car as any)?.details?.inspect_outer as Record<string, unknown> | undefined,
-        (car as any)?.details?.inspect?.outer as Record<string, unknown> | undefined,
-      ];
+    const plainOuterSources: Array<Record<string, unknown> | undefined> = [
+      (car?.inspect?.outer as Record<string, unknown> | undefined),
+      (car?.inspect?.inspect_outer as Record<string, unknown> | undefined),
+      (car as any)?.details?.inspect_outer as Record<string, unknown> | undefined,
+      (car as any)?.details?.inspect?.outer as Record<string, unknown> | undefined,
+    ];
 
-      plainOuterSources.forEach((source) => {
-        if (!source || typeof source !== "object" || Array.isArray(source)) {
+    plainOuterSources.forEach((source) => {
+      if (!source || typeof source !== "object" || Array.isArray(source)) {
+        return;
+      }
+
+      Object.entries(source).forEach(([partKey, rawValue]) => {
+        if (rawValue === undefined || rawValue === null) {
           return;
         }
 
-        Object.entries(source).forEach(([partKey, rawValue]) => {
-          if (rawValue === undefined || rawValue === null) {
-            return;
-          }
+        const entries = Array.isArray(rawValue)
+          ? rawValue
+          : [rawValue];
+        if (entries.length === 0) return;
 
-          const entries = Array.isArray(rawValue)
-            ? rawValue
-            : [rawValue];
-          if (entries.length === 0) return;
+        const statusTypes = entries
+          .map((entry) => {
+            if (entry && typeof entry === "object") {
+              const candidate = entry as Record<string, unknown>;
+              const codeCandidate =
+                candidate.code ??
+                candidate.status ??
+                candidate.value ??
+                candidate.result ??
+                candidate.type;
+              const titleCandidate =
+                candidate.title ??
+                candidate.name ??
+                candidate.description ??
+                candidate.label ??
+                candidate.text;
 
-          const statusTypes = entries
-            .map((entry) => {
-              if (entry && typeof entry === "object") {
-                const candidate = entry as Record<string, unknown>;
-                const codeCandidate =
-                  candidate.code ??
-                  candidate.status ??
-                  candidate.value ??
-                  candidate.result ??
-                  candidate.type;
-                const titleCandidate =
-                  candidate.title ??
-                  candidate.name ??
-                  candidate.description ??
-                  candidate.label ??
-                  candidate.text;
-
-                if (codeCandidate === undefined && titleCandidate === undefined) {
-                  return null;
-                }
-
-                return {
-                  code:
-                    codeCandidate !== undefined
-                      ? String(codeCandidate)
-                      : undefined,
-                  title:
-                    titleCandidate !== undefined
-                      ? String(titleCandidate)
-                      : undefined,
-                };
-              }
-
-              const value = String(entry ?? "").trim();
-              if (!value) {
+              if (codeCandidate === undefined && titleCandidate === undefined) {
                 return null;
               }
 
               return {
-                code: value.length <= 4 ? value.toUpperCase() : undefined,
-                title: value,
+                code:
+                  codeCandidate !== undefined
+                    ? String(codeCandidate)
+                    : undefined,
+                title:
+                  titleCandidate !== undefined
+                    ? String(titleCandidate)
+                    : undefined,
               };
-            })
-            .filter(Boolean);
+            }
 
-          if (statusTypes.length === 0) return;
+            const value = String(entry ?? "").trim();
+            if (!value) {
+              return null;
+            }
 
-          collected.push({
-            type: { code: partKey, title: partKey },
-            statusTypes,
-            attributes: [],
-          });
+            return {
+              code: value.length <= 4 ? value.toUpperCase() : undefined,
+              title: value,
+            };
+          })
+          .filter(Boolean);
+
+        if (statusTypes.length === 0) return;
+
+        collected.push({
+          type: { code: partKey, title: partKey },
+          statusTypes,
+          attributes: [],
         });
       });
+    });
 
-      const keyed = new Map<string, any>();
+    const keyed = new Map<string, any>();
     for (const item of collected) {
       const key =
         (item as any)?.type?.code ||
         (item as any)?.code ||
         (item as any)?.type?.title ||
         JSON.stringify(item);
-        if (!keyed.has(key)) {
-          keyed.set(key, {
-            ...item,
-            statusTypes: Array.isArray((item as any)?.statusTypes)
-              ? [...(item as any).statusTypes]
-              : [],
-            attributes: Array.isArray((item as any)?.attributes)
-              ? [...(item as any).attributes]
-              : [],
-          });
-        } else {
-          const existing = keyed.get(key);
-          if (Array.isArray((item as any)?.statusTypes) && (item as any).statusTypes.length > 0) {
-            existing.statusTypes.push(...(item as any).statusTypes);
-          }
-          if (Array.isArray((item as any)?.attributes) && (item as any).attributes.length > 0) {
-            existing.attributes.push(...(item as any).attributes);
-          }
-          if (!existing.type?.title && item?.type?.title) {
-            existing.type = existing.type ?? {};
-            existing.type.title = item.type.title;
-          }
+      if (!keyed.has(key)) {
+        keyed.set(key, {
+          ...item,
+          statusTypes: Array.isArray((item as any)?.statusTypes)
+            ? [...(item as any).statusTypes]
+            : [],
+          attributes: Array.isArray((item as any)?.attributes)
+            ? [...(item as any).attributes]
+            : [],
+        });
+      } else {
+        const existing = keyed.get(key);
+        if (Array.isArray((item as any)?.statusTypes) && (item as any).statusTypes.length > 0) {
+          existing.statusTypes.push(...(item as any).statusTypes);
+        }
+        if (Array.isArray((item as any)?.attributes) && (item as any).attributes.length > 0) {
+          existing.attributes.push(...(item as any).attributes);
+        }
+        if (!existing.type?.title && item?.type?.title) {
+          existing.type = existing.type ?? {};
+          existing.type.title = item.type.title;
+        }
       }
     }
 
-      return Array.from(keyed.values()).map((entry) => {
-        if (Array.isArray(entry.statusTypes) && entry.statusTypes.length > 1) {
-          const seen = new Set<string>();
-          entry.statusTypes = entry.statusTypes.filter((status: any) => {
-            const statusKey = `${status?.code ?? ""}|${status?.title ?? ""}`.toLowerCase();
-            if (seen.has(statusKey)) {
-              return false;
-            }
-            seen.add(statusKey);
-            return true;
-          });
-        }
-        return entry;
-      });
+    return Array.from(keyed.values()).map((entry) => {
+      if (Array.isArray(entry.statusTypes) && entry.statusTypes.length > 1) {
+        const seen = new Set<string>();
+        entry.statusTypes = entry.statusTypes.filter((status: any) => {
+          const statusKey = `${status?.code ?? ""}|${status?.title ?? ""}`.toLowerCase();
+          if (seen.has(statusKey)) {
+            return false;
+          }
+          seen.add(statusKey);
+          return true;
+        });
+      }
+      return entry;
+    });
   }, [car]);
 
   const inspectionInnerData = useMemo(() => {
@@ -1557,22 +1556,22 @@ const CarInspectionReport = () => {
     return result;
   }, [car]);
 
-const mechanicalStatusEntries = useMemo(
-  () =>
-    inspectionInnerData
-      ? Object.entries(inspectionInnerData).filter(([, value]) =>
+  const mechanicalStatusEntries = useMemo(
+    () =>
+      inspectionInnerData
+        ? Object.entries(inspectionInnerData).filter(([, value]) =>
           hasMeaningfulStatusValue(value),
         )
-      : [],
-  [inspectionInnerData],
-);
+        : [],
+    [inspectionInnerData],
+  );
 
-const accidentSummaryData = car?.inspect?.accident_summary;
+  const accidentSummaryData = car?.inspect?.accident_summary;
 
-const accidentSummaryEntries = useMemo(
-  () =>
-    accidentSummaryData && typeof accidentSummaryData === "object"
-      ? Object.entries(accidentSummaryData).filter(([key, value]) => {
+  const accidentSummaryEntries = useMemo(
+    () =>
+      accidentSummaryData && typeof accidentSummaryData === "object"
+        ? Object.entries(accidentSummaryData).filter(([key, value]) => {
           const normalizedKey =
             typeof key === "string"
               ? key.replace(/[\s_]/g, "").toLowerCase()
@@ -1582,9 +1581,9 @@ const accidentSummaryEntries = useMemo(
           }
           return hasMeaningfulAccidentValue(value);
         })
-      : [],
-  [accidentSummaryData],
-);
+        : [],
+    [accidentSummaryData],
+  );
 
   const inspectionIssueSummary = useMemo(() => {
     if (!inspectionOuterData || inspectionOuterData.length === 0) {
@@ -1676,7 +1675,7 @@ const accidentSummaryEntries = useMemo(
   const insuranceCarInfo = useMemo<InsuranceSummaryInfo | undefined>(() => {
     const baseInfo =
       car?.details?.insurance?.car_info &&
-      typeof car.details.insurance.car_info === "object"
+        typeof car.details.insurance.car_info === "object"
         ? { ...(car.details.insurance.car_info as Record<string, unknown>) }
         : {};
 
@@ -1698,14 +1697,14 @@ const accidentSummaryEntries = useMemo(
         typeof insuranceV2.accidentCnt === "number"
           ? insuranceV2.accidentCnt
           : ((insuranceV2.myAccidentCnt as number | undefined) ?? 0) +
-            ((insuranceV2.otherAccidentCnt as number | undefined) ?? 0);
+          ((insuranceV2.otherAccidentCnt as number | undefined) ?? 0);
       if (accidentCount) {
         assignIfMissing("accident_history", accidentCount);
       }
 
       const repairCount =
         typeof insuranceV2.myAccidentCnt === "number" &&
-        typeof insuranceV2.otherAccidentCnt === "number"
+          typeof insuranceV2.otherAccidentCnt === "number"
           ? insuranceV2.myAccidentCnt + insuranceV2.otherAccidentCnt
           : (insuranceV2.myAccidentCnt ?? insuranceV2.otherAccidentCnt);
       if (repairCount !== undefined) {
@@ -2121,10 +2120,10 @@ const accidentSummaryEntries = useMemo(
                 : "-",
         part: normalizeValue(
           accident?.part ||
-            accident?.partCost ||
-            accident?.parts ||
-            accident?.component ||
-            accident?.position,
+          accident?.partCost ||
+          accident?.parts ||
+          accident?.component ||
+          accident?.position,
         ),
         paint: normalizeValue(
           accident?.paintingCost || accident?.paint || accident?.painting,
@@ -2134,9 +2133,9 @@ const accidentSummaryEntries = useMemo(
         ),
         total: normalizeValue(
           accident?.insuranceBenefit ||
-            accident?.total ||
-            accident?.totalCost ||
-            accident?.sum,
+          accident?.total ||
+          accident?.totalCost ||
+          accident?.sum,
         ),
       };
     });
@@ -2201,29 +2200,29 @@ const accidentSummaryEntries = useMemo(
       secondaryCodeSet.add(code);
     };
 
-      const addTextSource = (value: unknown) => {
-        if (Array.isArray(value)) {
-          value.forEach(addTextSource);
+    const addTextSource = (value: unknown) => {
+      if (Array.isArray(value)) {
+        value.forEach(addTextSource);
+        return;
+      }
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed || trimmed === "-" || trimmed === "--") return;
+        const normalized = trimmed.toLowerCase();
+        if (
+          normalized === "informacion i padisponueshëm" ||
+          normalized === "informacion i padisponueshem" ||
+          normalized === "pa të dhëna" ||
+          normalized === "pa te dhena" ||
+          normalized === "n/a" ||
+          normalized === "na" ||
+          normalized === "none"
+        ) {
           return;
         }
-        if (typeof value === "string") {
-          const trimmed = value.trim();
-          if (!trimmed || trimmed === "-" || trimmed === "--") return;
-          const normalized = trimmed.toLowerCase();
-          if (
-            normalized === "informacion i padisponueshëm" ||
-            normalized === "informacion i padisponueshem" ||
-            normalized === "pa të dhëna" ||
-            normalized === "pa te dhena" ||
-            normalized === "n/a" ||
-            normalized === "na" ||
-            normalized === "none"
-          ) {
-            return;
-          }
-          textSourceSet.add(trimmed);
-        }
-      };
+        textSourceSet.add(trimmed);
+      }
+    };
 
     addTextSource(car?.details?.insurance?.general_info?.usage_type);
     addTextSource((car?.details?.insurance?.car_info as any)?.usage_type);
@@ -2247,271 +2246,271 @@ const accidentSummaryEntries = useMemo(
       addTextSource(entry.value);
     });
 
-      const primaryCodes = Array.from(primaryCodeSet);
-      const secondaryCodes = Array.from(secondaryCodeSet);
-      const textSources = Array.from(textSourceSet);
+    const primaryCodes = Array.from(primaryCodeSet);
+    const secondaryCodes = Array.from(secondaryCodeSet);
+    const textSources = Array.from(textSourceSet);
 
-      const rentalDetails = new Set<string>();
-      const commercialDetails = new Set<string>();
-      const generalDetails = new Set<string>();
+    const rentalDetails = new Set<string>();
+    const commercialDetails = new Set<string>();
+    const generalDetails = new Set<string>();
 
-      const addDetail = (set: Set<string>, detail?: string) => {
-        if (!detail) return;
-        const trimmed = detail.trim();
-        if (
-          !trimmed ||
-          trimmed === "-" ||
-          trimmed === "--" ||
-          trimmed === "Informacion i padisponueshëm" ||
-          trimmed.toLowerCase().includes("pa të dhëna") ||
-          trimmed.toLowerCase().includes("pa te dhena")
-        ) {
-          return;
-        }
-        const translated = translateUsageText(trimmed).trim();
-        if (!translated || isUsageDetailHidden(translated)) {
-          return;
-        }
-        set.add(translated);
-      };
+    const addDetail = (set: Set<string>, detail?: string) => {
+      if (!detail) return;
+      const trimmed = detail.trim();
+      if (
+        !trimmed ||
+        trimmed === "-" ||
+        trimmed === "--" ||
+        trimmed === "Informacion i padisponueshëm" ||
+        trimmed.toLowerCase().includes("pa të dhëna") ||
+        trimmed.toLowerCase().includes("pa te dhena")
+      ) {
+        return;
+      }
+      const translated = translateUsageText(trimmed).trim();
+      if (!translated || isUsageDetailHidden(translated)) {
+        return;
+      }
+      set.add(translated);
+    };
 
-      let codeIndicatesRental = false;
-      let codeIndicatesCommercial = false;
-      let codeIndicatesGeneral = false;
+    let codeIndicatesRental = false;
+    let codeIndicatesCommercial = false;
+    let codeIndicatesGeneral = false;
 
-      primaryCodes.forEach((code) => {
-        if (!code) return;
-        if (["2", "3", "4"].includes(code)) {
-          codeIndicatesCommercial = true;
-          addDetail(commercialDetails, decodePrimaryUsage(code));
-        } else if (code === "1") {
-          codeIndicatesGeneral = true;
-          addDetail(generalDetails, decodePrimaryUsage(code));
-        }
-      });
+    primaryCodes.forEach((code) => {
+      if (!code) return;
+      if (["2", "3", "4"].includes(code)) {
+        codeIndicatesCommercial = true;
+        addDetail(commercialDetails, decodePrimaryUsage(code));
+      } else if (code === "1") {
+        codeIndicatesGeneral = true;
+        addDetail(generalDetails, decodePrimaryUsage(code));
+      }
+    });
 
-      secondaryCodes.forEach((code) => {
-        if (!code) return;
-        if (["4", "5"].includes(code)) {
-          codeIndicatesRental = true;
-          addDetail(rentalDetails, decodeSecondaryUsage(code));
-        } else if (["2", "3", "6", "7", "8"].includes(code)) {
-          codeIndicatesCommercial = true;
-          addDetail(commercialDetails, decodeSecondaryUsage(code));
-        } else if (code === "1") {
-          codeIndicatesGeneral = true;
-          addDetail(generalDetails, decodeSecondaryUsage(code));
-        }
-      });
+    secondaryCodes.forEach((code) => {
+      if (!code) return;
+      if (["4", "5"].includes(code)) {
+        codeIndicatesRental = true;
+        addDetail(rentalDetails, decodeSecondaryUsage(code));
+      } else if (["2", "3", "6", "7", "8"].includes(code)) {
+        codeIndicatesCommercial = true;
+        addDetail(commercialDetails, decodeSecondaryUsage(code));
+      } else if (code === "1") {
+        codeIndicatesGeneral = true;
+        addDetail(generalDetails, decodeSecondaryUsage(code));
+      }
+    });
 
-      const rentalKeywords = [
-        "rent",
-        "rental",
-        "rentcar",
-        "rent car",
-        "lease",
-        "leasing",
-        "qira",
-        "qiraja",
-        "rentë",
-        "rentim",
-        "임대",
-        "임차",
-        "렌트",
-        "렌터카",
-        "대여",
-      ];
-      const commercialKeywords = [
-        "komerc",
-        "komercial",
-        "commercial",
-        "business",
-        "biznes",
-        "corporate",
-        "company",
-        "fleet",
-        "taxi",
-        "transport",
-        "delivery",
-        "cargo",
-        "logistics",
-        "영업",
-        "영업용",
-        "사업",
-        "사업용",
-        "법인",
-        "업무",
-      ];
-      const generalKeywords = [
-        "general",
-        "i përgjithshëm",
-        "i pergjithshem",
-        "përdorim i përgjithshëm",
-        "perdorim i pergjithshem",
-        "private",
-        "personal",
-        "individual",
-        "vetjak",
-        "non-commercial",
-        "non commercial",
-        "noncommercial",
-        "비영업",
-        "자가용",
-      ];
+    const rentalKeywords = [
+      "rent",
+      "rental",
+      "rentcar",
+      "rent car",
+      "lease",
+      "leasing",
+      "qira",
+      "qiraja",
+      "rentë",
+      "rentim",
+      "임대",
+      "임차",
+      "렌트",
+      "렌터카",
+      "대여",
+    ];
+    const commercialKeywords = [
+      "komerc",
+      "komercial",
+      "commercial",
+      "business",
+      "biznes",
+      "corporate",
+      "company",
+      "fleet",
+      "taxi",
+      "transport",
+      "delivery",
+      "cargo",
+      "logistics",
+      "영업",
+      "영업용",
+      "사업",
+      "사업용",
+      "법인",
+      "업무",
+    ];
+    const generalKeywords = [
+      "general",
+      "i përgjithshëm",
+      "i pergjithshem",
+      "përdorim i përgjithshëm",
+      "perdorim i pergjithshem",
+      "private",
+      "personal",
+      "individual",
+      "vetjak",
+      "non-commercial",
+      "non commercial",
+      "noncommercial",
+      "비영업",
+      "자가용",
+    ];
 
-      const negativeRentalPatterns = [
-        /no\s+rent/i,
-        /no\s+rental/i,
-        /without\s+rent/i,
-        /without\s+rental/i,
-        /no\s+rentcar/i,
-        /norent/i,
-        /norental/i,
-        /nuk\s+ka\s+rent/i,
-        /nuk\s+ka\s+qira/i,
-        /pa\s+qira/i,
-        /미렌트/,
-        /렌트이력없음/,
-      ];
-      const negativeCommercialPatterns = [
-        /no\s+commercial/i,
-        /without\s+commercial/i,
-        /non[-\s]?commercial/i,
-        /no\s+business/i,
-        /without\s+business/i,
-        /nuk\s+ka\s+biznes/i,
-        /pa\s+biznes/i,
-        /비영업/,
-        /영업이력없음/,
-      ];
+    const negativeRentalPatterns = [
+      /no\s+rent/i,
+      /no\s+rental/i,
+      /without\s+rent/i,
+      /without\s+rental/i,
+      /no\s+rentcar/i,
+      /norent/i,
+      /norental/i,
+      /nuk\s+ka\s+rent/i,
+      /nuk\s+ka\s+qira/i,
+      /pa\s+qira/i,
+      /미렌트/,
+      /렌트이력없음/,
+    ];
+    const negativeCommercialPatterns = [
+      /no\s+commercial/i,
+      /without\s+commercial/i,
+      /non[-\s]?commercial/i,
+      /no\s+business/i,
+      /without\s+business/i,
+      /nuk\s+ka\s+biznes/i,
+      /pa\s+biznes/i,
+      /비영업/,
+      /영업이력없음/,
+    ];
 
-      let textIndicatesRental = false;
-      let textIndicatesCommercial = false;
-      let textIndicatesGeneral = false;
+    let textIndicatesRental = false;
+    let textIndicatesCommercial = false;
+    let textIndicatesGeneral = false;
 
-      const includesAny = (normalized: string, keywords: string[]) =>
-        keywords.some((keyword) => normalized.includes(keyword));
+    const includesAny = (normalized: string, keywords: string[]) =>
+      keywords.some((keyword) => normalized.includes(keyword));
 
-      textSources.forEach((text) => {
-        if (!text) return;
-        if (/^-?\d+(\.\d+)?$/.test(text)) {
-          return;
-        }
-        const normalized = text.toLowerCase();
-        const yesNo = toYesNo(text as any);
-        const rentKeyword = includesAny(normalized, rentalKeywords);
-        const commercialKeyword = includesAny(normalized, commercialKeywords);
-        const generalKeyword = includesAny(normalized, generalKeywords);
+    textSources.forEach((text) => {
+      if (!text) return;
+      if (/^-?\d+(\.\d+)?$/.test(text)) {
+        return;
+      }
+      const normalized = text.toLowerCase();
+      const yesNo = toYesNo(text as any);
+      const rentKeyword = includesAny(normalized, rentalKeywords);
+      const commercialKeyword = includesAny(normalized, commercialKeywords);
+      const generalKeyword = includesAny(normalized, generalKeywords);
 
-        const rentNeg = negativeRentalPatterns.some((pattern) =>
-          pattern.test(text),
-        );
-        const commercialNeg = negativeCommercialPatterns.some((pattern) =>
-          pattern.test(text),
-        );
+      const rentNeg = negativeRentalPatterns.some((pattern) =>
+        pattern.test(text),
+      );
+      const commercialNeg = negativeCommercialPatterns.some((pattern) =>
+        pattern.test(text),
+      );
 
-        if (rentKeyword) {
-          if (yesNo === "Jo" || rentNeg) {
-            textIndicatesGeneral = true;
-            addDetail(generalDetails, text);
-          } else {
-            textIndicatesRental = true;
-            addDetail(rentalDetails, text);
-          }
-        }
-
-        if (commercialKeyword) {
-          if (yesNo === "Jo" || commercialNeg) {
-            textIndicatesGeneral = true;
-            addDetail(generalDetails, text);
-          } else {
-            textIndicatesCommercial = true;
-            addDetail(commercialDetails, text);
-          }
-        }
-
-        if (
-          generalKeyword ||
-          (!rentKeyword && !commercialKeyword && yesNo === "Jo")
-        ) {
+      if (rentKeyword) {
+        if (yesNo === "Jo" || rentNeg) {
           textIndicatesGeneral = true;
           addDetail(generalDetails, text);
+        } else {
+          textIndicatesRental = true;
+          addDetail(rentalDetails, text);
         }
-      });
+      }
 
-      const hasRent =
-        codeIndicatesRental || textIndicatesRental || rentalDetails.size > 0;
-      const hasCommercial =
-        codeIndicatesCommercial ||
-        textIndicatesCommercial ||
-        commercialDetails.size > 0;
-      const hasGeneral =
-        codeIndicatesGeneral || textIndicatesGeneral || generalDetails.size > 0;
+      if (commercialKeyword) {
+        if (yesNo === "Jo" || commercialNeg) {
+          textIndicatesGeneral = true;
+          addDetail(generalDetails, text);
+        } else {
+          textIndicatesCommercial = true;
+          addDetail(commercialDetails, text);
+        }
+      }
 
-      const hasNonZeroPrimaryCode = primaryCodes.some(
-        (code) => code && code !== "0",
+      if (
+        generalKeyword ||
+        (!rentKeyword && !commercialKeyword && yesNo === "Jo")
+      ) {
+        textIndicatesGeneral = true;
+        addDetail(generalDetails, text);
+      }
+    });
+
+    const hasRent =
+      codeIndicatesRental || textIndicatesRental || rentalDetails.size > 0;
+    const hasCommercial =
+      codeIndicatesCommercial ||
+      textIndicatesCommercial ||
+      commercialDetails.size > 0;
+    const hasGeneral =
+      codeIndicatesGeneral || textIndicatesGeneral || generalDetails.size > 0;
+
+    const hasNonZeroPrimaryCode = primaryCodes.some(
+      (code) => code && code !== "0",
+    );
+    const hasNonZeroSecondaryCode = secondaryCodes.some(
+      (code) => code && code !== "0",
+    );
+    const hasMeaningfulEvidence =
+      hasRent ||
+      hasCommercial ||
+      hasGeneral ||
+      hasNonZeroPrimaryCode ||
+      hasNonZeroSecondaryCode ||
+      textSources.length > 0;
+
+    const rentalValue = hasRent
+      ? "Po"
+      : hasGeneral || hasMeaningfulEvidence
+        ? "Jo"
+        : "Nuk ka informata";
+
+    const generalDetailsList = Array.from(generalDetails);
+    if (hasGeneral) {
+      generalDetailsList.unshift(
+        "Raporti përmend përdorim të përgjithshëm (informativ)",
       );
-      const hasNonZeroSecondaryCode = secondaryCodes.some(
-        (code) => code && code !== "0",
-      );
-      const hasMeaningfulEvidence =
-        hasRent ||
-        hasCommercial ||
-        hasGeneral ||
-        hasNonZeroPrimaryCode ||
-        hasNonZeroSecondaryCode ||
-        textSources.length > 0;
+    }
 
-      const rentalValue = hasRent
-        ? "Po"
-        : hasGeneral || hasMeaningfulEvidence
-          ? "Jo"
-          : "Nuk ka informata";
+    const generalValue = hasMeaningfulEvidence ? "Jo" : "Nuk ka informata";
 
-          const generalDetailsList = Array.from(generalDetails);
-          if (hasGeneral) {
-            generalDetailsList.unshift(
-              "Raporti përmend përdorim të përgjithshëm (informativ)",
-            );
-          }
+    const sanitizeDetails = (details: Iterable<string>) => {
+      const seen = new Set<string>();
+      const result: string[] = [];
+      for (const detail of details) {
+        const translated = translateUsageText(detail).trim();
+        if (!translated || isUsageDetailHidden(translated) || seen.has(translated)) {
+          continue;
+        }
+        seen.add(translated);
+        result.push(translated);
+      }
+      return result;
+    };
 
-          const generalValue = hasMeaningfulEvidence ? "Jo" : "Nuk ka informata";
+    const rentalDetailsList = sanitizeDetails(rentalDetails);
+    const generalDetailsSanitized = sanitizeDetails(generalDetailsList);
 
-          const sanitizeDetails = (details: Iterable<string>) => {
-            const seen = new Set<string>();
-            const result: string[] = [];
-            for (const detail of details) {
-              const translated = translateUsageText(detail).trim();
-              if (!translated || isUsageDetailHidden(translated) || seen.has(translated)) {
-                continue;
-              }
-              seen.add(translated);
-              result.push(translated);
-            }
-            return result;
-          };
+    const highlightItems = [
+      {
+        label: "Përdorur si veturë me qira",
+        value: rentalValue,
+        details: rentalDetailsList,
+      },
+      {
+        label: "Përdorim i përgjithshëm",
+        value: generalValue,
+        details: generalDetailsSanitized,
+      },
+    ];
 
-          const rentalDetailsList = sanitizeDetails(rentalDetails);
-          const generalDetailsSanitized = sanitizeDetails(generalDetailsList);
-
-          const highlightItems = [
-            {
-              label: "Përdorur si veturë me qira",
-              value: rentalValue,
-              details: rentalDetailsList,
-            },
-            {
-              label: "Përdorim i përgjithshëm",
-              value: generalValue,
-              details: generalDetailsSanitized,
-            },
-          ];
-
-          return highlightItems.filter(
-            (item) =>
-              item.value !== "Nuk ka informata" ||
-              (item.details && item.details.length > 0),
-          );
+    return highlightItems.filter(
+      (item) =>
+        item.value !== "Nuk ka informata" ||
+        (item.details && item.details.length > 0),
+    );
   }, [car, toYesNo, usageHistoryList]);
 
   const specialAccidentHistory = useMemo<SpecialAccidentEntry[]>(() => {
@@ -2596,8 +2595,8 @@ const accidentSummaryEntries = useMemo(
 
     const accidentCountValue =
       accidentCountSource !== undefined &&
-      accidentCountSource !== null &&
-      accidentCountSource !== ""
+        accidentCountSource !== null &&
+        accidentCountSource !== ""
         ? `${accidentCountSource}`
         : "Nuk ka informata";
 
@@ -2694,9 +2693,9 @@ const accidentSummaryEntries = useMemo(
 
   const firstRegistrationDisplay = formatDisplayDate(
     car.firstRegistration ||
-      car.details?.first_registration ||
-      car.details?.registration_date ||
-      car.insurance_v2?.firstDate,
+    car.details?.first_registration ||
+    car.details?.registration_date ||
+    car.insurance_v2?.firstDate,
     { monthYear: true },
   );
 
@@ -2763,79 +2762,79 @@ const accidentSummaryEntries = useMemo(
     icon: LucideIcon;
     highlight?: boolean;
   }> = [
-    {
-      label: "Kilometrazhi",
-      value: mileageDisplay,
-      icon: Gauge,
-    },
-    {
-      label: "Aksidente",
-      value: `${accidentBadgeCount}`,
-      icon: AlertTriangle,
-      highlight: accidentBadgeCount > 0,
-    },
-    {
-      label: "Ndërrime pronari",
-      value: ownerChangesDisplay,
-      icon: Users,
-    },
-    {
-      label: "Regjistrimi i parë",
-      value: firstRegistrationDisplay ?? "-",
-      icon: Clock,
-    },
-  ];
+      {
+        label: "Kilometrazhi",
+        value: mileageDisplay,
+        icon: Gauge,
+      },
+      {
+        label: "Aksidente",
+        value: `${accidentBadgeCount}`,
+        icon: AlertTriangle,
+        highlight: accidentBadgeCount > 0,
+      },
+      {
+        label: "Ndërrime pronari",
+        value: ownerChangesDisplay,
+        icon: Users,
+      },
+      {
+        label: "Regjistrimi i parë",
+        value: firstRegistrationDisplay ?? "-",
+        icon: Clock,
+      },
+    ];
 
   const vehicleSubtitle =
     car.title &&
-    carName &&
-    car.title.trim().toLowerCase() !== carName.toLowerCase()
+      carName &&
+      car.title.trim().toLowerCase() !== carName.toLowerCase()
       ? car.title
       : undefined;
 
-    const locationDisplay =
-      car.location?.name ??
-      (typeof car.details?.location === "string"
-        ? car.details.location
-        : car.details?.location?.name) ??
-      (typeof car.details?.dealer === "string"
-        ? car.details.dealer
-        : (car.details?.dealer as { name?: string } | undefined)?.name) ??
-      null;
+  const locationDisplay =
+    car.location?.name ??
+    (typeof car.details?.location === "string"
+      ? car.details.location
+      : car.details?.location?.name) ??
+    (typeof car.details?.dealer === "string"
+      ? car.details.dealer
+      : (car.details?.dealer as { name?: string } | undefined)?.name) ??
+    null;
 
-    const overviewInfo = [
-      { label: "Prodhuesi", value: car.make || "-" },
-      { label: "Modeli", value: car.model || "-" },
-      { label: "Regjistrimi i parë", value: firstRegistrationDisplay ?? "-" },
-      { label: "Kilometra", value: mileageDisplay },
-      { label: "Karburanti", value: fuelDisplay || "-" },
-      { label: "Motorri", value: engineDisplay || "-" },
-      { label: "Numri i shasisë", value: car.vin || "-" },
-      { label: "Pronaret e ndërruar", value: ownerChangesDisplay },
-      {
-        label: "Burimi i të dhënave",
-        value: car.sourceLabel || "Encars Korea",
-      },
-      { label: "Lokacioni", value: locationDisplay || "-" },
-    ];
+  const overviewInfo = [
+    { label: "Prodhuesi", value: car.make || "-" },
+    { label: "Modeli", value: car.model || "-" },
+    { label: "Regjistrimi i parë", value: firstRegistrationDisplay ?? "-" },
+    { label: "Kilometra", value: mileageDisplay },
+    { label: "Karburanti", value: fuelDisplay || "-" },
+    { label: "Motorri", value: engineDisplay || "-" },
+    { label: "Numri i shasisë", value: car.vin || "-" },
+    { label: "Pronaret e ndërruar", value: ownerChangesDisplay },
+    {
+      label: "Burimi i të dhënave",
+      value: car.sourceLabel || "Encars Korea",
+    },
+    { label: "Lokacioni", value: locationDisplay || "-" },
+  ];
 
-    const galleryImages = Array.from(
-      new Set(
-        (
-          car.images && car.images.length > 0
-            ? car.images
-            : heroImageSrc
-              ? [heroImageSrc]
-              : []
-        ).filter((image): image is string => Boolean(image)),
-      ),
-    ).slice(0, 12);
+  const galleryImages = Array.from(
+    new Set(
+      (
+        car.images && car.images.length > 0
+          ? car.images
+          : heroImageSrc
+            ? [heroImageSrc]
+            : []
+      ).filter((image): image is string => Boolean(image)),
+    ),
+  ).slice(0, 12);
 
-    const sectionNavItems: Array<{
-      id: string;
-      label: string;
-      icon: LucideIcon;
-    }> = [
+  const sectionNavItems: Array<{
+    id: string;
+    label: string;
+    icon: LucideIcon;
+  }> = [
       { id: "permbledhje", label: "Përmbledhje", icon: FileText },
       { id: "inspektimi", label: "Inspektimi", icon: Wrench },
       { id: "sigurimi", label: "Sigurimi", icon: Shield },
@@ -2844,61 +2843,61 @@ const accidentSummaryEntries = useMemo(
       { id: "garancia", label: "Garancia", icon: CheckCircle },
     ];
 
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <div className="container-responsive py-4 md:py-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openCarDetailsInNewTab(car.lot || lot)}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kthehu te makinat
-          </Button>
-          <Tabs defaultValue="diagram" className="space-y-4">
-            <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
-              <TabsTrigger
-                value="diagram"
-                className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-              >
-                <FileText className="h-4 w-4 text-primary" />
-                <span>Diagrami i Inspektimit</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="exterior"
-                className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-              >
-                <Car className="h-4 w-4 text-primary" />
-                <span>Historia e Përdorimit</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="insurance"
-                className="flex items-start justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium text-left whitespace-normal leading-tight min-h-[48px]"
-              >
-                <AlertTriangle className="h-4 w-4 text-primary" />
-                <span className="text-left leading-tight whitespace-normal">
-                  Aksidentet & Sigurimi
-                </span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="options"
-                className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-              >
-                <Cog className="h-4 w-4 text-primary" />
-                <span>Pajisjet & Opsionet</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="warranty"
-                className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-              >
-                <Shield className="h-4 w-4 text-primary" />
-                <span>Garancioni</span>
-              </TabsTrigger>
-            </TabsList>
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="container-responsive py-4 md:py-6">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => openCarDetailsInNewTab(car.lot || lot)}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Kthehu te makinat
+        </Button>
+        <Tabs defaultValue="diagram" className="space-y-4">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
+            <TabsTrigger
+              value="diagram"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <FileText className="h-4 w-4 text-primary" />
+              <span>Diagrami i Inspektimit</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="exterior"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <Car className="h-4 w-4 text-primary" />
+              <span>Historia e Përdorimit</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="insurance"
+              className="flex items-start justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium text-left whitespace-normal leading-tight min-h-[48px]"
+            >
+              <AlertTriangle className="h-4 w-4 text-primary" />
+              <span className="text-left leading-tight whitespace-normal">
+                Aksidentet & Sigurimi
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="options"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <Cog className="h-4 w-4 text-primary" />
+              <span>Pajisjet & Opsionet</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="warranty"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <Shield className="h-4 w-4 text-primary" />
+              <span>Garancioni</span>
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="diagram" className="space-y-4">
-             {/* Redesigned Inspection Diagram matching Korean format */}
+          <TabsContent value="diagram" className="space-y-4">
+            {/* Redesigned Inspection Diagram matching Korean format */}
             <div className="space-y-4">
               <Card className="border border-primary/20 bg-primary/5 backdrop-blur-sm">
                 <CardContent className="px-4 py-4 sm:px-6">
@@ -2946,98 +2945,98 @@ const accidentSummaryEntries = useMemo(
                 </CardContent>
               </Card>
 
-                {/* Two-panel diagram with "within" and "out" views */}
-                <InspectionDiagramPanel
-                  outerInspectionData={inspectionOuterData}
-                />
-
-                {/* Mechanical System Section */}
-                {mechanicalStatusEntries.length > 0 && (
-                  <Card className="shadow-md border-border/80">
-                    <CardHeader className="pb-3 md:pb-4">
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                        <CardTitle className="text-base md:text-xl">
-                          Motori dhe Sistemi Mekanik
-                        </CardTitle>
-                      </div>
-                      <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                        Kontrolli teknik i komponentëve kryesorë të automjetit
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
-                        {mechanicalStatusEntries.map(([key, value]) => {
-                          const positive = isPositiveStatus(value);
-                          return (
-                            <div
-                              key={key}
-                              className={`p-1.5 md:p-2.5 rounded-lg border text-[11px] md:text-sm ${
-                                positive
-                                  ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
-                                  : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
-                              }`}
-                            >
-                              <span className="font-semibold text-foreground block mb-0.5 truncate leading-tight">
-                                {formatKeyLabel(key)}
-                              </span>
-                              <p
-                                className={`font-medium leading-tight ${positive ? "text-emerald-700" : "text-red-700"}`}
-                              >
-                                {translateStatusValue(value)}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Accident Summary Section */}
-                {accidentSummaryEntries.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        Përmbledhje e Aksidenteve
+              {/* Two-panel diagram with "within" and "out" views */}
+              <InspectionDiagramPanel
+                outerInspectionData={inspectionOuterData}
+              />
+              <div className="mt-8">
+                <InspectionItemList inspectionData={car.encarInspection} />
+              </div>
+              {/* Mechanical System Section */}
+              {mechanicalStatusEntries.length > 0 && (
+                <Card className="shadow-md border-border/80">
+                  <CardHeader className="pb-3 md:pb-4">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                      <CardTitle className="text-base md:text-xl">
+                        Motori dhe Sistemi Mekanik
                       </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-3">
-                        {accidentSummaryEntries.map(([key, value]) => {
-                          const isNegative = isAccidentNegative(value);
-
-                          return (
-                            <div
-                              key={key}
-                              className={`flex flex-col gap-1.5 md:gap-2 rounded-lg border p-2.5 md:p-4 ${
-                                isNegative
-                                  ? "border-destructive/50 bg-destructive/5"
-                                  : "border-border bg-muted/40"
+                    </div>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                      Kontrolli teknik i komponentëve kryesorë të automjetit
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
+                      {mechanicalStatusEntries.map(([key, value]) => {
+                        const positive = isPositiveStatus(value);
+                        return (
+                          <div
+                            key={key}
+                            className={`p-1.5 md:p-2.5 rounded-lg border text-[11px] md:text-sm ${positive
+                              ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-500/10"
+                              : "border-red-400/40 bg-red-50/60 dark:bg-red-500/10"
                               }`}
+                          >
+                            <span className="font-semibold text-foreground block mb-0.5 truncate leading-tight">
+                              {formatKeyLabel(key)}
+                            </span>
+                            <p
+                              className={`font-medium leading-tight ${positive ? "text-emerald-700" : "text-red-700"}`}
                             >
-                              <div className="flex items-center gap-1.5 md:gap-2">
-                                {isNegative ? (
-                                  <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive flex-shrink-0" />
-                                ) : (
-                                  <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
-                                )}
-                                <span className="text-[10px] md:text-xs font-medium uppercase tracking-wide text-muted-foreground leading-tight">
-                                  {translateAccidentSummaryKey(key)}
-                                </span>
-                              </div>
-                              <span
-                                className={`text-base md:text-lg font-bold ${isNegative ? "text-destructive" : "text-green-600"}`}
-                              >
-                                {translateAccidentSummaryValue(value)}
+                              {translateStatusValue(value)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Accident Summary Section */}
+              {accidentSummaryEntries.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Përmbledhje e Aksidenteve
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-3">
+                      {accidentSummaryEntries.map(([key, value]) => {
+                        const isNegative = isAccidentNegative(value);
+
+                        return (
+                          <div
+                            key={key}
+                            className={`flex flex-col gap-1.5 md:gap-2 rounded-lg border p-2.5 md:p-4 ${isNegative
+                              ? "border-destructive/50 bg-destructive/5"
+                              : "border-border bg-muted/40"
+                              }`}
+                          >
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                              {isNegative ? (
+                                <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive flex-shrink-0" />
+                              ) : (
+                                <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
+                              )}
+                              <span className="text-[10px] md:text-xs font-medium uppercase tracking-wide text-muted-foreground leading-tight">
+                                {translateAccidentSummaryKey(key)}
                               </span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                            <span
+                              className={`text-base md:text-lg font-bold ${isNegative ? "text-destructive" : "text-green-600"}`}
+                            >
+                              {translateAccidentSummaryValue(value)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
@@ -3059,7 +3058,7 @@ const accidentSummaryEntries = useMemo(
               <CardContent className="space-y-3 md:space-y-6">
                 {/* Insurance Summary Stats */}
                 {car.insurance_v2 &&
-                Object.keys(car.insurance_v2).length > 0 ? (
+                  Object.keys(car.insurance_v2).length > 0 ? (
                   <div className="grid gap-2 grid-cols-2 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <div className="flex flex-col gap-0.5 md:gap-1 rounded-lg border border-border/60 bg-muted/40 p-2 md:p-3">
                       <span className="text-[10px] md:text-xs uppercase tracking-wide text-muted-foreground">
@@ -3118,23 +3117,23 @@ const accidentSummaryEntries = useMemo(
                                       {accident.date || "Data e panjohur"}
                                     </span>
                                   </div>
-                                    <Badge
-                                      variant="outline"
-                                      className="w-fit text-xs"
-                                    >
-                                      Lloji:{" "}
-                                      {accident.type === "2"
-                                        ? "Dëmtimi i vet"
-                                        : accident.type === "3"
-                                          ? "Dëmtim nga tjeri"
-                                          : `Lloji ${accident.type}`}
-                                    </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className="w-fit text-xs"
+                                  >
+                                    Lloji:{" "}
+                                    {accident.type === "2"
+                                      ? "Dëmtimi i vet"
+                                      : accident.type === "3"
+                                        ? "Dëmtim nga tjeri"
+                                        : `Lloji ${accident.type}`}
+                                  </Badge>
                                 </div>
                                 <div className="grid gap-1.5 md:gap-2 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
                                   <div className="flex flex-col gap-0.5 md:gap-1">
-                                      <span className="text-[10px] md:text-xs text-muted-foreground">
-                                        Shpenzimet totale
-                                      </span>
+                                    <span className="text-[10px] md:text-xs text-muted-foreground">
+                                      Shpenzimet totale
+                                    </span>
                                     <span className="text-sm md:text-base font-bold text-destructive">
                                       {Math.round(
                                         convertKRWtoEUR(
@@ -3204,9 +3203,9 @@ const accidentSummaryEntries = useMemo(
                               key={idx}
                               className="flex items-center justify-between p-2 md:p-3 rounded-lg border border-border/60 bg-muted/30"
                             >
-                                <span className="text-sm md:text-base font-mono font-semibold">
-                                  {change.carNo || "Pa të dhëna"}
-                                </span>
+                              <span className="text-sm md:text-base font-mono font-semibold">
+                                {change.carNo || "Pa të dhëna"}
+                              </span>
                               <span className="text-xs md:text-sm text-muted-foreground">
                                 {change.date || "Data e panjohur"}
                               </span>
@@ -3219,11 +3218,11 @@ const accidentSummaryEntries = useMemo(
 
                 {(!car.insurance_v2 ||
                   Object.keys(car.insurance_v2).length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Shield className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                    <p>Nuk ka informata për historinë e sigurimit</p>
-                  </div>
-                )}
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Shield className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>Nuk ka informata për historinë e sigurimit</p>
+                    </div>
+                  )}
               </CardContent>
             </Card>
 
@@ -3359,8 +3358,8 @@ const accidentSummaryEntries = useMemo(
                           label: "Dëmtime nga uji",
                           value: insuranceCarInfo.flood_damage
                             ? processFloodDamageText(
-                                String(insuranceCarInfo.flood_damage),
-                              )
+                              String(insuranceCarInfo.flood_damage),
+                            )
                             : undefined,
                         },
                       ]
@@ -3436,7 +3435,7 @@ const accidentSummaryEntries = useMemo(
                                       </h4>
                                       {option.name_original &&
                                         translatedName !==
-                                          option.name_original && (
+                                        option.name_original && (
                                           <p className="text-xs text-muted-foreground">
                                             {option.name_original}
                                           </p>
@@ -3453,11 +3452,11 @@ const accidentSummaryEntries = useMemo(
                                   </div>
                                   {(getOptionDescription(option.code) ||
                                     option.description) && (
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                      {getOptionDescription(option.code) ||
-                                        option.description}
-                                    </p>
-                                  )}
+                                      <p className="text-sm text-muted-foreground leading-relaxed">
+                                        {getOptionDescription(option.code) ||
+                                          option.description}
+                                      </p>
+                                    )}
                                 </CardContent>
                               </Card>
                             );
@@ -3709,34 +3708,33 @@ const accidentSummaryEntries = useMemo(
                       <div className="w-1 h-5 bg-primary rounded-full"></div>
                       Lloji i Përdorimit
                     </h3>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {usageHighlights.map((item) => (
-                          <div
-                            key={item.label}
-                            className="flex flex-col gap-1.5 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 hover:shadow-md transition-shadow"
-                          >
-                            <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                              {item.label}
-                            </span>
-                            <span
-                              className={`text-lg font-semibold ${
-                                item.value === "Po"
-                                  ? "text-destructive"
-                                  : item.value === "Jo"
-                                    ? "text-emerald-600"
-                                    : "text-muted-foreground"
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {usageHighlights.map((item) => (
+                        <div
+                          key={item.label}
+                          className="flex flex-col gap-1.5 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 hover:shadow-md transition-shadow"
+                        >
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                            {item.label}
+                          </span>
+                          <span
+                            className={`text-lg font-semibold ${item.value === "Po"
+                              ? "text-destructive"
+                              : item.value === "Jo"
+                                ? "text-emerald-600"
+                                : "text-muted-foreground"
                               }`}
-                            >
-                              {item.value}
+                          >
+                            {item.value}
+                          </span>
+                          {item.details && item.details.length > 0 && (
+                            <span className="text-xs text-muted-foreground leading-relaxed">
+                              {item.details.join(" • ")}
                             </span>
-                            {item.details && item.details.length > 0 && (
-                              <span className="text-xs text-muted-foreground leading-relaxed">
-                                {item.details.join(" • ")}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </section>
                 )}
 
@@ -3747,34 +3745,34 @@ const accidentSummaryEntries = useMemo(
                       <div className="w-1 h-5 bg-primary rounded-full"></div>
                       Detajet e Historisë së Përdorimit
                     </h3>
-                      <div className="space-y-2">
-                        {usageHistoryList
-                          .filter(
-                            (entry) =>
-                              !isUsageDetailHidden(entry.description) &&
-                              !isUsageDetailHidden(entry.value),
-                          )
-                          .map((entry, index) => {
-                            const description =
-                              translateUsageText(entry.description ?? "").trim() ||
-                              "Përdorim";
-                            const valueDisplay =
-                              translateUsageText(entry.value ?? "").trim() || "-";
-                            return (
-                              <div
-                                key={`${entry.description || "usage"}-${index}`}
-                                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/80 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
-                              >
-                                <span className="font-semibold text-foreground">
-                                  {description}
-                                </span>
-                                <span className="text-muted-foreground font-medium">
-                                  {valueDisplay}
-                                </span>
-                              </div>
-                            );
-                          })}
-                      </div>
+                    <div className="space-y-2">
+                      {usageHistoryList
+                        .filter(
+                          (entry) =>
+                            !isUsageDetailHidden(entry.description) &&
+                            !isUsageDetailHidden(entry.value),
+                        )
+                        .map((entry, index) => {
+                          const description =
+                            translateUsageText(entry.description ?? "").trim() ||
+                            "Përdorim";
+                          const valueDisplay =
+                            translateUsageText(entry.value ?? "").trim() || "-";
+                          return (
+                            <div
+                              key={`${entry.description || "usage"}-${index}`}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/80 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
+                            >
+                              <span className="font-semibold text-foreground">
+                                {description}
+                              </span>
+                              <span className="text-muted-foreground font-medium">
+                                {valueDisplay}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </section>
                 )}
 

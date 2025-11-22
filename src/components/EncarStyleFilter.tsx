@@ -216,16 +216,21 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   }, [manufacturers]);
 
   const manufacturerOptions = useMemo(() => {
-    const options = prioritizedManufacturers.map((manufacturer: Manufacturer) => {
-      const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
-      const count = manufacturer.cars_qty || manufacturer.car_count || 0;
+    const options = prioritizedManufacturers
+      .filter((manufacturer: Manufacturer) => {
+        const count = manufacturer.cars_qty || manufacturer.car_count || 0;
+        return count > 0; // Only show manufacturers with cars
+      })
+      .map((manufacturer: Manufacturer) => {
+        const logoUrl = manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
+        const count = manufacturer.cars_qty || manufacturer.car_count || 0;
 
-      return {
-        value: manufacturer.id.toString(),
-        label: `${manufacturer.name} (${count})`,
-        icon: logoUrl
-      };
-    });
+        return {
+          value: manufacturer.id.toString(),
+          label: `${manufacturer.name} (${count})`,
+          icon: logoUrl
+        };
+      });
 
     if (prioritizedManufacturerCount > 0 && prioritizedManufacturerCount < options.length) {
       return [
@@ -293,8 +298,8 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   // Compact mode for sidebar
   if (compact) {
     return (
-      <Card className="glass-panel border-0 rounded-xl p-6 sm:p-8 space-y-4 w-full max-w-md mx-auto shadow-lg">
-        <div className="space-y-2">
+      <Card className="relative border-0 rounded-2xl p-6 sm:p-8 space-y-5 w-full max-w-md mx-auto backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 ring-1 ring-gray-200/50 dark:ring-white/10">
+        <div className="space-y-4">
           <div className="space-y-1 filter-section">
             <Label className="filter-label text-xs font-medium flex items-center gap-1.5">
               <Car className="h-2.5 w-2.5" />
@@ -329,21 +334,21 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               disabled={!filters.manufacturer_id}
               placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
               className="filter-control h-8 text-xs"
-              options={[
+              options={useMemo(() => [
                 ...(!(isStrictMode && filters.model_id)
                   ? [{ value: 'all', label: 'Të gjithë modelet' }]
                   : []),
                 ...models
-                  .filter(model => model.cars_qty && model.cars_qty > 0)
+                  .filter(model => (model.cars_qty || 0) > 0) // Only show models with cars
                   .map(model => {
                     const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
                     const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
                     return {
                       value: model.id.toString(),
-                      label: `${formattedModelName} (${model.cars_qty})`
+                      label: `${formattedModelName} (${model.cars_qty || 0})`
                     };
                   })
-              ]}
+              ], [isStrictMode, filters.model_id, models, filters.manufacturer_id, manufacturers])}
               forceNative
             />
           </div>
@@ -665,7 +670,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
   // Catalog style - expanded with sections
   return (
-    <Card className="glass-panel p-4 space-y-4 border-0 rounded-xl">
+    <Card className="relative border-0 rounded-2xl p-5 space-y-5 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 shadow-xl shadow-gray-200/30 dark:shadow-black/30 ring-1 ring-gray-200/50 dark:ring-white/10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-primary" />
@@ -700,7 +705,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('basic') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-white/60 to-white/30 dark:from-gray-800/60 dark:to-gray-800/30 backdrop-blur-md rounded-xl border border-gray-200/50 dark:border-white/10 shadow-sm">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Marka</Label>
@@ -726,23 +731,23 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 value={filters.model_id || 'all'}
                 onValueChange={(value) => updateFilter('model_id', value)}
                 disabled={!filters.manufacturer_id}
-                placeholder={filters.manufacturer_id ? "Select model" : "Select brand first"}
-                className="filter-control"
-                options={[
+                placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
+                className="filter-control h-8 text-xs"
+                options={useMemo(() => [
                   ...(!(isStrictMode && filters.model_id)
                     ? [{ value: 'all', label: 'Të gjithë modelet' }]
                     : []),
                   ...models
-                    .filter(model => model.cars_qty && model.cars_qty > 0)
+                    .filter(model => (model.cars_qty || 0) > 0) // Only show models with cars
                     .map(model => {
                       const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
                       const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
                       return {
                         value: model.id.toString(),
-                        label: `${formattedModelName} (${model.cars_qty})`
+                        label: `${formattedModelName} (${model.cars_qty || 0})`
                       };
                     })
-                ]}
+                ], [isStrictMode, filters.model_id, models, filters.manufacturer_id, manufacturers])}
                 forceNative
               />
             </div>
@@ -766,7 +771,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
         </Button>
 
         {expandedSections.includes('advanced') && (
-          <div className="space-y-4 p-3 bg-white/5 dark:bg-black/10 backdrop-blur-sm rounded-lg border border-white/10 dark:border-white/5">
+          <div className="space-y-4 p-4 bg-gradient-to-br from-white/60 to-white/30 dark:from-gray-800/60 dark:to-gray-800/30 backdrop-blur-md rounded-xl border border-gray-200/50 dark:border-white/10 shadow-sm">
             {/* Price */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">
