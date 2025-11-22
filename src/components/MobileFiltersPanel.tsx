@@ -34,6 +34,8 @@ interface MobileFiltersPanelProps {
     onFiltersChange: (filters: any) => void;
     onClearFilters: () => void;
     onApply: () => void;
+    onManufacturerChange?: (manufacturerId: string) => void;
+    onModelChange?: (modelId: string) => void;
 }
 
 const FUEL_TYPES: Record<string, number> = {
@@ -57,13 +59,19 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     filterCounts,
     onFiltersChange,
     onClearFilters,
-    onApply
+    onApply,
+    onManufacturerChange,
+    onModelChange
 }) => {
     const handleChange = (key: string, value: string) => {
         const actualValue = value === '' || value === 'all' ? undefined : value;
 
         if (key === 'manufacturer_id') {
             onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
+            onManufacturerChange?.(actualValue || '');
+        } else if (key === 'model_id') {
+            onFiltersChange({ ...filters, [key]: actualValue });
+            onModelChange?.(actualValue || '');
         } else {
             onFiltersChange({ ...filters, [key]: actualValue });
         }

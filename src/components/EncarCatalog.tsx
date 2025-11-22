@@ -323,6 +323,19 @@ const EncarCatalog = ({
   const mainContentRef = useRef<HTMLDivElement>(null);
   const filterPanelRef = useRef<HTMLDivElement>(null);
 
+  const recenterCatalog = useCallback(() => {
+    requestAnimationFrame(() => {
+      const contentEl = mainContentRef.current;
+      if (contentEl) {
+        contentEl.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+        const contentTop = contentEl.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: Math.max(0, contentTop - 12), left: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      }
+    });
+  }, []);
+
   // SIMPLIFIED: More efficient scroll position saving
   const saveScrollPosition = useCallback(() => {
     if (containerRef.current) {
@@ -371,14 +384,16 @@ const EncarCatalog = ({
     if (!showFilters && isMobile) {
       setShowFilters(true);
       setHasExplicitlyClosed(false); // Reset explicit close flag when opening via swipe
+      recenterCatalog();
     }
-  }, [showFilters, isMobile]);
+  }, [showFilters, isMobile, recenterCatalog]);
   const handleSwipeLeftToCloseFilters = useCallback(() => {
     if (showFilters && isMobile) {
       setShowFilters(false);
       setHasExplicitlyClosed(true); // Mark as explicitly closed
+      recenterCatalog();
     }
-  }, [showFilters, isMobile]);
+  }, [showFilters, isMobile, recenterCatalog]);
 
   // Handle view mode toggle
   const handleViewModeToggle = useCallback(() => {
@@ -405,6 +420,7 @@ const EncarCatalog = ({
     } else {
       setHasExplicitlyClosed(true);
       console.log("Closing filters, set explicit close flag");
+      recenterCatalog();
     }
 
     // Use a single shorter timeout for DOM sync if needed (mobile only)
@@ -426,7 +442,7 @@ const EncarCatalog = ({
     }
   }, 250),
     // 250ms debounce to prevent rapid clicking
-    [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]);
+    [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed, recenterCatalog]);
 
   // Set up swipe gestures for main content (swipe right to show filters)
   useSwipeGesture(mainContentRef, {
@@ -673,28 +689,19 @@ const EncarCatalog = ({
 
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
+      ...filters,
       manufacturer_id: manufacturerId,
       model_id: undefined,
       generation_id: undefined,
       grade_iaai: undefined,
-      color: filters.color,
-      fuel_type: filters.fuel_type,
-      transmission: filters.transmission,
-      odometer_from_km: filters.odometer_from_km,
-      odometer_to_km: filters.odometer_to_km,
-      from_year: filters.from_year,
-      to_year: filters.to_year,
-      buy_now_price_from: filters.buy_now_price_from,
-      buy_now_price_to: filters.buy_now_price_to,
-      seats_count: filters.seats_count,
-      search: filters.search
+      engine_spec: undefined
     };
     setFilters(newFilters);
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
 
-    // Only show loading for cars
+    // Only show loading for dependent data
     setIsLoading(true);
     try {
       if (!manufacturerId) {
@@ -716,15 +723,10 @@ const EncarCatalog = ({
       // Fetch models in parallel
       const modelPromise = fetchModels(manufacturerId);
 
-      // Fetch cars with neutral sorting (user can re-apply a sort after filters)
-      const filtersForCars = {
-        ...newFilters,
-        per_page: "50"
-      };
-      await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
+      await modelPromise.then(modelData => {
         console.log(`[handleManufacturerChange] Setting models to:`, modelData);
         setModels(modelData);
-      }).catch(err => console.warn('Failed to load models:', err))]);
+      }).catch(err => console.warn('Failed to load models:', err));
 
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -1248,7 +1250,10 @@ const EncarCatalog = ({
               fetchCars(1, searchFilters, true);
               setShowFilters(false);
               setHasExplicitlyClosed(true);
+              recenterCatalog();
             }}
+            onManufacturerChange={handleManufacturerChange}
+            onModelChange={handleModelChange}
           />
         )}
       </div>
@@ -1261,6 +1266,7 @@ const EncarCatalog = ({
             if (isMobile) {
               setShowFilters(false);
               setHasExplicitlyClosed(true);
+              recenterCatalog();
             }
           }}
         />
