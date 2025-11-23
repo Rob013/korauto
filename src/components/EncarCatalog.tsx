@@ -1224,6 +1224,7 @@ const EncarCatalog = ({
               }
             }, 300);
           }}
+          onManufacturerChange={handleManufacturerChange}
           usePortal={true}
         />
       )}

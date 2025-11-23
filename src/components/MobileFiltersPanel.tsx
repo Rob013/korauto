@@ -100,10 +100,12 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         const actualValue = value === '' || value === 'all' ? undefined : value;
 
         if (key === 'manufacturer_id') {
-            // Reset model when manufacturer changes to ensure we only show models for the selected brand
-            onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
+            // If onManufacturerChange is provided, use it exclusively to handle logic (fetching models, etc.)
             if (onManufacturerChange) {
                 onManufacturerChange(actualValue || '');
+            } else {
+                // Fallback for when onManufacturerChange is not provided
+                onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
             }
         } else {
             onFiltersChange({ ...filters, [key]: actualValue });
@@ -184,6 +186,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 // If no manufacturer_id on model, assume it's correct (legacy behavior)
                 return true;
             })
+            .filter(m => (m.cars_qty || 0) > 0) // Filter out models with 0 cars
             .map(m => ({
                 id: m.id,
                 name: m.name,
