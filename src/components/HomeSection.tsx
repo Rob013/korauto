@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
+
 const HomeSection = () => {
+  const navigate = useNavigate();
+  
   return <section id="home" className="min-h-[85vh] flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 pt-2 pb-4 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -25,8 +29,8 @@ const HomeSection = () => {
           </p>
           
           <div className="grid grid-cols-2 gap-3 justify-center items-center mb-8 animate-bounce-in sm:flex sm:flex-row sm:flex-wrap">
-            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto px-5 sm:px-8 py-3 text-base sm:text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/catalog'}>Shfleto Veturat</Button>
-            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto px-5 sm:px-8 py-3 text-base sm:text-lg transition-all duration-300 hover-lift-gentle" onClick={() => window.location.href = '/inspections'}>
+            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto px-5 sm:px-8 py-3 text-base sm:text-lg transition-all duration-300 hover-lift-gentle" onClick={() => navigate('/catalog')}>Shfleto Veturat</Button>
+            <Button variant="outline" size="lg" className="btn-enhanced border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto px-5 sm:px-8 py-3 text-base sm:text-lg transition-all duration-300 hover-lift-gentle" onClick={() => navigate('/inspections')}>
               Mëso për Inspektimet
             </Button>
           </div>
