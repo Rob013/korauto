@@ -1203,7 +1203,7 @@ const EncarCatalog = ({
       )}
 
       {/* Mobile Filter Panel – rendered as an overlay independent of catalog layout */}
-      {isMobile && (
+      {isMobile && showFilters && (
         <MobileFiltersPanel
           filters={filters}
           manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
