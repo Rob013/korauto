@@ -169,7 +169,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     // Get models for selected manufacturer
     const modelsList = useMemo(() =>
         filters.manufacturer_id
-            ? models.filter(m => (m.cars_qty || 0) > 0).map(m => ({
+            ? models.map(m => ({
                 id: m.id,
                 name: m.name,
                 count: m.cars_qty || 0
@@ -268,8 +268,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                     key={year}
                                     onClick={() => handleChange('from_year', year.toString())}
                                     className={`flex-shrink-0 px-4 py-2 text-xs font-medium rounded-lg border transition-all ${filters.from_year === year.toString()
-                                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                                            : 'bg-background border-border hover:bg-muted'
+                                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                        : 'bg-background border-border hover:bg-muted'
                                         }`}
                                 >
                                     {year}+
