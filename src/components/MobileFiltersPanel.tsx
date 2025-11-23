@@ -409,8 +409,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                         key={value}
                                         onClick={() => handleChange('fuel_type', filters.fuel_type === value.toString() ? '' : value.toString())}
                                         className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === value.toString()
-                                                ? 'bg-primary text-primary-foreground border-primary'
-                                                : 'bg-background border-border hover:bg-muted'
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background border-border hover:bg-muted'
                                             }`}
                                     >
                                         {label}
@@ -428,8 +428,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                         key={value}
                                         onClick={() => handleChange('transmission', filters.transmission === value.toString() ? '' : value.toString())}
                                         className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === value.toString()
-                                                ? 'bg-primary text-primary-foreground border-primary'
-                                                : 'bg-background border-border hover:bg-muted'
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background border-border hover:bg-muted'
                                             }`}
                                     >
                                         {label}
@@ -502,20 +502,26 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Motorri (cc)</label>
                             <div className="grid grid-cols-2 gap-2">
-                                <input
-                                    type="number"
-                                    placeholder="Nga (cc)"
+                                <select
                                     value={filters.engine_from || ''}
                                     onChange={(e) => handleChange('engine_from', e.target.value)}
                                     className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="Deri (cc)"
+                                >
+                                    <option value="">Nga</option>
+                                    {[800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500, 3000, 3500, 4000, 5000].map(cc => (
+                                        <option key={cc} value={cc}>{cc} cc</option>
+                                    ))}
+                                </select>
+                                <select
                                     value={filters.engine_to || ''}
                                     onChange={(e) => handleChange('engine_to', e.target.value)}
                                     className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
-                                />
+                                >
+                                    <option value="">Deri</option>
+                                    {[1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500, 3000, 3500, 4000, 5000, 6000].map(cc => (
+                                        <option key={cc} value={cc}>{cc} cc</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
@@ -523,23 +529,30 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <div className="grid grid-cols-2 gap-3 mb-4">
                             <div>
                                 <label className="block text-sm font-medium mb-2">Ulëse</label>
-                                <input
-                                    type="number"
-                                    placeholder="Nr."
+                                <select
                                     value={filters.seats_count || ''}
                                     onChange={(e) => handleChange('seats_count', e.target.value)}
                                     className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
-                                />
+                                >
+                                    <option value="">Të gjitha</option>
+                                    {[2, 4, 5, 6, 7, 8, 9].map(seats => (
+                                        <option key={seats} value={seats}>{seats}</option>
+                                    ))}
+                                    <option value="10+">10+</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-2">Dyer</label>
-                                <input
-                                    type="number"
-                                    placeholder="Nr."
+                                <select
                                     value={filters.doors_count || ''}
                                     onChange={(e) => handleChange('doors_count', e.target.value)}
                                     className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
-                                />
+                                >
+                                    <option value="">Të gjitha</option>
+                                    {[2, 3, 4, 5].map(doors => (
+                                        <option key={doors} value={doors}>{doors}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     </div>
