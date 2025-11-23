@@ -317,46 +317,6 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         </select>
                     </div>
 
-                    {/* Generation Select */}
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Gjenerata</label>
-                        <select
-                            value={filters.generation_id || ''}
-                            onChange={(e) => handleChange('generation_id', e.target.value)}
-                            disabled={!filters.model_id}
-                            className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50 transition-colors"
-                        >
-                            <option value="">
-                                {filters.model_id ? 'Të gjitha gjeneratat' : 'Zgjidhni modelin së pari'}
-                            </option>
-                            {generations.map(g => (
-                                <option key={g.id} value={g.id}>
-                                    {g.name} {g.cars_qty ? `(${g.cars_qty})` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Variant (Grade) Select */}
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Varianti</label>
-                        <select
-                            value={filters.grade_iaai || ''}
-                            onChange={(e) => handleChange('grade_iaai', e.target.value)}
-                            disabled={!filters.model_id}
-                            className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50 transition-colors"
-                        >
-                            <option value="">
-                                {filters.model_id ? 'Të gjitha variantet' : 'Zgjidhni modelin së pari'}
-                            </option>
-                            {variants.map(v => (
-                                <option key={v.value} value={v.value}>
-                                    {v.label} {v.count ? `(${v.count})` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
                     {/* Year Range */}
                     <div>
                         <label className="block text-sm font-medium mb-2">Viti</label>
@@ -365,7 +325,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 <button
                                     key={year}
                                     onClick={() => handleChange('from_year', year.toString())}
-                                    className={`flex-shrink-0 px-4 py-2 text-xs font-medium rounded-lg border transition-all ${filters.from_year === year.toString()
+                                    className={`flex-shrink-0 px-2.5 py-1.5 text-[10px] font-medium rounded-lg border transition-all ${filters.from_year === year.toString()
                                         ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                                         : 'bg-background border-border hover:bg-muted'
                                         }`}
