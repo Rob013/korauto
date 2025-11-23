@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { X, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Search, ChevronRight } from "lucide-react";
 import { APIFilters } from "@/utils/catalog-filter";
+import { Slider } from "@/components/ui/slider";
 
 interface Manufacturer {
     id: number;
@@ -150,14 +151,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         others.sort((a, b) => b.count - a.count);
 
         return { popular, others };
-    }, [manufacturers, POPULAR_BRANDS]);
-
-    // Helper to get logo URL
-    const getLogoUrl = (manufacturer: Manufacturer) => {
-        return manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
-    };
-
-    const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+    }, [manufacturers]);
 
     // Get models for selected manufacturer
     const modelsList = filters.manufacturer_id
@@ -172,67 +166,120 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i);
 
-    const inputClass = "w-full h-10 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent pointer-events-auto cursor-pointer";
-    const labelClass = "block text-xs font-semibold mb-1 text-gray-900 dark:text-gray-100 pointer-events-none";
-    const subLabelClass = "block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5 pointer-events-none";
+    // Helper for filter row item
+    const FilterRow = ({ label, value, onClick }: { label: string; value?: string; onClick: () => void }) => (
+        <button
+            onClick={onClick}
+            className="w-full flex items-center justify-between py-3.5 px-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+        >
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>
+            <div className="flex items-center gap-2">
+                {value && <span className="text-xs text-primary font-medium">{value}</span>}
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+            </div>
+        </button>
+    );
+
+    // Get display values
+    const getYearValue = () => {
+        if (filters.from_year && filters.to_year) return `${filters.from_year} - ${filters.to_year}`;
+        if (filters.from_year) return `${filters.from_year}+`;
+        if (filters.to_year) return `deri ${filters.to_year}`;
+        return 'Të gjitha';
+    };
+
+    const getPriceValue = () => {
+        if (filters.buy_now_price_from && filters.buy_now_price_to) 
+            return `€${filters.buy_now_price_from} - €${filters.buy_now_price_to}`;
+        if (filters.buy_now_price_from) return `€${filters.buy_now_price_from}+`;
+        if (filters.buy_now_price_to) return `deri €${filters.buy_now_price_to}`;
+        return 'Të gjitha';
+    };
+
+    const getMileageValue = () => {
+        if (filters.odometer_from_km && filters.odometer_to_km) 
+            return `${filters.odometer_from_km} - ${filters.odometer_to_km} km`;
+        if (filters.odometer_from_km) return `${filters.odometer_from_km}+ km`;
+        if (filters.odometer_to_km) return `deri ${filters.odometer_to_km} km`;
+        return 'Të gjitha';
+    };
+
+    const selectedManufacturerName = manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.name || 'Të gjitha';
+    const selectedModelName = models.find(m => m.id.toString() === filters.model_id)?.name || 'Të gjitha';
 
     return (
-        <div className={className || "fixed inset-0 flex flex-col bg-white dark:bg-gray-900 z-50 overflow-hidden touch-action-manipulation"}>
+        <div className={className || "fixed inset-0 flex flex-col bg-background z-50 overflow-hidden"}>
             {/* Header */}
-            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                <div className="px-4 py-2.5">
-                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
-                        Filtrat e Kërkimit
-                    </h2>
+            <div className="flex-shrink-0 border-b border-border bg-background">
+                <div className="px-4 py-3 flex items-center justify-between">
+                    <h2 className="text-base font-bold">Filtrat e Kërkimit</h2>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.history.back()}
+                        className="h-8 w-8 p-0"
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
                 </div>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' }}>
-                <div className="px-3 py-3 space-y-2.5 pointer-events-auto">
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+                <div className="divide-y divide-border">
+                    {/* Main Filter Rows */}
+                    <FilterRow 
+                        label="Marka" 
+                        value={selectedManufacturerName !== 'Të gjitha' ? selectedManufacturerName : undefined}
+                        onClick={() => {/* TODO: Open manufacturer drawer */}}
+                    />
+                    
+                    <FilterRow 
+                        label="Modeli" 
+                        value={selectedModelName !== 'Të gjitha' ? selectedModelName : undefined}
+                        onClick={() => {/* TODO: Open model drawer */}}
+                    />
+                    
+                    <FilterRow 
+                        label="Viti" 
+                        value={getYearValue() !== 'Të gjitha' ? getYearValue() : undefined}
+                        onClick={() => {/* TODO: Open year drawer */}}
+                    />
+                    
+                    <FilterRow 
+                        label="Kilometrazha" 
+                        value={getMileageValue() !== 'Të gjitha' ? getMileageValue() : undefined}
+                        onClick={() => {/* TODO: Open mileage drawer */}}
+                    />
+                    
+                    <FilterRow 
+                        label="Çmimi" 
+                        value={getPriceValue() !== 'Të gjitha' ? getPriceValue() : undefined}
+                        onClick={() => {/* TODO: Open price drawer */}}
+                    />
 
-                    {/* BASIC FILTERS */}
-                    <div className="space-y-2.5">
-                        <h3 className="text-xs font-bold text-primary uppercase tracking-wide">
-                            Filtrat Bazë
-                        </h3>
-
-                        {/* Manufacturer */}
+                    {/* Temporary inline filters - will be replaced with drawers */}
+                    <div className="p-4 space-y-4 bg-muted/30">
+                        {/* Manufacturer Select */}
                         <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <label className={labelClass}>Marka</label>
-                                {selectedManufacturer && (
-                                    <img
-                                        src={getLogoUrl(selectedManufacturer)}
-                                        alt={selectedManufacturer.name}
-                                        className="h-5 w-5 object-contain"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                        }}
-                                    />
-                                )}
-                            </div>
+                            <label className="block text-sm font-medium mb-2">Marka</label>
                             <select
                                 value={filters.manufacturer_id || ''}
                                 onChange={(e) => {
                                     handleChange('manufacturer_id', e.target.value);
-                                    // Auto-apply on manufacturer change
                                     setTimeout(() => onApply?.(), 100);
                                 }}
-                                className={inputClass}
+                                className="w-full h-10 px-3 text-sm border border-border rounded-lg bg-background"
                             >
                                 <option value="">Të gjitha markat</option>
-                                {/* Popular Brands */}
                                 {manufacturersList.popular.map(m => (
                                     <option key={m.id} value={m.id}>
                                         {m.name} {m.count > 0 ? `(${m.count})` : ''}
                                     </option>
                                 ))}
-                                {/* Separator */}
                                 {manufacturersList.popular.length > 0 && manufacturersList.others.length > 0 && (
                                     <option disabled>──────────</option>
                                 )}
-                                {/* Other Brands */}
                                 {manufacturersList.others.map(m => (
                                     <option key={m.id} value={m.id}>
                                         {m.name} {m.count > 0 ? `(${m.count})` : ''}
@@ -241,18 +288,17 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             </select>
                         </div>
 
-                        {/* Model */}
+                        {/* Model Select */}
                         <div>
-                            <label className={labelClass}>Modeli</label>
+                            <label className="block text-sm font-medium mb-2">Modeli</label>
                             <select
                                 value={filters.model_id || ''}
                                 onChange={(e) => {
                                     handleChange('model_id', e.target.value);
-                                    // Auto-apply on model change
                                     setTimeout(() => onApply?.(), 100);
                                 }}
                                 disabled={!filters.manufacturer_id}
-                                className={inputClass + " disabled:opacity-50 disabled:cursor-not-allowed"}
+                                className="w-full h-10 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50"
                             >
                                 <option value="">
                                     {filters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
@@ -267,321 +313,141 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
                         {/* Year Range */}
                         <div>
-                            <label className={labelClass}>Viti</label>
-                            {/* Fast Year Selection */}
-                            <div className="flex gap-2 mb-2 overflow-x-auto pb-1 scrollbar-hide">
+                            <label className="block text-sm font-medium mb-2">Viti</label>
+                            <div className="flex gap-2 mb-3">
                                 {[2022, 2020, 2018, 2016].map(year => (
                                     <button
                                         key={year}
                                         onClick={() => handleChange('from_year', year.toString())}
-                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors whitespace-nowrap ${filters.from_year === year.toString()
-                                            ? 'bg-primary text-primary-foreground border-primary'
-                                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                            }`}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+                                            filters.from_year === year.toString()
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background border-border hover:bg-muted'
+                                        }`}
                                     >
                                         {year}+
                                     </button>
                                 ))}
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className={subLabelClass}>Nga</label>
-                                    <select
-                                        value={filters.from_year || ''}
-                                        onChange={(e) => handleChange('from_year', e.target.value)}
-                                        className={inputClass}
-                                    >
-                                        <option value="">Çdo vit</option>
-                                        {years.map(y => (
-                                            <option key={y} value={y}>{y}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className={subLabelClass}>Deri</label>
-                                    <select
-                                        value={filters.to_year || ''}
-                                        onChange={(e) => handleChange('to_year', e.target.value)}
-                                        className={inputClass}
-                                    >
-                                        <option value="">Çdo vit</option>
-                                        {years.map(y => (
-                                            <option key={y} value={y}>{y}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <select
+                                    value={filters.from_year || ''}
+                                    onChange={(e) => handleChange('from_year', e.target.value)}
+                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
+                                >
+                                    <option value="">Nga</option>
+                                    {years.map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={filters.to_year || ''}
+                                    onChange={(e) => handleChange('to_year', e.target.value)}
+                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
+                                >
+                                    <option value="">Deri</option>
+                                    {years.map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
-                        {/* Price */}
+                        {/* Mileage Range with Slider */}
                         <div>
-                            <label className={labelClass}>Çmimi (EUR)</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className={subLabelClass}>Nga</label>
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        value={filters.buy_now_price_from || ''}
-                                        onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
-                                        className={inputClass}
-                                    />
-                                </div>
-                                <div>
-                                    <label className={subLabelClass}>Deri</label>
-                                    <input
-                                        type="number"
-                                        placeholder="100000"
-                                        value={filters.buy_now_price_to || ''}
-                                        onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
-                                        className={inputClass}
-                                    />
-                                </div>
+                            <label className="block text-sm font-medium mb-2">Kilometrazha</label>
+                            <div className="text-xs text-muted-foreground text-center mb-3">
+                                {getMileageValue()}
+                            </div>
+                            <Slider
+                                min={0}
+                                max={300000}
+                                step={5000}
+                                value={[
+                                    parseInt(filters.odometer_from_km || '0'),
+                                    parseInt(filters.odometer_to_km || '300000')
+                                ]}
+                                onValueChange={(values) => {
+                                    handleChange('odometer_from_km', values[0].toString());
+                                    handleChange('odometer_to_km', values[1].toString());
+                                }}
+                                className="mb-2"
+                            />
+                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={filters.odometer_from_km || ''}
+                                    onChange={(e) => handleChange('odometer_from_km', e.target.value)}
+                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="300000"
+                                    value={filters.odometer_to_km || ''}
+                                    onChange={(e) => handleChange('odometer_to_km', e.target.value)}
+                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
+                                />
                             </div>
                         </div>
 
-                        {/* Mileage */}
+                        {/* Price Range with Slider */}
                         <div>
-                            <label className={labelClass}>Kilometrazha (KM)</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className={subLabelClass}>Nga</label>
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        value={filters.odometer_from_km || ''}
-                                        onChange={(e) => handleChange('odometer_from_km', e.target.value)}
-                                        className={inputClass}
-                                    />
-                                </div>
-                                <div>
-                                    <label className={subLabelClass}>Deri</label>
-                                    <input
-                                        type="number"
-                                        placeholder="300000"
-                                        value={filters.odometer_to_km || ''}
-                                        onChange={(e) => handleChange('odometer_to_km', e.target.value)}
-                                        className={inputClass}
-                                    />
-                                </div>
+                            <label className="block text-sm font-medium mb-2">Çmimi (EUR)</label>
+                            <div className="text-xs text-muted-foreground text-center mb-3">
+                                {getPriceValue()}
+                            </div>
+                            <Slider
+                                min={0}
+                                max={100000}
+                                step={1000}
+                                value={[
+                                    parseInt(filters.buy_now_price_from || '0'),
+                                    parseInt(filters.buy_now_price_to || '100000')
+                                ]}
+                                onValueChange={(values) => {
+                                    handleChange('buy_now_price_from', values[0].toString());
+                                    handleChange('buy_now_price_to', values[1].toString());
+                                }}
+                                className="mb-2"
+                            />
+                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={filters.buy_now_price_from || ''}
+                                    onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
+                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="100000"
+                                    value={filters.buy_now_price_to || ''}
+                                    onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
+                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
+                                />
                             </div>
                         </div>
                     </div>
-
-                    {/* ADVANCED FILTERS TOGGLE */}
-                    <button
-                        onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="w-full flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                    >
-                        <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                            Filtrat Avancuar
-                        </span>
-                        {showAdvanced ? (
-                            <ChevronUp className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        ) : (
-                            <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        )}
-                    </button>
-
-                    {/* ADVANCED FILTERS */}
-                    {showAdvanced && (
-                        <div className="space-y-2.5">
-                            <h3 className="text-xs font-bold text-primary uppercase tracking-wide">
-                                Më shumë opcione
-                            </h3>
-
-                            {/* Fuel Type */}
-                            <div>
-                                <label className={labelClass}>Lloji i karburantit</label>
-                                <select
-                                    value={filters.fuel_type || ''}
-                                    onChange={(e) => handleChange('fuel_type', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo lloj</option>
-                                    {Object.entries(FUEL_TYPES).map(([name, id]) => (
-                                        <option key={id} value={id}>
-                                            {name} {filterCounts?.fuelTypes?.[id] ? `(${filterCounts.fuelTypes[id]})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Transmission */}
-                            <div>
-                                <label className={labelClass}>Transmisioni</label>
-                                <select
-                                    value={filters.transmission || ''}
-                                    onChange={(e) => handleChange('transmission', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo transmision</option>
-                                    {Object.entries(TRANSMISSIONS).map(([name, id]) => (
-                                        <option key={id} value={id}>
-                                            {name} {filterCounts?.transmissions?.[id] ? `(${filterCounts.transmissions[id]})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Body Type */}
-                            <div>
-                                <label className={labelClass}>Lloji i trupit</label>
-                                <select
-                                    value={filters.body_type || ''}
-                                    onChange={(e) => handleChange('body_type', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo lloj</option>
-                                    {Object.entries(BODY_TYPES).map(([name, id]) => (
-                                        <option key={id} value={id}>
-                                            {name} {filterCounts?.bodyTypes?.[id] ? `(${filterCounts.bodyTypes[id]})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Color */}
-                            <div>
-                                <label className={labelClass}>Ngjyra</label>
-                                <select
-                                    value={filters.color || ''}
-                                    onChange={(e) => handleChange('color', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo ngjyrë</option>
-                                    {Object.entries(COLORS).map(([name, id]) => (
-                                        <option key={id} value={id}>
-                                            {name} {filterCounts?.colors?.[id] ? `(${filterCounts.colors[id]})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Drive Type */}
-                            <div>
-                                <label className={labelClass}>Tipi i nxitjes</label>
-                                <select
-                                    value={filters.drive_type || ''}
-                                    onChange={(e) => handleChange('drive_type', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo tip</option>
-                                    {DRIVE_TYPES.map(type => (
-                                        <option key={type} value={type}>{type}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Steering Position */}
-                            <div>
-                                <label className={labelClass}>Pozicioni i timonit</label>
-                                <select
-                                    value={filters.steering_position || ''}
-                                    onChange={(e) => handleChange('steering_position', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo pozicion</option>
-                                    {STEERING_POSITIONS.map(pos => (
-                                        <option key={pos} value={pos}>{pos}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Engine Displacement */}
-                            <div>
-                                <label className={labelClass}>Vëllimi i motorit (L)</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className={subLabelClass}>Nga</label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            placeholder="0.0"
-                                            value={filters.engine_from || ''}
-                                            onChange={(e) => handleChange('engine_from', e.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className={subLabelClass}>Deri</label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            placeholder="10.0"
-                                            value={filters.engine_to || ''}
-                                            onChange={(e) => handleChange('engine_to', e.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Seats */}
-                            <div>
-                                <label className={labelClass}>Numri i ulëseve</label>
-                                <select
-                                    value={filters.seats_count || ''}
-                                    onChange={(e) => handleChange('seats_count', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo numër</option>
-                                    {[2, 4, 5, 6, 7, 8, 9].map(seats => (
-                                        <option key={seats} value={seats}>{seats} ulëse</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Doors */}
-                            <div>
-                                <label className={labelClass}>Numri i dyerve</label>
-                                <select
-                                    value={filters.doors_count || ''}
-                                    onChange={(e) => handleChange('doors_count', e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Çdo numër</option>
-                                    {[2, 3, 4, 5].map(doors => (
-                                        <option key={doors} value={doors}>{doors} dyer</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Search Button - Under Advanced Filters */}
-                    {showAdvanced && (
-                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <Button
-                                onClick={onApply}
-                                className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
-                            >
-                                <Search className="h-4 w-4" />
-                                Kërko Makinat
-                            </Button>
-                        </div>
-                    )}
                 </div>
             </div>
 
-            {/* Fixed Bottom Buttons - Only Clear Filters */}
-            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
-                {!showAdvanced && (
-                    <Button
-                        onClick={onApply}
-                        className="w-full h-11 mb-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
-                    >
-                        <Search className="h-4 w-4" />
-                        Kërko Makinat
-                    </Button>
-                )}
+            {/* Fixed Bottom Buttons */}
+            <div className="flex-shrink-0 border-t border-border bg-background p-3 space-y-2">
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
-                    className="w-full h-9 font-semibold text-xs"
+                    className="w-full h-11 font-semibold"
                 >
-                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    <X className="h-4 w-4 mr-2" />
                     Pastro Filtrat
+                </Button>
+                <Button
+                    onClick={onApply}
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm"
+                >
+                    <Search className="h-4 w-4 mr-2" />
+                    Kërko Makinat
                 </Button>
             </div>
         </div>
