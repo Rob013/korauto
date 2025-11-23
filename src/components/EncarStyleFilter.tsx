@@ -72,10 +72,12 @@ interface EncarStyleFilterProps {
   onClearFilters: () => void;
   onManufacturerChange?: (manufacturerId: string) => void;
   onModelChange?: (modelId: string) => void;
+  onGenerationChange?: (generationId: string) => void;
   showAdvanced?: boolean;
   onToggleAdvanced?: () => void;
   loadingCounts?: boolean;
-  onFetchGrades?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchGrades?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
+  onFetchGenerations?: (modelId?: string) => Promise<{ id: number; name: string; cars_qty?: number }[]>;
   onFetchTrimLevels?: (manufacturerId?: string, modelId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   onFetchEngines?: (manufacturerId?: string, modelId?: string, generationId?: string) => Promise<{ value: string; label: string; count?: number }[]>;
   isHomepage?: boolean;
@@ -96,9 +98,11 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onClearFilters,
   onManufacturerChange,
   onModelChange,
+  onGenerationChange,
   showAdvanced = false,
   onToggleAdvanced,
   onFetchGrades,
+  onFetchGenerations,
   onFetchTrimLevels,
   onFetchEngines,
   isHomepage = false,
@@ -113,15 +117,38 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const [isLoading, setIsLoading] = useState(false);
   const loadingTimerRef = useRef<number | null>(null);
 
+  const [generations, setGenerations] = useState<{ id: number; name: string; cars_qty?: number }[]>([]);
+  const [isLoadingGenerations, setIsLoadingGenerations] = useState(false);
+
   const [grades, setGrades] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
 
-  // Fetch grades when model changes
+  // Fetch generations when model changes
+  useEffect(() => {
+    if (filters.model_id && onFetchGenerations) {
+      setIsLoadingGenerations(true);
+      const timeoutId = setTimeout(() => {
+        onFetchGenerations(filters.model_id)
+          .then(generationData => {
+            if (Array.isArray(generationData)) {
+              setGenerations(generationData);
+            }
+          })
+          .finally(() => setIsLoadingGenerations(false));
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setGenerations([]);
+      setIsLoadingGenerations(false);
+    }
+  }, [filters.model_id, onFetchGenerations]);
+
+  // Fetch grades (variants) when model or generation changes
   useEffect(() => {
     if (filters.manufacturer_id && filters.model_id && onFetchGrades) {
       setIsLoadingGrades(true);
       const timeoutId = setTimeout(() => {
-        onFetchGrades(filters.manufacturer_id, filters.model_id)
+        onFetchGrades(filters.manufacturer_id, filters.model_id, filters.generation_id)
           .then(gradeData => {
             if (Array.isArray(gradeData)) {
               setGrades(gradeData);
@@ -134,7 +161,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
       setGrades([]);
       setIsLoadingGrades(false);
     }
-  }, [filters.manufacturer_id, filters.model_id, onFetchGrades]);
+  }, [filters.manufacturer_id, filters.model_id, filters.generation_id, onFetchGrades]);
 
   // Show loading only if the update actually takes longer than a threshold to avoid flicker.
   const startLoadingWithDelay = useCallback((delayMs: number = 180) => {
@@ -165,18 +192,22 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
     // Instant response - no loading delays
     if (key === 'manufacturer_id') {
-      // Reset model, grade, and engine when manufacturer changes
-      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, grade_iaai: undefined, engine_spec: undefined });
+      // Reset model, generation, grade, and engine when manufacturer changes
+      onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, generation_id: undefined, grade_iaai: undefined, engine_spec: undefined });
       onManufacturerChange?.(actualValue || '');
     } else if (key === 'model_id') {
-      // Reset grade and engine when model changes
-      onFiltersChange({ ...filters, model_id: actualValue, grade_iaai: undefined, engine_spec: undefined });
+      // Reset generation, grade and engine when model changes
+      onFiltersChange({ ...filters, model_id: actualValue, generation_id: undefined, grade_iaai: undefined, engine_spec: undefined });
       onModelChange?.(actualValue || '');
+    } else if (key === 'generation_id') {
+      // Reset grade when generation changes
+      onFiltersChange({ ...filters, generation_id: actualValue, grade_iaai: undefined });
+      onGenerationChange?.(actualValue || '');
     } else {
       const updatedFilters = { ...filters, [key]: actualValue };
       onFiltersChange(updatedFilters);
     }
-  }, [filters, onFiltersChange, onManufacturerChange, onModelChange]);
+  }, [filters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
 
   const handleSearchClick = useCallback(() => {
     if (onSearchCars) {
@@ -263,9 +294,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
     const scopedModels = filters.manufacturer_id
       ? modelsList.filter(model => {
-          const manufacturerId = (model as any).manufacturer_id;
-          return manufacturerId ? manufacturerId.toString() === filters.manufacturer_id : true;
-        })
+        const manufacturerId = (model as any).manufacturer_id;
+        return manufacturerId ? manufacturerId.toString() === filters.manufacturer_id : true;
+      })
       : modelsList;
 
     const enabledModels = scopedModels.filter(model => (model.cars_qty || model.car_count || 0) > 0);
@@ -841,7 +872,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                             : "outline"
                         }
                         size="sm"
-                        className="h-7 px-2 text-xs"
+                        className="h-6 px-1.5 text-[10px]"
                         onClick={() => handleYearRangePreset(preset)}
                       >
                         {preset.label}
@@ -852,7 +883,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-xs text-muted-foreground"
+                        className="h-6 px-1.5 text-[10px] text-muted-foreground"
                         onClick={() => onFiltersChange({
                           ...filters,
                           from_year: undefined,
@@ -897,16 +928,34 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Cog className="h-3 w-3" />
-                  Grada/Motori
+                  Gjenerata
+                </Label>
+                <AdaptiveSelect
+                  value={filters.generation_id || 'all'}
+                  onValueChange={(value) => updateFilter('generation_id', value)}
+                  disabled={!filters.model_id || isLoadingGenerations}
+                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGenerations ? "Loading..." : "Zgjidhni gjeneratën"}
+                  options={[
+                    ...(!(isStrictMode && filters.generation_id) ? [{ value: 'all', label: 'Të gjitha gjeneratat' }] : []),
+                    ...generations.map((gen) => ({ value: gen.id.toString(), label: `${gen.name}${gen.cars_qty ? ` (${gen.cars_qty})` : ''}` }))
+                  ]}
+                  forceNative
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Cog className="h-3 w-3" />
+                  Varianti
                 </Label>
                 <AdaptiveSelect
                   value={filters.grade_iaai || 'all'}
                   onValueChange={(value) => updateFilter('grade_iaai', value)}
                   disabled={!filters.model_id || isLoadingGrades}
-                  placeholder={!filters.manufacturer_id ? "Select brand first" : !filters.model_id ? "Select model first" : isLoadingGrades ? "Loading..." : "Select generation"}
+                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGrades ? "Loading..." : "Zgjidhni variantin"}
                   options={[
-                    ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha gradat' }] : []),
-                    ...grades.map((grade) => ({ value: grade.value, label: grade.label }))
+                    ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha variantet' }] : []),
+                    ...grades.map((grade) => ({ value: grade.value, label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}` }))
                   ]}
                   forceNative
                 />
