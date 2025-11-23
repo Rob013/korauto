@@ -434,7 +434,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                       : "outline"
                   }
                   size="sm"
-                  className="h-6 px-2 text-xs"
+                  className="h-6 px-1.5 text-[10px]"
                   onClick={() => handleYearRangePreset(preset)}
                 >
                   {preset.label}

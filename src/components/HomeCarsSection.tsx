@@ -193,7 +193,7 @@ const HomeCarsSection = memo(() => {
 
         // Check in lots array
         if (car.lots && Array.isArray(car.lots)) {
-          hasMatchingGrade = car.lots.some((lot: any) => 
+          hasMatchingGrade = car.lots.some((lot: any) =>
             lot.grade_iaai && (lot.grade_iaai || '').toString().toLowerCase().includes(targetGrade)
           );
         }
@@ -216,9 +216,9 @@ const HomeCarsSection = memo(() => {
       if (filters.search && filters.search.trim()) {
         const searchTerm = filters.search.toLowerCase();
         const searchFields = [
-          car.manufacturer?.name || '', 
-          car.model?.name || '', 
-          car.title || '', 
+          car.manufacturer?.name || '',
+          car.model?.name || '',
+          car.title || '',
           car.vin || ''
         ].filter(Boolean).join(" ").toLowerCase();
         if (!searchFields.includes(searchTerm)) {
@@ -242,13 +242,13 @@ const HomeCarsSection = memo(() => {
     const cleanedCars = filterOutTestCars(sourceCars);
     // Filter to show cars that have real pricing (buy_now, final_bid, or price)
     const carsWithRealPricing = filterCarsWithRealPricing(cleanedCars);
-    
+
     return carsWithRealPricing.map(car => {
       // Calculate EUR price using current exchange rate from the best available price
       const lot = car.lots?.[0];
       const priceUSD = Number(lot?.buy_now || lot?.final_bid || lot?.price || (car as any).buy_now || (car as any).final_bid || (car as any).price || 0);
       const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
-      
+
       return {
         ...car,
         price_eur: priceEUR, // Add calculated EUR price
@@ -484,135 +484,158 @@ const HomeCarsSection = memo(() => {
       setIsLoadingGenerations(false);
     }
   };
+
   const handleClearFilters = () => {
     // Frontend-only filter clearing - no API calls needed
     setFilters({});
     setPendingFilters({});
   };
+
+  // Generation change handler
+  const handleGenerationChange = async (generationId: string) => {
+    console.log('Generation changed:', generationId);
+    // Generations are primarily for filtering in catalog, so we redirect
+  };
+
   return <section ref={ref} id="cars" className={`py-4 sm:py-6 lg:py-8 bg-secondary/30 transition-all duration-1000 ${isInView ? 'animate-fade-in-up' : 'opacity-0'}`}>
-      <div className="container-responsive">
-        <div className="text-center mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground gradient-text">
-            Makinat e Disponueshme
-          </h2>
+    <div className="container-responsive">
+      <div className="text-center mb-4 sm:mb-6">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-foreground gradient-text">
+          Makinat e Disponueshme
+        </h2>
 
-          
-        </div>
 
-        {error && <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mx-2 sm:mx-0">
-            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-            <span className="text-blue-800 dark:text-blue-200 text-sm sm:text-base text-left sm:text-center">
-              {cars.length === 0 ? "Shfaqen makina të përzgjedhura. Për përditësime të reja, kontaktoni: +38348181116" : "Problem me lidhjen API: Disa funksione mund të jenë të kufizuara."}
-            </span>
-          </div>}
+      </div>
 
-        {/* Filter Form */}
-        {showFilters && <div className="mb-6 sm:mb-8">
-            <EncarStyleFilter filters={pendingFilters} manufacturers={manufacturers.length > 0 ? manufacturers : fallbackManufacturers} models={models} filterCounts={filterCounts} onFiltersChange={handleFiltersChange} onClearFilters={handleClearFilters} onManufacturerChange={handleManufacturerChange} onModelChange={handleModelChange} onFetchGrades={fetchGrades} onFetchTrimLevels={fetchTrimLevels} isHomepage={true} onSearchCars={handleSearchCars} />
-          </div>}
+      {error && <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-2 mb-6 sm:mb-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mx-2 sm:mx-0">
+        <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+        <span className="text-blue-800 dark:text-blue-200 text-sm sm:text-base text-left sm:text-center">
+          {cars.length === 0 ? "Shfaqen makina të përzgjedhura. Për përditësime të reja, kontaktoni: +38348181116" : "Problem me lidhjen API: Disa funksione mund të jenë të kufizuara."}
+        </span>
+      </div>}
 
-        {/* Daily Selection Badge */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            Zgjedhja e Ditës - {new Date().getDate()}{" "}
-            {new Date().toLocaleDateString("sq-AL", {
+      {/* Filter Form */}
+      {showFilters && <div className="mb-6 sm:mb-8">
+        <EncarStyleFilter
+          filters={pendingFilters}
+          manufacturers={manufacturers.length > 0 ? manufacturers : fallbackManufacturers}
+          models={models}
+          filterCounts={filterCounts}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+          onManufacturerChange={handleManufacturerChange}
+          onModelChange={handleModelChange}
+          onGenerationChange={handleGenerationChange}
+          onFetchGrades={fetchGrades}
+          onFetchGenerations={fetchGenerations}
+          onFetchTrimLevels={fetchTrimLevels}
+          isHomepage={true}
+          onSearchCars={handleSearchCars}
+        />
+      </div>}
+
+      {/* Daily Selection Badge */}
+      <div className="text-center mb-6 sm:mb-8">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+          Zgjedhja e Ditës - {new Date().getDate()}{" "}
+          {new Date().toLocaleDateString("sq-AL", {
             month: "long"
           })}
-          </div>
         </div>
-
-        {/* Sort Control */}
-        <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
-          
-        </div>
-
-        {/* Car Cards */}
-        {showInitialSkeleton ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 stagger-animation">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="modern-card p-4 pulse-enhanced">
-                <div className="h-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-4"></div>
-                <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-2"></div>
-                <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded w-3/4"></div>
-              </div>
-            ))}
-          </div>
-        ) : showEmptyState ? (
-          <div className="text-center py-8 sm:py-12 px-4">
-            <p className="text-base sm:text-lg text-muted-foreground mb-4">
-              Nuk ka makina të disponueshme.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div
-              className={cn(
-                "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container",
-                isInView && "stagger-animation",
-                (loading || isShowcaseTransitioning) &&
-                  "opacity-80 transition-opacity duration-200 motion-reduce:transition-none",
-              )}
-            >
-              {smoothDisplayedCars.map((car) => {
-                const lot = car.lots?.[0];
-                const usdPrice = Number(
-                  lot?.buy_now ||
-                    lot?.final_bid ||
-                    lot?.price ||
-                    (car as any).buy_now ||
-                    (car as any).final_bid ||
-                    (car as any).price ||
-                    0,
-                );
-                const price =
-                  usdPrice > 0 ? calculateFinalPriceEUR(usdPrice, exchangeRate.rate) : 0;
-                return (
-                  <LazyCarCard
-                    key={car.id}
-                    id={car.id}
-                    make={car.manufacturer?.name || "Unknown"}
-                    model={car.model?.name || "Unknown"}
-                    year={car.year}
-                    price={price}
-                    image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
-                    vin={car.vin}
-                    mileage={
-                      lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined
-                    }
-                    transmission={car.transmission?.name}
-                    fuel={resolveFuelFromSources(car, lot) || undefined}
-                    color={car.color?.name}
-                    condition={car.condition?.replace("run_and_drives", "Good")}
-                    lot={car.lot_number || lot?.lot}
-                    title={car.title}
-                    status={Number(car.status || lot?.status || 1)}
-                    sale_status={car.sale_status || lot?.sale_status}
-                    final_price={car.final_price || lot?.final_price}
-                    insurance_v2={(lot as any)?.insurance_v2}
-                    details={(lot as any)?.details}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Show More Button */}
-            <div className="text-center mt-8">
-              {carsToDisplay.length > defaultDisplayCount && !showAllCars && (
-                <Button
-                  onClick={() => setShowAllCars(true)}
-                  variant="outline"
-                  size="lg"
-                  className="btn-enhanced bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
-                >
-                  Shiko të gjitha ({carsToDisplay.length} makina)
-                </Button>
-              )}
-            </div>
-          </>
-        )}
       </div>
-    </section>;
+
+      {/* Sort Control */}
+      <div className="mb-6 sm:mb-8 mx-2 sm:mx-0">
+
+      </div>
+
+      {/* Car Cards */}
+      {showInitialSkeleton ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 stagger-animation">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="modern-card p-4 pulse-enhanced">
+              <div className="h-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-4"></div>
+              <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-2"></div>
+              <div className="h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
+      ) : showEmptyState ? (
+        <div className="text-center py-8 sm:py-12 px-4">
+          <p className="text-base sm:text-lg text-muted-foreground mb-4">
+            Nuk ka makina të disponueshme.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div
+            className={cn(
+              "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 px-2 sm:px-0 mobile-card-container",
+              isInView && "stagger-animation",
+              (loading || isShowcaseTransitioning) &&
+              "opacity-80 transition-opacity duration-200 motion-reduce:transition-none",
+            )}
+          >
+            {smoothDisplayedCars.map((car) => {
+              const lot = car.lots?.[0];
+              const usdPrice = Number(
+                lot?.buy_now ||
+                lot?.final_bid ||
+                lot?.price ||
+                (car as any).buy_now ||
+                (car as any).final_bid ||
+                (car as any).price ||
+                0,
+              );
+              const price =
+                usdPrice > 0 ? calculateFinalPriceEUR(usdPrice, exchangeRate.rate) : 0;
+              return (
+                <LazyCarCard
+                  key={car.id}
+                  id={car.id}
+                  make={car.manufacturer?.name || "Unknown"}
+                  model={car.model?.name || "Unknown"}
+                  year={car.year}
+                  price={price}
+                  image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]}
+                  vin={car.vin}
+                  mileage={
+                    lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined
+                  }
+                  transmission={car.transmission?.name}
+                  fuel={resolveFuelFromSources(car, lot) || undefined}
+                  color={car.color?.name}
+                  condition={car.condition?.replace("run_and_drives", "Good")}
+                  lot={car.lot_number || lot?.lot}
+                  title={car.title}
+                  status={Number(car.status || lot?.status || 1)}
+                  sale_status={car.sale_status || lot?.sale_status}
+                  final_price={car.final_price || lot?.final_price}
+                  insurance_v2={(lot as any)?.insurance_v2}
+                  details={(lot as any)?.details}
+                />
+              );
+            })}
+          </div>
+
+          {/* Show More Button */}
+          <div className="text-center mt-8">
+            {carsToDisplay.length > defaultDisplayCount && !showAllCars && (
+              <Button
+                onClick={() => setShowAllCars(true)}
+                variant="outline"
+                size="lg"
+                className="btn-enhanced bg-card border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3"
+              >
+                Shiko të gjitha ({carsToDisplay.length} makina)
+              </Button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  </section>;
 });
 HomeCarsSection.displayName = "HomeCarsSection";
 export default HomeCarsSection;
