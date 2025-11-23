@@ -27,11 +27,11 @@ interface CarPart {
   markerPos?: { x: number; y: number };
 }
 
-const BASE_MARKER_RADIUS = 4.5;
-const BASE_MARKER_OUTER_RADIUS = 7;
-const BASE_MARKER_STROKE_WIDTH = 1;
-const BASE_MARKER_SPACING = 9;
-const BASE_MARKER_FONT_SIZE = 7.5;
+const BASE_MARKER_RADIUS = 9;
+const BASE_MARKER_OUTER_RADIUS = 13;
+const BASE_MARKER_STROKE_WIDTH = 2;
+const BASE_MARKER_SPACING = 18;
+const BASE_MARKER_FONT_SIZE = 12;
 
 const POSITIVE_STATUS_CODES = new Set([
   "",
@@ -330,32 +330,64 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
   const titleMatchesPart = useCallback((title: string, partId: string) => {
     const t = title.toLowerCase().replace(/\s+/g, ' ').trim();
 
+    // Comprehensive Korean and English part name mappings
+    const koreanPatterns: Record<string, string> = {
+      '후드': 'hood',
+      '프론트 도어(우)': 'front_right_door',
+      '프론트 도어(좌)': 'front_left_door',
+      '리어 도어(우)': 'rear_right_door',
+      '리어 도어(좌)': 'rear_left_door',
+      '프론트 휠더(우)': 'right_fender',
+      '프론트 휠더(좌)': 'left_fender',
+      '쿼터 패널(우)': 'right_quarter',
+      '쿼터 패널(좌)': 'left_quarter',
+      '프론트 범퍼': 'front_bumper',
+      '리어 범퍼': 'rear_bumper',
+      '트럭크 플로어': 'trunk',
+      '프론트 휠하우스(우)': 'right_fender',
+      '프론트 휠하우스(좌)': 'left_fender',
+      '인사이드 패널(우)': 'right_quarter',
+      '인사이드 패널(좌)': 'left_quarter',
+      '루프 패널': 'roof'
+    };
+
+    // Check Korean exact matches first
+    for (const [korean, partId] of Object.entries(koreanPatterns)) {
+      if (title.includes(korean) || t.includes(korean.toLowerCase())) {
+        return partId === partId;
+      }
+    }
+
     // Strict regex-based mappings to avoid false positives
     const patterns: Array<{ re: RegExp; id: string }> = [
-      // Doors
-      { re: /(front\s*)?door.*(left|\blh\b)/i, id: 'front_left_door' },
-      { re: /(front\s*)?door.*(right|\brh\b)/i, id: 'front_right_door' },
-      { re: /rear\s*door.*(left|\blh\b)/i, id: 'rear_left_door' },
-      { re: /rear\s*door.*(right|\brh\b)/i, id: 'rear_right_door' },
-      // Quarters and wheel house
-      { re: /(quarter\s*panel|quarter).*\b(left|lh)\b/i, id: 'left_quarter' },
-      { re: /(quarter\s*panel|quarter).*\b(right|rh)\b/i, id: 'right_quarter' },
-      { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(left|lh)\b/i, id: 'left_quarter' },
+      // Doors with Korean support
+      { re: /(프론트|앞|front).{0,5}(도어|door).{0,5}(우|우측|right|\brh\b|右)/i, id: 'front_right_door' },
+      { re: /(프론트|앞|front).{0,5}(도어|door).{0,5}(좌|좌측|left|\blh\b|左)/i, id: 'front_left_door' },
+      { re: /(리어|뒤|rear).{0,5}(도어|door).{0,5}(우|우측|right|\brh\b|右)/i, id: 'rear_right_door' },
+      { re: /(리어|뒤|rear).{0,5}(도어|door).{0,5}(좌|좌측|left|\blh\b|左)/i, id: 'rear_left_door' },
+      // Fenders with Korean support
+      { re: /(프론트|앞|front).{0,5}(휠더|페더|fender|휠하우스|wheel\s*house).{0,5}(우|우측|right|\brh\b|右)/i, id: 'right_fender' },
+      { re: /(프론트|앞|front).{0,5}(휠더|페더|fender|휠하우스|wheel\s*house).{0,5}(좌|좌측|left|\blh\b|左)/i, id: 'left_fender' },
+      // Quarters with Korean support
+      { re: /(쿼터|quarter|인사이드|inside).{0,5}(패널|panel).{0,5}(우|우측|right|\brh\b|右)/i, id: 'right_quarter' },
+      { re: /(쿼터|quarter|인사이드|inside).{0,5}(패널|panel).{0,5}(좌|좌캁|left|\blh\b|左)/i, id: 'left_quarter' },
       { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(right|rh)\b/i, id: 'right_quarter' },
+      { re: /(rear).*(wheel\s*house|wheelhouse|wheel\s*arch).*\b(left|lh)\b/i, id: 'left_quarter' },
       // Side sills
       { re: /(side\s*sill|sill).*\b(left|lh)\b/i, id: 'side_sill_left' },
       { re: /(side\s*sill|sill).*\b(right|rh)\b/i, id: 'side_sill_right' },
-      // Bumpers
-      { re: /front\s*bumper/i, id: 'front_bumper' },
-      { re: /rear\s*bumper/i, id: 'rear_bumper' },
-      // Trunk floor
-      { re: /trunk\s*floor/i, id: 'trunk' },
-      // Fenders
-      { re: /(front\s*)?fender.*\b(left|lh)\b/i, id: 'left_fender' },
-      { re: /(front\s*)?fender.*\b(right|rh)\b/i, id: 'right_fender' },
+      // Bumpers with Korean
+      { re: /(프론트|앞|front).{0,5}(범퍼|bumper)/i, id: 'front_bumper' },
+      { re: /(리어|뒤|rear).{0,5}(범퍼|bumper)/i, id: 'rear_bumper' },
+      // Hood with Korean
+      { re: /후드|hood|bonnet/i, id: 'hood' },
+      // Trunk with Korean
+      { re: /(트럭크|트럭크리드|trunk|boot).{0,5}(floor|플로어)?/i, id: 'trunk' },
+      // Roof
+      { re: /루프|roof|ceiling/i, id: 'roof' },
     ];
 
-    const matched = patterns.find((m) => m.re.test(t));
+    const matched = patterns.find((m) => m.re.test(t) || m.re.test(title));
     if (!matched) return false;
     return matched.id === partId;
   }, []);
@@ -369,7 +401,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     }
 
     const deriveStatuses = (item: InspectionItem): Array<{ code: string; title: string }> => {
-      const statuses: Array<{ code: string; title: string }> = Array.isArray(item?.statusTypes)
+      let statuses: Array<{ code: string; title: string }> = Array.isArray(item?.statusTypes)
         ? [...item.statusTypes]
         : [];
       const attrs = Array.isArray((item as any)?.attributes)
@@ -405,11 +437,59 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
         }
       }
 
-      return statuses;
+      // Filter out positive/normal statuses - only return actual issues
+      const filteredStatuses = statuses.filter(status => {
+        const code = (status.code || "").toString().toUpperCase().trim();
+        const title = (status.title || "").toString().toLowerCase().trim();
+
+        // Empty status - ignore
+        if (!code && !title) {
+          console.log('[CarInspectionDiagram] Filtering out empty status:', { code, title });
+          return false;
+        }
+
+        // Check if it's a positive status (ignore these)
+        if (POSITIVE_STATUS_CODES.has(code)) {
+          console.log('[CarInspectionDiagram] Filtering out positive code:', code);
+          return false;
+        }
+
+        if (POSITIVE_STATUS_KEYWORDS.some(keyword => title.includes(keyword))) {
+          console.log('[CarInspectionDiagram] Filtering out positive keyword in title:', title);
+          return false;
+        }
+
+        // ONLY include if it explicitly indicates replacement, welding, or repair
+        // Be very strict - only X, W, A codes or explicit Korean/English keywords
+        const isReplacement =
+          code === 'X' || code === 'N' ||
+          title.includes('exchange') || title.includes('replacement') || title.includes('replaced') || title.includes('교환');
+
+        const isWelding =
+          code === 'W' || code === 'S' ||
+          title.includes('weld') || title.includes('sheet metal') || title.includes('용접') || title.includes('판금');
+
+        const isRepair =
+          code === 'A' || code === 'R' ||
+          title.includes('repair') || title.includes('수리');
+
+        const isActualIssue = isReplacement || isWelding || isRepair;
+
+        if (isActualIssue) {
+          console.log('[CarInspectionDiagram] Including status with actual issue:', { code, title });
+        } else {
+          console.log('[CarInspectionDiagram] Filtering out non-critical status:', { code, title });
+        }
+
+        return isActualIssue;
+      });
+
+      return filteredStatuses;
     };
 
     inspectionData.forEach((item) => {
       const statuses = deriveStatuses(item);
+
       if (statuses.length === 0) {
         return;
       }
@@ -484,10 +564,12 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
     // RED for critical replacements/exchanges
     if (hasExchange) return 'hsl(0 84% 60%)';
-    // BLUE for welding
-    if (hasWelding) return 'hsl(217 91% 60%)';
-    // ORANGE for repairs and corrosion
-    if (hasRepair || hasCorrosion) return 'hsl(25 95% 53%)';
+    // BLUE for repairs
+    if (hasRepair) return 'hsl(217 91% 60%)';
+    // ORANGE for welding/sheet metal
+    if (hasWelding) return 'hsl(25 95% 53%)';
+    // ORANGE for corrosion
+    if (hasCorrosion) return 'hsl(25 95% 53%)';
     // YELLOW for scratches
     if (hasScratch) return 'hsl(48 96% 53%)';
 
@@ -504,8 +586,8 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
     const hasScratch = statuses.some((s) => s.code === 'S');
 
     if (hasExchange) return 'Pjesë e zëvendësuar (Rreth i kuq)';
-    if (hasWelding) return 'Saldim i kryer (Rreth blu)';
-    if (hasRepair) return 'Pjesë e riparuar (Rreth portokalli)';
+    if (hasRepair) return 'Pjesë e riparuar (Rreth blu)';
+    if (hasWelding) return 'Saldim i kryer (Rreth portokalli)';
     if (hasCorrosion) return 'Ndryshk i vogël (Rreth portokalli)';
     if (hasScratch) return 'Gërvishje (Rreth i verdhë)';
 
@@ -662,17 +744,17 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                 </div>
                 <div className="flex items-center justify-between p-1.5 rounded-lg bg-blue-600/10">
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold shadow-sm">S</span>
-                    Saldime
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold shadow-sm">R</span>
+                    Riparime
                   </span>
-                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(217 91% 60%)', color: 'white' }}>{issueCount.welds}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(217 91% 60%)', color: 'white' }}>{issueCount.repairs}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-1.5 rounded-lg" style={{ backgroundColor: 'hsl(25 95% 53% / 0.1)' }}>
                   <span className="text-xs flex items-center gap-1">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{ backgroundColor: 'hsl(25 95% 53%)' }}>R</span>
-                    Riparime
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold shadow-sm" style={{ backgroundColor: 'hsl(25 95% 53%)' }}>S</span>
+                    Saldime
                   </span>
-                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(25 95% 53%)', color: 'white' }}>{issueCount.repairs}</Badge>
+                  <Badge className="font-mono text-xs" style={{ backgroundColor: 'hsl(25 95% 53%)', color: 'white' }}>{issueCount.welds}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-1.5 rounded-lg" style={{ backgroundColor: 'hsl(25 95% 53% / 0.1)' }}>
                   <span className="text-xs flex items-center gap-1">
@@ -782,13 +864,14 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                           const markers: Array<{ char: string; color: string }> = [];
 
                           if (hasExchange) markers.push({ char: 'N', color: 'hsl(0 84% 60%)' });
-                          if (hasWeld) markers.push({ char: 'S', color: 'hsl(217 91% 60%)' });
-                          if (hasRepair) markers.push({ char: 'R', color: 'hsl(25 95% 53%)' });
+                          if (hasRepair) markers.push({ char: 'R', color: 'hsl(217 91% 60%)' });
+                          if (hasWeld) markers.push({ char: 'S', color: 'hsl(25 95% 53%)' });
                           if (hasCorrosion) markers.push({ char: 'K', color: 'hsl(25 95% 53%)' });
                           if (hasScratch) markers.push({ char: 'G', color: 'hsl(48 96% 53%)' });
-                          if (shouldShowOnlyPositive) {
-                            markers.push({ char: 'O', color: 'hsl(142 76% 36%)' });
-                          }
+                          // Don't show green markers for normal parts
+
+                          // Only render if there are actual issues
+                          if (markers.length === 0) return null;
 
                           const n = markers.length;
                           const base = PRECISE_MARKER_POSITIONS[part.id] ?? part.markerPos ?? part.labelPos;
@@ -797,48 +880,44 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                           return markers.map((m, idx) => {
                             const offset = (idx - (n - 1) / 2) * spacing;
                             const cx = base.x + offset;
-                            const cy =
-                              base.y +
-                              (n > 2 ? (idx % 2 === 0 ? -markerSizing.verticalOffset : markerSizing.verticalOffset) : 0);
+                            const cy = base.y - markerSizing.verticalOffset;
+
+                            // Build tooltip text
+                            const tooltipText = `${part.name}: ${getStatusText(statuses)}`;
 
                             return (
-                              <g key={`${part.id}-mrk-${idx}`}>
-                                {/* Outer glow for better visibility */}
+                              <g key={`${part.id}-marker-${idx}`}>
+                                <title>{tooltipText}</title>
+                                {/* Outer glow circle */}
                                 <circle
                                   cx={cx}
                                   cy={cy}
                                   r={markerSizing.outerRadius}
                                   fill={m.color}
-                                  fillOpacity={0.2}
+                                  opacity="0.3"
                                   filter="url(#glow)"
                                 />
-                                {/* Main marker */}
+                                {/* Main marker circle */}
                                 <circle
                                   cx={cx}
                                   cy={cy}
                                   r={markerSizing.radius}
                                   fill={m.color}
-                                  fillOpacity={0.45}
-                                  stroke={m.color}
+                                  stroke="white"
                                   strokeWidth={markerSizing.strokeWidth}
-                                  filter={isHovered || isSelected ? "url(#glow)" : undefined}
-                                  className="transition-all duration-200"
+                                  className="drop-shadow-lg"
                                 />
+                                {/* Status code letter */}
                                 <text
                                   x={cx}
                                   y={cy}
                                   textAnchor="middle"
                                   dominantBaseline="central"
-                                  fontSize={markerSizing.fontSize}
-                                  fontWeight={800}
                                   fill="white"
+                                  fontSize={markerSizing.fontSize}
+                                  fontWeight="900"
                                   className="pointer-events-none select-none"
-                                  style={{
-                                    textShadow: "1px 1px 3px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.4)",
-                                    paintOrder: "stroke fill",
-                                  }}
-                                  stroke={m.color}
-                                  strokeWidth="0.75"
+                                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                                 >
                                   {m.char}
                                 </text>

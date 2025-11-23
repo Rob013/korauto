@@ -1169,25 +1169,28 @@ const EncarCatalog = ({
         fixed lg:sticky lg:top-4 lg:self-start z-40 glass-card transition-transform duration-300 ease-in-out
         ${showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${!showFilters && 'lg:block hidden'}
-        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform'}
+        ${isMobile ? 'mobile-filter-panel top-0 left-0 right-0 bottom-0 w-full rounded-none h-full flex flex-col' : 'w-80 md:w-72 lg:w-80 xl:w-96 flex-shrink-0 rounded-lg shadow-lg will-change-transform lg:h-[calc(100vh-2rem)] lg:flex lg:flex-col'}
       `}>
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100">
-            {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
-          </h3>
+      {/* Header */}
+      {isMobile && (
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100">
+              {isMobile ? 'Filtrat e Kërkimit' : 'Filters'}
+            </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={handleClearFilters} className="h-8 px-2 text-xs hover:bg-primary-foreground/20 text-primary-foreground">
+              <span>Clear</span>
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowFilters(false); setHasExplicitlyClosed(true); }} className="h-8 px-2 text-xs hover:bg-primary-foreground/20 text-primary-foreground" title="Mbyll filtrat">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={handleClearFilters} className="h-8 px-2 text-xs hover:bg-primary-foreground/20 text-primary-foreground">
-            <span>Clear</span>
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => { setShowFilters(false); setHasExplicitlyClosed(true); }} className="h-8 px-2 text-xs hover:bg-primary-foreground/20 text-primary-foreground" title="Mbyll filtrat">
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Mobile Filter Panel – rendered as an overlay independent of catalog layout */}
       {isMobile && (
@@ -1209,284 +1212,286 @@ const EncarCatalog = ({
       )}
 
       {/* Main catalog content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* ... existing catalog list rendering ... */}
-        console.log("Close filter called, isMobile:", isMobile);
-        // Close the filter panel on mobile only; keep open on desktop
-        if (isMobile) {
-          setShowFilters(false);
-        setHasExplicitlyClosed(true);
-          }
-        }}
-        onFetchEngines={fetchEngines}
-        className={isMobile ? "!shadow-none !border-none !rounded-none !max-w-none !mx-0 !w-full !p-2" : ""}
-      />
+      <div className={!isMobile ? "flex-1 flex flex-col overflow-hidden" : "flex-1 overflow-y-auto"}>
+        {!isMobile && (
+          <MobileFiltersPanel
+            filters={filters}
+            manufacturers={manufacturers}
+            models={models}
+            filterCounts={filterCounts}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={handleClearFilters}
+            onApply={() => {
+              // No-op for desktop as updates are live, or could trigger a scroll to top
+            }}
+            onManufacturerChange={handleManufacturerChange}
+            className="w-full h-full flex flex-col bg-white dark:bg-gray-900 rounded-lg overflow-hidden"
+          />
+        )}
 
         {/* Mobile Apply/Close Filters Button - Enhanced */}
         {isMobile && <div className="mt-4 pt-3 border-t space-y-2 flex-shrink-0">
           {/* Apply/Close button removed per Issue #3 */}
         </div>}
       </div>
-        )}
     </div>
-  </div >
 
-  {/* Overlay for mobile - stronger backdrop on mobile */ }
-  {
-    showFilters && <div className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'}`} onClick={() => {
-      // Only close on mobile via overlay click
-      if (isMobile) {
-        setShowFilters(false);
-        setHasExplicitlyClosed(true); // Mark as explicitly closed
-      }
-    }} />
-  }
+    {/* Overlay for mobile - stronger backdrop on mobile */}
+    {
+      showFilters && <div className={`fixed inset-0 z-30 lg:hidden transition-opacity duration-300 ${isMobile ? 'bg-black/70 backdrop-blur-md' : 'bg-black/50 backdrop-blur-sm'}`} onClick={() => {
+        // Only close on mobile via overlay click
+        if (isMobile) {
+          setShowFilters(false);
+          setHasExplicitlyClosed(true); // Mark as explicitly closed
+        }
+      }} />
+    }
 
-  {/* Main Content */ }
-  <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300 lg:ml-6`}>
-    <div className="container-responsive py-3 sm:py-6 mobile-text-optimize max-w-[1600px]">
-      {/* Header Section - Mobile optimized */}
-      <div className="flex flex-col gap-3 mb-4">
-        {/* Top row: Back button and filter button */}
-        <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full flex-nowrap">
-          {/* Left group: Back and Filter buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            <Button type="button" variant="ghost" size="sm" onClick={() => window.history.back()} className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 sm:h-9 px-2 sm:px-3">
-              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="text-xs sm:text-sm whitespace-nowrap">Back</span>
-            </Button>
+    {/* Main Content */}
+    <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300 lg:ml-6`}>
+      <div className="container-responsive py-3 sm:py-6 mobile-text-optimize max-w-[1600px]">
+        {/* Header Section - Mobile optimized */}
+        <div className="flex flex-col gap-3 mb-4">
+          {/* Top row: Back button and filter button */}
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full flex-nowrap">
+            {/* Left group: Back and Filter buttons */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <Button type="button" variant="ghost" size="sm" onClick={() => window.history.back()} className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground transition-colors h-8 sm:h-9 px-2 sm:px-3">
+                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm whitespace-nowrap">Back</span>
+              </Button>
 
-            {/* Filter Toggle Button - Mobile only */}
-            <Button type="button" variant="default" size="sm" onClick={handleFilterToggle} className="lg:hidden flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform">
-              {showFilters ? <PanelLeftClose className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <PanelLeftOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-              <span className="whitespace-nowrap">{showFilters ? 'Fshih' : 'Filtrat'}</span>
-              {hasSelectedCategories && !showFilters && <span className="ml-1 text-xs bg-primary-foreground/20 px-1.5 py-0.5 rounded-full">
-                {Object.values(filters).filter(Boolean).length}
-              </span>}
-            </Button>
-          </div>
+              {/* Filter Toggle Button - Mobile only */}
+              <Button type="button" variant="default" size="sm" onClick={handleFilterToggle} className="lg:hidden flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 font-semibold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-transform">
+                {showFilters ? <PanelLeftClose className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <PanelLeftOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                <span className="whitespace-nowrap">{showFilters ? 'Fshih' : 'Filtrat'}</span>
+                {hasSelectedCategories && !showFilters && <span className="ml-1 text-xs bg-primary-foreground/20 px-1.5 py-0.5 rounded-full">
+                  {Object.values(filters).filter(Boolean).length}
+                </span>}
+              </Button>
+            </div>
 
-          {/* Right group: View and Sort controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
-            {/* View Mode Toggle Button */}
-            <Button type="button" variant="outline" size="sm" onClick={handleViewModeToggle} className="h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1 transition-colors hover:bg-accent" title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}>
-              {viewMode === 'grid' ? <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Grid3X3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-              <span className="text-xs sm:text-sm whitespace-nowrap">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
-            </Button>
+            {/* Right group: View and Sort controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
+              {/* View Mode Toggle Button */}
+              <Button type="button" variant="outline" size="sm" onClick={handleViewModeToggle} className="h-8 sm:h-9 px-2 sm:px-3 flex items-center gap-1 transition-colors hover:bg-accent" title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}>
+                {viewMode === 'grid' ? <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Grid3X3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                <span className="text-xs sm:text-sm whitespace-nowrap">{viewMode === 'grid' ? 'List' : 'Grid'}</span>
+              </Button>
 
-            {/* Sort Control */}
-            <div className="relative flex-shrink-0">
-              <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
-              <AdaptiveSelect value={sortBy} onValueChange={(value: SortOption) => {
-                setSortBy(value);
-                setHasUserSelectedSort(true);
-                setCurrentPage(1);
-                const currentParams = Object.fromEntries(searchParams.entries());
-                currentParams.page = '1';
-                setSearchParams(currentParams);
-              }} placeholder="Sort" className="w-36 sm:w-44 h-8 sm:h-9 text-xs sm:text-sm pl-6" options={getEncarSortOptions().map(option => ({
-                value: option.value,
-                label: option.label
-              }))} />
+              {/* Sort Control */}
+              <div className="relative flex-shrink-0">
+                <ArrowUpDown className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none" />
+                <AdaptiveSelect value={sortBy} onValueChange={(value: SortOption) => {
+                  setSortBy(value);
+                  setHasUserSelectedSort(true);
+                  setCurrentPage(1);
+                  const currentParams = Object.fromEntries(searchParams.entries());
+                  currentParams.page = '1';
+                  setSearchParams(currentParams);
+                }} placeholder="Sort" className="w-36 sm:w-44 h-8 sm:h-9 text-xs sm:text-sm pl-6" options={getEncarSortOptions().map(option => ({
+                  value: option.value,
+                  label: option.label
+                }))} />
+              </div>
             </div>
           </div>
+
+          {/* AI Search Bar */}
+
+
+          {/* Title and count from API */}
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Katalogu i makinave
+            </h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">
+              {loading ? (
+                <span className="inline-flex items-center gap-2 animate-pulse">
+                  <Loader2
+                    className="h-4 w-4 text-primary animate-spin"
+                    aria-hidden="true"
+                  />
+                  <span className="font-medium">Loading...</span>
+                </span>
+              ) : (
+                <>
+                  <span className="font-semibold text-foreground">{animatedTotalCount.toLocaleString()}</span> vetura të disponueshme
+                </>
+              )}
+            </p>
+          </div>
         </div>
 
-        {/* AI Search Bar */}
+        {/* Error State */}
+        {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
+          <p className="text-destructive font-medium">Error: {error}</p>
+        </div>}
 
+        {/* Loading State - Only for initial load, not for filters */}
+        {loading && cars.length === 0 || isRestoringState ? <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <LoadingLogo size="lg" />
+        </div> : null}
 
-        {/* Title and count from API */}
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Katalogu i makinave
-          </h1>
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            {loading ? (
-              <span className="inline-flex items-center gap-2 animate-pulse">
-                <Loader2
-                  className="h-4 w-4 text-primary animate-spin"
-                  aria-hidden="true"
-                />
-                <span className="font-medium">Loading...</span>
-              </span>
-            ) : (
-              <>
-                <span className="font-semibold text-foreground">{animatedTotalCount.toLocaleString()}</span> vetura të disponueshme
-              </>
-            )}
+        {/* No Selection State */}
+        {!shouldShowCars && !loading && !isRestoringState && <div className="text-center py-16">
+          <div className="max-w-md mx-auto">
+            <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Zgjidhni markën dhe modelin</h3>
+            <p className="text-muted-foreground mb-6">
+              Për të parë makinat, ju duhet të zgjidhni së paku markën dhe modelin e makinës.
+            </p>
+            <Button variant="outline" onClick={() => setShowFilters(true)} className="flex items-center gap-2 mx-auto">
+              <Filter className="h-4 w-4" />
+              Open Filters
+            </Button>
+          </div>
+        </div>}
+
+        {/* No Results State */}
+        {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            No cars found matching your filters.
           </p>
-        </div>
-      </div>
-
-      {/* Error State */}
-      {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-        <p className="text-destructive font-medium">Error: {error}</p>
-      </div>}
-
-      {/* Loading State - Only for initial load, not for filters */}
-      {loading && cars.length === 0 || isRestoringState ? <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <LoadingLogo size="lg" />
-      </div> : null}
-
-      {/* No Selection State */}
-      {!shouldShowCars && !loading && !isRestoringState && <div className="text-center py-16">
-        <div className="max-w-md mx-auto">
-          <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Zgjidhni markën dhe modelin</h3>
-          <p className="text-muted-foreground mb-6">
-            Për të parë makinat, ju duhet të zgjidhni së paku markën dhe modelin e makinës.
-          </p>
-          <Button variant="outline" onClick={() => setShowFilters(true)} className="flex items-center gap-2 mx-auto">
-            <Filter className="h-4 w-4" />
-            Open Filters
+          <Button variant="outline" onClick={handleClearFilters} className="mt-4">
+            Clear Filters
           </Button>
-        </div>
-      </div>}
-
-      {/* No Results State */}
-      {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && <div className="text-center py-12">
-        <p className="text-muted-foreground">
-          No cars found matching your filters.
-        </p>
-        <Button variant="outline" onClick={handleClearFilters} className="mt-4">
-          Clear Filters
-        </Button>
-      </div>}
-
-      {/* Filter Loading State - Only when no cars and not in main loading */}
-      {isFilterLoading && cars.length === 0 && !loading && !isRestoringState && <div className="flex items-center justify-center py-12">
-        <LoadingLogo size="lg" />
-      </div>}
-
-      {/* Cars Grid/List - Show cars without requiring filters */}
-      {shouldShowCars && cars.length > 0 && <div className="relative">
-        {/* Loading Overlay for Cars Grid - Only on desktop or when not conflicting with main loading */}
-        {isFilterLoading && !loading && !isRestoringState && !isMobile && <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-          <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
-            <LoadingLogo size="md" />
-          </div>
         </div>}
 
-        <div
-          ref={containerRef}
-          className={cn(
-            "transition-all duration-300 motion-safe:transition-opacity motion-reduce:transition-none",
-            viewMode === "list"
-              ? "flex flex-col gap-2 sm:gap-3"
-              : "grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-1 sm:px-2",
-            (isFilterLoading || loading || isCarsTransitioning) && "opacity-80",
-          )}
-        >
-          {renderableCars.map((car: CarWithRank | any) => {
-            const lot = car.lots?.[0];
-            // Only use buy_now price, no fallbacks
-            const usdPrice = lot?.buy_now;
-            const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
-            const lotNumber = car.lot_number || lot?.lot || "";
-            return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
-              <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
-                vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} viewMode={viewMode} />
-            </div>;
-          })}
-        </div>
+        {/* Filter Loading State - Only when no cars and not in main loading */}
+        {isFilterLoading && cars.length === 0 && !loading && !isRestoringState && <div className="flex items-center justify-center py-12">
+          <LoadingLogo size="lg" />
+        </div>}
 
-        {/* Pagination Controls - replace Load More button */}
-        {!showAllCars && totalPages > 1 && <div className="flex flex-col items-center py-8 space-y-4">
-          {/* Page Info */}
-          <div className="text-center text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages.toLocaleString()} • {renderableCars.length} cars shown
+        {/* Cars Grid/List - Show cars without requiring filters */}
+        {shouldShowCars && cars.length > 0 && <div className="relative">
+          {/* Loading Overlay for Cars Grid - Only on desktop or when not conflicting with main loading */}
+          {isFilterLoading && !loading && !isRestoringState && !isMobile && <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+            <div className="bg-card border border-border rounded-lg p-6 shadow-lg">
+              <LoadingLogo size="md" />
+            </div>
+          </div>}
+
+          <div
+            ref={containerRef}
+            className={cn(
+              "transition-all duration-300 motion-safe:transition-opacity motion-reduce:transition-none",
+              viewMode === "list"
+                ? "flex flex-col gap-2 sm:gap-3"
+                : "grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-1 sm:px-2",
+              (isFilterLoading || loading || isCarsTransitioning) && "opacity-80",
+            )}
+          >
+            {renderableCars.map((car: CarWithRank | any) => {
+              const lot = car.lots?.[0];
+              // Only use buy_now price, no fallbacks
+              const usdPrice = lot?.buy_now;
+              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+              const lotNumber = car.lot_number || lot?.lot || "";
+              return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
+                <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
+                  vin={car.vin} mileage={lot?.odometer?.km ? `${lot.odometer.km.toLocaleString()} km` : undefined} transmission={car.transmission?.name} fuel={resolveFuelFromSources(car, lot) || undefined} color={car.color?.name} lot={car.lot_number || lot?.lot || ""} title={car.title || ""} status={Number(car.status || lot?.status || 1)} sale_status={car.sale_status || lot?.sale_status} final_price={car.final_price || lot?.final_price} insurance_v2={(lot as any)?.insurance_v2} details={(lot as any)?.details} source={(car as any)?.domain?.name || (car as any)?.domain_name || (car as any)?.source_api} viewMode={viewMode} />
+              </div>;
+            })}
           </div>
 
-          {/* Pagination Navigation */}
-          <div className="flex items-center space-x-2">
-            {/* First Page */}
-            <Button variant="outline" size="sm" onClick={() => handlePageChange(1)} disabled={currentPage === 1 || loading} className="h-8 px-3">
-              First
-            </Button>
-
-            {/* Previous Page */}
-            <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1 || loading} className="h-8 px-3">
-              Previous
-            </Button>
-
-            {/* Page Numbers */}
-            <div className="flex space-x-1">
-              {(() => {
-                const maxVisible = 5;
-                const half = Math.floor(maxVisible / 2);
-                let start = Math.max(1, currentPage - half);
-                let end = Math.min(totalPages, start + maxVisible - 1);
-
-                // Adjust start if we're near the end
-                if (end - start < maxVisible - 1) {
-                  start = Math.max(1, end - maxVisible + 1);
-                }
-                const pages = [];
-
-                // Show first page if not in range
-                if (start > 1) {
-                  pages.push(<Button key={1} variant={1 === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(1)} disabled={loading} className="h-8 px-3">
-                    1
-                  </Button>);
-                  if (start > 2) {
-                    pages.push(<span key="ellipsis-start" className="px-2 text-muted-foreground">
-                      ...
-                    </span>);
-                  }
-                }
-
-                // Show page range
-                for (let i = start; i <= end; i++) {
-                  pages.push(<Button key={i} variant={i === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(i)} disabled={loading} className="h-8 px-3">
-                    {i.toLocaleString()}
-                  </Button>);
-                }
-
-                // Show last page if not in range
-                if (end < totalPages) {
-                  if (end < totalPages - 1) {
-                    pages.push(<span key="ellipsis-end" className="px-2 text-muted-foreground">
-                      ...
-                    </span>);
-                  }
-                  pages.push(<Button key={totalPages} variant={totalPages === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(totalPages)} disabled={loading} className="h-8 px-3">
-                    {totalPages.toLocaleString()}
-                  </Button>);
-                }
-                return pages;
-              })()}
+          {/* Pagination Controls - replace Load More button */}
+          {!showAllCars && totalPages > 1 && <div className="flex flex-col items-center py-8 space-y-4">
+            {/* Page Info */}
+            <div className="text-center text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages.toLocaleString()} • {renderableCars.length} cars shown
             </div>
 
-            {/* Next Page */}
-            <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages || loading} className="h-8 px-3">
-              Next
-            </Button>
+            {/* Pagination Navigation */}
+            <div className="flex items-center space-x-2">
+              {/* First Page */}
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(1)} disabled={currentPage === 1 || loading} className="h-8 px-3">
+                First
+              </Button>
 
-            {/* Last Page */}
-            <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages || loading} className="h-8 px-3">
-              Last
-            </Button>
-          </div>
+              {/* Previous Page */}
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1 || loading} className="h-8 px-3">
+                Previous
+              </Button>
 
-          {/* Go to Page Input */}
-          <div className="flex items-center space-x-2 text-sm">
-            <span className="text-muted-foreground">Go to page:</span>
-            <Input type="number" min={1} max={totalPages} value={currentPage} onChange={e => {
-              const page = parseInt(e.target.value);
-              if (page >= 1 && page <= totalPages) {
-                handlePageChange(page);
-              }
-            }} className="w-20 h-8 text-center" />
-            <span className="text-muted-foreground">of {totalPages.toLocaleString()}</span>
-          </div>
+              {/* Page Numbers */}
+              <div className="flex space-x-1">
+                {(() => {
+                  const maxVisible = 5;
+                  const half = Math.floor(maxVisible / 2);
+                  let start = Math.max(1, currentPage - half);
+                  let end = Math.min(totalPages, start + maxVisible - 1);
+
+                  // Adjust start if we're near the end
+                  if (end - start < maxVisible - 1) {
+                    start = Math.max(1, end - maxVisible + 1);
+                  }
+                  const pages = [];
+
+                  // Show first page if not in range
+                  if (start > 1) {
+                    pages.push(<Button key={1} variant={1 === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(1)} disabled={loading} className="h-8 px-3">
+                      1
+                    </Button>);
+                    if (start > 2) {
+                      pages.push(<span key="ellipsis-start" className="px-2 text-muted-foreground">
+                        ...
+                      </span>);
+                    }
+                  }
+
+                  // Show page range
+                  for (let i = start; i <= end; i++) {
+                    pages.push(<Button key={i} variant={i === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(i)} disabled={loading} className="h-8 px-3">
+                      {i.toLocaleString()}
+                    </Button>);
+                  }
+
+                  // Show last page if not in range
+                  if (end < totalPages) {
+                    if (end < totalPages - 1) {
+                      pages.push(<span key="ellipsis-end" className="px-2 text-muted-foreground">
+                        ...
+                      </span>);
+                    }
+                    pages.push(<Button key={totalPages} variant={totalPages === currentPage ? "default" : "outline"} size="sm" onClick={() => handlePageChange(totalPages)} disabled={loading} className="h-8 px-3">
+                      {totalPages.toLocaleString()}
+                    </Button>);
+                  }
+                  return pages;
+                })()}
+              </div>
+
+              {/* Next Page */}
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages || loading} className="h-8 px-3">
+                Next
+              </Button>
+
+              {/* Last Page */}
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages || loading} className="h-8 px-3">
+                Last
+              </Button>
+            </div>
+
+            {/* Go to Page Input */}
+            <div className="flex items-center space-x-2 text-sm">
+              <span className="text-muted-foreground">Go to page:</span>
+              <Input type="number" min={1} max={totalPages} value={currentPage} onChange={e => {
+                const page = parseInt(e.target.value);
+                if (page >= 1 && page <= totalPages) {
+                  handlePageChange(page);
+                }
+              }} className="w-20 h-8 text-center" />
+              <span className="text-muted-foreground">of {totalPages.toLocaleString()}</span>
+            </div>
+          </div>}
+
+          {/* Loading indicator for load more */}
+          {loading && cars.length > 0 && <div className="flex justify-center py-8">
+            <LoadingLogo size="md" />
+          </div>}
         </div>}
-
-        {/* Loading indicator for load more */}
-        {loading && cars.length > 0 && <div className="flex justify-center py-8">
-          <LoadingLogo size="md" />
-        </div>}
-      </div>}
+      </div>
     </div>
-  </div>
   </div >;
 };
 export default EncarCatalog;

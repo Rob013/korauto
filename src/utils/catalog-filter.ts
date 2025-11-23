@@ -19,6 +19,8 @@ export interface APIFilters {
   color?: string;
   fuel_type?: string;
   transmission?: string;
+  drive_type?: string;
+  steering_position?: string;
   body_type?: string;
   odometer_from_km?: string;
   odometer_to_km?: string;
@@ -26,8 +28,11 @@ export interface APIFilters {
   to_year?: string;
   buy_now_price_from?: string;
   buy_now_price_to?: string;
-  search?: string;
+  engine_from?: string;
+  engine_to?: string;
+  doors_count?: string;
   seats_count?: string;
+  search?: string;
   max_accidents?: string;
   domain_name?: string;
   per_page?: string;

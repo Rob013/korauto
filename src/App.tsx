@@ -34,7 +34,7 @@ const CarInspectionReport = lazyWithPreload(() => import("./pages/CarInspectionR
 const AdminDashboard = lazyWithPreload(() => import("./pages/AdminDashboard"));
 const AuthPage = lazyWithPreload(() => import("./pages/AuthPage"));
 const EmailConfirmationPage = lazyWithPreload(() => import("./pages/EmailConfirmationPage"));
-const FavoritesPage = lazyWithPreload(() => import("./pages/FavoritesPage"));
+// const FavoritesPage = lazyWithPreload(() => import("./pages/FavoritesPage"));
 const InspectionServices = lazyWithPreload(() => import("./pages/InspectionServices"));
 const MyAccount = lazyWithPreload(() => import("./pages/MyAccount"));
 const NotFound = lazyWithPreload(() => import("./pages/NotFound"));
@@ -154,8 +154,8 @@ const App = () => {
         CarInspectionReport.preload?.();
         preloadRouteResources('car-details');
       },
-      '/favorites': () => { FavoritesPage.preload?.(); },
-      '/favorites/*': () => { FavoritesPage.preload?.(); },
+      // '/favorites': () => { FavoritesPage.preload?.(); },
+      // '/favorites/*': () => { FavoritesPage.preload?.(); },
       '/inspections': () => { InspectionServices.preload?.(); },
       '/contacts': () => { Contacts.preload?.(); },
       '/tracking': () => {
@@ -292,7 +292,7 @@ const App = () => {
                     <Route path="/auth" element={renderWithTransition(AuthPage)} />
                     <Route path="/auth/confirm" element={renderWithTransition(EmailConfirmationPage)} />
                     <Route path="/account" element={renderWithTransition(MyAccount)} />
-                    <Route path="/favorites" element={renderWithTransition(FavoritesPage)} />
+                    {/* <Route path="/favorites" element={renderWithTransition(FavoritesPage)} /> */}
                     <Route path="/inspections" element={renderWithTransition(InspectionServices)} />
                     <Route path="/warranty" element={renderWithTransition(Warranty)} />
                     <Route path="/contacts" element={renderWithTransition(Contacts)} />

@@ -35,6 +35,7 @@ interface MobileFiltersPanelProps {
     onClearFilters: () => void;
     onApply: () => void;
     onManufacturerChange?: (manufacturerId: string) => void;
+    className?: string;
 }
 
 const FUEL_TYPES: Record<string, number> = {
@@ -86,7 +87,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     onFiltersChange,
     onClearFilters,
     onApply,
-    onManufacturerChange
+    onManufacturerChange,
+    className
 }) => {
 
     const [showAdvanced, setShowAdvanced] = useState(false);
@@ -148,7 +150,14 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         others.sort((a, b) => b.count - a.count);
 
         return { popular, others };
-    }, [manufacturers]);
+    }, [manufacturers, POPULAR_BRANDS]);
+
+    // Helper to get logo URL
+    const getLogoUrl = (manufacturer: Manufacturer) => {
+        return manufacturer.image || `https://auctionsapi.com/images/brands/${manufacturer.name}.svg`;
+    };
+
+    const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
 
     // Get models for selected manufacturer
     const modelsList = filters.manufacturer_id
@@ -168,7 +177,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     const subLabelClass = "block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5";
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-white dark:bg-gray-900 z-50 overflow-hidden touch-action-manipulation">
+        <div className={className || "fixed inset-0 flex flex-col bg-white dark:bg-gray-900 z-50 overflow-hidden touch-action-manipulation"}>
             {/* Header */}
             <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <div className="px-4 py-2.5">
@@ -188,9 +197,21 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             Filtrat Bazë
                         </h3>
 
-                        {/* Brand */}
+                        {/* Manufacturer */}
                         <div>
-                            <label className={labelClass}>Marka</label>
+                            <div className="flex items-center gap-2 mb-1">
+                                <label className={labelClass}>Marka</label>
+                                {selectedManufacturer && (
+                                    <img
+                                        src={getLogoUrl(selectedManufacturer)}
+                                        alt={selectedManufacturer.name}
+                                        className="h-5 w-5 object-contain"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                    />
+                                )}
+                            </div>
                             <select
                                 value={filters.manufacturer_id || ''}
                                 onChange={(e) => handleChange('manufacturer_id', e.target.value)}
@@ -239,6 +260,21 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         {/* Year Range */}
                         <div>
                             <label className={labelClass}>Viti</label>
+                            {/* Fast Year Selection */}
+                            <div className="flex gap-2 mb-2 overflow-x-auto pb-1 scrollbar-hide">
+                                {[2022, 2020, 2018, 2016].map(year => (
+                                    <button
+                                        key={year}
+                                        onClick={() => handleChange('from_year', year.toString())}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors whitespace-nowrap ${filters.from_year === year.toString()
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                            }`}
+                                    >
+                                        {year}+
+                                    </button>
+                                ))}
+                            </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <label className={subLabelClass}>Nga</label>

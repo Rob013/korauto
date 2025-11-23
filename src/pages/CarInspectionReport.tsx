@@ -10,7 +10,7 @@ import InspectionRequestForm from "@/components/InspectionRequestForm";
 import { DrivingInformationPanel } from "@/components/DrivingInformationPanel";
 import { VehicleHistoryPanel } from "@/components/VehicleHistoryPanel";
 import { AttentionHistoryPanel } from "@/components/AttentionHistoryPanel";
-import { InsuranceMaintenancePanel } from "@/components/InsuranceMaintenancePanel";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,8 @@ import {
   Shield,
   Users,
   Wrench,
+  ChevronDown,
+  ChevronUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -230,6 +232,55 @@ const mechanicalKeyPhraseTranslations: Record<string, string> = {
   "gear box": "Kutia e Marsheve",
   "clutch pedal": "Pedali i Kllaxhës",
   "coolant reservoir": "Depoja e Ftohësit",
+  "자기진단": "Vetë-diagnostikim",
+  "원동기": "Motori",
+  "변속기": "Transmisioni",
+  "동력전달": "Transmetimi i fuqisë",
+  "조향": "Drejtimi",
+  "제동": "Frenimi",
+  "전기": "Elektrika",
+  "연료": "Karburanti",
+  "리어 도어(우)": "Dera e pasme (Djathtas)",
+  "판금/용접": "Llamarina/Saldim",
+  "프론트 휠하우스(우)": "Shtëpiza e rrotës së përparme (Djathtas)",
+  "교환(교체)": "Ndërrim (Zëvendësim)",
+  "프론트 휀더(우)": "Fenderi i përparmë (Djathtas)",
+  "후드": "Kofano",
+  "인사이드 패널(우)": "Paneli i brendshëm (Djathtas)",
+  "쿼터 패널(우)": "Paneli çerek (Djathtas)",
+  "라디에이터 서포트(볼트체결부품)": "Mbështetësja e radiatorit (Me bulona)",
+  "프론트 도어(우)": "Dera e përparme (Djathtas)",
+  "자동변속기(a/t)": "Transmisioni automatik (A/T)",
+  "작동상태(공회전)": "Gjendja e funksionimit (Ralanti)",
+  "오일누유": "Rrjedhje vaji",
+  "수동변속기(m/t)": "Transmisioni manual (M/T)",
+  "작동상태": "Gjendja e funksionimit",
+  "공회전": "Ralanti",
+  "스티어링 기어(mdps포함)": "Ingranazhii i drejtimit (përfshirë MDPS)",
+  "mdps포함": "përfshirë MDPS",
+  "연료누출(lp가스포함)": "Rrjedhje karburanti (përfshirë LPG)",
+  "lp가스포함": "përfshirë LPG",
+  "실린더 헤드 커버(로커안 커버)": "Kapaku i cilindrit (kapaku i rocker arm-it)",
+  "실린더 헤드/가스켓": "Koka e cilindrit / garnitura",
+  "실린더 블록/오일팬": "Blloku i cilindrit / kartteri i vajit",
+  "오일량": "Sasia e vajit",
+  "워터펌프": "Pompa e ujit",
+  "라디에이터": "Radiatori",
+  "냉각수량": "Sasia e lëngu ftohës",
+  "등속조인트": "Nyja me shpejtësi konstante",
+  "차동기어": "Diferenciali",
+  "동력조향장치 오일누유": "Rrjedhje e vajit të servo-drejtimit",
+  "조향장치 조인트": "Nyja e drejtimit",
+  "타이로드엔드 및 볼조인트": "Fundi i shufrës së drejtimit dhe nyjat sferike",
+  "브레이크 마스터실린드 누유": "Rrjedhje nga cilindri kryesor i frenave",
+  "브레이크 누유": "Rrjedhje e vajit të frenave",
+  "백업부스터 기능": "Gjendja e servofrenit",
+  "발전기 출력": "Dalja e alternatorit",
+  "시동모터": "Motori i ndezjes",
+  "와이퍼모터 기능": "Funksioni i motorit të pastruesit të xhamit",
+  "블로워모터": "Motori i ventilimit të brendshëm",
+  "라디에이터팬모터": "Motori i ventilatorit të radiatorit",
+  "윈도모터": "Motorët e dritareve",
 };
 
 const mechanicalKeyExactTranslations: Record<string, string> = {
@@ -1023,6 +1074,7 @@ const CarInspectionReport = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAllStandard, setShowAllStandard] = useState(true);
   const [showAllChoice, setShowAllChoice] = useState(true);
+  const [isMechanicalExpanded, setIsMechanicalExpanded] = useState(false);
   const cacheHydratedRef = useRef(false);
 
   const persistReportToSession = useCallback((targetLot: string, payload: unknown) => {
@@ -1300,7 +1352,7 @@ const CarInspectionReport = () => {
         },
         ownerChanges,
         maintenanceHistory: [],
-        location: encarVehicle?.contact?.address,
+        location: translateKoreanText(encarVehicle?.contact?.address),
         grade: encarVehicle?.category?.gradeName,
         sourceLabel: encarVehicle?.category?.manufacturerName
           ? `Encars • ${encarVehicle.category.manufacturerName}`
@@ -2797,7 +2849,7 @@ const CarInspectionReport = () => {
       : undefined;
 
   const locationDisplay =
-    car.location?.name ??
+    (typeof car.location === "string" ? car.location : car.location?.name) ??
     (typeof car.details?.location === "string"
       ? car.details.location
       : car.details?.location?.name) ??
@@ -2859,7 +2911,7 @@ const CarInspectionReport = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Kthehu te makinat
         </Button>
-        <Tabs defaultValue="diagram" className="space-y-4">
+        <Tabs defaultValue="inspection" className="space-y-4">
           <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
             <TabsTrigger
               value="inspection"
@@ -2873,14 +2925,7 @@ const CarInspectionReport = () => {
               className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
             >
               <Clock className="h-4 w-4 text-primary" />
-              <span>Historia e Përdorimit</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="insurance"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
-            >
-              <AlertTriangle className="h-4 w-4 text-primary" />
-              <span>Aksidentet & Sigurimi</span>
+              <span>Historia e Vetures</span>
             </TabsTrigger>
             <TabsTrigger
               value="options"
@@ -2888,6 +2933,13 @@ const CarInspectionReport = () => {
             >
               <Cog className="h-4 w-4 text-primary" />
               <span>Pajisjet & Opsionet</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="warranty"
+              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+            >
+              <Shield className="h-4 w-4 text-primary" />
+              <span>Garancioni</span>
             </TabsTrigger>
           </TabsList>
 
@@ -2975,7 +3027,7 @@ const CarInspectionReport = () => {
                     </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3">
+                    <div className={`grid gap-1.5 md:gap-2 grid-cols-2 lg:grid-cols-3 ${!isMechanicalExpanded ? 'max-h-[280px] overflow-hidden md:max-h-none' : ''}`}>
                       {mechanicalStatusEntries.map(([key, value]) => {
                         const positive = isPositiveStatus(value);
                         return (
@@ -2997,6 +3049,26 @@ const CarInspectionReport = () => {
                           </div>
                         );
                       })}
+                    </div>
+                    <div className="md:hidden mt-3 flex justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsMechanicalExpanded(!isMechanicalExpanded)}
+                        className="w-full text-primary"
+                      >
+                        {isMechanicalExpanded ? (
+                          <>
+                            <ChevronUp className="h-4 w-4 mr-2" />
+                            Mshef detajet
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4 mr-2" />
+                            Shfaq të gjitha detajet
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -3046,25 +3118,211 @@ const CarInspectionReport = () => {
                 </Card>
               )}
             </div>
+          </TabsContent>
 
-            {/* Vehicle History Panel (Consolidated) */}
-            <VehicleHistoryPanel
-              manufacturer={car?.encarVehicle?.category?.manufacturerName || car?.make}
-              model={car?.encarVehicle?.category?.modelName || car?.model}
-              rating={car?.encarVehicle?.category?.gradeName}
-              yearOfManufacture={car?.year || (car?.encarVehicle?.category?.formYear ? parseInt(car.encarVehicle.category.formYear) : undefined)}
-              mileage={car?.encarVehicle?.spec?.mileage || car?.mileageKm || car?.odometer?.km}
-              productionDate={car?.encarRecord?.firstDate || car?.firstRegistration}
-              countryOfOrigin={car?.encarVehicle?.category?.domestic ? 'Korea' : 'E importuar'}
-              use={car?.encarRecord?.use || car?.encarRecordSummary?.use || 'Personale'}
-              newCarPrice={car?.encarVehicle?.category?.originPrice}
-              newCarReleasePrice={car?.encarVehicle?.category?.originPrice}
-              fuel={car?.encarVehicle?.spec?.fuelName || car?.fuel}
-              cityFuelConsumption="Nuk ka informacion"
-              highwayFuelConsumption="Nuk ka informacion"
-            />
+          {/* Insurance History & Mechanical System Tab */}
 
-            {/* Warranty Card (Consolidated) */}
+
+          {/* Options & Equipment Tab */}
+          <TabsContent value="options" className="space-y-4">
+            <Card className="shadow-md border-border/80">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Cog className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-xl">
+                    Pajisjet dhe Opsionet
+                  </CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Lista e plotë e pajisjeve standarde dhe opsionale
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Extra Options with Details */}
+                {car.details?.options_extra &&
+                  car.details.options_extra.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-accent"></div>
+                        <h3 className="text-base font-semibold text-foreground">
+                          Opsione Shtesë me Çmim
+                        </h3>
+                        <div className="flex-1 h-px bg-border"></div>
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {car.details.options_extra.length} opsione
+                        </span>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                        {car.details.options_extra.map(
+                          (option: any, idx: number) => {
+                            const translatedName =
+                              getOptionName(option.code) !== option.code
+                                ? getOptionName(option.code)
+                                : option.name || option.name_original;
+                            const priceKRW = option.price || 0;
+                            const priceInEur = Math.round(
+                              convertKRWtoEUR(priceKRW),
+                            );
+
+                            return (
+                              <Card key={idx} className="border-primary/20">
+                                <CardContent className="p-4 space-y-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1">
+                                      <h4 className="font-semibold text-base">
+                                        {translatedName}
+                                      </h4>
+                                      {option.name_original &&
+                                        translatedName !==
+                                        option.name_original && (
+                                          <p className="text-xs text-muted-foreground">
+                                            {option.name_original}
+                                          </p>
+                                        )}
+                                    </div>
+                                    {priceInEur > 0 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-sm font-bold"
+                                      >
+                                        {priceInEur.toLocaleString()}€
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {(getOptionDescription(option.code) ||
+                                    option.description) && (
+                                      <p className="text-sm text-muted-foreground leading-relaxed">
+                                        {getOptionDescription(option.code) ||
+                                          option.description}
+                                      </p>
+                                    )}
+                                </CardContent>
+                              </Card>
+                            );
+                          },
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Standard Options */}
+                {car.details?.options?.standard &&
+                  Array.isArray(car.details.options.standard) &&
+                  car.details.options.standard.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                        <h3 className="text-base font-semibold text-foreground">
+                          Pajisje Standarde
+                        </h3>
+                        <div className="flex-1 h-px bg-border"></div>
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {car.details.options.standard.length} pajisje
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                        {(showAllStandard
+                          ? car.details.options.standard
+                          : car.details.options.standard.slice(0, 6)
+                        ).map((optionCode: string, idx: number) => {
+                          const displayName = getOptionName(optionCode);
+                          return (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">
+                                {displayName}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {car.details.options.standard.length > 6 && (
+                        <div className="flex justify-center pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAllStandard(!showAllStandard)}
+                            className="h-9 px-4 text-sm text-primary hover:bg-primary/10 font-medium border-primary/30"
+                          >
+                            {showAllStandard
+                              ? `Më pak`
+                              : `Shfaq të gjitha (${car.details.options.standard.length - 6} më shumë)`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                {/* Choice Options */}
+                {car.details?.options?.choice &&
+                  Array.isArray(car.details.options.choice) &&
+                  car.details.options.choice.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-accent"></div>
+                        <h3 className="text-base font-semibold text-foreground">
+                          Opsione të Zgjedhura
+                        </h3>
+                        <div className="flex-1 h-px bg-border"></div>
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {car.details.options.choice.length} opsione
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                        {(showAllChoice
+                          ? car.details.options.choice
+                          : car.details.options.choice.slice(0, 6)
+                        ).map((optionCode: string, idx: number) => {
+                          const displayName = getOptionName(optionCode);
+                          return (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 p-2 bg-accent/5 border border-accent/20 rounded-md hover:bg-accent/10 hover:border-accent/30 transition-all duration-200 group"
+                            >
+                              <Cog className="h-3.5 w-3.5 text-accent flex-shrink-0" />
+                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight line-clamp-1">
+                                {displayName}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {car.details.options.choice.length > 6 && (
+                        <div className="flex justify-center pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAllChoice(!showAllChoice)}
+                            className="h-9 px-4 text-sm text-accent hover:bg-accent/10 font-medium border-accent/30"
+                          >
+                            {showAllChoice
+                              ? `Më pak`
+                              : `Shfaq të gjitha (${car.details.options.choice.length - 6} më shumë)`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                {(!car.details?.options_extra ||
+                  car.details.options_extra.length === 0) &&
+                  (!car.details?.options?.standard ||
+                    car.details.options.standard.length === 0) &&
+                  (!car.details?.options?.choice ||
+                    car.details.options.choice.length === 0) && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Cog className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>Nuk ka informata për pajisjet dhe opsionet</p>
+                    </div>
+                  )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="warranty" className="space-y-4">
             <Card className="shadow-md border-border/80">
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -3168,20 +3426,61 @@ const CarInspectionReport = () => {
             </Card>
           </TabsContent>
 
-          {/* Insurance History & Mechanical System Tab */}
-          <TabsContent value="insurance" className="space-y-4">
-            {/* New Encar-style Insurance/Maintenance Panel */}
-            <InsuranceMaintenancePanel
-              insuranceClaims={car?.encarRecord?.accidents?.map((acc: any) => ({
-                date: acc.date || '',
-                type: acc.type === '1' ? 'my_damage' : acc.type === '2' ? 'other_damage' : 'estimate',
-                costParts: acc.partCost,
-                costService: acc.laborCost,
-                costCoating: acc.paintingCost,
-                description: `Insurance benefit: ${acc.insuranceBenefit || 0} KRW`
-              })) || []}
-              maintenanceRecords={[]}
+          <TabsContent value="history" className="space-y-4">
+            {/* Vehicle History Panel (Consolidated) */}
+            <VehicleHistoryPanel
+              manufacturer={car?.encarVehicle?.category?.manufacturerName || car?.make}
+              model={car?.encarVehicle?.category?.modelName || car?.model}
+              rating={car?.encarVehicle?.category?.gradeName}
+              yearOfManufacture={car?.year || (car?.encarVehicle?.category?.formYear ? parseInt(car.encarVehicle.category.formYear) : undefined)}
+              mileage={car?.encarVehicle?.spec?.mileage || car?.mileageKm || car?.odometer?.km}
+              productionDate={car?.encarRecord?.firstDate || car?.firstRegistration}
+              countryOfOrigin={car?.encarVehicle?.category?.domestic ? 'Korea' : 'E importuar'}
+              use={car?.encarRecord?.use || car?.encarRecordSummary?.use || 'Personale'}
+              newCarPrice={car?.encarVehicle?.category?.originPrice}
+              newCarReleasePrice={car?.encarVehicle?.category?.originPrice}
+              fuel={car?.encarVehicle?.spec?.fuelName || car?.fuel}
+              cityFuelConsumption="Nuk ka informacion"
+              highwayFuelConsumption="Nuk ka informacion"
             />
+
+            <DrivingInformationPanel
+              ownershipHistory={
+                car?.encarRecord?.ownerChanges?.map((change: any, index: number) => ({
+                  fromDate: change || '',
+                  toDate: index < (car?.encarRecord?.ownerChanges?.length || 0) - 1 ? car?.encarRecord?.ownerChanges?.[index + 1] : undefined,
+                  location: translateKoreanText(car?.encarVehicle?.contact?.address) || 'E panjohur',
+                  ownerType: index === 0 ? 'individual' : 'individual',
+                  distanceKm: Math.floor((car?.mileageKm || 0) / (car?.encarRecord?.ownerChangeCnt || 1))
+                })) || []
+              }
+            />
+
+            {/* Attention History Panel (Consolidated) */}
+            <AttentionHistoryPanel
+              recalls={[]}
+              insuranceGap={{
+                exists: !!(car?.encarRecord?.notJoinDate1 || car?.encarRecord?.notJoinDate2 || car?.encarRecord?.notJoinDate3),
+                periods: [
+                  car?.encarRecord?.notJoinDate1,
+                  car?.encarRecord?.notJoinDate2,
+                  car?.encarRecord?.notJoinDate3,
+                  car?.encarRecord?.notJoinDate4,
+                  car?.encarRecord?.notJoinDate5
+                ].filter(Boolean) as string[]
+              }}
+              specialUsage={{
+                totalLoss: (car?.encarRecordSummary?.totalLossCnt || 0) > 0,
+                flooding: (car?.encarRecordSummary?.floodTotalLossCnt || 0) > 0,
+                theft: (car?.encarRecordSummary?.robberCnt || 0) > 0,
+                commercial: car?.encarRecord?.use?.toLowerCase().includes('business') || false,
+                taxi: car?.encarRecord?.use?.toLowerCase().includes('taxi') || false,
+                police: false,
+                rental: car?.encarRecord?.use?.toLowerCase().includes('rental') || false
+              }}
+            />
+
+
 
             {/* Separator */}
             <Separator className="my-6" />
@@ -3527,423 +3826,8 @@ const CarInspectionReport = () => {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          {/* Options & Equipment Tab */}
-          <TabsContent value="options" className="space-y-4">
-            <Card className="shadow-md border-border/80">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Cog className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">
-                    Pajisjet dhe Opsionet
-                  </CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Lista e plotë e pajisjeve standarde dhe opsionale
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Extra Options with Details */}
-                {car.details?.options_extra &&
-                  car.details.options_extra.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-accent"></div>
-                        <h3 className="text-base font-semibold text-foreground">
-                          Opsione Shtesë me Çmim
-                        </h3>
-                        <div className="flex-1 h-px bg-border"></div>
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {car.details.options_extra.length} opsione
-                        </span>
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-                        {car.details.options_extra.map(
-                          (option: any, idx: number) => {
-                            const translatedName =
-                              getOptionName(option.code) !== option.code
-                                ? getOptionName(option.code)
-                                : option.name || option.name_original;
-                            const priceKRW = option.price || 0;
-                            const priceInEur = Math.round(
-                              convertKRWtoEUR(priceKRW),
-                            );
-
-                            return (
-                              <Card key={idx} className="border-primary/20">
-                                <CardContent className="p-4 space-y-2">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1">
-                                      <h4 className="font-semibold text-base">
-                                        {translatedName}
-                                      </h4>
-                                      {option.name_original &&
-                                        translatedName !==
-                                        option.name_original && (
-                                          <p className="text-xs text-muted-foreground">
-                                            {option.name_original}
-                                          </p>
-                                        )}
-                                    </div>
-                                    {priceInEur > 0 && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-sm font-bold"
-                                      >
-                                        {priceInEur.toLocaleString()}€
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  {(getOptionDescription(option.code) ||
-                                    option.description) && (
-                                      <p className="text-sm text-muted-foreground leading-relaxed">
-                                        {getOptionDescription(option.code) ||
-                                          option.description}
-                                      </p>
-                                    )}
-                                </CardContent>
-                              </Card>
-                            );
-                          },
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Standard Options */}
-                {car.details?.options?.standard &&
-                  Array.isArray(car.details.options.standard) &&
-                  car.details.options.standard.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary"></div>
-                        <h3 className="text-base font-semibold text-foreground">
-                          Pajisje Standarde
-                        </h3>
-                        <div className="flex-1 h-px bg-border"></div>
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {car.details.options.standard.length} pajisje
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                        {(showAllStandard
-                          ? car.details.options.standard
-                          : car.details.options.standard.slice(0, 6)
-                        ).map((optionCode: string, idx: number) => {
-                          const displayName = getOptionName(optionCode);
-                          return (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group"
-                            >
-                              <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">
-                                {displayName}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {car.details.options.standard.length > 6 && (
-                        <div className="flex justify-center pt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowAllStandard(!showAllStandard)}
-                            className="h-9 px-4 text-sm text-primary hover:bg-primary/10 font-medium border-primary/30"
-                          >
-                            {showAllStandard
-                              ? `Më pak`
-                              : `Shfaq të gjitha (${car.details.options.standard.length - 6} më shumë)`}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                {/* Choice Options */}
-                {car.details?.options?.choice &&
-                  Array.isArray(car.details.options.choice) &&
-                  car.details.options.choice.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-accent"></div>
-                        <h3 className="text-base font-semibold text-foreground">
-                          Opsione të Zgjedhura
-                        </h3>
-                        <div className="flex-1 h-px bg-border"></div>
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {car.details.options.choice.length} opsione
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                        {(showAllChoice
-                          ? car.details.options.choice
-                          : car.details.options.choice.slice(0, 6)
-                        ).map((optionCode: string, idx: number) => {
-                          const displayName = getOptionName(optionCode);
-                          return (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-2 p-2 bg-accent/5 border border-accent/20 rounded-md hover:bg-accent/10 hover:border-accent/30 transition-all duration-200 group"
-                            >
-                              <Cog className="h-3.5 w-3.5 text-accent flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight line-clamp-1">
-                                {displayName}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {car.details.options.choice.length > 6 && (
-                        <div className="flex justify-center pt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowAllChoice(!showAllChoice)}
-                            className="h-9 px-4 text-sm text-accent hover:bg-accent/10 font-medium border-accent/30"
-                          >
-                            {showAllChoice
-                              ? `Më pak`
-                              : `Shfaq të gjitha (${car.details.options.choice.length - 6} më shumë)`}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                {(!car.details?.options_extra ||
-                  car.details.options_extra.length === 0) &&
-                  (!car.details?.options?.standard ||
-                    car.details.options.standard.length === 0) &&
-                  (!car.details?.options?.choice ||
-                    car.details.options.choice.length === 0) && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Cog className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>Nuk ka informata për pajisjet dhe opsionet</p>
-                    </div>
-                  )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
 
-
-          <TabsContent value="history" className="space-y-4">
-            <DrivingInformationPanel
-              ownershipHistory={
-                car?.encarRecord?.ownerChanges?.map((change: any, index: number) => ({
-                  fromDate: change || '',
-                  toDate: index < (car?.encarRecord?.ownerChanges?.length || 0) - 1 ? car?.encarRecord?.ownerChanges?.[index + 1] : undefined,
-                  location: car?.encarVehicle?.contact?.address || 'E panjohur',
-                  ownerType: index === 0 ? 'individual' : 'individual',
-                  distanceKm: Math.floor((car?.mileageKm || 0) / (car?.encarRecord?.ownerChangeCnt || 1))
-                })) || []
-              }
-            />
-            <Card className="shadow-md border-border/80">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Car className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">
-                    Historia e Përdorimit të Automjetit
-                  </CardTitle>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Informacion i detajuar nga API për historinë e përdorimit, pronësisë dhe ndërrimeve
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Usage Type Highlights */}
-                {usageHighlights.length > 0 && (
-                  <section className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <div className="w-1 h-5 bg-primary rounded-full"></div>
-                      Lloji i Përdorimit
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {usageHighlights.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex flex-col gap-1.5 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 hover:shadow-md transition-shadow"
-                        >
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                            {item.label}
-                          </span>
-                          <span
-                            className={`text-lg font-semibold ${item.value === "Po"
-                              ? "text-destructive"
-                              : item.value === "Jo"
-                                ? "text-emerald-600"
-                                : "text-muted-foreground"
-                              }`}
-                          >
-                            {item.value}
-                          </span>
-                          {item.details && item.details.length > 0 && (
-                            <span className="text-xs text-muted-foreground leading-relaxed">
-                              {item.details.join(" • ")}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* Detailed Usage History */}
-                {usageHistoryList.length > 0 && (
-                  <section className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <div className="w-1 h-5 bg-primary rounded-full"></div>
-                      Detajet e Historisë së Përdorimit
-                    </h3>
-                    <div className="space-y-2">
-                      {usageHistoryList
-                        .filter(
-                          (entry) =>
-                            !isUsageDetailHidden(entry.description) &&
-                            !isUsageDetailHidden(entry.value),
-                        )
-                        .map((entry, index) => {
-                          const description =
-                            translateUsageText(entry.description ?? "").trim() ||
-                            "Përdorim";
-                          const valueDisplay =
-                            translateUsageText(entry.value ?? "").trim() || "-";
-                          return (
-                            <div
-                              key={`${entry.description || "usage"}-${index}`}
-                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/80 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
-                            >
-                              <span className="font-semibold text-foreground">
-                                {description}
-                              </span>
-                              <span className="text-muted-foreground font-medium">
-                                {valueDisplay}
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </section>
-                )}
-
-                {/* Owner Changes History */}
-                <section className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <div className="w-1 h-5 bg-primary rounded-full"></div>
-                    Historia e Ndërrimit të Pronarëve
-                  </h3>
-                  {ownerChangesList.length > 0 ? (
-                    <div className="space-y-3">
-                      {ownerChangesList.map((change, index) => {
-                        const changeType =
-                          translateGeneralText(change?.change_type) ||
-                          "Ndryshim pronari";
-                        const usageType = translateGeneralText(change?.usage_type);
-
-                        return (
-                          <Card
-                            key={`${change?.change_type || "owner"}-${index}`}
-                            className="border-l-4 border-l-primary/50"
-                          >
-                            <CardContent className="p-4 space-y-2">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="font-semibold text-foreground text-base">
-                                  {changeType}
-                                </span>
-                                {change?.date && (
-                                  <Badge variant="outline" className="text-xs font-medium">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    {formatDisplayDate(change.date) ?? change.date}
-                                  </Badge>
-                                )}
-                              </div>
-                              {usageType && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-xs text-muted-foreground">Lloji i përdorimit:</span>
-                                  <span className="text-xs font-medium text-foreground">{usageType}</span>
-                                </div>
-                              )}
-                              {change?.previous_number && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-xs text-muted-foreground">Numri paraprak:</span>
-                                  <span className="text-xs font-mono font-medium text-foreground">{change.previous_number}</span>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
-                      <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p className="font-medium">Nuk ka informata për ndërrimin e pronarëve</p>
-                    </div>
-                  )}
-                </section>
-
-                {/* Reported Damages */}
-                {car.damage && (car.damage.main || car.damage.second) && (
-                  <section className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <div className="w-1 h-5 bg-destructive rounded-full"></div>
-                      Dëmtimet e Raportuara
-                    </h3>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {car.damage?.main && (
-                        <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5">
-                          <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-destructive" />
-                            Dëmtimi Kryesor
-                          </h4>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {translateGeneralText(car.damage.main)}
-                          </p>
-                        </div>
-                      )}
-                      {car.damage?.second && (
-                        <div className="p-4 rounded-lg border border-orange-400/30 bg-orange-50/50 dark:bg-orange-500/5">
-                          <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-orange-500" />
-                            Dëmtimi Dytësor
-                          </h4>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {translateGeneralText(car.damage.second)}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                )}
-              </CardContent>
-            </Card>
-            {/* Attention History Panel (Consolidated) */}
-            <AttentionHistoryPanel
-              recalls={[]}
-              insuranceGap={{
-                exists: !!(car?.encarRecord?.notJoinDate1 || car?.encarRecord?.notJoinDate2 || car?.encarRecord?.notJoinDate3),
-                periods: [
-                  car?.encarRecord?.notJoinDate1,
-                  car?.encarRecord?.notJoinDate2,
-                  car?.encarRecord?.notJoinDate3,
-                  car?.encarRecord?.notJoinDate4,
-                  car?.encarRecord?.notJoinDate5
-                ].filter(Boolean) as string[]
-              }}
-              specialUsage={{
-                totalLoss: (car?.encarRecordSummary?.totalLossCnt || 0) > 0,
-                flooding: (car?.encarRecordSummary?.floodTotalLossCnt || 0) > 0,
-                theft: (car?.encarRecordSummary?.robberCnt || 0) > 0,
-                commercial: car?.encarRecord?.use?.toLowerCase().includes('business') || false,
-                taxi: car?.encarRecord?.use?.toLowerCase().includes('taxi') || false,
-                police: false,
-                rental: car?.encarRecord?.use?.toLowerCase().includes('rental') || false
-              }}
-            />
           </TabsContent>
 
 

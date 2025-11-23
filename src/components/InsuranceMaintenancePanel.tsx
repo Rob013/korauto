@@ -75,13 +75,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
 
     return (
         <div className={className}>
-            {/* Header */}
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-1">Historia e Sigurimit/Mirëmbajtjes</h3>
-                <p className="text-sm text-muted-foreground">
-                    Gjithsej {allRecords.length} raste
-                </p>
-            </div>
+
 
             {/* Sorting tabs */}
             <div className="flex gap-4 mb-4 pb-2 border-b border-border">
@@ -230,19 +224,7 @@ export const InsuranceMaintenancePanel: React.FC<InsuranceMaintenancePanelProps>
                 )}
             </div>
 
-            {/* Footer note */}
-            <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <div className="flex gap-2">
-                    <FileText className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-xs text-yellow-800 dark:text-yellow-200">
-                        <p className="font-semibold mb-1">Artikujt e historisë së mirëmbajtjes janë informacion i dhënë përmes Ministrisë së Tokës, Infrastrukturës dhe Transportit dhe Institutit të Zhvillimit të Sigurimit.</p>
-                        <p>Ndërsa pjesët e lidhura mund të jenë riparuar ose zëvendësuar, puna aktuale mund të ndryshojë. Për histori më të saktë të aksidenteve të automjetit, ju lutemi referojuni regjistrimit të inspektimit të performancës më poshtë.</p>
-                        <button className="mt-2 text-blue-600 dark:text-blue-400 underline font-medium">
-                            Shiko regjistrat e inspektimit të performancës
-                        </button>
-                    </div>
-                </div>
-            </div>
+
         </div>
     );
 };
