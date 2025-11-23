@@ -100,6 +100,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         const actualValue = value === '' || value === 'all' ? undefined : value;
 
         if (key === 'manufacturer_id') {
+            // Reset model when manufacturer changes to ensure we only show models for the selected brand
             onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
             if (onManufacturerChange) {
                 onManufacturerChange(actualValue || '');
@@ -396,7 +397,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                     Pastro Filtrat
                 </Button>
                 <Button
-                    onClick={onApply}
+                    onClick={() => {
+                        onApply();
+                        // The parent component handles closing via onApply, but we can also ensure it here if needed
+                    }}
                     className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm"
                 >
                     <Search className="h-4 w-4 mr-2" />
