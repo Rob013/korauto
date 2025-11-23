@@ -233,7 +233,16 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 <div className="p-4 space-y-4">
                     {/* Manufacturer Select */}
                     <div>
-                        <label className="block text-sm font-medium mb-2">Marka</label>
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="block text-sm font-medium">Marka</label>
+                            {filters.manufacturer_id && manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.image && (
+                                <img
+                                    src={manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.image}
+                                    alt="Brand Logo"
+                                    className="h-5 w-auto object-contain"
+                                />
+                            )}
+                        </div>
                         <select
                             value={filters.manufacturer_id || ''}
                             onChange={(e) => handleChange('manufacturer_id', e.target.value)}
@@ -279,7 +288,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                     {/* Year Range */}
                     <div>
                         <label className="block text-sm font-medium mb-2">Viti</label>
-                        <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+                        <div className="flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar">
                             {[2022, 2020, 2018, 2016].map(year => (
                                 <button
                                     key={year}
@@ -317,7 +326,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         </div>
                     </div>
 
-                    {/* Mileage Range with Slider */}
+                    {/* Mileage Range */}
                     <div>
                         <label className="block text-sm font-medium mb-2">Kilometrazha</label>
                         <div className="text-xs text-muted-foreground text-center mb-3 font-medium">
@@ -352,7 +361,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         </div>
                     </div>
 
-                    {/* Price Range with Slider */}
+                    {/* Price Range */}
                     <div>
                         <label className="block text-sm font-medium mb-2">Çmimi (EUR)</label>
                         <div className="text-xs text-muted-foreground text-center mb-3 font-medium">
@@ -384,6 +393,154 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
                                 className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             />
+                        </div>
+                    </div>
+
+                    {/* Advanced Filters Divider */}
+                    <div className="pt-4 border-t border-border">
+                        <h3 className="text-sm font-semibold mb-4 text-muted-foreground">Filtra të Avancuar</h3>
+
+                        {/* Fuel Type */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Karburanti</label>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(FUEL_TYPES).map(([label, value]) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => handleChange('fuel_type', filters.fuel_type === value.toString() ? '' : value.toString())}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === value.toString()
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background border-border hover:bg-muted'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Transmission */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Transmisioni</label>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(TRANSMISSIONS).map(([label, value]) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => handleChange('transmission', filters.transmission === value.toString() ? '' : value.toString())}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === value.toString()
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background border-border hover:bg-muted'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Body Type */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Karroceria</label>
+                            <select
+                                value={filters.body_type || ''}
+                                onChange={(e) => handleChange('body_type', e.target.value)}
+                                className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                            >
+                                <option value="">Të gjitha</option>
+                                {Object.entries(BODY_TYPES).map(([label, value]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Color */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Ngjyra</label>
+                            <select
+                                value={filters.color || ''}
+                                onChange={(e) => handleChange('color', e.target.value)}
+                                className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                            >
+                                <option value="">Të gjitha</option>
+                                {Object.entries(COLORS).map(([label, value]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Drive Type & Steering */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Tërheqja</label>
+                                <select
+                                    value={filters.drive_type || ''}
+                                    onChange={(e) => handleChange('drive_type', e.target.value)}
+                                    className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                >
+                                    <option value="">Të gjitha</option>
+                                    {DRIVE_TYPES.map(type => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Timoni</label>
+                                <select
+                                    value={filters.steering_position || ''}
+                                    onChange={(e) => handleChange('steering_position', e.target.value)}
+                                    className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                >
+                                    <option value="">Të gjitha</option>
+                                    {STEERING_POSITIONS.map(pos => (
+                                        <option key={pos} value={pos}>{pos}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Engine Capacity */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Motorri (cc)</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="Nga (cc)"
+                                    value={filters.engine_from || ''}
+                                    onChange={(e) => handleChange('engine_from', e.target.value)}
+                                    className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Deri (cc)"
+                                    value={filters.engine_to || ''}
+                                    onChange={(e) => handleChange('engine_to', e.target.value)}
+                                    className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Seats & Doors */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Ulëse</label>
+                                <input
+                                    type="number"
+                                    placeholder="Nr."
+                                    value={filters.seats_count || ''}
+                                    onChange={(e) => handleChange('seats_count', e.target.value)}
+                                    className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Dyer</label>
+                                <input
+                                    type="number"
+                                    placeholder="Nr."
+                                    value={filters.doors_count || ''}
+                                    onChange={(e) => handleChange('doors_count', e.target.value)}
+                                    className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
