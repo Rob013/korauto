@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +55,7 @@ const InspectionRequestForm = ({
   carModel,
   carYear,
 }: InspectionRequestFormProps) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { impact, notification } = useHaptics();
@@ -353,8 +355,8 @@ const InspectionRequestForm = ({
 
   const handleOpenWarranty = useCallback(() => {
     impact('light');
-    window.location.href = "/garancioni";
-  }, [impact]);
+    navigate("/garancioni");
+  }, [impact, navigate]);
 
   const formContent = (
     <Card className="border-0 shadow-none">

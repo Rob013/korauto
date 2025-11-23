@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { X, Search, ChevronRight } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { APIFilters } from "@/utils/catalog-filter";
 import { Slider } from "@/components/ui/slider";
 
@@ -92,27 +92,40 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     className
 }) => {
 
-    const [showAdvanced, setShowAdvanced] = useState(false);
-
-    const handleChange = (key: string, value: string) => {
+    const handleChange = useCallback((key: string, value: string) => {
         const actualValue = value === '' || value === 'all' ? undefined : value;
 
         if (key === 'manufacturer_id') {
             onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
-            // Trigger model fetching for selected manufacturer
             if (onManufacturerChange) {
                 onManufacturerChange(actualValue || '');
             }
         } else {
             onFiltersChange({ ...filters, [key]: actualValue });
         }
-    };
+    }, [filters, onFiltersChange, onManufacturerChange]);
+
+    const handleSliderChange = useCallback((key: string, values: number[]) => {
+        if (key === 'mileage') {
+            onFiltersChange({ 
+                ...filters, 
+                odometer_from_km: values[0].toString(), 
+                odometer_to_km: values[1].toString() 
+            });
+        } else if (key === 'price') {
+            onFiltersChange({ 
+                ...filters, 
+                buy_now_price_from: values[0].toString(), 
+                buy_now_price_to: values[1].toString() 
+            });
+        }
+    }, [filters, onFiltersChange]);
 
     // Popular brands (in order)
     const POPULAR_BRANDS = ['AUDI', 'MERCEDES-BENZ', 'VOLKSWAGEN', 'BMW'];
 
     // Get manufacturers with counts, sorted with popular brands first
-    const manufacturersList = React.useMemo(() => {
+    const manufacturersList = useMemo(() => {
         const allManufacturers = manufacturers
             .filter(m => (m.cars_qty || m.car_count || 0) > 0 || m.cars_qty === undefined)
             .map(m => ({
@@ -154,58 +167,38 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     }, [manufacturers]);
 
     // Get models for selected manufacturer
-    const modelsList = filters.manufacturer_id
-        ? models.filter(m => (m.cars_qty || 0) > 0).map(m => ({
-            id: m.id,
-            name: m.name,
-            count: m.cars_qty || 0
-        }))
-        : [];
+    const modelsList = useMemo(() => 
+        filters.manufacturer_id
+            ? models.filter(m => (m.cars_qty || 0) > 0).map(m => ({
+                id: m.id,
+                name: m.name,
+                count: m.cars_qty || 0
+            }))
+            : []
+    , [filters.manufacturer_id, models]);
 
     // Generate years
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i);
-
-    // Helper for filter row item
-    const FilterRow = ({ label, value, onClick }: { label: string; value?: string; onClick: () => void }) => (
-        <button
-            onClick={onClick}
-            className="w-full flex items-center justify-between py-3.5 px-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
-        >
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>
-            <div className="flex items-center gap-2">
-                {value && <span className="text-xs text-primary font-medium">{value}</span>}
-                <ChevronRight className="h-4 w-4 text-gray-400" />
-            </div>
-        </button>
-    );
+    const years = useMemo(() => 
+        Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i)
+    , [currentYear]);
 
     // Get display values
-    const getYearValue = () => {
-        if (filters.from_year && filters.to_year) return `${filters.from_year} - ${filters.to_year}`;
-        if (filters.from_year) return `${filters.from_year}+`;
-        if (filters.to_year) return `deri ${filters.to_year}`;
-        return 'Të gjitha';
-    };
-
-    const getPriceValue = () => {
-        if (filters.buy_now_price_from && filters.buy_now_price_to) 
-            return `€${filters.buy_now_price_from} - €${filters.buy_now_price_to}`;
-        if (filters.buy_now_price_from) return `€${filters.buy_now_price_from}+`;
-        if (filters.buy_now_price_to) return `deri €${filters.buy_now_price_to}`;
-        return 'Të gjitha';
-    };
-
-    const getMileageValue = () => {
+    const getMileageValue = useCallback(() => {
         if (filters.odometer_from_km && filters.odometer_to_km) 
             return `${filters.odometer_from_km} - ${filters.odometer_to_km} km`;
         if (filters.odometer_from_km) return `${filters.odometer_from_km}+ km`;
         if (filters.odometer_to_km) return `deri ${filters.odometer_to_km} km`;
         return 'Të gjitha';
-    };
+    }, [filters.odometer_from_km, filters.odometer_to_km]);
 
-    const selectedManufacturerName = manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.name || 'Të gjitha';
-    const selectedModelName = models.find(m => m.id.toString() === filters.model_id)?.name || 'Të gjitha';
+    const getPriceValue = useCallback(() => {
+        if (filters.buy_now_price_from && filters.buy_now_price_to) 
+            return `€${filters.buy_now_price_from} - €${filters.buy_now_price_to}`;
+        if (filters.buy_now_price_from) return `€${filters.buy_now_price_from}+`;
+        if (filters.buy_now_price_to) return `deri €${filters.buy_now_price_to}`;
+        return 'Të gjitha';
+    }, [filters.buy_now_price_from, filters.buy_now_price_to]);
 
     return (
         <div className={className || "fixed inset-0 flex flex-col bg-background z-50 overflow-hidden"}>
@@ -226,207 +219,161 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="divide-y divide-border">
-                    {/* Main Filter Rows */}
-                    <FilterRow 
-                        label="Marka" 
-                        value={selectedManufacturerName !== 'Të gjitha' ? selectedManufacturerName : undefined}
-                        onClick={() => {/* TODO: Open manufacturer drawer */}}
-                    />
-                    
-                    <FilterRow 
-                        label="Modeli" 
-                        value={selectedModelName !== 'Të gjitha' ? selectedModelName : undefined}
-                        onClick={() => {/* TODO: Open model drawer */}}
-                    />
-                    
-                    <FilterRow 
-                        label="Viti" 
-                        value={getYearValue() !== 'Të gjitha' ? getYearValue() : undefined}
-                        onClick={() => {/* TODO: Open year drawer */}}
-                    />
-                    
-                    <FilterRow 
-                        label="Kilometrazha" 
-                        value={getMileageValue() !== 'Të gjitha' ? getMileageValue() : undefined}
-                        onClick={() => {/* TODO: Open mileage drawer */}}
-                    />
-                    
-                    <FilterRow 
-                        label="Çmimi" 
-                        value={getPriceValue() !== 'Të gjitha' ? getPriceValue() : undefined}
-                        onClick={() => {/* TODO: Open price drawer */}}
-                    />
-
-                    {/* Temporary inline filters - will be replaced with drawers */}
-                    <div className="p-4 space-y-4 bg-muted/30">
-                        {/* Manufacturer Select */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Marka</label>
-                            <select
-                                value={filters.manufacturer_id || ''}
-                                onChange={(e) => {
-                                    handleChange('manufacturer_id', e.target.value);
-                                    setTimeout(() => onApply?.(), 100);
-                                }}
-                                className="w-full h-10 px-3 text-sm border border-border rounded-lg bg-background"
-                            >
-                                <option value="">Të gjitha markat</option>
-                                {manufacturersList.popular.map(m => (
-                                    <option key={m.id} value={m.id}>
-                                        {m.name} {m.count > 0 ? `(${m.count})` : ''}
-                                    </option>
-                                ))}
-                                {manufacturersList.popular.length > 0 && manufacturersList.others.length > 0 && (
-                                    <option disabled>──────────</option>
-                                )}
-                                {manufacturersList.others.map(m => (
-                                    <option key={m.id} value={m.id}>
-                                        {m.name} {m.count > 0 ? `(${m.count})` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Model Select */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Modeli</label>
-                            <select
-                                value={filters.model_id || ''}
-                                onChange={(e) => {
-                                    handleChange('model_id', e.target.value);
-                                    setTimeout(() => onApply?.(), 100);
-                                }}
-                                disabled={!filters.manufacturer_id}
-                                className="w-full h-10 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50"
-                            >
-                                <option value="">
-                                    {filters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
+                <div className="p-4 space-y-4">
+                    {/* Manufacturer Select */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Marka</label>
+                        <select
+                            value={filters.manufacturer_id || ''}
+                            onChange={(e) => handleChange('manufacturer_id', e.target.value)}
+                            className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                        >
+                            <option value="">Të gjitha markat</option>
+                            {manufacturersList.popular.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name} {m.count > 0 ? `(${m.count})` : ''}
                                 </option>
-                                {modelsList.map(m => (
-                                    <option key={m.id} value={m.id}>
-                                        {m.name} {m.count > 0 ? `(${m.count})` : ''}
-                                    </option>
+                            ))}
+                            {manufacturersList.popular.length > 0 && manufacturersList.others.length > 0 && (
+                                <option disabled>──────────</option>
+                            )}
+                            {manufacturersList.others.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name} {m.count > 0 ? `(${m.count})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Model Select */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Modeli</label>
+                        <select
+                            value={filters.model_id || ''}
+                            onChange={(e) => handleChange('model_id', e.target.value)}
+                            disabled={!filters.manufacturer_id}
+                            className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50 transition-colors"
+                        >
+                            <option value="">
+                                {filters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
+                            </option>
+                            {modelsList.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name} {m.count > 0 ? `(${m.count})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Year Range */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Viti</label>
+                        <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+                            {[2022, 2020, 2018, 2016].map(year => (
+                                <button
+                                    key={year}
+                                    onClick={() => handleChange('from_year', year.toString())}
+                                    className={`flex-shrink-0 px-4 py-2 text-xs font-medium rounded-lg border transition-all ${
+                                        filters.from_year === year.toString()
+                                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                            : 'bg-background border-border hover:bg-muted'
+                                    }`}
+                                >
+                                    {year}+
+                                </button>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <select
+                                value={filters.from_year || ''}
+                                onChange={(e) => handleChange('from_year', e.target.value)}
+                                className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                            >
+                                <option value="">Nga</option>
+                                {years.map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={filters.to_year || ''}
+                                onChange={(e) => handleChange('to_year', e.target.value)}
+                                className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                            >
+                                <option value="">Deri</option>
+                                {years.map(y => (
+                                    <option key={y} value={y}>{y}</option>
                                 ))}
                             </select>
                         </div>
+                    </div>
 
-                        {/* Year Range */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Viti</label>
-                            <div className="flex gap-2 mb-3">
-                                {[2022, 2020, 2018, 2016].map(year => (
-                                    <button
-                                        key={year}
-                                        onClick={() => handleChange('from_year', year.toString())}
-                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-                                            filters.from_year === year.toString()
-                                                ? 'bg-primary text-primary-foreground border-primary'
-                                                : 'bg-background border-border hover:bg-muted'
-                                        }`}
-                                    >
-                                        {year}+
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <select
-                                    value={filters.from_year || ''}
-                                    onChange={(e) => handleChange('from_year', e.target.value)}
-                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
-                                >
-                                    <option value="">Nga</option>
-                                    {years.map(y => (
-                                        <option key={y} value={y}>{y}</option>
-                                    ))}
-                                </select>
-                                <select
-                                    value={filters.to_year || ''}
-                                    onChange={(e) => handleChange('to_year', e.target.value)}
-                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
-                                >
-                                    <option value="">Deri</option>
-                                    {years.map(y => (
-                                        <option key={y} value={y}>{y}</option>
-                                    ))}
-                                </select>
-                            </div>
+                    {/* Mileage Range with Slider */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Kilometrazha</label>
+                        <div className="text-xs text-muted-foreground text-center mb-3 font-medium">
+                            {getMileageValue()}
                         </div>
-
-                        {/* Mileage Range with Slider */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Kilometrazha</label>
-                            <div className="text-xs text-muted-foreground text-center mb-3">
-                                {getMileageValue()}
-                            </div>
-                            <Slider
-                                min={0}
-                                max={300000}
-                                step={5000}
-                                value={[
-                                    parseInt(filters.odometer_from_km || '0'),
-                                    parseInt(filters.odometer_to_km || '300000')
-                                ]}
-                                onValueChange={(values) => {
-                                    handleChange('odometer_from_km', values[0].toString());
-                                    handleChange('odometer_to_km', values[1].toString());
-                                }}
-                                className="mb-2"
+                        <Slider
+                            min={0}
+                            max={300000}
+                            step={5000}
+                            value={[
+                                parseInt(filters.odometer_from_km || '0'),
+                                parseInt(filters.odometer_to_km || '300000')
+                            ]}
+                            onValueChange={(values) => handleSliderChange('mileage', values)}
+                            className="mb-2"
+                        />
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                            <input
+                                type="number"
+                                placeholder="0"
+                                value={filters.odometer_from_km || ''}
+                                onChange={(e) => handleChange('odometer_from_km', e.target.value)}
+                                className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             />
-                            <div className="grid grid-cols-2 gap-2 mt-3">
-                                <input
-                                    type="number"
-                                    placeholder="0"
-                                    value={filters.odometer_from_km || ''}
-                                    onChange={(e) => handleChange('odometer_from_km', e.target.value)}
-                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="300000"
-                                    value={filters.odometer_to_km || ''}
-                                    onChange={(e) => handleChange('odometer_to_km', e.target.value)}
-                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
-                                />
-                            </div>
+                            <input
+                                type="number"
+                                placeholder="300000"
+                                value={filters.odometer_to_km || ''}
+                                onChange={(e) => handleChange('odometer_to_km', e.target.value)}
+                                className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                            />
                         </div>
+                    </div>
 
-                        {/* Price Range with Slider */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Çmimi (EUR)</label>
-                            <div className="text-xs text-muted-foreground text-center mb-3">
-                                {getPriceValue()}
-                            </div>
-                            <Slider
-                                min={0}
-                                max={100000}
-                                step={1000}
-                                value={[
-                                    parseInt(filters.buy_now_price_from || '0'),
-                                    parseInt(filters.buy_now_price_to || '100000')
-                                ]}
-                                onValueChange={(values) => {
-                                    handleChange('buy_now_price_from', values[0].toString());
-                                    handleChange('buy_now_price_to', values[1].toString());
-                                }}
-                                className="mb-2"
+                    {/* Price Range with Slider */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Çmimi (EUR)</label>
+                        <div className="text-xs text-muted-foreground text-center mb-3 font-medium">
+                            {getPriceValue()}
+                        </div>
+                        <Slider
+                            min={0}
+                            max={100000}
+                            step={1000}
+                            value={[
+                                parseInt(filters.buy_now_price_from || '0'),
+                                parseInt(filters.buy_now_price_to || '100000')
+                            ]}
+                            onValueChange={(values) => handleSliderChange('price', values)}
+                            className="mb-2"
+                        />
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                            <input
+                                type="number"
+                                placeholder="0"
+                                value={filters.buy_now_price_from || ''}
+                                onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
+                                className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             />
-                            <div className="grid grid-cols-2 gap-2 mt-3">
-                                <input
-                                    type="number"
-                                    placeholder="0"
-                                    value={filters.buy_now_price_from || ''}
-                                    onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
-                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="100000"
-                                    value={filters.buy_now_price_to || ''}
-                                    onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
-                                    className="h-10 px-3 text-sm border border-border rounded-lg bg-background"
-                                />
-                            </div>
+                            <input
+                                type="number"
+                                placeholder="100000"
+                                value={filters.buy_now_price_to || ''}
+                                onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
+                                className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                            />
                         </div>
                     </div>
                 </div>

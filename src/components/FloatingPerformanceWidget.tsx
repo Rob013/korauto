@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ const FloatingPerformanceWidget = ({
   enabled = process.env.NODE_ENV === 'development',
   position = 'bottom-right' 
 }: FloatingPerformanceWidgetProps) => {
+  const navigate = useNavigate();
   const [isMinimized, setIsMinimized] = useState(true);
   const [isVisible, setIsVisible] = useState(enabled);
   const { metrics, isLoading, runQuickCheck } = useQuickAudit();
@@ -199,7 +201,7 @@ const FloatingPerformanceWidget = ({
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => window.location.href = '/performance'}
+                      onClick={() => navigate('/performance')}
                       className="flex-1 text-xs h-7"
                     >
                       Details

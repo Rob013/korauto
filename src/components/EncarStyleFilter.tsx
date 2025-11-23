@@ -1,4 +1,5 @@
 import React, { useState, memo, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   onCloseFilter,
   className
 }) => {
+  const navigate = useNavigate();
   const [trimLevels, setTrimLevels] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [engineOptions, setEngineOptions] = useState<{ value: string; label: string; count?: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -186,9 +188,9 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
           searchParams.set(key, value);
         }
       });
-      window.location.href = `/catalog?${searchParams.toString()}`;
+      navigate(`/catalog?${searchParams.toString()}`);
     }
-  }, [onSearchCars, isHomepage, filters]);
+  }, [onSearchCars, isHomepage, filters, navigate]);
 
   const handleYearRangePreset = useCallback((preset: { label: string; from: number; to: number }) => {
     const updatedFilters = {
