@@ -107,16 +107,16 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
     const handleSliderChange = useCallback((key: string, values: number[]) => {
         if (key === 'mileage') {
-            onFiltersChange({ 
-                ...filters, 
-                odometer_from_km: values[0].toString(), 
-                odometer_to_km: values[1].toString() 
+            onFiltersChange({
+                ...filters,
+                odometer_from_km: values[0].toString(),
+                odometer_to_km: values[1].toString()
             });
         } else if (key === 'price') {
-            onFiltersChange({ 
-                ...filters, 
-                buy_now_price_from: values[0].toString(), 
-                buy_now_price_to: values[1].toString() 
+            onFiltersChange({
+                ...filters,
+                buy_now_price_from: values[0].toString(),
+                buy_now_price_to: values[1].toString()
             });
         }
     }, [filters, onFiltersChange]);
@@ -167,7 +167,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     }, [manufacturers]);
 
     // Get models for selected manufacturer
-    const modelsList = useMemo(() => 
+    const modelsList = useMemo(() =>
         filters.manufacturer_id
             ? models.filter(m => (m.cars_qty || 0) > 0).map(m => ({
                 id: m.id,
@@ -175,17 +175,17 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 count: m.cars_qty || 0
             }))
             : []
-    , [filters.manufacturer_id, models]);
+        , [filters.manufacturer_id, models]);
 
     // Generate years
     const currentYear = new Date().getFullYear();
-    const years = useMemo(() => 
+    const years = useMemo(() =>
         Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i)
-    , [currentYear]);
+        , [currentYear]);
 
     // Get display values
     const getMileageValue = useCallback(() => {
-        if (filters.odometer_from_km && filters.odometer_to_km) 
+        if (filters.odometer_from_km && filters.odometer_to_km)
             return `${filters.odometer_from_km} - ${filters.odometer_to_km} km`;
         if (filters.odometer_from_km) return `${filters.odometer_from_km}+ km`;
         if (filters.odometer_to_km) return `deri ${filters.odometer_to_km} km`;
@@ -193,7 +193,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     }, [filters.odometer_from_km, filters.odometer_to_km]);
 
     const getPriceValue = useCallback(() => {
-        if (filters.buy_now_price_from && filters.buy_now_price_to) 
+        if (filters.buy_now_price_from && filters.buy_now_price_to)
             return `€${filters.buy_now_price_from} - €${filters.buy_now_price_to}`;
         if (filters.buy_now_price_from) return `€${filters.buy_now_price_from}+`;
         if (filters.buy_now_price_to) return `deri €${filters.buy_now_price_to}`;
@@ -201,19 +201,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     }, [filters.buy_now_price_from, filters.buy_now_price_to]);
 
     return (
-        <div className={className || "fixed inset-0 flex flex-col bg-background z-50 overflow-hidden"}>
+        <div className={className || "fixed inset-y-0 right-0 flex flex-col w-full md:w-80 bg-white dark:bg-black z-50 overflow-y-auto touch-action-manipulation"}>
             {/* Header */}
-            <div className="flex-shrink-0 border-b border-border bg-background">
-                <div className="px-4 py-3 flex items-center justify-between">
-                    <h2 className="text-base font-bold">Filtrat e Kërkimit</h2>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.history.back()}
-                        className="h-8 w-8 p-0"
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
+            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+                <div className="px-4 py-2.5">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                        Filtrat e Kërkimit
+                    </h2>
                 </div>
             </div>
 
@@ -273,11 +267,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 <button
                                     key={year}
                                     onClick={() => handleChange('from_year', year.toString())}
-                                    className={`flex-shrink-0 px-4 py-2 text-xs font-medium rounded-lg border transition-all ${
-                                        filters.from_year === year.toString()
+                                    className={`flex-shrink-0 px-4 py-2 text-xs font-medium rounded-lg border transition-all ${filters.from_year === year.toString()
                                             ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                                             : 'bg-background border-border hover:bg-muted'
-                                    }`}
+                                        }`}
                                 >
                                     {year}+
                                 </button>
@@ -379,8 +372,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 </div>
             </div>
 
-            {/* Fixed Bottom Buttons */}
-            <div className="flex-shrink-0 border-t border-border bg-background p-3 space-y-2">
+            {/* Fixed Bottom Buttons - Only Clear Filters */}
+            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-3">
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
