@@ -29,15 +29,31 @@ interface FilterCounts {
     bodyTypes?: Record<number, number>;
 }
 
+interface Generation {
+    id: number;
+    name: string;
+    cars_qty?: number;
+}
+
+interface Variant {
+    value: string;
+    label: string;
+    count?: number;
+}
+
 interface MobileFiltersPanelProps {
     filters: APIFilters;
     manufacturers: Manufacturer[];
     models: Model[];
+    generations?: Generation[];
+    variants?: Variant[];
     filterCounts?: FilterCounts;
     onFiltersChange: (filters: any) => void;
     onClearFilters: () => void;
     onApply: () => void;
     onManufacturerChange?: (manufacturerId: string) => void;
+    onModelChange?: (modelId: string) => void;
+    onGenerationChange?: (generationId: string) => void;
     className?: string;
     usePortal?: boolean;
 }
@@ -87,11 +103,15 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     filters,
     manufacturers,
     models,
+    generations = [],
+    variants = [],
     filterCounts,
     onFiltersChange,
     onClearFilters,
     onApply,
     onManufacturerChange,
+    onModelChange,
+    onGenerationChange,
     className,
     usePortal = false
 }) => {
@@ -105,12 +125,24 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 onManufacturerChange(actualValue || '');
             } else {
                 // Fallback for when onManufacturerChange is not provided
-                onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined });
+                onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, generation_id: undefined, grade_iaai: undefined });
+            }
+        } else if (key === 'model_id') {
+            if (onModelChange) {
+                onModelChange(actualValue || '');
+            } else {
+                onFiltersChange({ ...filters, model_id: actualValue, generation_id: undefined, grade_iaai: undefined });
+            }
+        } else if (key === 'generation_id') {
+            if (onGenerationChange) {
+                onGenerationChange(actualValue || '');
+            } else {
+                onFiltersChange({ ...filters, generation_id: actualValue, grade_iaai: undefined });
             }
         } else {
             onFiltersChange({ ...filters, [key]: actualValue });
         }
-    }, [filters, onFiltersChange, onManufacturerChange]);
+    }, [filters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
 
     const handleSliderChange = useCallback((key: string, values: number[]) => {
         if (key === 'mileage') {
@@ -280,6 +312,46 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             {modelsList.map(m => (
                                 <option key={m.id} value={m.id}>
                                     {m.name} {m.count > 0 ? `(${m.count})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Generation Select */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Gjenerata</label>
+                        <select
+                            value={filters.generation_id || ''}
+                            onChange={(e) => handleChange('generation_id', e.target.value)}
+                            disabled={!filters.model_id}
+                            className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50 transition-colors"
+                        >
+                            <option value="">
+                                {filters.model_id ? 'Të gjitha gjeneratat' : 'Zgjidhni modelin së pari'}
+                            </option>
+                            {generations.map(g => (
+                                <option key={g.id} value={g.id}>
+                                    {g.name} {g.cars_qty ? `(${g.cars_qty})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Variant (Grade) Select */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Varianti</label>
+                        <select
+                            value={filters.grade_iaai || ''}
+                            onChange={(e) => handleChange('grade_iaai', e.target.value)}
+                            disabled={!filters.model_id}
+                            className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50 transition-colors"
+                        >
+                            <option value="">
+                                {filters.model_id ? 'Të gjitha variantet' : 'Zgjidhni modelin së pari'}
+                            </option>
+                            {variants.map(v => (
+                                <option key={v.value} value={v.value}>
+                                    {v.label} {v.count ? `(${v.count})` : ''}
                                 </option>
                             ))}
                         </select>

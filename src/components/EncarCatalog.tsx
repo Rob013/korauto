@@ -430,20 +430,22 @@ const EncarCatalog = ({
     // 250ms debounce to prevent rapid clicking
     [showFilters, isMobile, setShowFilters, setHasExplicitlyClosed]);
 
-  // Set up swipe gestures for main content (swipe right to show filters)
-  useSwipeGesture(mainContentRef, {
-    onSwipeRight: handleSwipeRightToShowFilters,
-    minSwipeDistance: 80,
-    // Require a more deliberate swipe
-    maxVerticalDistance: 120
-  });
+  // Remove swipe gestures to prevent catalog from getting stuck off-center
+  // useSwipeGesture(mainContentRef, {
+  //   onSwipeRight: handleSwipeRightToShowFilters,
+  //   minSwipeDistance: 80,
+  //   // Require a more deliberate swipe
+  //   maxVerticalDistance: 120
+  // });
 
   // Set up swipe gestures for filter panel (swipe left to close filters)
-  useSwipeGesture(filterPanelRef, {
-    onSwipeLeft: handleSwipeLeftToCloseFilters,
-    minSwipeDistance: 80,
-    maxVerticalDistance: 120
-  });
+  // useSwipeGesture(filterPanelRef, {
+  //   onSwipeLeft: handleSwipeLeftToCloseFilters,
+  //   minSwipeDistance: 80,
+  //   maxVerticalDistance: 120
+  // });
+
+  const [variants, setVariants] = useState<{ value: string; label: string; count?: number }[]>([]);
 
   // Internal function to actually apply filters - now using utilities
   const applyFiltersInternal = useCallback((newFilters: APIFilters) => {
@@ -533,6 +535,7 @@ const EncarCatalog = ({
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
+    setVariants([]);
     setHasUserSelectedSort(false); // Reset sort preference
     setSortBy("recently_added"); // Reset to recently_added default
     clearCarsCache();
@@ -682,6 +685,7 @@ const EncarCatalog = ({
       color: filters.color,
       fuel_type: filters.fuel_type,
       transmission: filters.transmission,
+      body_type: filters.body_type,
       odometer_from_km: filters.odometer_from_km,
       odometer_to_km: filters.odometer_to_km,
       from_year: filters.from_year,
