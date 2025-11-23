@@ -2874,7 +2874,7 @@ const CarDetails = memo(() => {
       }
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // Reduced to 8s for faster timeout
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // Reduced to 4s for faster response
 
         let response: Response;
         try {
