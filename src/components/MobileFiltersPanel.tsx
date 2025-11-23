@@ -172,9 +172,9 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: currentYear - 1999 }, (_, i) => currentYear - i);
 
-    const inputClass = "w-full h-10 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent";
-    const labelClass = "block text-xs font-semibold mb-1 text-gray-900 dark:text-gray-100";
-    const subLabelClass = "block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5";
+    const inputClass = "w-full h-10 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent pointer-events-auto cursor-pointer";
+    const labelClass = "block text-xs font-semibold mb-1 text-gray-900 dark:text-gray-100 pointer-events-none";
+    const subLabelClass = "block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5 pointer-events-none";
 
     return (
         <div className={className || "fixed inset-0 flex flex-col bg-white dark:bg-gray-900 z-50 overflow-hidden touch-action-manipulation"}>
@@ -188,8 +188,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}>
-                <div className="px-3 py-3 space-y-2.5">
+            <div className="flex-1 overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' }}>
+                <div className="px-3 py-3 space-y-2.5 pointer-events-auto">
 
                     {/* BASIC FILTERS */}
                     <div className="space-y-2.5">

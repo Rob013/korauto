@@ -1185,7 +1185,16 @@ const EncarCatalog = ({
             <Button type="button" variant="ghost" size="sm" onClick={handleClearFilters} className="h-8 px-2 text-xs hover:bg-primary-foreground/20 text-primary-foreground">
               <span>Clear</span>
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowFilters(false); setHasExplicitlyClosed(true); }} className="h-8 px-2 text-xs hover:bg-primary-foreground/20 text-primary-foreground" title="Mbyll filtrat">
+            <Button type="button" variant="ghost" size="sm" onClick={() => {
+              setShowFilters(false);
+              setHasExplicitlyClosed(true);
+              // Recenter main content when closing filters on mobile
+              setTimeout(() => {
+                if (mainContentRef.current) {
+                  mainContentRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                }
+              }, 300); // Wait for transition
+            }} className="h-8 px-2 text-xs hover:bg-primary-foreground/20 text-primary-foreground" title="Mbyll filtrat">
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -1207,6 +1216,12 @@ const EncarCatalog = ({
             fetchCars(1, searchFilters, true);
             setShowFilters(false);
             setHasExplicitlyClosed(true);
+            // Recenter main content after applying filters
+            setTimeout(() => {
+              if (mainContentRef.current) {
+                mainContentRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              }
+            }, 300);
           }}
         />
       )}
@@ -1248,7 +1263,7 @@ const EncarCatalog = ({
     }
 
     {/* Main Content */}
-    <div ref={mainContentRef} className={`flex-1 min-w-0 transition-all duration-300 lg:ml-6`}>
+    <div ref={mainContentRef} className="flex-1 overflow-auto min-w-0 transition-all duration-300 lg:ml-6">
       <div className="container-responsive py-3 sm:py-6 mobile-text-optimize max-w-[1600px]">
         {/* Header Section - Mobile optimized */}
         <div className="flex flex-col gap-3 mb-4">
