@@ -35,6 +35,7 @@ import {
 } from '@/utils/catalog-filter';
 import { sortBrandsWithPriority } from '@/utils/brandOrdering';
 import { formatModelName } from '@/utils/modelNameFormatter';
+import { safeToLowerCase } from "@/utils/safeStringOps";
 
 interface Manufacturer {
   id: number;
@@ -213,7 +214,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
   const { sorted: prioritizedManufacturers, priorityCount: prioritizedManufacturerCount } = useMemo(() => {
     const excludedBrands = ['mitsubishi', 'alfa romeo', 'alfa-romeo', 'acura', 'mazda', 'dongfeng', 'lotus'];
     const baseList = sortManufacturers(manufacturers).filter(manufacturer =>
-      !excludedBrands.includes((manufacturer.name || '').toLowerCase())
+      !excludedBrands.includes(safeToLowerCase(manufacturer.name))
     );
     return sortBrandsWithPriority(baseList);
   }, [manufacturers]);
@@ -254,6 +255,38 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
     }
     return manufacturerOptions;
   }, [isStrictMode, filters.manufacturer_id, manufacturerOptions]);
+
+  const modelSelectOptions = useMemo(() => {
+    const modelsList = models || [];
+
+    const scopedModels = filters.manufacturer_id
+      ? modelsList.filter(model => {
+          const manufacturerId = (model as any).manufacturer_id;
+          return manufacturerId ? manufacturerId.toString() === filters.manufacturer_id : true;
+        })
+      : modelsList;
+
+    const enabledModels = scopedModels.filter(model => (model.cars_qty || model.car_count || 0) > 0);
+
+    const mappedModels = enabledModels.map(model => {
+      const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
+      const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
+
+      const carCount = model.cars_qty ?? model.car_count ?? 0;
+      const countLabel = carCount > 0 ? ` (${carCount})` : '';
+
+      return {
+        value: model.id.toString(),
+        label: `${formattedModelName}${countLabel}`
+      };
+    });
+
+    if (!(isStrictMode && filters.model_id)) {
+      return [{ value: 'all', label: 'Të gjithë modelet' }, ...mappedModels];
+    }
+
+    return mappedModels;
+  }, [filters.manufacturer_id, filters.model_id, isStrictMode, manufacturers, models]);
 
   // Grades are now fetched automatically via useGrades hook
 
@@ -345,21 +378,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
               disabled={!filters.manufacturer_id}
               placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
               className="filter-control h-8 text-xs"
-              options={useMemo(() => [
-                ...(!(isStrictMode && filters.model_id)
-                  ? [{ value: 'all', label: 'Të gjithë modelet' }]
-                  : []),
-                ...models
-                  .filter(model => (model.cars_qty || 0) > 0) // Only show models with cars
-                  .map(model => {
-                    const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
-                    const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
-                    return {
-                      value: model.id.toString(),
-                      label: `${formattedModelName} (${model.cars_qty || 0})`
-                    };
-                  })
-              ], [isStrictMode, filters.model_id, models, filters.manufacturer_id, manufacturers])}
+              options={modelSelectOptions}
               forceNative
             />
           </div>
@@ -744,21 +763,7 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
                 disabled={!filters.manufacturer_id}
                 placeholder={filters.manufacturer_id ? "Zgjidhni modelin" : "Zgjidhni markën së pari"}
                 className="filter-control h-8 text-xs"
-                options={useMemo(() => [
-                  ...(!(isStrictMode && filters.model_id)
-                    ? [{ value: 'all', label: 'Të gjithë modelet' }]
-                    : []),
-                  ...models
-                    .filter(model => (model.cars_qty || 0) > 0) // Only show models with cars
-                    .map(model => {
-                      const selectedManufacturer = manufacturers.find(m => m.id.toString() === filters.manufacturer_id);
-                      const formattedModelName = formatModelName(model.name, selectedManufacturer?.name);
-                      return {
-                        value: model.id.toString(),
-                        label: `${formattedModelName} (${model.cars_qty || 0})`
-                      };
-                    })
-                ], [isStrictMode, filters.model_id, models, filters.manufacturer_id, manufacturers])}
+                options={modelSelectOptions}
                 forceNative
               />
             </div>
