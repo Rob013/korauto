@@ -10,6 +10,7 @@ const HomeCarsSection = lazy(() => import("@/components/HomeCarsSection"));
 const InspectionSection = lazy(() => import("@/components/InspectionSection"));
 const ContactSection = lazy(() => import("@/components/ContactSection"));
 const Footer = lazy(() => import("@/components/Footer"));
+const SeasonalDecorations = lazy(() => import("@/components/SeasonalDecorations").then(module => ({ default: module.SeasonalDecorations })));
 
 // Loading fallback components
 const HomeSectionSkeleton = () => (
@@ -66,7 +67,7 @@ const Index = () => {
     // Initialize analytics tracking for homepage
     initializeAnalytics();
     trackPageView(undefined, { page_type: 'homepage' });
-    
+
     // Initialize mobile enhancements
     initMobileEnhancers();
   }, []);
@@ -75,25 +76,31 @@ const Index = () => {
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header loads immediately for navigation */}
       <Header />
-      
+
       {/* Main content with proper landmark */}
       <main id="main-content" className="animate-fade-in">
         {/* Lazy load other sections with optimized skeletons */}
         <Suspense fallback={<HomeSectionSkeleton />}>
           <HomeSection />
         </Suspense>
-        
+
         <Suspense fallback={<CarsSectionSkeleton />}>
           <HomeCarsSection />
         </Suspense>
-        
+
         <Suspense fallback={<SectionSkeleton />}>
           <ContactSection />
         </Suspense>
       </main>
-      
+
+
       <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse" />}>
         <Footer />
+      </Suspense>
+
+      {/* Seasonal decorations overlay */}
+      <Suspense fallback={null}>
+        <SeasonalDecorations />
       </Suspense>
     </div>
   );
