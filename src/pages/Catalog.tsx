@@ -32,10 +32,13 @@ const Catalog = () => {
 
   useEffect(() => {
     // Track catalog page view
-    trackPageView(undefined, { 
+    trackPageView(undefined, {
       page_type: 'catalog',
-      highlighted_car: highlightCarId 
+      highlighted_car: highlightCarId
     });
+
+    // Scroll to top when catalog opens
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [highlightCarId]);
 
   return (
