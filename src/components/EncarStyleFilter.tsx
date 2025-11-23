@@ -927,42 +927,6 @@ const EncarStyleFilter = memo<EncarStyleFilterProps>(({
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
-                  <Cog className="h-3 w-3" />
-                  Gjenerata
-                </Label>
-                <AdaptiveSelect
-                  value={filters.generation_id || 'all'}
-                  onValueChange={(value) => updateFilter('generation_id', value)}
-                  disabled={!filters.model_id || isLoadingGenerations}
-                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGenerations ? "Loading..." : "Zgjidhni gjeneratën"}
-                  options={[
-                    ...(!(isStrictMode && filters.generation_id) ? [{ value: 'all', label: 'Të gjitha gjeneratat' }] : []),
-                    ...generations.map((gen) => ({ value: gen.id.toString(), label: `${gen.name}${gen.cars_qty ? ` (${gen.cars_qty})` : ''}` }))
-                  ]}
-                  forceNative
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Cog className="h-3 w-3" />
-                  Varianti
-                </Label>
-                <AdaptiveSelect
-                  value={filters.grade_iaai || 'all'}
-                  onValueChange={(value) => updateFilter('grade_iaai', value)}
-                  disabled={!filters.model_id || isLoadingGrades}
-                  placeholder={!filters.manufacturer_id ? "Zgjidhni markën së pari" : !filters.model_id ? "Zgjidhni modelin së pari" : isLoadingGrades ? "Loading..." : "Zgjidhni variantin"}
-                  options={[
-                    ...(!(isStrictMode && filters.grade_iaai) ? [{ value: 'all', label: 'Të gjitha variantet' }] : []),
-                    ...grades.map((grade) => ({ value: grade.value, label: `${grade.label}${grade.count ? ` (${grade.count})` : ''}` }))
-                  ]}
-                  forceNative
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
                   <Settings className="h-3 w-3" />
                   Motori
                 </Label>
