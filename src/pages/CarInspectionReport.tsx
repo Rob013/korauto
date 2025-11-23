@@ -140,6 +140,11 @@ const positiveStatusValues = new Set([
   "정상",
   "없음",
   "적정",
+  "nuk ka",
+  "në gjendje të mirë",
+  "në nivel të duhur",
+  "asnjë",
+  "mirë",
 ]);
 
 const negativeStatusValues = new Set([
@@ -281,6 +286,19 @@ const mechanicalKeyPhraseTranslations: Record<string, string> = {
   "블로워모터": "Motori i ventilimit të brendshëm",
   "라디에이터팬모터": "Motori i ventilatorit të radiatorit",
   "윈도모터": "Motorët e dritareve",
+  // Status values
+  "양호": "Në gjendje të mirë",
+  "정상": "Normal",
+  "없음": "Asnjë",
+  "없응": "Asnjë",
+  "nuk ka": "Asnjë",
+  "적정": "Në nivel të duhur",
+  "수리": "Riparuar",
+  "교환": "Zëvendësuar",
+  "용접": "Salduar",
+  "판금": "Llamarina",
+  "부식": "Ndryshk",
+  "흠집": "Gërvishje",
 };
 
 const mechanicalKeyExactTranslations: Record<string, string> = {

@@ -214,7 +214,11 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             </div>
                             <select
                                 value={filters.manufacturer_id || ''}
-                                onChange={(e) => handleChange('manufacturer_id', e.target.value)}
+                                onChange={(e) => {
+                                    handleChange('manufacturer_id', e.target.value);
+                                    // Auto-apply on manufacturer change
+                                    setTimeout(() => onApply?.(), 100);
+                                }}
                                 className={inputClass}
                             >
                                 <option value="">Të gjitha markat</option>
@@ -242,7 +246,11 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <label className={labelClass}>Modeli</label>
                             <select
                                 value={filters.model_id || ''}
-                                onChange={(e) => handleChange('model_id', e.target.value)}
+                                onChange={(e) => {
+                                    handleChange('model_id', e.target.value);
+                                    // Auto-apply on model change
+                                    setTimeout(() => onApply?.(), 100);
+                                }}
                                 disabled={!filters.manufacturer_id}
                                 className={inputClass + " disabled:opacity-50 disabled:cursor-not-allowed"}
                             >
@@ -540,25 +548,40 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             </div>
                         </div>
                     )}
+
+                    {/* Search Button - Under Advanced Filters */}
+                    {showAdvanced && (
+                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <Button
+                                onClick={onApply}
+                                className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
+                            >
+                                <Search className="h-4 w-4" />
+                                Kërko Makinat
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Fixed Bottom Buttons */}
-            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-2 shadow-lg">
-                <Button
-                    onClick={onApply}
-                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-bold text-sm flex items-center justify-center gap-2"
-                >
-                    <Search className="h-4 w-4" />
-                    Kërko Makinat
-                </Button>
+            {/* Fixed Bottom Buttons - Only Clear Filters */}
+            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
+                {!showAdvanced && (
+                    <Button
+                        onClick={onApply}
+                        className="w-full h-11 mb-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
+                    >
+                        <Search className="h-4 w-4" />
+                        Kërko Makinat
+                    </Button>
+                )}
                 <Button
                     onClick={onClearFilters}
                     variant="outline"
                     className="w-full h-9 font-semibold text-xs"
                 >
                     <X className="h-3.5 w-3.5 mr-1.5" />
-                    Pastro të gjitha filtrat
+                    Pastro Filtrat
                 </Button>
             </div>
         </div>
