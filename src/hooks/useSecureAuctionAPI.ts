@@ -201,6 +201,7 @@ export interface Model {
   id: number;
   name: string;
   car_count?: number;
+  manufacturer_id?: number;
 }
 
 export interface Generation {

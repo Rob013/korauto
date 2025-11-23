@@ -300,6 +300,7 @@ const EncarCatalog = ({
     name: string;
     car_count?: number;
     cars_qty?: number;
+    manufacturer_id?: number;
   }[]>([]);
   const [generations, setGenerations] = useState<{
     id: number;
@@ -1223,6 +1224,7 @@ const EncarCatalog = ({
               }
             }, 300);
           }}
+          usePortal={true}
         />
       )}
 

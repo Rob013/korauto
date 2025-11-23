@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { X, Search } from "lucide-react";
 import { APIFilters } from "@/utils/catalog-filter";
@@ -16,6 +17,7 @@ interface Model {
     id: number;
     name: string;
     cars_qty?: number;
+    manufacturer_id?: number;
 }
 
 interface FilterCounts {
@@ -37,6 +39,7 @@ interface MobileFiltersPanelProps {
     onApply: () => void;
     onManufacturerChange?: (manufacturerId: string) => void;
     className?: string;
+    usePortal?: boolean;
 }
 
 const FUEL_TYPES: Record<string, number> = {
@@ -89,7 +92,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     onClearFilters,
     onApply,
     onManufacturerChange,
-    className
+    className,
+    usePortal = false
 }) => {
 
     const handleChange = useCallback((key: string, value: string) => {
@@ -166,16 +170,25 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         return { popular, others };
     }, [manufacturers]);
 
-    // Get models for selected manufacturer
-    const modelsList = useMemo(() =>
-        filters.manufacturer_id
-            ? models.map(m => ({
+    // Get models for selected manufacturer with STRICT filtering
+    const modelsList = useMemo(() => {
+        if (!filters.manufacturer_id) return [];
+
+        return models
+            .filter(m => {
+                // Strict check: if model has manufacturer_id, it MUST match the selected one
+                if (m.manufacturer_id !== undefined) {
+                    return m.manufacturer_id.toString() === filters.manufacturer_id;
+                }
+                // If no manufacturer_id on model, assume it's correct (legacy behavior)
+                return true;
+            })
+            .map(m => ({
                 id: m.id,
                 name: m.name,
                 count: m.cars_qty || 0
-            }))
-            : []
-        , [filters.manufacturer_id, models]);
+            }));
+    }, [filters.manufacturer_id, models]);
 
     // Generate years
     const currentYear = new Date().getFullYear();
@@ -200,10 +213,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         return 'Të gjitha';
     }, [filters.buy_now_price_from, filters.buy_now_price_to]);
 
-    return (
-        <div className={className || "fixed inset-y-0 right-0 flex flex-col w-full md:w-80 bg-white dark:bg-black z-50 overflow-y-auto touch-action-manipulation"}>
+    const content = (
+        <div className={className || "fixed inset-y-0 right-0 flex flex-col w-full md:w-80 bg-white dark:bg-black z-[9999] overflow-y-auto touch-action-manipulation shadow-2xl"}>
             {/* Header */}
-            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sticky top-0 z-10">
                 <div className="px-4 py-2.5">
                     <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
                         Filtrat e Kërkimit
@@ -392,4 +405,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
             </div>
         </div>
     );
+
+    if (usePortal) {
+        return createPortal(content, document.body);
+    }
+
+    return content;
 };
