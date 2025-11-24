@@ -3057,44 +3057,29 @@ const CarDetails = memo(() => {
         setCar(sessionData);
         setLoading(false);
         cacheHydratedRef.current = true;
+        // Background refresh
         fetchFromApi({ background: true }).catch((error) => {
           console.warn("Background refresh failed", error);
         });
         return;
       }
 
-      const cachePromise = hydrateFromCache();
-
-      let shouldBackgroundRefresh = false;
-
-      // Reduced timeout from 200ms to 100ms for faster display
-      const quickCacheResult = await Promise.race([
-        cachePromise
-          .then((data) => {
-            if (data) {
-              shouldBackgroundRefresh = true;
-            }
-            return data;
-          })
-          .catch(() => null),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 100)),
-      ]);
-
-      const apiPromise = fetchFromApi({
-        background: shouldBackgroundRefresh,
-      });
-
-      cachePromise.catch((error) => {
-        console.warn("Cache hydration failed", error);
-      });
-
-      if (!quickCacheResult) {
-        await apiPromise;
-      } else {
-        apiPromise.catch((error) => {
-          console.warn("Background refresh failed", error);
-        });
+      // Try cache first
+      try {
+        const cachedData = await hydrateFromCache();
+        if (cachedData) {
+          // If we have cache, show it immediately and refresh in background
+          setCar(cachedData);
+          setLoading(false);
+          fetchFromApi({ background: true }).catch(console.warn);
+          return;
+        }
+      } catch (e) {
+        console.warn("Cache hydration failed", e);
       }
+
+      // If no cache, fetch from API
+      await fetchFromApi({ background: false });
     };
 
     loadCar();

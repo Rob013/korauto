@@ -8,15 +8,47 @@ const __dirname = path.dirname(__filename);
 
 async function scrapeSSancar() {
     const url = 'https://www.ssancar.com/ajax/ajax_car_list.php';
+    const mainPageUrl = 'https://www.ssancar.com/bbs/board.php?bo_table=list';
 
     try {
-        console.log('📡 Fetching SSancar list...');
+        console.log('📡 Fetching SSancar main page for auction schedule...');
 
-        // Fetch list
+        // First, get the main page to extract auction schedule
+        const mainPageResponse = await fetch(mainPageUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            }
+        });
+        const mainPageHtml = await mainPageResponse.text();
+
+        // Extract week number
+        const weekMatch = mainPageHtml.match(/<input type="hidden" id="week_no" value="(\d+)">/);
+        const weekNo = weekMatch ? weekMatch[1] : '1';
+
+        // Extract auction schedule
+        const uploadMatch = mainPageHtml.match(/Upload\s*:\s*(\d{4}-\d{2}-\d{2}\s+\d+:\d+[AP]M)/i);
+        const startMatch = mainPageHtml.match(/Start\s*:\s*(\d{4}-\d{2}-\d{2}\s+\d+:\d+[AP]M)/i);
+
+        // Extract countdown end date
+        const endDateMatch = mainPageHtml.match(/new Date\("(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^"]+)"\)/);
+
+        const auctionSchedule = {
+            weekNo: weekNo,
+            uploadTime: uploadMatch ? uploadMatch[1] : null,
+            bidStartTime: startMatch ? startMatch[1] : null,
+            bidEndTime: endDateMatch ? endDateMatch[1] : null,
+            lastUpdated: new Date().toISOString()
+        };
+
+        console.log('📅 Auction Schedule:', auctionSchedule);
+
+        console.log('📡 Fetching SSancar car list...');
+
+        // Fetch ALL cars - start with a large number
         const params = new URLSearchParams();
         params.append('pages', '0');
-        params.append('list', '100'); // Fetch 100 cars
-        params.append('weekNo', '1');
+        params.append('list', '500'); // Fetch up to 500 cars
+        params.append('weekNo', weekNo);
 
         const response = await fetch(url, {
             method: 'POST',
@@ -38,10 +70,8 @@ async function scrapeSSancar() {
         const carLinkMatches = html.matchAll(/<a\s+href="(https:\/\/www\.ssancar\.com\/page\/car_view\.php\?car_no=(\d+))"[^>]*>([\s\S]*?)<\/a>/g);
 
         let carCount = 0;
-        const MAX_CARS = 20; // Limit for now to avoid timeout/blocking
 
         for (const linkMatch of carLinkMatches) {
-            if (carCount >= MAX_CARS) break;
             carCount++;
 
             const detailUrl = linkMatch[1];
@@ -51,12 +81,15 @@ async function scrapeSSancar() {
             console.log(`🚗 Processing car ${carCount}: ID ${carId}`);
 
             try {
-                // Extract basic info from list item first (fallback/quick info)
+                // Extract basic info from list item first
                 const stockMatch = content.match(/<span\s+class="num">\s*(\d+)\s*<\/span>/);
                 const nameMatch = content.match(/<span\s+class="name">([^<]+)<\/span>/);
                 const priceSection = content.match(/<p\s+class="money">[\s\S]*?<span\s+class="num">([\d,]+)<\/span>/);
 
-                if (!stockMatch || !nameMatch || !priceSection) continue;
+                if (!stockMatch || !nameMatch || !priceSection) {
+                    console.log(`  ⚠️ Skipping car ${carId}: Missing basic info`);
+                    continue;
+                }
 
                 const basicInfo = {
                     id: carId,
@@ -70,7 +103,7 @@ async function scrapeSSancar() {
                 console.log(`   ...fetching details from ${detailUrl}`);
                 const detailResponse = await fetch(detailUrl, {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
                     }
                 });
                 const detailHtml = await detailResponse.text();
@@ -80,20 +113,19 @@ async function scrapeSSancar() {
                 const imageMatches = detailHtml.matchAll(/<div class="swiper-slide">\s*<img src="([^"]+)"/g);
                 for (const imgMatch of imageMatches) {
                     let imgUrl = imgMatch[1];
-                    if (!imgUrl.startsWith('http')) {
-                        imgUrl = `https://www.ssancar.com${imgUrl}`;
-                    }
-                    // Filter out placeholders if possible, but keep them if that's all we have
-                    if (!imgUrl.includes('no_image')) {
-                        images.push(imgUrl);
+                    if (imgUrl && imgUrl.trim()) {
+                        if (!imgUrl.startsWith('http')) {
+                            imgUrl = `https://www.ssancar.com${imgUrl}`;
+                        }
+                        if (!imgUrl.includes('no_image') && !imgUrl.includes('car_detail.svg')) {
+                            images.push(imgUrl);
+                        }
                     }
                 }
 
                 // Extract Specs Table
                 const specs = {};
-                // This regex is tricky, might need adjustment based on actual HTML structure
-                // Looking for <th>Label</th><td>Value</td> pattern
-                const tableMatches = detailHtml.matchAll(/<th>(.*?)<\/th>\s*<td>(.*?)<\/td>/g);
+                const tableMatches = detailHtml.matchAll(/<th[^>]*>(.*?)<\/th>\s*<td[^>]*>(.*?)<\/td>/gs);
                 for (const match of tableMatches) {
                     const key = match[1].replace(/<[^>]+>/g, '').trim();
                     const value = match[2].replace(/<[^>]+>/g, '').trim();
@@ -104,11 +136,12 @@ async function scrapeSSancar() {
 
                 // Extract Options
                 const options = [];
-                // Look for option checkboxes or lists. Based on typical structure:
-                // <li class="on">Option Name</li> or similar
-                const optionMatches = detailHtml.matchAll(/<li\s+class="on"><span>(.*?)<\/span><\/li>/g);
+                const optionMatches = detailHtml.matchAll(/<li\s+class="on"[^>]*><span[^>]*>(.*?)<\/span><\/li>/gs);
                 for (const match of optionMatches) {
-                    options.push(match[1].trim());
+                    const optionText = match[1].replace(/<[^>]+>/g, '').trim();
+                    if (optionText) {
+                        options.push(optionText);
+                    }
                 }
 
                 // Construct full car object
@@ -124,21 +157,29 @@ async function scrapeSSancar() {
 
                 cars.push(car);
 
-                // Be nice to the server
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Be nice to the server - small delay between requests
+                await new Promise(resolve => setTimeout(resolve, 300));
 
             } catch (err) {
-                console.error(`❌ Error parsing car ${carId}:`, err);
+                console.error(`❌ Error parsing car ${carId}:`, err.message);
                 continue;
             }
         }
 
         console.log(`✅ Successfully scraped ${cars.length} cars with full details`);
 
+        // Prepare output data
+        const outputData = {
+            auctionSchedule,
+            cars,
+            totalCars: cars.length,
+            lastUpdated: new Date().toISOString()
+        };
+
         // Save to JSON file
         const outputPath = path.join(__dirname, '../src/data/auctions.json');
-        fs.writeFileSync(outputPath, JSON.stringify(cars, null, 2));
-        console.log(`💾 Saved data to ${outputPath}`);
+        fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
+        console.log(`💾 Saved ${cars.length} cars and auction schedule to ${outputPath}`);
 
     } catch (error) {
         console.error('❌ Error scraping SSancar:', error);

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Gauge, Fuel, Settings2, ExternalLink, Download } from 'lucide-react';
+import { Calendar, Gauge, Fuel, Settings2, ExternalLink, Download, Clock } from 'lucide-react';
 import auctionData from '@/data/auctions.json';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AuctionCar {
   id: string;
@@ -20,26 +21,107 @@ interface AuctionCar {
   auction_date: string;
 }
 
+interface AuctionSchedule {
+  weekNo: string;
+  uploadTime: string | null;
+  bidStartTime: string | null;
+  bidEndTime: string | null;
+  lastUpdated: string;
+}
+
+interface AuctionData {
+  auctionSchedule: AuctionSchedule;
+  cars: AuctionCar[];
+  totalCars: number;
+  lastUpdated: string;
+}
+
 const Auctions = () => {
   const [cars, setCars] = useState<AuctionCar[]>([]);
+  const [schedule, setSchedule] = useState<AuctionSchedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
 
   useEffect(() => {
-    // Simulate loading to make it feel dynamic
+    // Load data
     const timer = setTimeout(() => {
       // @ts-ignore - JSON import type mismatch is expected
-      setCars(auctionData);
+      const data = auctionData as AuctionData;
+
+      if (data.cars && Array.isArray(data.cars)) {
+        setCars(data.cars);
+      }
+
+      if (data.auctionSchedule) {
+        setSchedule(data.auctionSchedule);
+      }
+
       setLoading(false);
     }, 500);
 
     return () => clearTimeout(timer);
   }, []);
 
+  // Countdown timer
+  useEffect(() => {
+    if (!schedule?.bidEndTime) return;
+
+    const updateCountdown = () => {
+      const endDate = new Date(schedule.bidEndTime!);
+      const now = new Date();
+      const timeDifference = endDate.getTime() - now.getTime();
+
+      if (timeDifference <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const intervalId = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [schedule]);
+
+  // Auto-refresh: Check for updates 3-4 minutes after upload time
+  useEffect(() => {
+    if (!schedule?.uploadTime) return;
+
+    const checkForUpdates = () => {
+      // Parse upload time and add 4 minutes
+      const uploadDate = new Date(schedule.uploadTime!);
+      const checkTime = new Date(uploadDate.getTime() + 4 * 60 * 1000);
+      const now = new Date();
+
+      if (now >= checkTime) {
+        // Reload the page to get fresh data
+        console.log('🔄 Auto-refreshing auction data...');
+        window.location.reload();
+      }
+    };
+
+    // Check every minute
+    const intervalId = setInterval(checkForUpdates, 60 * 1000);
+    // Also check immediately
+    checkForUpdates();
+
+    return () => clearInterval(intervalId);
+  }, [schedule]);
+
   const handleDownloadExcel = () => {
-    // Redirect to the SSancar excel download
-    // Note: The week parameter might need to be dynamic in a real scenario
-    window.location.href = "https://www.ssancar.com/ajax/excel_car_list.php?week=1";
+    if (schedule?.weekNo) {
+      window.location.href = `https://www.ssancar.com/ajax/excel_car_list.php?week=${schedule.weekNo}`;
+    } else {
+      window.location.href = "https://www.ssancar.com/ajax/excel_car_list.php?week=1";
+    }
   };
 
   if (loading) {
@@ -69,8 +151,46 @@ const Auctions = () => {
     );
   }
 
+  const isAuctionEnded = timeLeft && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
+
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Auction Schedule Banner */}
+      {schedule && (
+        <Alert className="mb-6 border-primary/20 bg-primary/5">
+          <Clock className="h-5 w-5" />
+          <AlertDescription className="ml-2">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-1">
+                {isAuctionEnded ? (
+                  <p className="font-semibold text-lg">Ankandi ka përfunduar sot</p>
+                ) : (
+                  <p className="font-semibold text-lg">Ankandi në vazhdim</p>
+                )}
+                {schedule.uploadTime && (
+                  <p className="text-sm text-muted-foreground">
+                    Ngarkuar: {new Date(schedule.uploadTime).toLocaleString('sq-AL')}
+                  </p>
+                )}
+                {schedule.bidStartTime && (
+                  <p className="text-sm text-muted-foreground">
+                    Fillimi i Ofertave: {new Date(schedule.bidStartTime).toLocaleString('sq-AL')}
+                  </p>
+                )}
+              </div>
+              {timeLeft && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">Koha e mbetur:</span>
+                  <span className="font-mono font-bold text-lg">
+                    {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                  </span>
+                </div>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Ankandet e Drejtpërdrejta</h1>

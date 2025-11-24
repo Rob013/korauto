@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, Gauge, Fuel, Settings2, CheckCircle, Car } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import auctionData from '@/data/auctions.json';
+import auctionDataImport from '@/data/auctions.json';
 
 // Type definition based on our scraped data
 interface AuctionCar {
@@ -22,6 +22,19 @@ interface AuctionCar {
     auction_date: string;
 }
 
+interface AuctionData {
+    auctionSchedule: {
+        weekNo: string;
+        uploadTime: string | null;
+        bidStartTime: string | null;
+        bidEndTime: string | null;
+        lastUpdated: string;
+    };
+    cars: AuctionCar[];
+    totalCars: number;
+    lastUpdated: string;
+}
+
 const AuctionCarDetails = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -30,7 +43,9 @@ const AuctionCarDetails = () => {
 
     useEffect(() => {
         if (id) {
-            const foundCar = auctionData.find((c) => c.id === id);
+            // @ts-ignore
+            const auctionData = auctionDataImport as AuctionData;
+            const foundCar = auctionData.cars.find((c) => c.id === id);
             if (foundCar) {
                 setCar(foundCar as AuctionCar);
                 if (foundCar.images && foundCar.images.length > 0) {
