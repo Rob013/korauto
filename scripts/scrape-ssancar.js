@@ -10,14 +10,13 @@ async function scrapeSSancar() {
     const url = 'https://www.ssancar.com/ajax/ajax_car_list.php';
 
     try {
-        console.log('📡 Fetching SSancar page...');
+        console.log('📡 Fetching SSancar list...');
 
-        // We need to fetch multiple pages to get all cars
-        // But for now let's fetch a large list
+        // Fetch list
         const params = new URLSearchParams();
         params.append('pages', '0');
         params.append('list', '100'); // Fetch 100 cars
-        params.append('weekNo', '1'); // Required parameter
+        params.append('weekNo', '1');
 
         const response = await fetch(url, {
             method: 'POST',
@@ -31,94 +30,110 @@ async function scrapeSSancar() {
         });
 
         const html = await response.text();
-        console.log(`📄 Received ${html.length} bytes of HTML`);
+        console.log(`📄 Received list HTML (${html.length} bytes)`);
 
         const cars = [];
 
-        // Regex to match car listing blocks
-        // The HTML structure is <li><a ...>...</a></li>
-        const carLinkMatches = html.matchAll(/<a\s+href="(https:\/\/www\.ssancar\.com\/page\/car_view\.php\?car_no=\d+)"[^>]*>([\s\S]*?)<\/a>/g);
+        // Extract basic info and detail URLs
+        const carLinkMatches = html.matchAll(/<a\s+href="(https:\/\/www\.ssancar\.com\/page\/car_view\.php\?car_no=(\d+))"[^>]*>([\s\S]*?)<\/a>/g);
 
         let carCount = 0;
+        const MAX_CARS = 20; // Limit for now to avoid timeout/blocking
+
         for (const linkMatch of carLinkMatches) {
+            if (carCount >= MAX_CARS) break;
             carCount++;
+
             const detailUrl = linkMatch[1];
-            const content = linkMatch[2];
+            const carId = linkMatch[2];
+            const content = linkMatch[3];
+
+            console.log(`🚗 Processing car ${carCount}: ID ${carId}`);
 
             try {
-                // Extract stock number
+                // Extract basic info from list item first (fallback/quick info)
                 const stockMatch = content.match(/<span\s+class="num">\s*(\d+)\s*<\/span>/);
-                if (!stockMatch) {
-                    continue;
-                }
-
-                // Extract car name
                 const nameMatch = content.match(/<span\s+class="name">([^<]+)<\/span>/);
-                if (!nameMatch) {
-                    continue;
-                }
-
-                // Extract detail list items
-                const detailSection = content.match(/<ul\s+class="detail">([\s\S]*?)<\/ul>/);
-                if (!detailSection) {
-                    continue;
-                }
-
-                const detailSpans = [...detailSection[1].matchAll(/<span>([^<]+)<\/span>/g)];
-                if (detailSpans.length < 5) {
-                    continue;
-                }
-
-                const year = parseInt(detailSpans[0][1]);
-                const mileageText = detailSpans[1][1].replace(/[^\d]/g, '');
-                const mileage = parseInt(mileageText) || 0;
-                const transmission = detailSpans[2][1].trim();
-                const color = detailSpans[3][1].trim();
-                const fuel = detailSpans[4][1].trim();
-
-                // Extract price
                 const priceSection = content.match(/<p\s+class="money">[\s\S]*?<span\s+class="num">([\d,]+)<\/span>/);
-                if (!priceSection) {
-                    continue;
-                }
 
-                const price = parseInt(priceSection[1].replace(/,/g, ''));
+                if (!stockMatch || !nameMatch || !priceSection) continue;
 
-                // Extract image
-                const imageMatch = content.match(/<img\s+src="([^"]+)"/);
-                let imageUrl = 'https://www.ssancar.com/img/no_image.png';
-                if (imageMatch) {
-                    imageUrl = imageMatch[1].startsWith('http') ? imageMatch[1] : `https://www.ssancar.com${imageMatch[1]}`;
-                }
-
-                // Parse make from car name
-                const carName = nameMatch[1].trim();
-                const nameParts = carName.split(/\s+/);
-                const make = nameParts[0];
-
-                const car = {
+                const basicInfo = {
+                    id: carId,
                     stock_no: stockMatch[1].padStart(4, '0'),
-                    make: make,
-                    model: carName,
-                    year: year,
-                    mileage: mileage,
-                    transmission: transmission,
-                    color: color,
-                    fuel: fuel,
-                    price: price,
-                    image_url: imageUrl,
-                    detail_url: detailUrl,
+                    name: nameMatch[1].trim(),
+                    price: parseInt(priceSection[1].replace(/,/g, '')),
+                    detail_url: detailUrl
+                };
+
+                // Fetch detail page
+                console.log(`   ...fetching details from ${detailUrl}`);
+                const detailResponse = await fetch(detailUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                });
+                const detailHtml = await detailResponse.text();
+
+                // Extract Images (Swiper)
+                const images = [];
+                const imageMatches = detailHtml.matchAll(/<div class="swiper-slide">\s*<img src="([^"]+)"/g);
+                for (const imgMatch of imageMatches) {
+                    let imgUrl = imgMatch[1];
+                    if (!imgUrl.startsWith('http')) {
+                        imgUrl = `https://www.ssancar.com${imgUrl}`;
+                    }
+                    // Filter out placeholders if possible, but keep them if that's all we have
+                    if (!imgUrl.includes('no_image')) {
+                        images.push(imgUrl);
+                    }
+                }
+
+                // Extract Specs Table
+                const specs = {};
+                // This regex is tricky, might need adjustment based on actual HTML structure
+                // Looking for <th>Label</th><td>Value</td> pattern
+                const tableMatches = detailHtml.matchAll(/<th>(.*?)<\/th>\s*<td>(.*?)<\/td>/g);
+                for (const match of tableMatches) {
+                    const key = match[1].replace(/<[^>]+>/g, '').trim();
+                    const value = match[2].replace(/<[^>]+>/g, '').trim();
+                    if (key && value) {
+                        specs[key] = value;
+                    }
+                }
+
+                // Extract Options
+                const options = [];
+                // Look for option checkboxes or lists. Based on typical structure:
+                // <li class="on">Option Name</li> or similar
+                const optionMatches = detailHtml.matchAll(/<li\s+class="on"><span>(.*?)<\/span><\/li>/g);
+                for (const match of optionMatches) {
+                    options.push(match[1].trim());
+                }
+
+                // Construct full car object
+                const car = {
+                    ...basicInfo,
+                    make: basicInfo.name.split(' ')[0],
+                    model: basicInfo.name,
+                    images: images.length > 0 ? images : ['https://www.ssancar.com/img/no_image.png'],
+                    specs: specs,
+                    options: options,
                     auction_date: new Date().toISOString().split('T')[0]
                 };
 
                 cars.push(car);
+
+                // Be nice to the server
+                await new Promise(resolve => setTimeout(resolve, 500));
+
             } catch (err) {
-                console.error(`❌ Error parsing car ${carCount}:`, err);
+                console.error(`❌ Error parsing car ${carId}:`, err);
                 continue;
             }
         }
 
-        console.log(`✅ Successfully parsed ${cars.length} cars`);
+        console.log(`✅ Successfully scraped ${cars.length} cars with full details`);
 
         // Save to JSON file
         const outputPath = path.join(__dirname, '../src/data/auctions.json');
