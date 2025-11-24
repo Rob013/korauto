@@ -496,7 +496,7 @@ const statusValueKeywordTranslations: Record<string, string> = {
   available: "Në dispozicion",
   unavailable: "I padisponueshëm",
   none: "Asnjë",
-  unknown: "Panjohet",
+  unknown: "Nuk ekziston",
   pending: "Në pritje",
   damaged: "Dëmtuar",
   damage: "Dëmtim",
@@ -2930,31 +2930,31 @@ const CarInspectionReport = () => {
           Kthehu te makinat
         </Button>
         <Tabs defaultValue="inspection" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto">
+          <TabsList className="w-full flex md:grid md:grid-cols-4 overflow-x-auto md:overflow-visible gap-1.5 bg-muted/60 p-1.5 rounded-xl h-auto snap-x scrollbar-hide">
             <TabsTrigger
               value="inspection"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+              className="flex-shrink-0 md:flex-shrink md:w-auto flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium min-w-[140px] md:min-w-0 snap-start"
             >
               <FileText className="h-4 w-4 text-primary" />
               <span>Inspektimi & Mjeti</span>
             </TabsTrigger>
             <TabsTrigger
               value="history"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+              className="flex-shrink-0 md:flex-shrink md:w-auto flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium min-w-[140px] md:min-w-0 snap-start"
             >
               <Clock className="h-4 w-4 text-primary" />
               <span>Historia e Vetures</span>
             </TabsTrigger>
             <TabsTrigger
               value="options"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+              className="flex-shrink-0 md:flex-shrink md:w-auto flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium min-w-[140px] md:min-w-0 snap-start"
             >
               <Cog className="h-4 w-4 text-primary" />
               <span>Pajisjet & Opsionet</span>
             </TabsTrigger>
             <TabsTrigger
               value="warranty"
-              className="flex items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-xs font-medium"
+              className="flex-shrink-0 md:flex-shrink md:w-auto flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium min-w-[140px] md:min-w-0 snap-start"
             >
               <Shield className="h-4 w-4 text-primary" />
               <span>Garancioni</span>

@@ -29,11 +29,11 @@ export const OptimizedCarImage = ({
     // Preload image
     const img = new Image();
     img.src = src;
-    
+
     img.onload = () => {
       setIsLoaded(true);
     };
-    
+
     img.onerror = () => {
       setHasError(true);
       setIsLoaded(true);
@@ -47,23 +47,22 @@ export const OptimizedCarImage = ({
 
   return (
     <div
-      className={`relative ${aspectRatio} w-full overflow-hidden bg-muted ${className}`}
+      className={`OptimizedCarImage relative ${aspectRatio} w-full overflow-hidden bg-muted ${className}`}
       style={style}
     >
       {/* Skeleton loader */}
       {!isLoaded && (
         <Skeleton className="absolute inset-0" />
       )}
-      
+
       {/* Actual image */}
       <img
         src={src}
         alt={alt}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
-        className={`h-full w-full object-cover transition-opacity duration-300 ${
-          isLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`h-full w-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
         onError={() => setHasError(true)}
       />
 

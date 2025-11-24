@@ -104,7 +104,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
   const markerScale = useMemo(() => {
     if (isMobile) {
-      return 0.45;
+      return 0.85; // Increased from 0.45 for better mobile visibility
     }
     if (viewportWidth < 1024) {
       return 0.68;
@@ -884,6 +884,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
 
                             // Build tooltip text
                             const tooltipText = `${part.name}: ${getStatusText(statuses)}`;
+                            const isCritical = ['N', 'R', 'S', 'K'].includes(m.char);
 
                             return (
                               <g key={`${part.id}-marker-${idx}`}>
@@ -896,6 +897,7 @@ export const CarInspectionDiagram: React.FC<CarInspectionDiagramProps> = ({
                                   fill={m.color}
                                   opacity="0.3"
                                   filter="url(#glow)"
+                                  className={isCritical ? "animate-pulse-scale" : ""}
                                 />
                                 {/* Main marker circle */}
                                 <circle

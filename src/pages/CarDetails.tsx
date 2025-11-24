@@ -3865,7 +3865,7 @@ const CarDetails = memo(() => {
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
-              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl transition-shadow duration-300 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
+              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl transition-shadow duration-300 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 min-w-0 prevent-cls">
                 <CardContent className="p-0">
                   <div
                     ref={imageContainerRef}
@@ -3889,7 +3889,7 @@ const CarDetails = memo(() => {
                       <OptimizedCarImage
                         src={images[selectedImageIndex]}
                         alt={`${car.year} ${car.make} ${car.model} - Image ${selectedImageIndex + 1}`}
-                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate transition-all duration-500`}
+                        className={`${swipeWrapperClass} w-full h-full image-transition gpu-accelerate duration-500`}
                         style={imageSwipeStyle}
                         aspectRatio="aspect-[4/3]"
                         priority={selectedImageIndex === 0}
