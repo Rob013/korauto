@@ -1,9 +1,8 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, Gauge, Fuel, Settings2, CheckCircle, Car } from 'lucide-react';
+import { ArrowLeft, Calendar, Gauge, Fuel, Settings2, CheckCircle, Car, MessageCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import auctionDataImport from '@/data/auctions.json';
 
@@ -54,6 +53,13 @@ const AuctionCarDetails = () => {
             }
         }
     }, [id]);
+
+    const handleWhatsAppContact = () => {
+        if (!car) return;
+        const message = `Përshëndetje! Jam i interesuar për ${car.name} (Çmimi fillestare: $${car.price.toLocaleString()}) - Stock #${car.stock_no}. A mund të më jepni më shumë informacion?`;
+        const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    };
 
     if (!car) {
         return (
@@ -120,6 +126,15 @@ const AuctionCarDetails = () => {
                             ${car.price.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">(Oferta fillestare)</span>
                         </div>
                     </div>
+
+                    <Button
+                        onClick={handleWhatsAppContact}
+                        size="lg"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
+                    >
+                        <MessageCircle className="h-5 w-5" />
+                        Kontakto në WhatsApp
+                    </Button>
 
                     <div className="grid grid-cols-2 gap-4">
                         <Card>

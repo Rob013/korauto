@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Gauge, Fuel, Settings2, ExternalLink, Download, Clock } from 'lucide-react';
+import { Calendar, Gauge, Fuel, Settings2, ExternalLink, Download, Clock, MessageCircle, Info } from 'lucide-react';
 import auctionData from '@/data/auctions.json';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AuctionCar {
@@ -129,7 +130,7 @@ const Auctions = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `auction_cars_${new Date().toISOString().split('T')[0]}.xls`;
+      a.download = `korauto_lista_${new Date().toISOString().split('T')[0]}.xls`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -140,6 +141,12 @@ const Auctions = () => {
       const weekNo = schedule?.weekNo || '1';
       window.location.href = `https://www.ssancar.com/ajax/excel_car_list.php?week=${weekNo}`;
     }
+  };
+
+  const handleWhatsAppContact = (car: AuctionCar) => {
+    const message = `Përshëndetje! Jam i interesuar për ${car.name} (Çmimi fillestare: $${car.price.toLocaleString()}) - Stock #${car.stock_no}. A mund të më jepni më shumë informacion?`;
+    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   if (loading) {
@@ -173,48 +180,73 @@ const Auctions = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Auction Schedule Banner */}
+      {/* Auction Schedule Modal */}
       {schedule && (
-        <Alert className="mb-6 border-primary/20 bg-primary/5">
-          <Clock className="h-5 w-5" />
-          <AlertDescription className="ml-2">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="space-y-1">
-                {isAuctionEnded ? (
-                  <p className="font-semibold text-lg">Ankandi ka përfunduar sot</p>
-                ) : (
-                  <p className="font-semibold text-lg">Ankandi në vazhdim</p>
-                )}
-                {schedule.uploadTime && (
-                  <p className="text-sm text-muted-foreground">
-                    Ngarkuar: {new Date(schedule.uploadTime).toLocaleString('sq-AL')}
-                  </p>
-                )}
-                {schedule.bidStartTime && (
-                  <p className="text-sm text-muted-foreground">
-                    Fillimi i Ofertave: {new Date(schedule.bidStartTime).toLocaleString('sq-AL')}
-                  </p>
-                )}
-              </div>
-              {timeLeft && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Koha e mbetur:</span>
-                  <span className="font-mono font-bold text-lg">
-                    {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-                  </span>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="mb-4 flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Orari i Ankandit
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Orari i Ankandit të Drejtpërdrejtë</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {isAuctionEnded ? (
+                <div className="text-center py-4">
+                  <p className="font-semibold text-lg text-muted-foreground">Ankandi ka përfunduar sot</p>
+                  <p className="text-sm text-muted-foreground mt-2">Orari i ardhshëm i ankandit</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm text-muted-foreground">Status</span>
+                    <Badge variant="default">Aktiv</Badge>
+                  </div>
+                  {schedule.uploadTime && (
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm text-muted-foreground">Ngarkuar</span>
+                      <span className="text-sm font-medium">{new Date(schedule.uploadTime).toLocaleString('sq-AL')}</span>
+                    </div>
+                  )}
+                  {schedule.bidStartTime && (
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm text-muted-foreground">Fillimi i Ofertave</span>
+                      <span className="text-sm font-medium">{new Date(schedule.bidStartTime).toLocaleString('sq-AL')}</span>
+                    </div>
+                  )}
+                  {timeLeft && (
+                    <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+                      <span className="text-sm font-semibold">Koha e mbetur</span>
+                      <span className="font-mono font-bold text-lg text-primary">
+                        {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          </AlertDescription>
-        </Alert>
+          </DialogContent>
+        </Dialog>
       )}
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Ankandet e Drejtpërdrejta</h1>
           <p className="text-muted-foreground">
             Vetura nga ankandet e Koresë së Jugut - të përditësuara automatikisht
           </p>
+          {timeLeft && (
+            <div className="flex items-center gap-2 mt-2 text-sm">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Koha e mbetur:</span>
+              <span className="font-mono font-semibold text-primary">
+                {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+              </span>
+            </div>
+          )}
           <Badge variant="outline" className="mt-2">
             {cars.length} vetura disponueshme
           </Badge>
@@ -224,6 +256,8 @@ const Auctions = () => {
           Shkarko Listën (Excel)
         </Button>
       </div>
+
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {cars.map((car) => (
@@ -272,20 +306,30 @@ const Auctions = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div>
-                  <div className="text-xs text-muted-foreground">Oferta fillestare</div>
-                  <div className="text-xl font-bold text-primary">
-                    ${car.price.toLocaleString()}
+              <div className="flex flex-col gap-3 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Oferta fillestare</div>
+                    <div className="text-xl font-bold text-primary">
+                      ${car.price.toLocaleString()}
+                    </div>
                   </div>
+                  <a
+                    href={`/auction/${car.id}`}
+                    className="flex items-center gap-1 text-sm text-primary hover:underline"
+                  >
+                    Shiko
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
                 </div>
-                <a
-                  href={`/auction/${car.id}`}
-                  className="flex items-center gap-1 text-sm text-primary hover:underline"
+                <Button
+                  onClick={() => handleWhatsAppContact(car)}
+                  size="sm"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
                 >
-                  Shiko
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                  <MessageCircle className="h-4 w-4" />
+                  Kontakto në WhatsApp
+                </Button>
               </div>
             </CardContent>
           </Card>
