@@ -116,11 +116,29 @@ const Auctions = () => {
     return () => clearInterval(intervalId);
   }, [schedule]);
 
-  const handleDownloadExcel = () => {
-    if (schedule?.weekNo) {
-      window.location.href = `https://www.ssancar.com/ajax/excel_car_list.php?week=${schedule.weekNo}`;
-    } else {
-      window.location.href = "https://www.ssancar.com/ajax/excel_car_list.php?week=1";
+  const handleDownloadExcel = async () => {
+    try {
+      const weekNo = schedule?.weekNo || '1';
+      const excelUrl = `https://www.ssancar.com/ajax/excel_car_list.php?week=${weekNo}`;
+
+      // Fetch the file
+      const response = await fetch(excelUrl);
+      const blob = await response.blob();
+
+      // Create a download link with custom filename
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `auction_cars_${new Date().toISOString().split('T')[0]}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download Excel file:', error);
+      // Fallback to direct link
+      const weekNo = schedule?.weekNo || '1';
+      window.location.href = `https://www.ssancar.com/ajax/excel_car_list.php?week=${weekNo}`;
     }
   };
 
@@ -195,7 +213,7 @@ const Auctions = () => {
         <div>
           <h1 className="text-3xl font-bold mb-2">Ankandet e Drejtpërdrejta</h1>
           <p className="text-muted-foreground">
-            Vetura nga ankandet e Koresë së Jugut - të përditësuara në kohë reale
+            Vetura nga ankandet e Koresë së Jugut - të përditësuara automatikisht
           </p>
           <Badge variant="outline" className="mt-2">
             {cars.length} vetura disponueshme
