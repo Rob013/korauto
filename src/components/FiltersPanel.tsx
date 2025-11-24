@@ -5,6 +5,12 @@ import { Label } from '@/components/ui/label';
 import { AdaptiveSelect } from '@/components/ui/adaptive-select';
 import { Badge } from '@/components/ui/badge';
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   X,
   Search,
   ChevronDown,
@@ -22,6 +28,7 @@ import { FilterState } from '@/hooks/useFiltersFromUrl';
 import { validateFilters } from '@/utils/buildQueryParams';
 import { cn } from '@/lib/utils';
 import { sortBrandsWithPriority } from '@/utils/brandOrdering';
+import { useGrades, useTrims } from '@/hooks/useFiltersData';
 
 interface FiltersData {
   brands: Array<{ id: string; name: string; count?: number; image?: string }>;
@@ -74,8 +81,12 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   compact = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
-  const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+  const [accordionValue, setAccordionValue] = useState<string[]>(['basic']);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Fetch grades and trims based on selected model
+  const { data: gradesData, isLoading: gradesLoading } = useGrades(filters.model);
+  const { data: trimsData, isLoading: trimsLoading } = useTrims(filters.model);
 
   // Debounce search term with 250ms delay as specified
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
@@ -327,6 +338,16 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       chips.push({ key: 'model', label: 'Modeli', value: model?.name || filters.model });
     }
 
+    if (filters.grade) {
+      const grade = gradesData?.find(g => g.id === filters.grade);
+      chips.push({ key: 'grade', label: 'Gjenerata', value: grade?.name || filters.grade });
+    }
+
+    if (filters.trim) {
+      const trim = trimsData?.find(t => t.id === filters.trim);
+      chips.push({ key: 'trim', label: 'Varianti', value: trim?.name || filters.trim });
+    }
+
     if (filters.fuel) {
       const fuel = data.fuelTypes.find(f => f.id === filters.fuel);
       chips.push({ key: 'fuel', label: 'Karburanti', value: fuel?.name || filters.fuel });
@@ -350,28 +371,27 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     }
 
     return chips;
-  }, [filters, data, availableModels]);
+  }, [filters, data, availableModels, gradesData, trimsData]);
 
   const handleBrandChange = (brandId: string) => {
-    // When brand changes, reset model as specified in requirements
-    onFiltersChange({ brand: brandId, model: undefined });
+    // When brand changes, reset model, grade, and trim as specified in requirements
+    onFiltersChange({ brand: brandId, model: undefined, grade: undefined, trim: undefined });
   };
 
-  const toggleSection = useCallback((section: string) => {
-    setExpandedSections(prev =>
-      prev.includes(section)
-        ? prev.filter(s => s !== section)
-        : [...prev, section]
-    );
-  }, []);
 
   const removeFilter = (key: string) => {
     switch (key) {
       case 'brand':
-        onFiltersChange({ brand: undefined, model: undefined }); // Reset model when removing brand
+        onFiltersChange({ brand: undefined, model: undefined, grade: undefined, trim: undefined }); // Reset model, grade, trim when removing brand
         break;
       case 'model':
-        onFiltersChange({ model: undefined });
+        onFiltersChange({ model: undefined, grade: undefined, trim: undefined }); // Reset grade, trim when removing model
+        break;
+      case 'grade':
+        onFiltersChange({ grade: undefined });
+        break;
+      case 'trim':
+        onFiltersChange({ trim: undefined });
         break;
       case 'fuel':
         onFiltersChange({ fuel: undefined });
@@ -391,13 +411,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   return (
     <div
       className={cn(
-        'space-y-4 rounded-xl p-4 backdrop-blur-sm border border-border/50 shadow-lg',
+        'space-y-4 rounded-xl p-4 bg-card border border-border shadow-lg',
         className
       )}
-      style={{
-        background: 'var(--gradient-filter)',
-        boxShadow: 'var(--shadow-filter)',
-      }}
     >
       {/* Header with active filters count */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -446,28 +462,18 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
 
 
-      {/* Basic Filters Section */}
-      <div className="space-y-3">
-        <Button
-          variant="ghost"
-          onClick={() => toggleSection('basic')}
-          className="w-full justify-between p-2 h-auto"
-        >
-          <div className="flex items-center gap-2">
-            <Car className="h-4 w-4 text-primary" />
-            <span className="font-medium">Filtrat Bazë</span>
-          </div>
-          {expandedSections.includes('basic') ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-
-        {expandedSections.includes('basic') && (
-          <div
-            className="space-y-4 p-3 bg-muted/30 rounded-lg"
-            style={{
-              animation: 'fadeIn 0.2s ease-out',
-              willChange: 'contents'
-            }}
-          >
+      {/* Filters Accordion */}
+      <Accordion type="multiple" value={accordionValue} onValueChange={setAccordionValue} className="space-y-2">
+        {/* Basic Filters Section */}
+        <AccordionItem value="basic" className="border border-border rounded-lg bg-card">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50 transition-colors rounded-t-lg">
+            <div className="flex items-center gap-2">
+              <Car className="h-4 w-4 text-primary" />
+              <span className="font-medium">Filtrat Bazë</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4 pt-2">
             {/* Brand */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
@@ -479,7 +485,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 value={filters.brand || ''}
                 onValueChange={handleBrandChange}
                 placeholder="Zgjidhni markën"
-                className="filter-select bg-background"
+                className="filter-select"
                 options={brandOptions}
                 forceNative
               />
@@ -497,7 +503,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 onValueChange={(value) => onFiltersChange({ model: value })}
                 disabled={!filters.brand || availableModels.length === 0}
                 placeholder={!filters.brand ? "Zgjidhni markën së pari" : "Zgjidhni modelin"}
-                className="filter-select bg-background"
+                className="filter-select"
                 options={(availableModels.length === 0
                   ? [{ value: '', label: 'Nuk ka modele të disponueshme', disabled: true }]
                   : availableModels.map((model) => ({
@@ -519,14 +525,14 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <AdaptiveSelect
                   value={filters.yearMin !== undefined ? filters.yearMin.toString() : 'any'}
                   onValueChange={handleYearMinChange}
-                  className="filter-select bg-background"
+                  className="filter-select"
                   options={[{ value: 'any', label: 'Pa minimum' }, ...yearOptions]}
                   forceNative
                 />
                 <AdaptiveSelect
                   value={filters.yearMax !== undefined ? filters.yearMax.toString() : 'any'}
                   onValueChange={handleYearMaxChange}
-                  className="filter-select bg-background"
+                  className="filter-select"
                   options={[{ value: 'any', label: 'Pa maksimum' }, ...descendingYearOptions]}
                   forceNative
                 />
@@ -548,14 +554,14 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 <AdaptiveSelect
                   value={filters.priceMin !== undefined ? filters.priceMin.toString() : 'any'}
                   onValueChange={handlePriceMinChange}
-                  className="filter-select bg-background"
+                  className="filter-select"
                   options={[{ value: 'any', label: 'Pa minimum' }, ...priceOptions]}
                   forceNative
                 />
                 <AdaptiveSelect
                   value={filters.priceMax !== undefined ? filters.priceMax.toString() : 'any'}
                   onValueChange={handlePriceMaxChange}
-                  className="filter-select bg-background"
+                  className="filter-select"
                   options={[{ value: 'any', label: 'Pa maksimum' }, ...descendingPriceOptions]}
                   forceNative
                 />
@@ -566,181 +572,212 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                   : `€${currentPriceRange[0].toLocaleString()} - €${currentPriceRange[1].toLocaleString()}`}
               </p>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Advanced Filters Section */}
-      <div className="space-y-3">
-        <Button
-          variant="ghost"
-          onClick={() => toggleSection('advanced')}
-          className="w-full justify-between p-2 h-auto hover:bg-muted/50 backdrop-blur-sm border border-border/30 transition-all duration-200"
-        >
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-primary transition-transform hover:scale-110" />
-            <span className="font-medium">Filtrat e Avancuar</span>
-          </div>
-          {expandedSections.includes('advanced') ?
-            <ChevronUp className="h-4 w-4 transition-transform duration-200" /> :
-            <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-          }
-        </Button>
-
-        {expandedSections.includes('advanced') && (
-          <div
-            className="space-y-4 p-3 bg-card/50 backdrop-blur-sm rounded-lg border border-border/30 max-h-[60vh] overflow-y-auto"
-            style={{
-              animation: 'fadeIn 0.2s ease-out',
-              willChange: 'contents',
-              scrollBehavior: 'smooth'
-            }}
-          >
-            {/* Fuel Type */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 font-medium">
-                <Fuel className="h-4 w-4" />
-                Lloji i Karburantit
-              </Label>
-              <AdaptiveSelect
-                key={`fuel-${filters.fuel || 'empty'}`}
-                value={filters.fuel || ''}
-                onValueChange={(value) => onFiltersChange({ fuel: value })}
-                placeholder="Zgjidhni karburantin"
-                className="filter-select bg-background"
-                options={data.fuelTypes
-                  .filter(fuel => fuel.count === undefined || fuel.count > 0)
-                  .map((fuel) => ({
-                    value: fuel.id,
-                    label: `${fuel.name}${fuel.count ? ` (${fuel.count})` : ''}`
-                  }))}
-                forceNative
-              />
             </div>
+          </AccordionContent>
+        </AccordionItem>
 
-            {/* Transmission */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Transmisioni
-              </Label>
-              <AdaptiveSelect
-                key={`transmission-${filters.transmission || 'empty'}`}
-                value={filters.transmission || ''}
-                onValueChange={(value) => onFiltersChange({ transmission: value })}
-                placeholder="Zgjidhni transmisionin"
-                className="filter-select bg-background"
-                options={data.transmissions
-                  .filter(transmission => transmission.count === undefined || transmission.count > 0)
-                  .map((transmission) => ({
-                    value: transmission.id,
-                    label: `${transmission.name}${transmission.count ? ` (${transmission.count})` : ''}`
-                  }))}
-                forceNative
-              />
+        {/* Advanced Filters Section */}
+        <AccordionItem value="advanced" className="border border-border rounded-lg bg-card">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50 transition-colors rounded-t-lg">
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-primary" />
+              <span className="font-medium">Filtrat e Avancuar</span>
             </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4 pt-2 max-h-[60vh] overflow-y-auto"  style={{ scrollBehavior: 'smooth' }}>
+              {/* Generations/Grades */}
+              {filters.model && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Gjeneratat
+                  </Label>
+                  <AdaptiveSelect
+                    key={`grade-${filters.model}-${filters.grade || 'empty'}`}
+                    value={filters.grade || ''}
+                    onValueChange={(value) => onFiltersChange({ grade: value })}
+                    disabled={!filters.model || gradesLoading || !gradesData?.length}
+                    placeholder={gradesLoading ? "Duke ngarkuar..." : !filters.model ? "Zgjidhni modelin së pari" : "Zgjidhni gjeneratën"}
+                    className="filter-select"
+                    options={gradesData?.map((grade) => ({
+                      value: grade.id,
+                      label: `${grade.name}${grade.car_count ? ` (${grade.car_count})` : ''}`
+                    })) || []}
+                    forceNative
+                  />
+                </div>
+              )}
 
-            {/* Mileage Range */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Kilometrazhi (km)
-              </Label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {/* Variants/Trims */}
+              {filters.model && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Variantet
+                  </Label>
+                  <AdaptiveSelect
+                    key={`trim-${filters.model}-${filters.trim || 'empty'}`}
+                    value={filters.trim || ''}
+                    onValueChange={(value) => onFiltersChange({ trim: value })}
+                    disabled={!filters.model || trimsLoading || !trimsData?.length}
+                    placeholder={trimsLoading ? "Duke ngarkuar..." : !filters.model ? "Zgjidhni modelin së pari" : "Zgjidhni variantin"}
+                    className="filter-select"
+                    options={trimsData?.map((trim) => ({
+                      value: trim.id,
+                      label: `${trim.name}${trim.car_count ? ` (${trim.car_count})` : ''}`
+                    })) || []}
+                    forceNative
+                  />
+                </div>
+              )}
+
+              {/* Fuel Type */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 font-medium">
+                  <Fuel className="h-4 w-4" />
+                  Lloji i Karburantit
+                </Label>
                 <AdaptiveSelect
-                  value={filters.mileageMin !== undefined ? filters.mileageMin.toString() : 'any'}
-                  onValueChange={handleMileageMinChange}
-                  className="filter-select bg-background"
-                  options={[{ value: 'any', label: 'Pa minimum' }, ...mileageOptions]}
-                  forceNative
-                />
-                <AdaptiveSelect
-                  value={filters.mileageMax !== undefined ? filters.mileageMax.toString() : 'any'}
-                  onValueChange={handleMileageMaxChange}
-                  className="filter-select bg-background"
-                  options={[{ value: 'any', label: 'Pa maksimum' }, ...descendingMileageOptions]}
+                  key={`fuel-${filters.fuel || 'empty'}`}
+                  value={filters.fuel || ''}
+                  onValueChange={(value) => onFiltersChange({ fuel: value })}
+                  placeholder="Zgjidhni karburantin"
+                  className="filter-select"
+                  options={data.fuelTypes
+                    .filter(fuel => fuel.count === undefined || fuel.count > 0)
+                    .map((fuel) => ({
+                      value: fuel.id,
+                      label: `${fuel.name}${fuel.count ? ` (${fuel.count})` : ''}`
+                    }))}
                   forceNative
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                {filters.mileageMin === undefined && filters.mileageMax === undefined
-                  ? 'Të gjitha kilometrat'
-                  : `${currentMileageRange[0].toLocaleString()} km - ${currentMileageRange[1].toLocaleString()} km`}
-              </p>
-            </div>
 
-            {/* Body Type */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Car className="h-4 w-4" />
-                Lloji i Trupit
-              </Label>
-              <AdaptiveSelect
-                key={`bodyType-${filters.bodyType || 'empty'}`}
-                value={filters.bodyType || ''}
-                onValueChange={(value) => onFiltersChange({ bodyType: value })}
-                placeholder="Zgjidhni llojin e trupit"
-                className="filter-select bg-background"
-                options={data.bodyTypes
-                  .filter(bodyType => bodyType.count === undefined || bodyType.count > 0)
-                  .map((bodyType) => ({
-                    value: bodyType.id,
-                    label: `${bodyType.name}${bodyType.count ? ` (${bodyType.count})` : ''}`
-                  }))}
-                forceNative
-              />
-            </div>
+              {/* Transmission */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Transmisioni
+                </Label>
+                <AdaptiveSelect
+                  key={`transmission-${filters.transmission || 'empty'}`}
+                  value={filters.transmission || ''}
+                  onValueChange={(value) => onFiltersChange({ transmission: value })}
+                  placeholder="Zgjidhni transmisionin"
+                  className="filter-select"
+                  options={data.transmissions
+                    .filter(transmission => transmission.count === undefined || transmission.count > 0)
+                    .map((transmission) => ({
+                      value: transmission.id,
+                      label: `${transmission.name}${transmission.count ? ` (${transmission.count})` : ''}`
+                    }))}
+                  forceNative
+                />
+              </div>
 
-            {/* Color */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                Ngjyra
-              </Label>
-              <AdaptiveSelect
-                key={`color-${filters.color || 'empty'}`}
-                value={filters.color || ''}
-                onValueChange={(value) => onFiltersChange({ color: value })}
-                placeholder="Zgjidhni ngjyrën"
-                className="filter-select bg-background"
-                options={data.colors
-                  .filter(color => color.count === undefined || color.count > 0)
-                  .map((color) => ({
-                    value: color.id,
-                    label: `${color.name}${color.count ? ` (${color.count})` : ''}`
-                  }))}
-                forceNative
-              />
-            </div>
+              {/* Mileage Range */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Kilometrazhi (km)
+                </Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <AdaptiveSelect
+                    value={filters.mileageMin !== undefined ? filters.mileageMin.toString() : 'any'}
+                    onValueChange={handleMileageMinChange}
+                    className="filter-select"
+                    options={[{ value: 'any', label: 'Pa minimum' }, ...mileageOptions]}
+                    forceNative
+                  />
+                  <AdaptiveSelect
+                    value={filters.mileageMax !== undefined ? filters.mileageMax.toString() : 'any'}
+                    onValueChange={handleMileageMaxChange}
+                    className="filter-select"
+                    options={[{ value: 'any', label: 'Pa maksimum' }, ...descendingMileageOptions]}
+                    forceNative
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {filters.mileageMin === undefined && filters.mileageMax === undefined
+                    ? 'Të gjitha kilometrat'
+                    : `${currentMileageRange[0].toLocaleString()} km - ${currentMileageRange[1].toLocaleString()} km`}
+                </p>
+              </div>
 
-            {/* Location */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Vendndodhja
-              </Label>
-              <AdaptiveSelect
-                key={`location-${filters.location || 'empty'}`}
-                value={filters.location || ''}
-                onValueChange={(value) => onFiltersChange({ location: value })}
-                placeholder="Zgjidhni vendndodhjen"
-                className="filter-select bg-background"
-                options={data.locations
-                  .filter(location => location.count === undefined || location.count > 0)
-                  .map((location) => ({
-                    value: location.id,
-                    label: `${location.name}${location.count ? ` (${location.count})` : ''}`
-                  }))}
-                forceNative
-              />
+              {/* Body Type */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  Lloji i Trupit
+                </Label>
+                <AdaptiveSelect
+                  key={`bodyType-${filters.bodyType || 'empty'}`}
+                  value={filters.bodyType || ''}
+                  onValueChange={(value) => onFiltersChange({ bodyType: value })}
+                  placeholder="Zgjidhni llojin e trupit"
+                  className="filter-select"
+                  options={data.bodyTypes
+                    .filter(bodyType => bodyType.count === undefined || bodyType.count > 0)
+                    .map((bodyType) => ({
+                      value: bodyType.id,
+                      label: `${bodyType.name}${bodyType.count ? ` (${bodyType.count})` : ''}`
+                    }))}
+                  forceNative
+                />
+              </div>
+
+              {/* Color */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Ngjyra
+                </Label>
+                <AdaptiveSelect
+                  key={`color-${filters.color || 'empty'}`}
+                  value={filters.color || ''}
+                  onValueChange={(value) => onFiltersChange({ color: value })}
+                  placeholder="Zgjidhni ngjyrën"
+                  className="filter-select"
+                  options={data.colors
+                    .filter(color => color.count === undefined || color.count > 0)
+                    .map((color) => ({
+                      value: color.id,
+                      label: `${color.name}${color.count ? ` (${color.count})` : ''}`
+                    }))}
+                  forceNative
+                />
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Vendndodhja
+                </Label>
+                <AdaptiveSelect
+                  key={`location-${filters.location || 'empty'}`}
+                  value={filters.location || ''}
+                  onValueChange={(value) => onFiltersChange({ location: value })}
+                  placeholder="Zgjidhni vendndodhjen"
+                  className="filter-select"
+                  options={data.locations
+                    .filter(location => location.count === undefined || location.count > 0)
+                    .map((location) => ({
+                      value: location.id,
+                      label: `${location.name}${location.count ? ` (${location.count})` : ''}`
+                    }))}
+                  forceNative
+                />
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
-        <div className="rounded-md bg-destructive/10 p-3 backdrop-blur-sm border border-destructive/20 animate-scale-in">
+        <div className="rounded-md bg-destructive/10 p-3 border border-destructive/20">
           <h4 className="text-sm font-medium text-destructive">Ju lutemi korrigoni gabimet e mëposhtme:</h4>
           <ul className="mt-1 text-sm text-destructive">
             {validationErrors.map((error, index) => (

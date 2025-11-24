@@ -5,6 +5,8 @@ export interface FilterState {
   // Exact match filters
   brand?: string;
   model?: string;
+  grade?: string;
+  trim?: string;
   fuel?: string;
   transmission?: string;
   bodyType?: string;
@@ -35,6 +37,8 @@ export const useFiltersFromUrl = () => {
   const filters: FilterState = {
     brand: searchParams.get('brand') || undefined,
     model: searchParams.get('model') || undefined,
+    grade: searchParams.get('grade') || undefined,
+    trim: searchParams.get('trim') || undefined,
     fuel: searchParams.get('fuel') || undefined,
     transmission: searchParams.get('transmission') || undefined,
     bodyType: searchParams.get('bodyType') || undefined,
