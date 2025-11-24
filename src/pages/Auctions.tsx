@@ -45,6 +45,15 @@ const Auctions = () => {
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
   const [showBlockingModal, setShowBlockingModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  // Filter states
+  const [selectedMake, setSelectedMake] = useState<string>('All');
+  const [selectedModel, setSelectedModel] = useState<string>('All');
+  const [selectedYear, setSelectedYear] = useState<string>('All');
+  const [selectedFuel, setSelectedFuel] = useState<string>('All');
+
   const { isAdmin } = useAdminCheck();
 
   // New state for current time
@@ -166,6 +175,36 @@ const Auctions = () => {
     window.open(whatsappUrl, '_blank');
   };
 
+  // Derive filter options
+  const uniqueMakes = ['All', ...Array.from(new Set(cars.map(c => c.make))).sort()];
+  const uniqueModels = ['All', ...Array.from(new Set(cars.filter(c => selectedMake === 'All' || c.make === selectedMake).map(c => c.model))).sort()];
+  const uniqueYears = ['All', ...Array.from(new Set(cars.map(c => c.specs['Year'] || c.specs['Model Year']).filter(Boolean))).sort().reverse()];
+  const uniqueFuels = ['All', ...Array.from(new Set(cars.map(c => c.specs['Fuel']).filter(Boolean))).sort()];
+
+  // Filter logic
+  const isAuctionEnded = timeLeft && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
+
+  const filteredCars = cars.filter(car => {
+    if (isAuctionEnded) return false;
+    if (selectedMake !== 'All' && car.make !== selectedMake) return false;
+    if (selectedModel !== 'All' && car.model !== selectedModel) return false;
+    if (selectedYear !== 'All' && (car.specs['Year'] !== selectedYear && car.specs['Model Year'] !== selectedYear)) return false;
+    if (selectedFuel !== 'All' && car.specs['Fuel'] !== selectedFuel) return false;
+    return true;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCars.length / itemsPerPage);
+  const paginatedCars = filteredCars.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -193,114 +232,57 @@ const Auctions = () => {
     );
   }
 
-  const isAuctionEnded = timeLeft && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
-
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Blocking Auction Schedule Modal */}
       <Dialog open={showBlockingModal} onOpenChange={setShowBlockingModal}>
         <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl">Orari i Ankandit të Drejtpërdrejtë</DialogTitle>
-            <DialogDescription className="text-center">
-              {isAuctionEnded ? 'Ankandi ka përfunduar sot' : 'Ankandi aktual'}
+            <DialogTitle>Orari i Ankandit</DialogTitle>
+            <DialogDescription>
+              Informacione rreth orarit të ankandit dhe kohës së mbetur.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-6">
-            {schedule && (
-              <div className="space-y-3">
-                <div className="text-center mb-4">
-                  <h3 className="text-lg font-semibold mb-2">Orari</h3>
-                  {schedule.uploadTime && (
-                    <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
-                      <span className="text-sm">Ngarkuar:</span>
-                      <span className="text-sm font-medium">{schedule.uploadTime}</span>
-                    </div>
-                  )}
-                  {schedule.bidStartTime && (
-                    <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
-                      <span className="text-sm">Fillimi i Ofertave:</span>
-                      <span className="text-sm font-medium">{schedule.bidStartTime}</span>
-                    </div>
-                  )}
-                </div>
 
-                {timeLeft && !isAuctionEnded && (
-                  <div className="text-center p-6 bg-primary/5 rounded-lg border-2 border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-2">Left Time :</p>
-                    <div className="text-4xl font-bold text-primary font-mono">
-                      {timeLeft.days}d{timeLeft.hours}h{timeLeft.minutes}m{timeLeft.seconds}s
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-center text-sm text-muted-foreground mt-4">
-                  {cars.length} vetura disponueshme
-                </div>
+          <div className="space-y-4 py-4">
+            {schedule?.uploadTime && (
+              <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
+                <span className="text-sm text-muted-foreground">Upload :</span>
+                <span className="text-sm font-medium">{schedule.uploadTime}</span>
               </div>
             )}
-
-            <Button
-              onClick={() => setShowBlockingModal(false)}
-              className="w-full"
-              size="lg"
-            >
-              Shiko Vetura
-            </Button>
+            {schedule?.bidStartTime && (
+              <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
+                <span className="text-sm text-muted-foreground">Fillimi i Ofertave:</span>
+                <span className="text-sm font-medium">{schedule.bidStartTime}</span>
+              </div>
+            )}
           </div>
+
+          {timeLeft && !isAuctionEnded && (
+            <div className="text-center p-6 bg-primary/5 rounded-lg border-2 border-primary/20">
+              <p className="text-sm text-muted-foreground mb-2">Left Time :</p>
+              <div className="text-4xl font-bold text-primary font-mono">
+                {timeLeft.days}d{timeLeft.hours}h{timeLeft.minutes}m{timeLeft.seconds}s
+              </div>
+            </div>
+          )}
+
+          <div className="text-center text-sm text-muted-foreground mt-4">
+            {filteredCars.length} vetura disponueshme
+          </div>
+
+          <Button
+            onClick={() => setShowBlockingModal(false)}
+            className="w-full"
+            size="lg"
+          >
+            Shiko Vetura
+          </Button>
         </DialogContent>
       </Dialog>
 
-      {/* Small Schedule Info Button */}
-      {schedule && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="mb-4 flex items-center gap-2">
-              <Info className="h-4 w-4" />
-              Orari i Ankandit
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Orari i Ankandit</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              {schedule.uploadTime && (
-                <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Upload :</span>
-                  <span className="text-sm font-medium">{schedule.uploadTime}</span>
-                </div>
-              )}
-              {schedule.bidStartTime && (
-                <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
-                  <span className="text-sm text-muted-foreground">Bid Start :</span>
-                  <span className="text-sm font-medium">{schedule.bidStartTime}</span>
-                </div>
-              )}
-              {/* Current time */}
-              <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
-                <span className="text-sm text-muted-foreground">Current Time :</span>
-                <span className="text-sm font-medium">{currentTime.toLocaleString('sq-AL')}</span>
-              </div>
-              {/* Total cars */}
-              <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
-                <span className="text-sm text-muted-foreground">Total Cars :</span>
-                <span className="text-sm font-medium">{cars.length}</span>
-              </div>
-              {timeLeft && (
-                <div className="flex justify-between p-3 bg-primary/10 rounded-lg">
-                  <span className="text-sm font-semibold">Left Time :</span>
-                  <span className="font-mono font-bold text-lg text-primary">
-                    {timeLeft.days}d{timeLeft.hours}h{timeLeft.minutes}m{timeLeft.seconds}s
-                  </span>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Ankandet e Drejtpërdrejta</h1>
           <p className="text-muted-foreground">
@@ -319,7 +301,7 @@ const Auctions = () => {
             </div>
           )}
           <Badge variant="outline" className="mt-2">
-            {cars.length} vetura disponueshme
+            {filteredCars.length} vetura disponueshme
           </Badge>
         </div>
         {isAdmin ? (
@@ -335,10 +317,73 @@ const Auctions = () => {
         )}
       </div>
 
-
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-muted/30 p-4 rounded-lg">
+        <div>
+          <label className="text-sm font-medium mb-1 block">Prodhuesi</label>
+          <select
+            className="w-full p-2 rounded-md border bg-background"
+            value={selectedMake}
+            onChange={(e) => {
+              setSelectedMake(e.target.value);
+              setSelectedModel('All'); // Reset model when make changes
+              setCurrentPage(1);
+            }}
+          >
+            {uniqueMakes.map(make => (
+              <option key={make} value={make}>{make}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1 block">Modeli</label>
+          <select
+            className="w-full p-2 rounded-md border bg-background"
+            value={selectedModel}
+            onChange={(e) => {
+              setSelectedModel(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            {uniqueModels.map(model => (
+              <option key={model} value={model}>{model}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1 block">Viti</label>
+          <select
+            className="w-full p-2 rounded-md border bg-background"
+            value={selectedYear}
+            onChange={(e) => {
+              setSelectedYear(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            {uniqueYears.map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1 block">Karburanti</label>
+          <select
+            className="w-full p-2 rounded-md border bg-background"
+            value={selectedFuel}
+            onChange={(e) => {
+              setSelectedFuel(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            {uniqueFuels.map(fuel => (
+              <option key={fuel} value={fuel}>{fuel}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {cars.map((car) => (
+        {paginatedCars.map((car) => (
           <Card key={car.stock_no} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="relative h-48 bg-muted">
               {car.images && car.images.length > 0 && !car.images[0].includes('no_image') ? (
@@ -355,8 +400,8 @@ const Auctions = () => {
                   <span className="text-muted-foreground">Nuk ka imazh</span>
                 </div>
               )}
-              <Badge className="absolute top-2 right-2 bg-background/90">
-                #{car.stock_no}
+              <Badge className="absolute top-2 right-2 bg-black/70 hover:bg-black/80 text-white border-0 backdrop-blur-sm">
+                Stock: {car.stock_no}
               </Badge>
             </div>
 
@@ -414,9 +459,58 @@ const Auctions = () => {
         ))}
       </div>
 
-      {cars.length === 0 && (
+      {filteredCars.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
-          Nuk ka vetura të disponueshme në ankandin e tanishëm
+          Nuk ka vetura të disponueshme me këto kritere
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+
+          <div className="flex items-center gap-2">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              // Logic to show pages around current page
+              let pageNum = i + 1;
+              if (totalPages > 5) {
+                if (currentPage > 3) {
+                  pageNum = currentPage - 3 + i;
+                }
+                if (pageNum > totalPages) {
+                  pageNum = totalPages - (4 - i);
+                }
+              }
+
+              if (pageNum <= 0) return null;
+
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  onClick={() => handlePageChange(pageNum)}
+                  className="w-10 h-10 p-0"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
         </div>
       )}
     </div>

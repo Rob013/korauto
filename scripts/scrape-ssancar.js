@@ -48,7 +48,7 @@ async function scrapeSSancar() {
         // Fetch ALL cars
         const params = new URLSearchParams();
         params.append('pages', '0');
-        params.append('list', '500');
+        params.append('list', '2000'); // Increased to capture all cars (approx 852)
         params.append('weekNo', weekNo);
 
         const response = await fetch(url, {
@@ -111,15 +111,16 @@ async function scrapeSSancar() {
 
                     if (spans.length >= 3) {
                         specs['Year'] = spans[0][1].trim();
-                        specs['Mileage'] = spans[1][1].trim();
-                        specs['Transmission'] = spans[2][1].trim();
+                        specs['Transmission'] = spans[1][1].trim() === 'A/T' ? 'Automatic' : spans[1][1].trim();
+                        specs['Fuel'] = spans[2][1].trim();
+                        // spans[3] is Engine CC (e.g. 1,999cc)
+                        specs['Mileage'] = spans[4][1].trim() + ' Km';
 
-                        if (spans.length >= 5) {
-                            specs['Color'] = spans[3][1].trim();
-                            specs['Fuel'] = spans[4][1].trim();
-                        }
                         if (spans.length >= 6) {
                             specs['Grade'] = spans[5][1].trim();
+                        }
+                        if (spans.length >= 7) {
+                            specs['Color'] = spans[6][1].trim();
                         }
                     }
                 }

@@ -44,12 +44,16 @@ const AuctionCarDetails = () => {
         if (id) {
             // @ts-ignore
             const auctionData = auctionDataImport as AuctionData;
-            const foundCar = auctionData.cars.find((c) => c.id === id);
+            // Robust comparison: convert both to strings to ensure match
+            const foundCar = auctionData.cars.find((c) => String(c.id) === String(id));
+
             if (foundCar) {
                 setCar(foundCar as AuctionCar);
                 if (foundCar.images && foundCar.images.length > 0) {
                     setSelectedImage(foundCar.images[0]);
                 }
+            } else {
+                console.error(`Car with ID ${id} not found in auction data`);
             }
         }
     }, [id]);
@@ -96,8 +100,8 @@ const AuctionCarDetails = () => {
                                 <Car className="h-16 w-16 text-muted-foreground" />
                             </div>
                         )}
-                        <Badge className="absolute top-4 left-4 text-lg px-3 py-1">
-                            #{car.stock_no}
+                        <Badge className="absolute top-4 left-4 text-lg px-3 py-1 bg-black/70 hover:bg-black/80 text-white border-0 backdrop-blur-sm z-10">
+                            Stock: {car.stock_no}
                         </Badge>
                     </div>
 
