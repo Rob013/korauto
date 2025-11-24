@@ -24,9 +24,9 @@ async function scrapeSSancar() {
         const weekMatch = mainPageHtml.match(/<input type="hidden" id="week_no" value="(\d+)">/);
         const weekNo = weekMatch ? weekMatch[1] : '1';
 
-        // Extract auction schedule
-        const uploadMatch = mainPageHtml.match(/Upload\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+(?::\d+)?)/i);
-        const startMatch = mainPageHtml.match(/(?:Bid\s+)?Start\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+(?::\d+)?)/i);
+        // Extract auction schedule with exact SSancar format
+        const uploadMatch = mainPageHtml.match(/Upload\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+)/i);
+        const startMatch = mainPageHtml.match(/Start\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+)/i);
 
         // Extract countdown end date
         const endDateMatch = mainPageHtml.match(/new Date\("(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^"]+)"\)/);
@@ -92,15 +92,14 @@ async function scrapeSSancar() {
                     continue;
                 }
 
-                // Extract image
+                // Extract thumbnail image
                 const imageMatch = content.match(/<img\s+src="([^"]+)"/);
-                let imageUrl = imageMatch ? imageMatch[1] : 'https://www.ssancar.com/img/no_image.png';
-                if (imageUrl && !imageUrl.startsWith('http')) {
-                    imageUrl = `https://www.ssancar.com${imageUrl}`;
+                let thumbnailUrl = imageMatch ? imageMatch[1] : 'https://www.ssancar.com/img/no_image.png';
+                if (thumbnailUrl && !thumbnailUrl.startsWith('http')) {
+                    thumbnailUrl = `https://www.ssancar.com${thumbnailUrl}`;
                 }
 
                 // Extract specs from the detail list
-                // The pattern is: <span>2023</span> <span>66,978 Km</span> <span>Automatic</span> <br /> <span>Color</span> <span>Fuel</span>
                 const detailSection = content.match(/<ul\s+class="detail">[\s\S]*?<\/ul>/);
                 const specs = {};
 
@@ -113,7 +112,6 @@ async function scrapeSSancar() {
                         specs['Mileage'] = spans[1][1].trim();
                         specs['Transmission'] = spans[2][1].trim();
 
-                        // After the first <br />, we get Color and Fuel
                         if (spans.length >= 5) {
                             specs['Color'] = spans[3][1].trim();
                             specs['Fuel'] = spans[4][1].trim();
@@ -124,6 +122,35 @@ async function scrapeSSancar() {
                     }
                 }
 
+                // Now fetch the detail page to get ALL images
+                console.log(`   ...fetching images from detail page`);
+                const detailResponse = await fetch(detailUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+                    }
+                });
+                const detailHtml = await detailResponse.text();
+
+                // Extract all images from swiper
+                const images = [];
+                const imageMatches = detailHtml.matchAll(/<div class="swiper-slide">\s*<img src="([^"]+)"/g);
+                for (const imgMatch of imageMatches) {
+                    let imgUrl = imgMatch[1];
+                    if (imgUrl && imgUrl.trim()) {
+                        if (!imgUrl.startsWith('http')) {
+                            imgUrl = `https://www.ssancar.com${imgUrl}`;
+                        }
+                        if (!imgUrl.includes('no_image') && !imgUrl.includes('car_detail.svg')) {
+                            images.push(imgUrl);
+                        }
+                    }
+                }
+
+                // If no images found in detail, use thumbnail
+                if (images.length === 0) {
+                    images.push(thumbnailUrl);
+                }
+
                 const basicInfo = {
                     id: carId,
                     stock_no: stockMatch[1].padStart(4, '0'),
@@ -132,15 +159,18 @@ async function scrapeSSancar() {
                     detail_url: detailUrl,
                     make: nameMatch[1].split(' ')[0],
                     model: nameMatch[1].trim(),
-                    images: [imageUrl],
+                    images: images,
                     specs: specs,
                     options: [],
                     auction_date: new Date().toISOString().split('T')[0]
                 };
 
-                console.log(`   ✓ Extracted: Year=${specs['Year']}, Mileage=${specs['Mileage']}, Trans=${specs['Transmission']}, Fuel=${specs['Fuel']}`);
+                console.log(`   ✓ Extracted: ${images.length} images, Year=${specs['Year']}, Mileage=${specs['Mileage']}, Fuel=${specs['Fuel']}`);
 
                 cars.push(basicInfo);
+
+                // Small delay to be respectful to server
+                await new Promise(resolve => setTimeout(resolve, 200));
 
             } catch (err) {
                 console.error(`❌ Error parsing car ${carId}:`, err.message);
@@ -148,7 +178,7 @@ async function scrapeSSancar() {
             }
         }
 
-        console.log(`✅ Successfully scraped ${cars.length} cars with specs`);
+        console.log(`✅ Successfully scraped ${cars.length} cars with full images and specs`);
 
         // Prepare output data
         const outputData = {
@@ -161,7 +191,7 @@ async function scrapeSSancar() {
         // Save to JSON file
         const outputPath = path.join(__dirname, '../src/data/auctions.json');
         fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
-        console.log(`💾 Saved ${cars.length} cars with specs to ${outputPath}`);
+        console.log(`💾 Saved ${cars.length} cars with images to ${outputPath}`);
 
     } catch (error) {
         console.error('❌ Error scraping SSancar:', error);
