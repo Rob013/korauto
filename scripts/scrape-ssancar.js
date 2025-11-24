@@ -21,13 +21,13 @@ async function scrapeSSancar() {
         });
         const mainPageHtml = await mainPageResponse.text();
 
-        // Extract week number
+        // Extract week number  
         const weekMatch = mainPageHtml.match(/<input type="hidden" id="week_no" value="(\d+)">/);
         const weekNo = weekMatch ? weekMatch[1] : '1';
 
-        // Extract auction schedule
-        const uploadMatch = mainPageHtml.match(/Upload\s*:\s*(\d{4}-\d{2}-\d{2}\s+\d+:\d+[AP]M)/i);
-        const startMatch = mainPageHtml.match(/Start\s*:\s*(\d{4}-\d{2}-\d{2}\s+\d+:\d+[AP]M)/i);
+        // Extract auction schedule - looking for the exact format from the page
+        const uploadMatch = mainPageHtml.match(/Upload\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+(?::\d+)?)/i);
+        const startMatch = mainPageHtml.match(/(?:Bid\s+)?Start\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+(?::\d+)?)/i);
 
         // Extract countdown end date
         const endDateMatch = mainPageHtml.match(/new Date\("(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^"]+)"\)/);
@@ -44,10 +44,10 @@ async function scrapeSSancar() {
 
         console.log('📡 Fetching SSancar car list...');
 
-        // Fetch ALL cars - start with a large number
+        // Fetch ALL cars
         const params = new URLSearchParams();
         params.append('pages', '0');
-        params.append('list', '500'); // Fetch up to 500 cars
+        params.append('list', '500');
         params.append('weekNo', weekNo);
 
         const response = await fetch(url, {
@@ -81,7 +81,7 @@ async function scrapeSSancar() {
             console.log(`🚗 Processing car ${carCount}: ID ${carId}`);
 
             try {
-                // Extract basic info from list item first
+                // Extract basic info from list item
                 const stockMatch = content.match(/<span\s+class="num">\s*(\d+)\s*<\/span>/);
                 const nameMatch = content.match(/<span\s+class="name">([^<]+)<\/span>/);
                 const priceSection = content.match(/<p\s+class="money">[\s\S]*?<span\s+class="num">([\d,]+)<\/span>/);
@@ -99,7 +99,7 @@ async function scrapeSSancar() {
                     detail_url: detailUrl
                 };
 
-                // Fetch detail page
+                // Fetch detail page to get REAL specs
                 console.log(`   ...fetching details from ${detailUrl}`);
                 const detailResponse = await fetch(detailUrl, {
                     headers: {
@@ -108,7 +108,7 @@ async function scrapeSSancar() {
                 });
                 const detailHtml = await detailResponse.text();
 
-                // Extract Images (Swiper)
+                // Extract Images
                 const images = [];
                 const imageMatches = detailHtml.matchAll(/<div class="swiper-slide">\s*<img src="([^"]+)"/g);
                 for (const imgMatch of imageMatches) {
@@ -123,13 +123,25 @@ async function scrapeSSancar() {
                     }
                 }
 
-                // Extract Specs Table
+                // Extract REAL Specs from the detail page table
                 const specs = {};
-                const tableMatches = detailHtml.matchAll(/<th[^>]*>(.*?)<\/th>\s*<td[^>]*>(.*?)<\/td>/gs);
-                for (const match of tableMatches) {
+
+                // Look for table rows with spec data
+                const specTableMatches = detailHtml.matchAll(/<tr[^>]*>\s*<th[^>]*>([^<]+)<\/th>\s*<td[^>]*>([^<]+)<\/td>\s*<\/tr>/g);
+                for (const match of specTableMatches) {
+                    const key = match[1].trim();
+                    const value = match[2].trim();
+                    if (key && value && value !== '-' && value !== '') {
+                        specs[key] = value;
+                    }
+                }
+
+                // Also try alternative table structure
+                const altTableMatches = detailHtml.matchAll(/<th[^>]*>([^<]+)<\/th>\s*<td[^>]*>([^<]+)<\/td>/g);
+                for (const match of altTableMatches) {
                     const key = match[1].replace(/<[^>]+>/g, '').trim();
                     const value = match[2].replace(/<[^>]+>/g, '').trim();
-                    if (key && value) {
+                    if (key && value && value !== '-' && value !== '' && !specs[key]) {
                         specs[key] = value;
                     }
                 }
@@ -155,9 +167,11 @@ async function scrapeSSancar() {
                     auction_date: new Date().toISOString().split('T')[0]
                 };
 
+                console.log(`   ✓ Extracted ${Object.keys(specs).length} specs, ${images.length} images, ${options.length} options`);
+
                 cars.push(car);
 
-                // Be nice to the server - small delay between requests
+                // Be nice to the server
                 await new Promise(resolve => setTimeout(resolve, 300));
 
             } catch (err) {

@@ -5,7 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Gauge, Fuel, Settings2, ExternalLink, Download, Clock, MessageCircle, Info } from 'lucide-react';
 import auctionData from '@/data/auctions.json';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AuctionCar {
@@ -43,8 +44,13 @@ const Auctions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
+  const [showBlockingModal, setShowBlockingModal] = useState(false);
+  const { isAdmin } = useAdminCheck();
 
   useEffect(() => {
+    // Show blocking modal on first load
+    setShowBlockingModal(true);
+
     // Load data
     const timer = setTimeout(() => {
       // @ts-ignore - JSON import type mismatch is expected
@@ -59,6 +65,8 @@ const Auctions = () => {
       }
 
       setLoading(false);
+      // Close blocking modal after data loads
+      setShowBlockingModal(false);
     }, 500);
 
     return () => clearTimeout(timer);
@@ -149,6 +157,12 @@ const Auctions = () => {
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleRequestFullList = () => {
+    const message = `Përshëndetje! Dëshiroj të marr listën e plotë të veturave në ankand. Faleminderit!`;
+    const whatsappUrl = `https://wa.me/38348181116?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -180,7 +194,61 @@ const Auctions = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Auction Schedule Modal */}
+      {/* Blocking Auction Schedule Modal */}
+      <Dialog open={showBlockingModal} onOpenChange={setShowBlockingModal}>
+        <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">Orari i Ankandit të Drejtpërdrejtë</DialogTitle>
+            <DialogDescription className="text-center">
+              {isAuctionEnded ? 'Ankandi ka përfunduar sot' : 'Ankandi aktual'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-6">
+            {schedule && (
+              <div className="space-y-3">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Orari</h3>
+                  {schedule.uploadTime && (
+                    <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm">Ngarkuar:</span>
+                      <span className="text-sm font-medium">{schedule.uploadTime}</span>
+                    </div>
+                  )}
+                  {schedule.bidStartTime && (
+                    <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
+                      <span className="text-sm">Fillimi i Ofertave:</span>
+                      <span className="text-sm font-medium">{schedule.bidStartTime}</span>
+                    </div>
+                  )}
+                </div>
+
+                {timeLeft && !isAuctionEnded && (
+                  <div className="text-center p-6 bg-primary/5 rounded-lg border-2 border-primary/20">
+                    <p className="text-sm text-muted-foreground mb-2">Koha e mbetur</p>
+                    <div className="text-4xl font-bold text-primary font-mono">
+                      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-center text-sm text-muted-foreground mt-4">
+                  {cars.length} vetura disponueshme
+                </div>
+              </div>
+            )}
+
+            <Button
+              onClick={() => setShowBlockingModal(false)}
+              className="w-full"
+              size="lg"
+            >
+              Shiko Vetura
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Small Schedule Info Button */}
       {schedule && (
         <Dialog>
           <DialogTrigger asChild>
@@ -191,40 +259,27 @@ const Auctions = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Orari i Ankandit të Drejtpërdrejtë</DialogTitle>
+              <DialogTitle>Orari i Ankandit</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              {isAuctionEnded ? (
-                <div className="text-center py-4">
-                  <p className="font-semibold text-lg text-muted-foreground">Ankandi ka përfunduar sot</p>
-                  <p className="text-sm text-muted-foreground mt-2">Orari i ardhshëm i ankandit</p>
+              {schedule.uploadTime && (
+                <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Ngarkuar</span>
+                  <span className="text-sm font-medium">{schedule.uploadTime}</span>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant="default">Aktiv</Badge>
-                  </div>
-                  {schedule.uploadTime && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <span className="text-sm text-muted-foreground">Ngarkuar</span>
-                      <span className="text-sm font-medium">{new Date(schedule.uploadTime).toLocaleString('sq-AL')}</span>
-                    </div>
-                  )}
-                  {schedule.bidStartTime && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <span className="text-sm text-muted-foreground">Fillimi i Ofertave</span>
-                      <span className="text-sm font-medium">{new Date(schedule.bidStartTime).toLocaleString('sq-AL')}</span>
-                    </div>
-                  )}
-                  {timeLeft && (
-                    <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-                      <span className="text-sm font-semibold">Koha e mbetur</span>
-                      <span className="font-mono font-bold text-lg text-primary">
-                        {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-                      </span>
-                    </div>
-                  )}
+              )}
+              {schedule.bidStartTime && (
+                <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Fillimi i Ofertave</span>
+                  <span className="text-sm font-medium">{schedule.bidStartTime}</span>
+                </div>
+              )}
+              {timeLeft && (
+                <div className="flex justify-between p-3 bg-primary/10 rounded-lg">
+                  <span className="text-sm font-semibold">Koha e mbetur</span>
+                  <span className="font-mono font-bold text-lg text-primary">
+                    {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                  </span>
                 </div>
               )}
             </div>
@@ -251,10 +306,17 @@ const Auctions = () => {
             {cars.length} vetura disponueshme
           </Badge>
         </div>
-        <Button onClick={handleDownloadExcel} variant="outline" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Shkarko Listën (Excel)
-        </Button>
+        {isAdmin ? (
+          <Button onClick={handleDownloadExcel} variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Shkarko Listën (Excel)
+          </Button>
+        ) : (
+          <Button onClick={handleRequestFullList} variant="outline" className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white">
+            <MessageCircle className="h-4 w-4" />
+            Kërko listën e plotë
+          </Button>
+        )}
       </div>
 
 
