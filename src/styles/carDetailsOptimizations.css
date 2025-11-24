@@ -6,6 +6,27 @@
   content-visibility: auto;
 }
 
+/* Lock image size on desktop - prevent unwanted growth */
+@media (min-width: 1024px) {
+  .car-image-container {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  
+  .car-image-container img,
+  .car-image-container .OptimizedCarImage {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    transform: none !important;
+  }
+  
+  /* Disable hover effects on desktop main image to prevent size changes */
+  .car-image-container:hover {
+    transform: none !important;
+  }
+}
+
 /* Smooth fade-in for content sections */
 @keyframes fadeInUp {
   from {

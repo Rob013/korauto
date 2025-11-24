@@ -27,11 +27,11 @@ interface CarPart {
   markerPos?: { x: number; y: number };
 }
 
-const BASE_MARKER_RADIUS = 9;
-const BASE_MARKER_OUTER_RADIUS = 13;
-const BASE_MARKER_STROKE_WIDTH = 2;
-const BASE_MARKER_SPACING = 18;
-const BASE_MARKER_FONT_SIZE = 12;
+const BASE_MARKER_RADIUS = 12;
+const BASE_MARKER_OUTER_RADIUS = 18;
+const BASE_MARKER_STROKE_WIDTH = 3;
+const BASE_MARKER_SPACING = 22;
+const BASE_MARKER_FONT_SIZE = 14;
 
 const POSITIVE_STATUS_CODES = new Set([
   "",

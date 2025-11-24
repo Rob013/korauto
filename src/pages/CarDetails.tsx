@@ -3514,36 +3514,13 @@ const CarDetails = memo(() => {
     }
   }, [selectedImageIndex, swipeCurrentIndex, goToIndex]);
   const registerMapTarget = useCallback((node: HTMLDivElement | null) => {
-    if (!node) return;
-    mapTargets.current = mapTargets.current.filter((target) => target !== node);
-    mapTargets.current.push(node);
+    // Map is now always rendered, no need to track targets
   }, []);
 
+  // Always render map immediately - no intersection observer needed
   useEffect(() => {
-    if (shouldRenderMap) return;
-    if (
-      typeof window === "undefined" ||
-      !(window as any).IntersectionObserver
-    ) {
-      setShouldRenderMap(true);
-      return;
-    }
-    if (mapTargets.current.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldRenderMap(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "200px" },
-    );
-
-    mapTargets.current.forEach((target) => observer.observe(target));
-
-    return () => observer.disconnect();
-  }, [shouldRenderMap]);
+    setShouldRenderMap(true);
+  }, []);
 
   const handleImageZoomOpen = useCallback(
     (event?: { preventDefault(): void; stopPropagation(): void }) => {
@@ -3888,11 +3865,11 @@ const CarDetails = memo(() => {
             {/* Main Image with modern styling - Compact mobile design */}
             <div className="hidden lg:flex lg:gap-4">
               {/* Main Image Card */}
-              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl hover:shadow-3xl transition-all duration-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
+              <Card className="border-0 shadow-2xl overflow-hidden rounded-xl md:rounded-2xl transition-shadow duration-300 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm flex-1 prevent-cls">
                 <CardContent className="p-0">
                   <div
                     ref={imageContainerRef}
-                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group cursor-pointer lg:cursor-default touch-pan-y select-none car-image-container"
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-muted/50 via-muted/30 to-background/50 overflow-hidden group lg:cursor-default touch-pan-y select-none car-image-container"
                     onClick={handleImageZoomOpen}
                     role={allowImageZoom ? "button" : undefined}
                     tabIndex={allowImageZoom ? 0 : -1}
@@ -3956,48 +3933,11 @@ const CarDetails = memo(() => {
                       </>
                     )}
 
-                    {/* Image counter and gallery button - Improved mobile design */}
-                    {images.length > 1 && (
-                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                        {/* Mobile gallery button */}
-                        <button
-                          onClick={handleGalleryButtonClick}
-                          className="gallery-button md:hidden bg-black/80 hover:bg-black/90 text-white px-3 py-2 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2"
-                          aria-label={`View all ${images.length} images`}
-                        >
-                          <Camera className="h-3 w-3" />
-                          {selectedImageIndex + 1}/{images.length}
-                        </button>
-
-                        {/* Desktop gallery button */}
-                        <button
-                          onClick={handleGalleryButtonClick}
-                          className="gallery-button hidden md:flex items-center gap-2 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium backdrop-blur-sm"
-                          aria-label={`View all ${images.length} images`}
-                        >
-                          <Camera className="h-4 w-4" />
-                          View Gallery ({images.length})
-                        </button>
-                      </div>
-                    )}
-
                     {/* Lot number badge - Improved positioning */}
                     {car.lot && (
                       <Badge className="absolute top-3 left-3 bg-primary/95 backdrop-blur-md text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow-xl rounded-lg">
                         {car.lot}
                       </Badge>
-                    )}
-
-                    {/* Zoom icon - Improved positioning and visibility */}
-                    {allowImageZoom && (
-                      <button
-                        type="button"
-                        onClick={handleImageZoomOpen}
-                        className="absolute top-3 right-3 hidden rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
-                        aria-label="Zmadho imazhin"
-                      >
-                        <Expand className="h-4 w-4" />
-                      </button>
                     )}
                   </div>
                   {typeof car?.price === "number" && (
