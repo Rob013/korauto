@@ -16,7 +16,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "sync-cars": "tsx scripts/sync-cars.ts",
-    "sync-currency": "tsx scripts/sync-currency.ts"
+    "sync-currency": "tsx scripts/sync-currency.ts",
+    "sync-encar": "tsx scripts/sync-encar-cache.ts",
+    "scrape-ssancar": "node scripts/scrape-ssancar.js"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
