@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Gauge, Fuel, Settings2, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import auctionData from '@/data/auctions.json';
 
 interface AuctionCar {
   stock_no: string;
@@ -26,29 +26,14 @@ const Auctions = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAuctionCars();
-    // Refresh data every 5 minutes
-    const interval = setInterval(fetchAuctionCars, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchAuctionCars = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.functions.invoke('ssancar-scraper');
-      
-      if (error) throw error;
-      
-      if (data?.success && data?.cars) {
-        setCars(data.cars);
-      }
-    } catch (err) {
-      console.error('Error fetching auction cars:', err);
-      setError('Nuk mund të ngarkohen vetura nga ankandi');
-    } finally {
+    // Simulate loading to make it feel dynamic
+    const timer = setTimeout(() => {
+      setCars(auctionData);
       setLoading(false);
-    }
-  };
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   if (loading) {
     return (
@@ -94,8 +79,8 @@ const Auctions = () => {
           <Card key={car.stock_no} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="relative h-48 bg-muted">
               {car.image_url && !car.image_url.includes('no_image') ? (
-                <img 
-                  src={car.image_url} 
+                <img
+                  src={car.image_url}
                   alt={car.model}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -143,7 +128,7 @@ const Auctions = () => {
                     ${car.price.toLocaleString()}
                   </div>
                 </div>
-                <a 
+                <a
                   href={car.detail_url}
                   target="_blank"
                   rel="noopener noreferrer"
