@@ -100,30 +100,24 @@ const Auctions = () => {
     return () => clearInterval(intervalId);
   }, [schedule]);
 
-  // Auto-refresh: Check for updates 3-4 minutes after upload time
+  // Auto-refresh: Check 30 minutes after auction ends
   useEffect(() => {
-    if (!schedule?.uploadTime) return;
+    if (!schedule?.bidEndTime || !timeLeft) return;
 
-    const checkForUpdates = () => {
-      // Parse upload time and add 4 minutes
-      const uploadDate = new Date(schedule.uploadTime!);
-      const checkTime = new Date(uploadDate.getTime() + 4 * 60 * 1000);
-      const now = new Date();
+    // When timer hits zero, show blocking modal and schedule refresh
+    if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
+      console.log('⏰ Auction has ended! Showing blocking modal...');
+      setShowBlockingModal(true);
 
-      if (now >= checkTime) {
-        // Reload the page to get fresh data
-        console.log('🔄 Auto-refreshing auction data...');
+      // Schedule auto-refresh 30 minutes after auction ends
+      const refreshTimeout = setTimeout(() => {
+        console.log('🔄 Auto-refreshing to check for new auction cars...');
         window.location.reload();
-      }
-    };
+      }, 30 * 60 * 1000); // 30 minutes
 
-    // Check every minute
-    const intervalId = setInterval(checkForUpdates, 60 * 1000);
-    // Also check immediately
-    checkForUpdates();
-
-    return () => clearInterval(intervalId);
-  }, [schedule]);
+      return () => clearTimeout(refreshTimeout);
+    }
+  }, [schedule, timeLeft]);
 
   const handleDownloadExcel = async () => {
     try {

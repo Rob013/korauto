@@ -24,11 +24,13 @@ async function scrapeSSancar() {
         const weekMatch = mainPageHtml.match(/<input type="hidden" id="week_no" value="(\d+)">/);
         const weekNo = weekMatch ? weekMatch[1] : '1';
 
-        // Extract auction schedule with exact SSancar format
-        const uploadMatch = mainPageHtml.match(/Upload\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+)/i);
-        const startMatch = mainPageHtml.match(/Start\s*:\s*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+)/i);
+        // Extract auction schedule with EXACT SSancar popup format
+        // Looking for: Upload&nbsp;:&nbsp;2025-11-24 PM 7 <br />
+        // And: Bid Start&nbsp;:&nbsp;2025-11-25  PM 1 <br />
+        const uploadMatch = mainPageHtml.match(/Upload[^:]*:[^>]*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+)/);
+        const startMatch = mainPageHtml.match(/Bid Start[^:]*:[^>]*(\d{4}-\d{2}-\d{2}\s+[AP]M\s+\d+)/);
 
-        // Extract countdown end date
+        // Extract countdown end date for timer
         const endDateMatch = mainPageHtml.match(/new Date\("(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^"]+)"\)/);
 
         const auctionSchedule = {
@@ -185,13 +187,15 @@ async function scrapeSSancar() {
             auctionSchedule,
             cars,
             totalCars: cars.length,
-            lastUpdated: new Date().toISOString()
+            lastUpdated: new Date().toISOString(),
+            scrapedAt: new Date().toISOString()
         };
 
         // Save to JSON file
         const outputPath = path.join(__dirname, '../src/data/auctions.json');
         fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
         console.log(`💾 Saved ${cars.length} cars with images to ${outputPath}`);
+        console.log(`📊 Total cars found: ${cars.length}`);
 
     } catch (error) {
         console.error('❌ Error scraping SSancar:', error);
