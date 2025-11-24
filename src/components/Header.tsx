@@ -4,11 +4,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const Header = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const { isAdmin } = useAdminCheck();
 
   // Check authentication state
   useEffect(() => {
@@ -70,13 +72,15 @@ const Header = () => {
             >
               Katalogu
             </Link>
-            <Link
-              to="/auctions"
-              className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
-              aria-label="Shikoni ankandet e drejtpërdrejta"
-            >
-              Ankandet
-            </Link>
+            {isAdmin && (
+              <Link
+                to="/auctions"
+                className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+                aria-label="Shikoni ankandet e drejtpërdrejta"
+              >
+                Ankandet
+              </Link>
+            )}
             <Link
               to="/inspections"
               className="text-foreground hover:text-primary font-medium transition-all duration-300 hover-scale-gentle focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
@@ -163,14 +167,16 @@ const Header = () => {
               >
                 Katalogu
               </Link>
-              <Link
-                to="/auctions"
-                className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
-                onClick={() => setIsMobileMenuOpen(false)}
-                aria-label="Shikoni ankandet e drejtpërdrejta"
-              >
-                Ankandet
-              </Link>
+              {isAdmin && (
+                <Link
+                  to="/auctions"
+                  className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  aria-label="Shikoni ankandet e drejtpërdrejta"
+                >
+                  Ankandet
+                </Link>
+              )}
               <Link
                 to="/inspections"
                 className="text-foreground hover:text-primary font-medium transition-all duration-300 py-2 px-3 rounded-md hover:bg-primary/10 hover-lift-gentle focus:outline-none focus:ring-2 focus:ring-primary"

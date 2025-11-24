@@ -304,12 +304,13 @@ const Auctions = () => {
             {filteredCars.length} vetura disponueshme
           </Badge>
         </div>
-        {isAdmin ? (
-          <Button onClick={handleDownloadExcel} variant="outline" className="flex items-center gap-2">
+        {isAdmin && (
+          <Button onClick={handleDownloadExcel} variant="outline" className="hidden md:flex items-center gap-2">
             <Download className="h-4 w-4" />
             Shkarko Listën (Excel)
           </Button>
-        ) : (
+        )}
+        {!isAdmin && (
           <Button onClick={handleRequestFullList} variant="outline" className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white">
             <MessageCircle className="h-4 w-4" />
             Kërko listën e plotë
@@ -318,11 +319,11 @@ const Auctions = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 bg-muted/30 p-4 rounded-lg">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-8 bg-muted/30 p-3 lg:p-4 rounded-lg">
         <div>
-          <label className="text-sm font-medium mb-1 block">Prodhuesi</label>
+          <label className="text-xs lg:text-sm font-medium mb-1 block">Prodhuesi</label>
           <select
-            className="w-full p-2 rounded-md border bg-background"
+            className="w-full p-1.5 lg:p-2 text-sm rounded-md border bg-background"
             value={selectedMake}
             onChange={(e) => {
               setSelectedMake(e.target.value);
@@ -336,9 +337,9 @@ const Auctions = () => {
           </select>
         </div>
         <div>
-          <label className="text-sm font-medium mb-1 block">Modeli</label>
+          <label className="text-xs lg:text-sm font-medium mb-1 block">Modeli</label>
           <select
-            className="w-full p-2 rounded-md border bg-background"
+            className="w-full p-1.5 lg:p-2 text-sm rounded-md border bg-background"
             value={selectedModel}
             onChange={(e) => {
               setSelectedModel(e.target.value);
@@ -351,9 +352,9 @@ const Auctions = () => {
           </select>
         </div>
         <div>
-          <label className="text-sm font-medium mb-1 block">Viti</label>
+          <label className="text-xs lg:text-sm font-medium mb-1 block">Viti</label>
           <select
-            className="w-full p-2 rounded-md border bg-background"
+            className="w-full p-1.5 lg:p-2 text-sm rounded-md border bg-background"
             value={selectedYear}
             onChange={(e) => {
               setSelectedYear(e.target.value);
@@ -366,9 +367,9 @@ const Auctions = () => {
           </select>
         </div>
         <div>
-          <label className="text-sm font-medium mb-1 block">Karburanti</label>
+          <label className="text-xs lg:text-sm font-medium mb-1 block">Karburanti</label>
           <select
-            className="w-full p-2 rounded-md border bg-background"
+            className="w-full p-1.5 lg:p-2 text-sm rounded-md border bg-background"
             value={selectedFuel}
             onChange={(e) => {
               setSelectedFuel(e.target.value);
