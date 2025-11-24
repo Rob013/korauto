@@ -47,6 +47,15 @@ const Auctions = () => {
   const [showBlockingModal, setShowBlockingModal] = useState(false);
   const { isAdmin } = useAdminCheck();
 
+  // New state for current time
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     // Show blocking modal on first load
     setShowBlockingModal(true);
@@ -218,9 +227,9 @@ const Auctions = () => {
 
                 {timeLeft && !isAuctionEnded && (
                   <div className="text-center p-6 bg-primary/5 rounded-lg border-2 border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-2">Koha e mbetur</p>
+                    <p className="text-sm text-muted-foreground mb-2">Left Time :</p>
                     <div className="text-4xl font-bold text-primary font-mono">
-                      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                      {timeLeft.days}d{timeLeft.hours}h{timeLeft.minutes}m{timeLeft.seconds}s
                     </div>
                   </div>
                 )}
@@ -258,21 +267,31 @@ const Auctions = () => {
             <div className="space-y-4 py-4">
               {schedule.uploadTime && (
                 <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Ngarkuar</span>
+                  <span className="text-sm text-muted-foreground">Upload :</span>
                   <span className="text-sm font-medium">{schedule.uploadTime}</span>
                 </div>
               )}
               {schedule.bidStartTime && (
-                <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Fillimi i Ofertave</span>
+                <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
+                  <span className="text-sm text-muted-foreground">Bid Start :</span>
                   <span className="text-sm font-medium">{schedule.bidStartTime}</span>
                 </div>
               )}
+              {/* Current time */}
+              <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
+                <span className="text-sm text-muted-foreground">Current Time :</span>
+                <span className="text-sm font-medium">{currentTime.toLocaleString('sq-AL')}</span>
+              </div>
+              {/* Total cars */}
+              <div className="flex justify-between p-3 bg-muted/30 rounded-lg mt-2">
+                <span className="text-sm text-muted-foreground">Total Cars :</span>
+                <span className="text-sm font-medium">{cars.length}</span>
+              </div>
               {timeLeft && (
                 <div className="flex justify-between p-3 bg-primary/10 rounded-lg">
-                  <span className="text-sm font-semibold">Koha e mbetur</span>
+                  <span className="text-sm font-semibold">Left Time :</span>
                   <span className="font-mono font-bold text-lg text-primary">
-                    {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                    {timeLeft.days}d{timeLeft.hours}h{timeLeft.minutes}m{timeLeft.seconds}s
                   </span>
                 </div>
               )}
@@ -287,6 +306,9 @@ const Auctions = () => {
           <p className="text-muted-foreground">
             Vetura nga ankandet e Koresë së Jugut - të përditësuara automatikisht
           </p>
+          <div className="text-sm text-muted-foreground mt-2">
+            Current Time: {currentTime.toLocaleString('sq-AL')}
+          </div>
           {timeLeft && (
             <div className="flex items-center gap-2 mt-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
