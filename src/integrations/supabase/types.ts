@@ -673,6 +673,210 @@ export type Database = {
         }
         Relationships: []
       }
+      encar_cars_cache: {
+        Row: {
+          advertisement_status: string | null
+          body_type: string | null
+          buy_now_price: number | null
+          color_name: string | null
+          contact_address: string | null
+          created_at: string | null
+          data_hash: string | null
+          dealer_firm: string | null
+          dealer_name: string | null
+          displacement: number | null
+          first_advertised_date: string | null
+          form_year: string | null
+          fuel_code: string | null
+          fuel_type: string | null
+          generation_id: number | null
+          generation_name: string | null
+          grade_name: string | null
+          has_accident: boolean | null
+          id: number
+          inspection_available: boolean | null
+          is_active: boolean | null
+          lot_number: string | null
+          manufacturer_id: number | null
+          manufacturer_name: string | null
+          mileage: number | null
+          model_id: number | null
+          model_name: string | null
+          modified_date: string | null
+          options: Json | null
+          original_price: number | null
+          photos: Json | null
+          registered_date: string | null
+          seat_count: number | null
+          subscribe_count: number | null
+          synced_at: string | null
+          transmission: string | null
+          updated_at: string | null
+          vehicle_id: number
+          vehicle_type: string | null
+          view_count: number | null
+          vin: string | null
+          year_month: string | null
+        }
+        Insert: {
+          advertisement_status?: string | null
+          body_type?: string | null
+          buy_now_price?: number | null
+          color_name?: string | null
+          contact_address?: string | null
+          created_at?: string | null
+          data_hash?: string | null
+          dealer_firm?: string | null
+          dealer_name?: string | null
+          displacement?: number | null
+          first_advertised_date?: string | null
+          form_year?: string | null
+          fuel_code?: string | null
+          fuel_type?: string | null
+          generation_id?: number | null
+          generation_name?: string | null
+          grade_name?: string | null
+          has_accident?: boolean | null
+          id?: number
+          inspection_available?: boolean | null
+          is_active?: boolean | null
+          lot_number?: string | null
+          manufacturer_id?: number | null
+          manufacturer_name?: string | null
+          mileage?: number | null
+          model_id?: number | null
+          model_name?: string | null
+          modified_date?: string | null
+          options?: Json | null
+          original_price?: number | null
+          photos?: Json | null
+          registered_date?: string | null
+          seat_count?: number | null
+          subscribe_count?: number | null
+          synced_at?: string | null
+          transmission?: string | null
+          updated_at?: string | null
+          vehicle_id: number
+          vehicle_type?: string | null
+          view_count?: number | null
+          vin?: string | null
+          year_month?: string | null
+        }
+        Update: {
+          advertisement_status?: string | null
+          body_type?: string | null
+          buy_now_price?: number | null
+          color_name?: string | null
+          contact_address?: string | null
+          created_at?: string | null
+          data_hash?: string | null
+          dealer_firm?: string | null
+          dealer_name?: string | null
+          displacement?: number | null
+          first_advertised_date?: string | null
+          form_year?: string | null
+          fuel_code?: string | null
+          fuel_type?: string | null
+          generation_id?: number | null
+          generation_name?: string | null
+          grade_name?: string | null
+          has_accident?: boolean | null
+          id?: number
+          inspection_available?: boolean | null
+          is_active?: boolean | null
+          lot_number?: string | null
+          manufacturer_id?: number | null
+          manufacturer_name?: string | null
+          mileage?: number | null
+          model_id?: number | null
+          model_name?: string | null
+          modified_date?: string | null
+          options?: Json | null
+          original_price?: number | null
+          photos?: Json | null
+          registered_date?: string | null
+          seat_count?: number | null
+          subscribe_count?: number | null
+          synced_at?: string | null
+          transmission?: string | null
+          updated_at?: string | null
+          vehicle_id?: number
+          vehicle_type?: string | null
+          view_count?: number | null
+          vin?: string | null
+          year_month?: string | null
+        }
+        Relationships: []
+      }
+      encar_filter_metadata: {
+        Row: {
+          car_count: number | null
+          filter_type: string
+          filter_value: string
+          id: number
+          parent_filter: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          car_count?: number | null
+          filter_type: string
+          filter_value: string
+          id?: number
+          parent_filter?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          car_count?: number | null
+          filter_type?: string
+          filter_value?: string
+          id?: number
+          parent_filter?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      encar_sync_status: {
+        Row: {
+          cars_added: number | null
+          cars_processed: number | null
+          cars_removed: number | null
+          cars_updated: number | null
+          created_at: string | null
+          duration_seconds: number | null
+          error_message: string | null
+          id: number
+          status: string
+          sync_completed_at: string | null
+          sync_started_at: string
+        }
+        Insert: {
+          cars_added?: number | null
+          cars_processed?: number | null
+          cars_removed?: number | null
+          cars_updated?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: number
+          status: string
+          sync_completed_at?: string | null
+          sync_started_at: string
+        }
+        Update: {
+          cars_added?: number | null
+          cars_processed?: number | null
+          cars_removed?: number | null
+          cars_updated?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: number
+          status?: string
+          sync_completed_at?: string | null
+          sync_started_at?: string
+        }
+        Relationships: []
+      }
       favorite_cars: {
         Row: {
           car_id: string
