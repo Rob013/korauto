@@ -187,37 +187,45 @@ async function fetchAllCarsFromAPI(): Promise<any[]> {
  * Transform API car data to cache format
  */
 function transformApiToCacheFormat(apiCar: any): any {
+    // AuctionsAPI uses 'id' as the primary identifier
+    const vehicleId = apiCar.id || apiCar.vehicleId || apiCar.vehicle_id;
+
+    // Skip if no vehicle ID (required field)
+    if (!vehicleId) {
+        return null;
+    }
+
     return {
-        vehicle_id: apiCar.vehicleId,
-        lot_number: apiCar.vehicleNo || apiCar.lot_number,
+        vehicle_id: vehicleId,
+        lot_number: apiCar.lot_number || apiCar.vehicleNo,
         vin: apiCar.vin,
-        manufacturer_id: apiCar.manufacturer_id,
-        manufacturer_name: apiCar.category?.manufacturerName || apiCar.manufacturer?.name,
-        model_id: apiCar.model_id,
-        model_name: apiCar.category?.modelName || apiCar.model?.name,
-        generation_id: apiCar.generation_id,
-        generation_name: apiCar.category?.modelGroupName || apiCar.generation?.name,
-        grade_name: apiCar.category?.gradeName || apiCar.grade,
-        form_year: apiCar.category?.formYear || apiCar.year?.toString(),
-        year_month: apiCar.category?.yearMonth || apiCar.year_month,
-        mileage: apiCar.spec?.mileage || apiCar.odometer,
-        displacement: apiCar.spec?.displacement || apiCar.engine_size,
-        fuel_type: apiCar.spec?.fuelName || apiCar.fuel,
-        fuel_code: apiCar.spec?.fuelCd || apiCar.fuel_code,
-        transmission: apiCar.spec?.transmissionName || apiCar.transmission,
-        color_name: apiCar.spec?.colorName || apiCar.color,
-        body_type: apiCar.spec?.bodyName || apiCar.body_type,
-        seat_count: apiCar.spec?.seatCount || apiCar.seats,
-        buy_now_price: apiCar.advertisement?.price || apiCar.lots?.[0]?.buy_now || apiCar.buy_now || apiCar.price,
-        original_price: apiCar.category?.originPrice || apiCar.original_price,
-        advertisement_status: apiCar.advertisement?.status || apiCar.status,
-        vehicle_type: apiCar.vehicleType || apiCar.vehicle_type,
-        photos: JSON.stringify(apiCar.photos || apiCar.images || []),
+        manufacturer_id: apiCar.manufacturer?.id || apiCar.manufacturer_id,
+        manufacturer_name: apiCar.manufacturer?.name || apiCar.category?.manufacturerName,
+        model_id: apiCar.model?.id || apiCar.model_id,
+        model_name: apiCar.model?.name || apiCar.category?.modelName,
+        generation_id: apiCar.generation?.id || apiCar.generation_id,
+        generation_name: apiCar.generation?.name || apiCar.category?.modelGroupName,
+        grade_name: apiCar.grade || apiCar.category?.gradeName,
+        form_year: apiCar.year?.toString() || apiCar.category?.formYear,
+        year_month: apiCar.year_month || apiCar.category?.yearMonth,
+        mileage: apiCar.lots?.[0]?.odometer?.km || apiCar.odometer || apiCar.spec?.mileage,
+        displacement: apiCar.engine_size || apiCar.spec?.displacement,
+        fuel_type: apiCar.fuel?.name || apiCar.fuel || apiCar.spec?.fuelName,
+        fuel_code: apiCar.fuel?.id || apiCar.fuel_code || apiCar.spec?.fuelCd,
+        transmission: apiCar.transmission?.name || apiCar.transmission || apiCar.spec?.transmissionName,
+        color_name: apiCar.color?.name || apiCar.color || apiCar.spec?.colorName,
+        body_type: apiCar.body_type?.name || apiCar.body_type || apiCar.spec?.bodyName,
+        seat_count: apiCar.seats || apiCar.spec?.seatCount,
+        buy_now_price: apiCar.lots?.[0]?.buy_now || apiCar.buy_now || apiCar.price || apiCar.advertisement?.price,
+        original_price: apiCar.original_price || apiCar.category?.originPrice,
+        advertisement_status: apiCar.status || apiCar.sale_status || apiCar.advertisement?.status,
+        vehicle_type: apiCar.vehicle_type?.name || apiCar.vehicle_type || apiCar.vehicleType,
+        photos: JSON.stringify(apiCar.lots?.[0]?.images?.big || apiCar.lots?.[0]?.images?.normal || apiCar.images || apiCar.photos || []),
         options: JSON.stringify(apiCar.options || {}),
-        registered_date: apiCar.manage?.registDateTime || apiCar.registered_date,
-        first_advertised_date: apiCar.manage?.firstAdvertisedDateTime || apiCar.first_advertised_date,
-        modified_date: apiCar.manage?.modifyDateTime || apiCar.modified_date,
-        view_count: apiCar.manage?.viewCount || 0,
+        registered_date: apiCar.registered_date || apiCar.manage?.registDateTime,
+        first_advertised_date: apiCar.first_advertised_date || apiCar.manage?.firstAdvertisedDateTime,
+        modified_date: apiCar.modified_date || apiCar.manage?.modifyDateTime,
+        view_count: apiCar.view_count || apiCar.manage?.viewCount || 0,
         subscribe_count: apiCar.manage?.subscribeCount || 0,
         has_accident: apiCar.condition?.accident?.recordView || false,
         inspection_available: (apiCar.condition?.inspection?.formats?.length || 0) > 0,
@@ -249,13 +257,19 @@ async function processBatch(cars: any[]): Promise<SyncStats> {
     for (const car of cars) {
         try {
             const cacheData = transformApiToCacheFormat(car);
+
+            // Skip if transformation returned null (no vehicle_id)
+            if (!cacheData) {
+                continue;
+            }
+
             const dataHash = generateDataHash(cacheData);
 
             // Check if car exists in cache
             const { data: existing } = await supabase
                 .from('encar_cars_cache')
                 .select('id, data_hash')
-                .eq('vehicle_id', car.vehicleId || car.vehicle_id)
+                .eq('vehicle_id', cacheData.vehicle_id)
                 .single();
 
             if (!existing) {
@@ -268,7 +282,7 @@ async function processBatch(cars: any[]): Promise<SyncStats> {
                     });
 
                 if (error) {
-                    console.error(`  ❌ Error inserting car ${car.vehicleId}:`, error.message);
+                    console.error(`  ❌ Error inserting car ${cacheData.vehicle_id}:`, error.message);
                 } else {
                     stats.added++;
                 }
@@ -284,7 +298,7 @@ async function processBatch(cars: any[]): Promise<SyncStats> {
                     .eq('id', existing.id);
 
                 if (error) {
-                    console.error(`  ❌ Error updating car ${car.vehicleId}:`, error.message);
+                    console.error(`  ❌ Error updating car ${cacheData.vehicle_id}:`, error.message);
                 } else {
                     stats.updated++;
                 }
