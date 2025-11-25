@@ -325,10 +325,10 @@ type EquipmentIconMapping = {
 const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
   {
     icon: Bluetooth,
-    keywords: ["bluetooth", "handsfree", "hands-free", "hands free"],
+    keywords: ["bluetooth", "handsfree", "hands-free", "hands free", "blue tooth"],
   },
-  { icon: Usb, keywords: ["usb"] },
-  { icon: Cable, keywords: ["aux", "auxiliar", "auxiliary"] },
+  { icon: Usb, keywords: ["usb", "usb port", "usb charger"] },
+  { icon: Cable, keywords: ["aux", "auxiliar", "auxiliary", "ipod"] },
   {
     icon: Smartphone,
     keywords: [
@@ -343,11 +343,13 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "mirrorlink",
       "mirror link",
       "wireless charging",
+      "wireless charger",
+      "phone",
     ],
   },
   {
     icon: Wifi,
-    keywords: ["wifi", "wi-fi", "wireless", "hotspot", "hot spot"],
+    keywords: ["wifi", "wi-fi", "wireless", "hotspot", "hot spot", "internet"],
   },
   {
     icon: Navigation,
@@ -359,6 +361,7 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "gps",
       "map",
       "maps",
+      "sat nav",
     ],
   },
   {
@@ -373,11 +376,19 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "surround",
       "hi-fi",
       "hifi",
+      "jbl",
+      "bose",
+      "harman",
+      "krell",
+      "meridian",
+      "bang",
+      "olufsen",
+      "burmester",
     ],
   },
   {
     icon: Music,
-    keywords: ["cd", "dvd", "mp3", "media", "entertainment", "multimedia"],
+    keywords: ["cd", "dvd", "mp3", "media", "entertainment", "multimedia", "radio", "tuner"],
   },
   {
     icon: Radar,
@@ -396,6 +407,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "lane keeping",
       "blind spot",
       "distance control",
+      "parking aid",
+      "sensors",
     ],
   },
   {
@@ -409,6 +422,9 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "surround view",
       "dashcam",
       "reverse camera",
+      "backup camera",
+      "svm",
+      "avm",
     ],
   },
   {
@@ -420,6 +436,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "limiter",
       "adaptive cruise",
       "pilot assist",
+      "acc",
+      "smart cruise",
     ],
   },
   {
@@ -436,6 +454,7 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "start button",
       "keyless go",
       "remote start",
+      "engine start",
     ],
   },
   {
@@ -450,6 +469,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "lock",
       "central locking",
       "immobilizer",
+      "smart key",
+      "folding key",
     ],
   },
   {
@@ -474,6 +495,10 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "stability control",
       "kontroll stabiliteti",
       "monitoring",
+      "fca",
+      "bca",
+      "lka",
+      "daw",
     ],
   },
   {
@@ -489,6 +514,9 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "a/c",
       "hvac",
       "aircon",
+      "auto climate",
+      "dual zone",
+      "tri zone",
     ],
   },
   {
@@ -500,6 +528,7 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "ventilated",
       "climatizim",
       "climatization",
+      "ventilation",
     ],
   },
   {
@@ -512,6 +541,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "defog",
       "heated seat",
       "heated steering",
+      "warmer",
+      "heating",
     ],
   },
   {
@@ -522,6 +553,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "ventilim",
       "ventiluar",
       "ventiluara",
+      "air purification",
+      "air clean",
     ],
   },
   {
@@ -538,6 +571,11 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "lekure",
       "lekur",
       "alcantara",
+      "nappa",
+      "power seat",
+      "electric seat",
+      "memory seat",
+      "lumbar",
     ],
   },
   {
@@ -550,6 +588,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "row",
       "isofix",
       "child",
+      "curtain",
+      "walk-in",
     ],
   },
   {
@@ -564,11 +604,29 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "gom",
       "goma",
       "pneumatic",
+      "17 inch",
+      "18 inch",
+      "19 inch",
+      "20 inch",
+      "21 inch",
+      "22 inch",
     ],
   },
   {
     icon: Eye,
-    keywords: ["window", "dritare", "glass", "windshield", "sunshade", "xham"],
+    keywords: [
+      "window",
+      "dritare",
+      "glass",
+      "windshield",
+      "sunshade",
+      "xham",
+      "privacy glass",
+      "tinted",
+      "solar glass",
+      "rain sensor",
+      "wiper",
+    ],
   },
   {
     icon: Sun,
@@ -579,6 +637,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "panoramik",
       "panoramic",
       "tavan",
+      "roof",
+      "glass roof",
     ],
   },
   {
@@ -593,6 +653,10 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "fog",
       "daylight",
       "ndricim",
+      "lamp",
+      "hid",
+      "high beam",
+      "ambient",
     ],
   },
   {
@@ -608,6 +672,8 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "hybrid",
       "plug in",
       "plug-in",
+      "lpg",
+      "lpi",
     ],
   },
   {
@@ -620,6 +686,11 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "gear",
       "powertrain",
       "drivetrain",
+      "4wd",
+      "awd",
+      "2wd",
+      "shift",
+      "paddle",
     ],
   },
   {
@@ -631,11 +702,26 @@ const EQUIPMENT_ICON_MAPPINGS: EquipmentIconMapping[] = [
       "drive mode",
       "setup",
       "adjustable",
+      "ecs",
+      "air suspension",
     ],
   },
   {
     icon: DoorClosed,
-    keywords: ["door", "dyer", "mirror", "pasqyre", "pasqyra", "pasqyr"],
+    keywords: [
+      "door",
+      "dyer",
+      "mirror",
+      "pasqyre",
+      "pasqyra",
+      "pasqyr",
+      "trunk",
+      "tailgate",
+      "power trunk",
+      "smart trunk",
+      "electric trunk",
+      "sliding door",
+    ],
   },
 ];
 
@@ -1035,29 +1121,30 @@ const EquipmentOptionsSection = memo(
         {/* Equipment Preview - Shows up to 10 real equipment items from API */}
         {!showOptions && specificFeatures.length > 0 && (
           <div className="p-4 border-b border-border/20">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-primary"></div>
-              <h5 className="text-sm font-medium text-foreground">
-                Pajisje Standarde
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.6)]"></div>
+              <h5 className="text-base font-semibold text-foreground tracking-tight">
+                Pajisje Kryesore
               </h5>
             </div>
-            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
               {specificFeatures.map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
                   <div
                     key={index}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-md transition-colors ${feature.hasFeature
-                      ? "bg-primary/10 border border-primary/30"
-                      : "bg-gray-100 border border-gray-200"
+                    className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${feature.hasFeature
+                      ? "bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 shadow-sm hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
+                      : "bg-muted/30 border border-border/40 grayscale opacity-60"
                       }`}
                   >
-                    <IconComponent
-                      className={`h-4 w-4 flex-shrink-0 ${feature.hasFeature ? "text-primary" : "text-gray-400"
-                        }`}
-                    />
+                    <div className={`p-2 rounded-full ${feature.hasFeature ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      <IconComponent
+                        className="h-5 w-5 flex-shrink-0"
+                      />
+                    </div>
                     <span
-                      className={`text-[10px] leading-tight text-center line-clamp-2 ${feature.hasFeature ? "text-foreground" : "text-gray-400"
+                      className={`text-[11px] font-medium leading-tight text-center line-clamp-2 ${feature.hasFeature ? "text-foreground" : "text-muted-foreground"
                         }`}
                     >
                       {feature.name}
@@ -2874,7 +2961,7 @@ const CarDetails = memo(() => {
       }
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout for better reliability
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced to 3s for faster fallback
 
         let response: Response;
         try {
@@ -2951,7 +3038,7 @@ const CarDetails = memo(() => {
           const detailController = new AbortController();
           const detailTimeoutId = setTimeout(
             () => detailController.abort(),
-            6000, // Reduced to 6s for faster detail fetch
+            3000, // Reduced to 3s for faster detail fetch
           );
           try {
             const detailResponse = await fetch(

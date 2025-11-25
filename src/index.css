@@ -93,24 +93,6 @@ html.theme-transitioning *::after {
   }
 }
 
-@keyframes pulse-scale {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.15);
-  }
-}
-
-.animate-pulse-scale {
-  animation: pulse-scale 2s infinite ease-in-out;
-  transform-origin: center;
-  transform-box: fill-box;
-}
-
 .loading-spinner {
   animation: korauto-spin 0.9s linear infinite;
   transform-origin: center;
