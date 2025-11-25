@@ -10,6 +10,8 @@ import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen,
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels, fetchManufacturers, fetchModels, fetchGenerations, fetchAllGenerationsForManufacturer, fetchFilterCounts, fetchGrades, fetchTrimLevels, fetchEngines } from "@/hooks/useSecureAuctionAPI";
+import { useHybridEncarData } from "@/hooks/useHybridEncarData";
+import { EncarCacheStatus } from "@/components/EncarCacheStatus";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
 import EncarStyleFilter from "@/components/EncarStyleFilter";
@@ -51,6 +53,7 @@ const EncarCatalog = ({
   const {
     restorePageState
   } = useNavigation();
+  // Use hybrid hook - automatically switches between cache and API
   const {
     cars,
     setCars,
@@ -65,8 +68,11 @@ const EncarCatalog = ({
     setFilters,
     loadMore,
     refreshInventory,
-    clearCarsCache
-  } = useSecureAuctionAPI();
+    clearCarsCache,
+    source,
+    cacheHealth,
+    isStale
+  } = useHybridEncarData();
   const {
     convertUSDtoEUR,
     exchangeRate
@@ -1322,10 +1328,14 @@ const EncarCatalog = ({
           {/* AI Search Bar */}
 
 
-          {/* Title and count from API */}
+          {/* Title, count, and cache status */}
           <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Katalogu i makinave
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Katalogu i makinave
+              </h1>
+              {/* Cache Status Indicator */}
+              <EncarCacheStatus source={source} compact />
+            </div>
             <p className="text-muted-foreground text-xs sm:text-sm">
               {loading ? (
                 <span className="inline-flex items-center gap-2 animate-pulse">
@@ -1338,6 +1348,9 @@ const EncarCatalog = ({
               ) : (
                 <>
                   <span className="font-semibold text-foreground">{animatedTotalCount.toLocaleString()}</span> vetura të disponueshme
+                  {source === 'cache' && isStale && (
+                    <span className="ml-2 text-yellow-600 text-xs">(data may be outdated)</span>
+                  )}
                 </>
               )}
             </p>
@@ -1346,7 +1359,7 @@ const EncarCatalog = ({
 
         {/* Error State */}
         {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-          <p className="text-destructive font-medium">Error: {error}</p>
+          <p className="text-destructive font-medium">Error: {error instanceof Error ? error.message : String(error)}</p>
         </div>}
 
         {/* Loading State - Only for initial load, not for filters */}
