@@ -40,7 +40,7 @@ export function EncarCacheStatus({ source, compact = false }: EncarCacheStatusPr
                 className="gap-1"
             >
                 <Database className="h-3 w-3" />
-                {isUsingCache ? 'Cached' : 'Live'}
+                {isUsingCache ? 'Database' : 'API'}
             </Badge>
         );
     }
@@ -55,7 +55,7 @@ export function EncarCacheStatus({ source, compact = false }: EncarCacheStatusPr
                         <AlertCircle className="h-4 w-4 text-yellow-500" />
                     )}
                     <span className="hidden sm:inline">
-                        {isUsingCache ? 'Using Cache' : 'Using Live API'}
+                        {isUsingCache ? 'Using Database' : 'Using API'}
                     </span>
                 </Button>
             </PopoverTrigger>
@@ -99,7 +99,7 @@ export function EncarCacheStatus({ source, compact = false }: EncarCacheStatusPr
                             {!cacheHealth?.available && (
                                 <div className="flex items-center gap-2 p-2 bg-muted rounded">
                                     <AlertCircle className="h-4 w-4" />
-                                    <span className="text-xs">Cache not available - using live API</span>
+                                    <span className="text-xs">Cache not available - using direct API</span>
                                 </div>
                             )}
                         </div>
