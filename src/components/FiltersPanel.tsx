@@ -411,19 +411,19 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   return (
     <div
       className={cn(
-        'space-y-4 rounded-xl p-4 bg-card border border-border shadow-lg',
+        'space-y-4 rounded-xl p-4 bg-card border border-border shadow-md',
         className
       )}
     >
       {/* Header with active filters count */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 leading-tight">
-          <Filter className="h-5 w-5 text-primary transition-transform hover:scale-110" />
-          <h3 className="text-lg font-semibold">Filtrat e Kërkimit</h3>
+          <Filter className="h-5 w-5 text-foreground transition-transform hover:scale-110" />
+          <h3 className="text-lg font-semibold text-foreground">Filtrat e Kërkimit</h3>
         </div>
         <div className="flex items-center gap-2 whitespace-nowrap">
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="animate-scale-in">{activeFiltersCount}</Badge>
+            <Badge variant="secondary" className="animate-scale-in bg-muted text-muted-foreground">{activeFiltersCount}</Badge>
           )}
           <Button
             variant="outline"
@@ -444,7 +444,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
             <Badge
               key={chip.key}
               variant="default"
-              className="flex items-center gap-1 animate-scale-in bg-primary/10 hover:bg-primary/20 border border-primary/20 backdrop-blur-sm transition-all duration-200 hover:scale-105"
+              className="flex items-center gap-1 animate-scale-in bg-muted hover:bg-muted/80 border border-border text-foreground backdrop-blur-sm transition-all duration-200 hover:scale-105"
             >
               <span className="text-xs font-medium">{chip.label}: {chip.value}</span>
               <Button
@@ -468,8 +468,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         <AccordionItem value="basic" className="border border-border rounded-lg bg-card">
           <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50 transition-colors rounded-t-lg">
             <div className="flex items-center gap-2">
-              <Car className="h-4 w-4 text-primary" />
-              <span className="font-medium">Filtrat Bazë</span>
+              <Car className="h-4 w-4 text-foreground" />
+              <span className="font-medium text-foreground">Filtrat Bazë</span>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
@@ -580,8 +580,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         <AccordionItem value="advanced" className="border border-border rounded-lg bg-card">
           <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50 transition-colors rounded-t-lg">
             <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-primary" />
-              <span className="font-medium">Filtrat e Avancuar</span>
+              <Settings className="h-4 w-4 text-foreground" />
+              <span className="font-medium text-foreground">Filtrat e Avancuar</span>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
