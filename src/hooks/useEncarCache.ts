@@ -81,15 +81,15 @@ export function useEncarCache(
 
             // Apply filters
             if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
-                query = query.eq('manufacturer_id', filters.manufacturer_id);
+                query = query.eq('manufacturer_id', Number(filters.manufacturer_id));
             }
 
             if (filters.model_id && filters.model_id !== 'all') {
-                query = query.eq('model_id', filters.model_id);
+                query = query.eq('model_id', Number(filters.model_id));
             }
 
             if (filters.generation_id && filters.generation_id !== 'all') {
-                query = query.eq('generation_id', filters.generation_id);
+                query = query.eq('generation_id', Number(filters.generation_id));
             }
 
             if (filters.fuel_type) {
@@ -109,7 +109,7 @@ export function useEncarCache(
             }
 
             if (filters.seats_count) {
-                query = query.eq('seat_count', filters.seats_count);
+                query = query.eq('seat_count', Number(filters.seats_count));
             }
 
             // Year range
