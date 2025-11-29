@@ -472,7 +472,7 @@ const buildCarCacheRecord = ({ listCar, detailedCar, detailPayload, syncBatchId,
     original_api_data: detailPayload || detailedCar || listCar || {},
     last_api_response: detailPayload || detailedCar || listCar || {},
     last_api_sync: nowIso,
-    last_updated_source: lot?.domain?.name ?? fallbackLot?.domain?.name ?? 'external',
+    last_updated_source: nowIso,
     sync_batch_id: syncBatchId,
     sync_metadata: {
       sync_type: syncType,
