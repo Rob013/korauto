@@ -53,7 +53,7 @@ const EncarCatalog = ({
   const {
     restorePageState
   } = useNavigation();
-  // Use hybrid hook - now locked to Supabase cache for database-backed catalog
+  // Use hybrid hook - automatically switches between cache and API
   const {
     cars,
     setCars,
@@ -72,7 +72,7 @@ const EncarCatalog = ({
     source,
     cacheHealth,
     isStale
-  } = useHybridEncarData({ preferCache: true, fallbackToAPI: false });
+  } = useHybridEncarData();
   const {
     convertUSDtoEUR,
     exchangeRate
