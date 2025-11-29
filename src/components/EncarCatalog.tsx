@@ -1105,30 +1105,38 @@ const EncarCatalog = ({
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
-    if (highlightCarId && cars.length > 0) {
-      setTimeout(() => {
-        // Find the car by lot number or ID and scroll to it
-        const targetCar = cars.find(car => car.lot_number === highlightCarId || car.id === highlightCarId);
-        if (targetCar) {
-          const lotNumber = targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
-          setHighlightedCarId(lotNumber || targetCar.id);
+    if (!highlightCarId || cars.length === 0) return;
 
-          // Scroll to the car
-          const carElement = document.getElementById(`car-${targetCar.id}`);
-          if (carElement) {
-            carElement.scrollIntoView({
-              behavior: "smooth",
-              block: "center"
-            });
-          }
+    let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+    let clearHighlightTimer: ReturnType<typeof setTimeout> | undefined;
 
-          // Remove highlight after 3 seconds
-          setTimeout(() => {
-            setHighlightedCarId(null);
-          }, 3000);
+    highlightTimer = setTimeout(() => {
+      // Find the car by lot number or ID and scroll to it
+      const targetCar = cars.find(car => car.lot_number === highlightCarId || car.id === highlightCarId);
+      if (targetCar) {
+        const lotNumber = targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
+        setHighlightedCarId(lotNumber || targetCar.id);
+
+        // Scroll to the car
+        const carElement = document.getElementById(`car-${targetCar.id}`);
+        if (carElement) {
+          carElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
         }
-      }, 1000);
-    }
+
+        // Remove highlight after 3 seconds
+        clearHighlightTimer = setTimeout(() => {
+          setHighlightedCarId(null);
+        }, 3000);
+      }
+    }, 1000);
+
+    return () => {
+      if (highlightTimer) clearTimeout(highlightTimer);
+      if (clearHighlightTimer) clearTimeout(clearHighlightTimer);
+    };
   }, [highlightCarId, cars]);
 
   // Clear filter loading state when main loading completes
