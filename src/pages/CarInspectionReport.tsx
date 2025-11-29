@@ -2964,11 +2964,11 @@ const CarInspectionReport = () => {
           <TabsContent value="inspection" className="space-y-4">
             {/* Redesigned Inspection Diagram matching Korean format */}
             <div className="space-y-4">
-              <Card className="border border-primary/20 bg-primary/5 backdrop-blur-sm">
+              <Card className="border border-border bg-card backdrop-blur-sm">
                 <CardContent className="px-4 py-4 sm:px-6">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="space-y-1">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
                         <Wrench className="h-3.5 w-3.5" />
                         Përmbledhja e kontrollit
                       </div>
@@ -2980,7 +2980,7 @@ const CarInspectionReport = () => {
                     </div>
                     {inspectionIssueSummary.total > 0 && (
                       <div className="grid w-full grid-cols-3 gap-2 sm:gap-3 lg:w-auto lg:auto-cols-max lg:grid-flow-col">
-                        <div className="rounded-xl border border-primary/30 bg-background/80 px-3 py-2 sm:px-4">
+                        <div className="rounded-xl border border-border bg-card px-3 py-2 sm:px-4">
                           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                             Ndërrime (N)
                           </span>
@@ -2988,7 +2988,7 @@ const CarInspectionReport = () => {
                             {inspectionIssueSummary.replacements}
                           </p>
                         </div>
-                        <div className="rounded-xl border border-primary/30 bg-background/80 px-3 py-2 sm:px-4">
+                        <div className="rounded-xl border border-border bg-card px-3 py-2 sm:px-4">
                           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                             Riparime (R)
                           </span>
@@ -3035,7 +3035,7 @@ const CarInspectionReport = () => {
                 <Card className="shadow-md border-border/80">
                   <CardHeader className="pb-3 md:pb-4">
                     <div className="flex items-center gap-2 md:gap-3">
-                      <Cog className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                      <Cog className="h-4 w-4 md:h-5 md:w-5 text-foreground" />
                       <CardTitle className="text-base md:text-xl">
                         Motori dhe Sistemi Mekanik
                       </CardTitle>
@@ -3073,7 +3073,7 @@ const CarInspectionReport = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsMechanicalExpanded(!isMechanicalExpanded)}
-                        className="w-full text-primary"
+                        className="w-full text-foreground hover:text-foreground/80"
                       >
                         {isMechanicalExpanded ? (
                           <>
@@ -3146,7 +3146,7 @@ const CarInspectionReport = () => {
             <Card className="shadow-md border-border/80">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <Cog className="h-5 w-5 text-primary" />
+                  <Cog className="h-5 w-5 text-foreground" />
                   <CardTitle className="text-xl">
                     Pajisjet dhe Opsionet
                   </CardTitle>
@@ -3161,7 +3161,7 @@ const CarInspectionReport = () => {
                   car.details.options_extra.length > 0 && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-accent"></div>
+                        <div className="w-2 h-2 rounded-full bg-muted"></div>
                         <h3 className="text-base font-semibold text-foreground">
                           Opsione Shtesë me Çmim
                         </h3>
@@ -3183,7 +3183,7 @@ const CarInspectionReport = () => {
                             );
 
                             return (
-                              <Card key={idx} className="border-primary/20">
+                              <Card key={idx} className="border-border">
                                 <CardContent className="p-4 space-y-2">
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
@@ -3229,7 +3229,7 @@ const CarInspectionReport = () => {
                   car.details.options.standard.length > 0 && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                        <div className="w-2 h-2 rounded-full bg-foreground"></div>
                         <h3 className="text-base font-semibold text-foreground">
                           Pajisje Standarde
                         </h3>
@@ -3247,10 +3247,10 @@ const CarInspectionReport = () => {
                           return (
                             <div
                               key={idx}
-                              className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 group"
+                              className="flex items-center gap-2 p-2 bg-muted border border-border rounded-md hover:bg-muted/80 transition-all duration-200 group"
                             >
-                              <CheckCircle className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-1">
+                              <CheckCircle className="h-3.5 w-3.5 text-foreground flex-shrink-0" />
+                              <span className="text-xs text-foreground transition-colors leading-tight line-clamp-1">
                                 {displayName}
                               </span>
                             </div>
@@ -3263,7 +3263,7 @@ const CarInspectionReport = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => setShowAllStandard(!showAllStandard)}
-                            className="h-9 px-4 text-sm text-primary hover:bg-primary/10 font-medium border-primary/30"
+                            className="h-9 px-4 text-sm hover:bg-muted font-medium"
                           >
                             {showAllStandard
                               ? `Më pak`
@@ -3280,7 +3280,7 @@ const CarInspectionReport = () => {
                   car.details.options.choice.length > 0 && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-accent"></div>
+                        <div className="w-2 h-2 rounded-full bg-muted"></div>
                         <h3 className="text-base font-semibold text-foreground">
                           Opsione të Zgjedhura
                         </h3>
@@ -3298,10 +3298,10 @@ const CarInspectionReport = () => {
                           return (
                             <div
                               key={idx}
-                              className="flex items-center gap-2 p-2 bg-accent/5 border border-accent/20 rounded-md hover:bg-accent/10 hover:border-accent/30 transition-all duration-200 group"
+                              className="flex items-center gap-2 p-2 bg-muted border border-border rounded-md hover:bg-muted/80 transition-all duration-200 group"
                             >
-                              <Cog className="h-3.5 w-3.5 text-accent flex-shrink-0" />
-                              <span className="text-xs text-foreground group-hover:text-accent transition-colors leading-tight line-clamp-1">
+                              <Cog className="h-3.5 w-3.5 text-foreground flex-shrink-0" />
+                              <span className="text-xs text-foreground transition-colors leading-tight line-clamp-1">
                                 {displayName}
                               </span>
                             </div>
@@ -3314,7 +3314,7 @@ const CarInspectionReport = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => setShowAllChoice(!showAllChoice)}
-                            className="h-9 px-4 text-sm text-accent hover:bg-accent/10 font-medium border-accent/30"
+                            className="h-9 px-4 text-sm hover:bg-muted font-medium"
                           >
                             {showAllChoice
                               ? `Më pak`
@@ -3344,7 +3344,7 @@ const CarInspectionReport = () => {
             <Card className="shadow-md border-border/80">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-primary" />
+                  <Shield className="h-5 w-5 text-foreground" />
                   <CardTitle className="text-xl">Garancioni KORAUTO</CardTitle>
                 </div>
                 <p className="text-sm text-muted-foreground">
