@@ -100,6 +100,7 @@ import {
   fetchEncarsVehicle,
   type EncarsVehicleResponse,
 } from "@/services/encarApi";
+import { useCarDetails } from "@/hooks/useCarDetails";
 import { createPortal } from "react-dom";
 import {
   buildUsageHighlights,
@@ -1628,6 +1629,14 @@ const CarDetails = memo(() => {
   const { exchangeRate } = useCurrencyAPI();
   const { getOptionName } = useKoreaOptions();
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
+  
+  // Use hybrid car details hook
+  const { 
+    car: hybridCar, 
+    loading: hybridLoading, 
+    error: hybridError,
+    source: dataSource 
+  } = useCarDetails(lot, { preferCache: true, fallbackToAPI: true });
   const { theme } = useTheme();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [prefetchedSummary, setPrefetchedSummary] =
