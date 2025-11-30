@@ -15,7 +15,7 @@ import { APIFilters } from '@/utils/catalog-filter';
 interface UseHybridEncarDataOptions {
     preferCache?: boolean; // Default: true
     maxCacheAge?: number; // Minutes, default: 60
-    fallbackToAPI?: boolean; // Default: true
+    fallbackToAPI?: boolean; // Default: false (cache-only for instant performance)
 }
 
 /**
@@ -26,8 +26,8 @@ interface UseHybridEncarDataOptions {
 export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     const {
         preferCache = true,
-        maxCacheAge = 60,
-        fallbackToAPI = true
+        maxCacheAge = 120, // 2 hours - cache stays fresh longer
+        fallbackToAPI = false // Cache-only by default for instant performance
     } = options;
 
     // Internal state
