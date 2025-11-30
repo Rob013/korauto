@@ -66,7 +66,22 @@ Deno.serve(async (req) => {
       console.log(`✅ Deleted ${pricelessCount} cars without buy_now_price`);
     }
 
-    // 4. Update sync schedule record
+    // 4. Delete sold/archived cars from API
+    console.log('🗑️ Cleaning up sold/archived cars...');
+    const { data: deletedSoldCars, error: soldDeleteError } = await supabase
+      .from('encar_cars_cache')
+      .delete()
+      .in('advertisement_status', ['SOLD', 'ARCHIVED', 'COMPLETED', 'INACTIVE', 'CLOSED', 'FINISHED'])
+      .select('count', { count: 'exact', head: true });
+
+    if (soldDeleteError) {
+      console.error('❌ Failed to delete sold/archived cars:', soldDeleteError);
+    } else {
+      const soldCount = deletedSoldCars?.length || 0;
+      console.log(`✅ Deleted ${soldCount} sold/archived cars`);
+    }
+
+    // 5. Update sync schedule record
     const { error: scheduleError } = await supabase
       .from('sync_schedule')
       .upsert({
@@ -91,6 +106,7 @@ Deno.serve(async (req) => {
         syncResults: syncData,
         deletedArchivedCount: deletedCars?.length || 0,
         deletedPricelessCount: deletedPricelessCars?.length || 0,
+        deletedSoldCount: deletedSoldCars?.length || 0,
         nextSync: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
