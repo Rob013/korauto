@@ -132,6 +132,9 @@ export default {
       // Only handle /api/cig-track routes
       if (!url.pathname.startsWith('/api/cig-track')) {
         // Pass through to the origin/next worker for all other routes (SPA handling)
+        if (env.ASSETS) {
+          return env.ASSETS.fetch(request);
+        }
         return fetch(request);
       }
 
