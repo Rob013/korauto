@@ -74,32 +74,6 @@ export function useEncarCache(
         queryFn: async () => {
             console.log('🔍 Fetching from Encar cache:', { filters, page, perPage });
 
-            // Mapping from numeric IDs to Korean database values
-            const FUEL_TYPE_MAP: Record<string, string[]> = {
-                '1': ['가솔린', 'Gasoline'],
-                '2': ['디젤', 'Diesel'],
-                '3': ['하이브리드', 'Hybrid'],
-                '4': ['전기', 'Electric'],
-                '5': ['LPG', 'LPG']
-            };
-
-            const TRANSMISSION_MAP: Record<string, string[]> = {
-                '1': ['자동', 'Automatic', 'Auto'],
-                '2': ['수동', 'Manual'],
-                '3': ['CVT', 'CVT']
-            };
-
-            const BODY_TYPE_MAP: Record<string, string[]> = {
-                '1': ['세단', 'Sedan'],
-                '2': ['SUV', 'SUV'],
-                '3': ['해치백', 'Hatchback'],
-                '4': ['왜건', 'Wagon'],
-                '5': ['쿠페', 'Coupe'],
-                '6': ['컨버터블', 'Convertible'],
-                '7': ['밴', 'Van'],
-                '8': ['트럭', 'Truck']
-            };
-
             let query = supabase
                 .from('encar_cars_cache')
                 .select('*', { count: 'exact' })
@@ -118,32 +92,25 @@ export function useEncarCache(
                 query = query.eq('generation_id', Number(filters.generation_id));
             }
 
-            // Fuel type - convert numeric ID to Korean text
+            // Fuel type - exact match on database value
             if (filters.fuel_type) {
-                const fuelValues = FUEL_TYPE_MAP[filters.fuel_type];
-                if (fuelValues && fuelValues.length > 0) {
-                    query = query.in('fuel_type', fuelValues);
-                }
+                query = query.eq('fuel_type', filters.fuel_type);
             }
 
-            // Transmission - convert numeric ID to Korean text
+            // Transmission - exact match on database value
             if (filters.transmission) {
-                const transValues = TRANSMISSION_MAP[filters.transmission];
-                if (transValues && transValues.length > 0) {
-                    query = query.in('transmission', transValues);
-                }
+                query = query.eq('transmission', filters.transmission);
             }
 
-            // Body type - convert numeric ID to Korean text
+            // Body type - exact match on database value
             if (filters.body_type) {
-                const bodyValues = BODY_TYPE_MAP[filters.body_type];
-                if (bodyValues && bodyValues.length > 0) {
-                    query = query.in('body_type', bodyValues);
-                }
+                query = query.eq('body_type', filters.body_type);
             }
 
-            // Color - skip for now as it requires more complex mapping
-            // TODO: Add color mapping when we have the database values
+            // Color - exact match on database value
+            if (filters.color) {
+                query = query.eq('color_name', filters.color);
+            }
 
             if (filters.seats_count) {
                 query = query.eq('seat_count', Number(filters.seats_count));
