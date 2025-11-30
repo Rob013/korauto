@@ -10,48 +10,99 @@ import { supabase } from '@/integrations/supabase/client';
 import { APIFilters } from '@/utils/catalog-filter';
 
 export interface EncarCachedCar {
-    id: number;
-    vehicle_id: number;
-    lot_number: string | null;
-    vin: string | null;
-    manufacturer_id: number | null;
-    manufacturer_name: string | null;
-    model_id: number | null;
-    model_name: string | null;
-    generation_id: number | null;
-    generation_name: string | null;
-    grade_name: string | null;
-    form_year: string | null;
-    year_month: string | null;
-    mileage: number | null;
-    displacement: number | null;
-    fuel_type: string | null;
-    fuel_code: string | null;
-    transmission: string | null;
-    color_name: string | null;
-    body_type: string | null;
-    seat_count: number | null;
-    buy_now_price: number | null;
-    original_price: number | null;
-    advertisement_status: string | null;
-    vehicle_type: string | null;
-    photos: any;
-    options: any;
-    registered_date: string | null;
-    first_advertised_date: string | null;
-    modified_date: string | null;
-    view_count: number;
-    subscribe_count: number;
-    has_accident: boolean;
-    inspection_available: boolean;
-    dealer_name: string | null;
-    dealer_firm: string | null;
-    contact_address: string | null;
-    synced_at: string;
-    data_hash: string | null;
-    is_active: boolean;
-    created_at: string;
-    updated_at: string;
+    vehicle_id: string | number; // Database can return either type
+    lot_number?: string;
+    vin?: string;
+    manufacturer_id?: number;
+    manufacturer_name?: string;
+    model_id?: number;
+    model_name?: string;
+    generation_id?: number;
+    generation_name?: string;
+    grade_name?: string;
+    form_year?: string;
+    year_month?: string;
+
+    // Odometer details
+    mileage?: number;
+    mileage_mi?: number;
+    odometer_status?: string;
+
+    displacement?: number;
+    fuel_type?: string;
+    fuel_code?: string;
+    transmission?: string;
+    color_name?: string;
+    body_type?: string;
+    seat_count?: number;
+
+    // Price fields
+    buy_now_price?: number;
+    bid_price?: number;
+    final_bid_price?: number;
+    estimate_repair_price?: number;
+    pre_accident_price?: number;
+    clean_wholesale_price?: number;
+    actual_cash_value?: number;
+    original_price?: number;
+
+    advertisement_status?: string;
+    vehicle_type?: string;
+
+    // Images
+    photos?: string | any[];
+    photos_small?: string | any[];
+    images_id?: number;
+    options?: string | any;
+
+    // Dates
+    registered_date?: string;
+    first_advertised_date?: string;
+    modified_date?: string;
+    view_count?: number;
+    subscribe_count?: number;
+
+    // Flags
+    has_accident?: boolean;
+    inspection_available?: boolean;
+
+    // Lot & sale tracking
+    lot_external_id?: string;
+    lot_status?: string;
+    sale_date?: string;
+    sale_date_updated_at?: string;
+    bid_updated_at?: string;
+    buy_now_updated_at?: string;
+    final_bid_updated_at?: string;
+
+    // Damage & condition
+    damage_main?: string;
+    damage_second?: string;
+    airbags_status?: string;
+    grade_iaai?: string;
+    detailed_title?: string;
+    condition_name?: string;
+
+    // Seller
+    seller_name?: string;
+    seller_type?: string;
+
+    // Dealer
+    dealer_name?: string;
+    dealer_firm?: string;
+    contact_address?: string;
+
+    // Engine
+    engine_id?: number;
+    engine_name?: string;
+    drive_wheel?: string;
+
+    // Metadata
+    is_active?: boolean;
+    synced_at?: string;
+    updated_at?: string;
+    data_hash?: string;
+    created_at?: string; // Added from original interface
 }
 
 interface UseEncarCacheOptions {
@@ -183,136 +234,165 @@ export function useEncarCache(
  * This ensures compatibility with existing components
  */
 function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
-    // Parse JSON fields
-    const photos = typeof cached.photos === 'string' ? JSON.parse(cached.photos) : (cached.photos || []);
-    const options = typeof cached.options === 'string' ? JSON.parse(cached.options) : (cached.options || {});
+    // Parse photos
+    let photos: string[] = [];
+    let photosSmall: string[] = [];
+    try {
+        if (cached.photos) {
+            const parsed = typeof cached.photos === 'string'
+                ? JSON.parse(cached.photos)
+                : cached.photos;
+            photos = Array.isArray(parsed) ? parsed : [];
+        }
+        if (cached.photos_small) {
+            const parsed = typeof cached.photos_small === 'string'
+                ? JSON.parse(cached.photos_small)
+                : cached.photos_small;
+            photosSmall = Array.isArray(parsed) ? parsed : [];
+        }
+    } catch (e) {
+        console.warn('Error parsing photos:', e);
+    }
 
-    // Extract image arrays - Encar typically has photo URLs in array
+    // Parse options
+    let options = {};
+    try {
+        if (cached.options) {
+            options = typeof cached.options === 'string'
+                ? JSON.parse(cached.options)
+                : cached.options;
+        }
+    } catch (e) {
+        console.warn('Error parsing options:', e);
+    }
+
     const photoArray = Array.isArray(photos) ? photos : [];
 
     return {
-        // Core identifiers
-        id: String(cached.vehicle_id), // Important: string ID for React keys
-        vehicleId: cached.vehicle_id,
-        vehicle_id: cached.vehicle_id,
-        lot_number: cached.lot_number,
-        vehicleNo: cached.lot_number,
+        id: parseInt(String(cached.vehicle_id)), // Ensure it's a number for id
+        year: parseInt(cached.form_year || '0'),
+        title: `${cached.manufacturer_name || ''} ${cached.model_name || ''} ${cached.grade_name || ''}`.trim(),
         vin: cached.vin,
-
-        // IDs for filters
-        manufacturer_id: cached.manufacturer_id,
-        model_id: cached.model_id,
-        generation_id: cached.generation_id,
-
-        // Nested objects with .name property (required by catalog)
         manufacturer: {
             id: cached.manufacturer_id,
-            name: cached.manufacturer_name || 'Unknown'
+            name: cached.manufacturer_name
         },
         model: {
             id: cached.model_id,
-            name: cached.model_name || 'Unknown'
+            name: cached.model_name,
+            manufacturer_id: cached.manufacturer_id
         },
-        transmission: {
-            name: cached.transmission || 'Unknown'
-        },
-        color: {
-            name: cached.color_name
-        },
-
-        // Category
-        category: {
-            manufacturerName: cached.manufacturer_name,
-            modelName: cached.model_name,
-            modelGroupName: cached.generation_name,
-            gradeName: cached.grade_name,
-            formYear: cached.form_year,
-            yearMonth: cached.year_month,
-            originPrice: cached.original_price
-        },
-
-        // Specs
-        spec: {
-            mileage: cached.mileage,
-            displacement: cached.displacement,
-            fuelName: cached.fuel_type,
-            fuelCd: cached.fuel_code,
-            transmissionName: cached.transmission,
-            colorName: cached.color_name,
-            bodyName: cached.body_type,
-            seatCount: cached.seat_count
-        },
-
-        // For compatibility with existing code
-        year: cached.form_year ? parseInt(cached.form_year) : null,
-        title: `${cached.form_year || ''} ${cached.manufacturer_name || ''} ${cached.model_name || ''}`.trim(),
-        odometer: cached.mileage,
-        fuel: cached.fuel_type,
-        body_type: cached.body_type,
-        seats: cached.seat_count,
-
-        // Pricing - format for existing components
-        advertisement: {
-            price: cached.buy_now_price,
-            status: cached.advertisement_status
-        },
-        buy_now: cached.buy_now_price,
-        price: cached.buy_now_price,
-
-        // CRITICAL: Lots array structure (catalog expects this!)
+        generation: cached.generation_id ? {
+            id: cached.generation_id,
+            name: cached.generation_name,
+            manufacturer_id: cached.manufacturer_id,
+            model_id: cached.model_id
+        } : null,
+        body_type: cached.body_type ? { name: cached.body_type } : null,
+        color: cached.color_name ? { name: cached.color_name, id: 0 } : null,
+        engine: (cached.engine_id || cached.engine_name) ? {
+            id: cached.engine_id || 0,
+            name: cached.engine_name || ''
+        } : null,
+        transmission: cached.transmission ? { name: cached.transmission, id: 0 } : null,
+        drive_wheel: cached.drive_wheel ? { name: cached.drive_wheel, id: 0 } : null,
+        vehicle_type: { name: 'automobile', id: 1 },
+        fuel: cached.fuel_type ? { name: cached.fuel_type, id: 0 } : null,
+        cylinders: null,
         lots: [{
+            id: 0,
             lot: cached.lot_number,
-            buy_now: cached.buy_now_price,
+            lot_number: cached.lot_number,
+            domain: { name: 'Encar', id: 12 },
+            external_id: cached.lot_external_id,
 
-            // Images in proper structure for catalog
-            images: {
-                normal: photoArray,  // All photos as "normal" size
-                big: photoArray      // Same photos as "big" size (Encar doesn't distinguish)
-            },
-
-            // Odometer in proper structure
+            // ENHANCED: Complete odometer with status
             odometer: {
                 km: cached.mileage || 0,
-                mi: cached.mileage ? Math.round(cached.mileage * 0.621371) : 0
+                mi: cached.mileage_mi || Math.round((cached.mileage || 0) * 0.621371),
+                status: {
+                    name: cached.odometer_status || 'actual',
+                    id: cached.odometer_status === 'actual' ? 1 : 0
+                }
             },
 
-            // Insurance/accident info
+            // ENHANCED: All price fields
+            buy_now: cached.buy_now_price,
+            bid: cached.bid_price,
+            final_bid: cached.final_bid_price,
+            estimate_repair_price: cached.estimate_repair_price,
+            pre_accident_price: cached.pre_accident_price,
+            clean_wholesale_price: cached.clean_wholesale_price,
+            actual_cash_value: cached.actual_cash_value,
+
+            // ENHANCED: Sale tracking
+            sale_date: cached.sale_date,
+            sale_date_updated_at: cached.sale_date_updated_at,
+            bid_updated_at: cached.bid_updated_at,
+            buy_now_updated_at: cached.buy_now_updated_at,
+            final_bid_updated_at: cached.final_bid_updated_at,
+
+            // ENHANCED: Status
+            status: cached.lot_status ? {
+                name: cached.lot_status,
+                id: cached.lot_status === 'sale' ? 3 : 0
+            } : { name: 'sale', id: 3 },
+
+            // ENHANCED: Seller
+            seller: cached.seller_name,
+            seller_type: cached.seller_type,
+
+            // ENHANCED: Condition & damage
+            detailed_title: cached.detailed_title,
+            damage: {
+                main: cached.damage_main,
+                second: cached.damage_second
+            },
+            keys_available: cached.inspection_available || false,
+            airbags: cached.airbags_status,
+            condition: cached.condition_name ? {
+                name: cached.condition_name,
+                id: 0
+            } : { name: 'run_and_drives', id: 0 },
+            grade_iaai: cached.grade_iaai,
+
+            // ENHANCED: Images with metadata
+            images: {
+                id: cached.images_id || 0,
+                small: photosSmall,
+                normal: photoArray,
+                big: photoArray
+            },
+
+            // Insurance and details
             insurance_v2: {
                 accidentCnt: cached.has_accident ? 1 : 0,
                 hasAccident: cached.has_accident
             },
-
-            // Additional details
             details: {
                 seats_count: cached.seat_count,
                 badge: cached.grade_name,
                 inspection_available: cached.inspection_available
             },
-
-            status: cached.advertisement_status,
             sale_status: cached.advertisement_status
         }],
 
-        // Also provide images at top level for backward compatibility
-        photos: photoArray,
-        images: photoArray,
+        // Top-level fields
+        lot_number: cached.lot_number,
+        status: cached.advertisement_status || 'active',
+        sale_status: cached.advertisement_status,
+        final_price: cached.buy_now_price,
+        domain: { name: 'Encar' },
+        source_api: 'encar',
+        _cache_source: 'encar_cars_cache',
 
-        // Status
-        status: cached.advertisement_status,
-        vehicleType: cached.vehicle_type,
-
-        // Options
+        // Metadata
         options: options,
-
-        // Management
-        manage: {
-            registDateTime: cached.registered_date,
-            firstAdvertisedDateTime: cached.first_advertised_date,
-            modifyDateTime: cached.modified_date,
-            viewCount: cached.view_count,
-            subscribeCount: cached.subscribe_count
-        },
-
+        registered_date: cached.registered_date,
+        first_advertised_date: cached.first_advertised_date,
+        modified_date: cached.modified_date,
+        view_count: cached.view_count || 0,
+        subscribe_count: cached.subscribe_count || 0,
         // Condition
         condition: {
             accident: {

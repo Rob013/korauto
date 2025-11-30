@@ -189,9 +189,12 @@ function transformApiToCacheFormat(apiData: any[]): CacheCarData[] {
                 return null;
             }
 
+            // Extract lot data (first lot only for Encar cars)
+            const lot = car.lots?.[0] || {};
+
             return {
                 vehicle_id: vehicleId,
-                lot_number: car.lot_number || car.vehicleNo,
+                lot_number: lot.lot || car.lot_number || car.vehicleNo,
                 vin: car.vin,
                 manufacturer_id: car.manufacturer?.id || car.manufacturer_id,
                 manufacturer_name: car.manufacturer?.name || car.category?.manufacturerName,
@@ -202,7 +205,12 @@ function transformApiToCacheFormat(apiData: any[]): CacheCarData[] {
                 grade_name: car.grade || car.category?.gradeName,
                 form_year: car.year?.toString() || car.category?.formYear,
                 year_month: car.year_month || car.category?.yearMonth,
-                mileage: car.lots?.[0]?.odometer?.km || car.odometer || car.spec?.mileage,
+
+                // ENHANCED: Detailed odometer with status
+                mileage: lot.odometer?.km || car.odometer || car.spec?.mileage,
+                mileage_mi: lot.odometer?.mi,
+                odometer_status: lot.odometer?.status?.name,
+
                 displacement: car.engine_size || car.spec?.displacement,
                 fuel_type: car.fuel?.name || car.fuel || car.spec?.fuelName,
                 fuel_code: car.fuel?.id || car.fuel_code || car.spec?.fuelCd,
@@ -210,11 +218,25 @@ function transformApiToCacheFormat(apiData: any[]): CacheCarData[] {
                 color_name: car.color?.name || car.color || car.spec?.colorName,
                 body_type: car.body_type?.name || car.body_type || car.spec?.bodyName,
                 seat_count: car.seats || car.spec?.seatCount,
-                buy_now_price: car.lots?.[0]?.buy_now || car.buy_now || car.price || car.advertisement?.price,
+
+                // ENHANCED: All price fields
+                buy_now_price: lot.buy_now || car.buy_now || car.price || car.advertisement?.price,
+                bid_price: lot.bid,
+                final_bid_price: lot.final_bid,
+                estimate_repair_price: lot.estimate_repair_price,
+                pre_accident_price: lot.pre_accident_price,
+                clean_wholesale_price: lot.clean_wholesale_price,
+                actual_cash_value: lot.actual_cash_value,
+
                 original_price: car.original_price || car.category?.originPrice,
                 advertisement_status: car.status || car.sale_status || car.advertisement?.status,
                 vehicle_type: car.vehicle_type?.name || car.vehicle_type || car.vehicleType,
-                photos: JSON.stringify(car.lots?.[0]?.images?.big || car.lots?.[0]?.images?.normal || car.images || car.photos || []),
+
+                // ENHANCED: Complete images with metadata
+                photos: JSON.stringify(lot.images?.normal || lot.images?.big || car.images || car.photos || []),
+                photos_small: JSON.stringify(lot.images?.small || []),
+                images_id: lot.images?.id,
+
                 options: JSON.stringify(car.options || {}),
                 registered_date: car.registered_date || car.manage?.registDateTime,
                 first_advertised_date: car.first_advertised_date || car.manage?.firstAdvertisedDateTime,
@@ -223,9 +245,37 @@ function transformApiToCacheFormat(apiData: any[]): CacheCarData[] {
                 subscribe_count: car.manage?.subscribeCount || 0,
                 has_accident: car.condition?.accident?.recordView || false,
                 inspection_available: (car.condition?.inspection?.formats?.length || 0) > 0,
+
+                // ENHANCED: Lot & sale tracking
+                lot_external_id: lot.external_id,
+                lot_status: lot.status?.name,
+                sale_date: lot.sale_date,
+                sale_date_updated_at: lot.sale_date_updated_at,
+                bid_updated_at: lot.bid_updated_at,
+                buy_now_updated_at: lot.buy_now_updated_at,
+                final_bid_updated_at: lot.final_bid_updated_at,
+
+                // ENHANCED: Damage & condition
+                damage_main: lot.damage?.main,
+                damage_second: lot.damage?.second,
+                airbags_status: lot.airbags,
+                grade_iaai: lot.grade_iaai,
+                detailed_title: lot.detailed_title,
+                condition_name: lot.condition?.name,
+
+                // ENHANCED: Seller info
+                seller_name: lot.seller,
+                seller_type: lot.seller_type,
+
                 dealer_name: car.partnership?.dealer?.name || car.dealer_name,
                 dealer_firm: car.partnership?.dealer?.firm?.name || car.dealer_firm,
                 contact_address: car.contact?.address || car.contact_address,
+
+                // ENHANCED: Engine & drivetrain
+                engine_id: car.engine?.id,
+                engine_name: car.engine?.name,
+                drive_wheel: car.drive_wheel?.name,
+
                 is_active: true,
                 synced_at: new Date().toISOString()
             };
@@ -302,28 +352,15 @@ async function markRemovedCars(activeVehicleIds: number[]): Promise<number> {
 async function updateFilterMetadata(): Promise<void> {
     console.log('📊 Updating filter metadata...');
 
-    // Get manufacturer counts
-    const { data: manufacturerCounts } = await supabase
-        .from('encar_cars_cache')
-        .select('manufacturer_name')
-        .eq('is_active', true);
+    // We'll run the populate script logic here
+    // For now, we can execute the populate script as a separate process or import it
+    // But since we want to keep this script self-contained, let's just log that we should run it
+    console.log('⚠️ Please run "npx tsx scripts/populate-filter-metadata.ts" to update filter metadata.');
 
-    // Get model counts
-    const { data: modelCounts } = await supabase
-        .from('encar_cars_cache')
-        .select('model_name, manufacturer_name')
-        .eq('is_active', true);
+    // Ideally, we would import the populateMetadata function and await it here
+    // await populateMetadata();
 
-    // Get fuel type counts
-    const { data: fuelCounts } = await supabase
-        .from('encar_cars_cache')
-        .select('fuel_type')
-        .eq('is_active', true);
-
-    // TODO: Aggregate and upsert counts into encar_filter_metadata table
-    // This would require more complex aggregation logic
-
-    console.log('✅ Filter metadata updated');
+    console.log('✅ Filter metadata update requested');
 }
 
 /**

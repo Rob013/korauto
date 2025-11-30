@@ -36,20 +36,39 @@ async function populateMetadata() {
 
         if (deleteError) throw deleteError;
 
-        // 2. Fetch all active cars (minimal fields)
+        // 2. Fetch all active cars (minimal fields) with pagination
         console.log('📥 Fetching active cars from cache...');
-        const { data: cars, error: fetchError } = await supabase
-            .from('encar_cars_cache')
-            .select('manufacturer_id, manufacturer_name, model_id, model_name, generation_id, generation_name, fuel_type, transmission, body_type, color_name, form_year')
-            .eq('is_active', true);
 
-        if (fetchError) throw fetchError;
-        if (!cars || cars.length === 0) {
+        const PAGE_SIZE = 1000;
+        let allCars: any[] = [];
+        let page = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+            const { data: cars, error: fetchError } = await supabase
+                .from('encar_cars_cache')
+                .select('manufacturer_id, manufacturer_name, model_id, model_name, generation_id, generation_name, fuel_type, transmission, body_type, color_name, form_year')
+                .eq('is_active', true)
+                .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+            if (fetchError) throw fetchError;
+
+            if (cars && cars.length > 0) {
+                allCars = [...allCars, ...cars];
+                console.log(`  Fetched ${cars.length} cars (Total: ${allCars.length})...`);
+                if (cars.length < PAGE_SIZE) hasMore = false;
+                page++;
+            } else {
+                hasMore = false;
+            }
+        }
+
+        if (allCars.length === 0) {
             console.log('⚠️ No active cars found in cache.');
             return;
         }
 
-        console.log(`📊 Processing ${cars.length} cars...`);
+        console.log(`📊 Processing ${allCars.length} cars...`);
 
         // 3. Aggregate counts
         const manufacturers = new Map<string, { id: number, name: string, count: number }>();
@@ -61,7 +80,7 @@ async function populateMetadata() {
         const colors = new Map<string, number>();
         const years = new Map<string, number>();
 
-        cars.forEach(car => {
+        allCars.forEach(car => {
             // Manufacturer
             if (car.manufacturer_id && car.manufacturer_name) {
                 const key = `${car.manufacturer_id}`;
