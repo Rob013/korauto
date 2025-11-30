@@ -33,7 +33,6 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     // Internal state
     const [filters, setFilters] = useState<APIFilters>({});
     const [currentPage, setCurrentPage] = useState(1);
-    const [isReady, setIsReady] = useState(false); // Track if filters are initialized
     const perPage = 200;
 
     // ALWAYS call all hooks - never conditional
@@ -53,13 +52,12 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         cacheAvailable: cacheHealth?.available,
         carCount: cacheHealth?.carCount,
         minutesSinceSync: cacheHealth?.minutesSinceSync,
-        currentFilters: filters,
-        isReady
+        currentFilters: filters
     });
 
     // ALWAYS fetch from cache with current filters
     const cacheQuery = useEncarCache(filters, currentPage, perPage, {
-        enabled: shouldUseCache && isReady // Only fetch when cache is available AND filters are ready
+        enabled: shouldUseCache // Fetch when cache is available
     });
 
     // ALWAYS fetch from API hook (but we'll decide whether to use it later)
@@ -74,7 +72,6 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         console.log('📡 fetchCarsCache called:', { page, newFilters, resetList });
         setCurrentPage(page);
         setFilters(newFilters);
-        setIsReady(true); // Mark as ready when filters are explicitly set
     }, []);
 
     const fetchAllCarsCache = useCallback(async () => {
@@ -111,7 +108,7 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
             setCars: (newCars: any[]) => {
                 console.warn('setCars not directly supported in cache mode');
             },
-            loading: cacheQuery.isLoading || !isReady,
+            loading: cacheQuery.isLoading,
             error: cacheQuery.error ? String(cacheQuery.error) : null,
             totalCount: cacheQuery.data?.totalCount || 0,
             setTotalCount: (count: number) => {
@@ -124,7 +121,6 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
             setFilters: (newFilters: APIFilters) => {
                 console.log('🔧 setFilters called directly:', newFilters);
                 setFilters(newFilters);
-                setIsReady(true);
             },
             loadMore: loadMoreCache,
             refreshInventory: refreshInventoryCache,
