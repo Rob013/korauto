@@ -301,17 +301,8 @@ const EncarCatalog = ({
     transitionMs: 240,
   });
 
-  const renderableCars = useMemo(
-    () => {
-      const filtered = smoothCarsToDisplay.filter((car: CarWithRank | any) => {
-        const lot = car?.lots?.[0];
-        return lot?.buy_now && lot.buy_now > 0;
-      });
-      console.log(`🎨 Renderable cars: ${filtered.length} out of ${smoothCarsToDisplay.length} (filtered out ${smoothCarsToDisplay.length - filtered.length} without price)`);
-      return filtered;
-    },
-    [smoothCarsToDisplay],
-  );
+  // All cars in database now have buy_now_price, no filtering needed
+  const renderableCars = smoothCarsToDisplay;
   const [searchTerm, setSearchTerm] = useState((filters as APIFilters).search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{
