@@ -617,15 +617,29 @@ export const fetchEngines = async (manufacturerId?: string, modelId?: string, ge
 
 export const fetchFilterCounts = async (filters: APIFilters = {}, manufacturers: any[] = []): Promise<any> => {
   try {
-    // Fetch cars with current filters to extract available options
-    const apiFilters = {
+    // For manufacturer counts: fetch all cars without any filters to show total per manufacturer
+    // For other counts: apply appropriate parent filters
+    
+    // Fetch manufacturer counts (no filters - show total cars per manufacturer)
+    const manufacturerCountsPromise = makeSecureAPICall('cars', {
+      per_page: '1000',
+      simple_paginate: '0'
+    });
+    
+    // Fetch counts with current filters for models, colors, etc.
+    const filteredCountsPromise = makeSecureAPICall('cars', {
       ...filters,
       per_page: '1000',
       simple_paginate: '0'
-    };
+    });
     
-    const data = await makeSecureAPICall('cars', apiFilters);
-    const cars = data.data || [];
+    const [manufacturerData, filteredData] = await Promise.all([
+      manufacturerCountsPromise,
+      filteredCountsPromise
+    ]);
+    
+    const allCars = manufacturerData.data || [];
+    const filteredCars = filteredData.data || [];
     
     // Extract counts from actual car data
     const counts = {
@@ -639,45 +653,56 @@ export const fetchFilterCounts = async (filters: APIFilters = {}, manufacturers:
       years: {} as Record<string, number>,
     };
     
-    cars.forEach((car: Car) => {
-      // Count manufacturers
+    // Count manufacturers from all cars (unfiltered)
+    allCars.forEach((car: Car) => {
       if (car.manufacturer?.name) {
-        counts.manufacturers[car.manufacturer.name] = (counts.manufacturers[car.manufacturer.name] || 0) + 1;
+        const name = car.manufacturer.name;
+        counts.manufacturers[name] = (counts.manufacturers[name] || 0) + 1;
       }
-      
+    });
+    
+    // Count everything else from filtered cars
+    filteredCars.forEach((car: Car) => {
       // Count models
       if (car.model?.name) {
-        counts.models[car.model.name] = (counts.models[car.model.name] || 0) + 1;
+        const name = car.model.name;
+        counts.models[name] = (counts.models[name] || 0) + 1;
       }
       
       // Count generations
       if (car.generation?.name) {
-        counts.generations[car.generation.name] = (counts.generations[car.generation.name] || 0) + 1;
+        const name = car.generation.name;
+        counts.generations[name] = (counts.generations[name] || 0) + 1;
       }
       
       // Count colors
       if (car.color?.name) {
-        counts.colors[car.color.name] = (counts.colors[car.color.name] || 0) + 1;
+        const name = car.color.name;
+        counts.colors[name] = (counts.colors[name] || 0) + 1;
       }
       
       // Count fuel types
       if (car.fuel?.name) {
-        counts.fuelTypes[car.fuel.name] = (counts.fuelTypes[car.fuel.name] || 0) + 1;
+        const name = car.fuel.name;
+        counts.fuelTypes[name] = (counts.fuelTypes[name] || 0) + 1;
       }
       
       // Count transmissions
       if (car.transmission?.name) {
-        counts.transmissions[car.transmission.name] = (counts.transmissions[car.transmission.name] || 0) + 1;
+        const name = car.transmission.name;
+        counts.transmissions[name] = (counts.transmissions[name] || 0) + 1;
       }
       
       // Count body types
       if (car.body_type?.name) {
-        counts.bodyTypes[car.body_type.name] = (counts.bodyTypes[car.body_type.name] || 0) + 1;
+        const name = car.body_type.name;
+        counts.bodyTypes[name] = (counts.bodyTypes[name] || 0) + 1;
       }
       
       // Count years
       if (car.year) {
-        counts.years[car.year.toString()] = (counts.years[car.year.toString()] || 0) + 1;
+        const yearStr = car.year.toString();
+        counts.years[yearStr] = (counts.years[yearStr] || 0) + 1;
       }
     });
     
