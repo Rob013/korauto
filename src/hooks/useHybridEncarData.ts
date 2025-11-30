@@ -40,31 +40,12 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     const { data: cacheHealth } = useEncarCacheHealth();
 
     // Determine if we should use cache
-    // When fallbackToAPI is false, ALWAYS use cache if available (cache-only mode)
-    const shouldUseCache = preferCache &&
-        cacheHealth?.available &&
-        cacheHealth?.carCount > 0 &&
-        (fallbackToAPI === false || !cacheHealth?.minutesSinceSync || cacheHealth.minutesSinceSync <= maxCacheAge);
-
-    // Log cache decision
-    console.log('🔄 useHybridEncarData decision:', {
-        shouldUseCache,
-        preferCache,
-        cacheAvailable: cacheHealth?.available,
-        carCount: cacheHealth?.carCount,
-        minutesSinceSync: cacheHealth?.minutesSinceSync
-    });
-
-    // ALWAYS fetch from cache (but we'll decide whether to use it later)
-    const cacheQuery = useEncarCache(filters || {}, currentPage, perPage, {
-        enabled: shouldUseCache // React Query will handle enabling/disabling
-    });
-
-    // ALWAYS fetch from API hook (but we'll decide whether to use it later)
-    const apiHook = useSecureAuctionAPI();
+    // Simplified: use cache if we prefer it AND it has data OR if API fallback is disabled
+    const hasCacheData = cacheQuery.data?.cars && cacheQuery.data.cars.length > 0;
+    const shouldUseCache = preferCache && (hasCacheData || cacheHealth?.carCount > 0);
 
     // Determine which source to use
-    const usingCache = shouldUseCache && !cacheQuery.isError && cacheQuery.data;
+    const usingCache = shouldUseCache && !cacheQuery.isError;
     const usingAPI = !usingCache && fallbackToAPI;
 
     // Define all callbacks unconditionally to follow Rules of Hooks
