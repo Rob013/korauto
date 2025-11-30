@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { X, Search } from "lucide-react";
 import { APIFilters } from "@/utils/catalog-filter";
 import { Slider } from "@/components/ui/slider";
+import { useEncarFilterOptions } from "@/hooks/useEncarFilterOptions";
 
 interface Manufacturer {
     id: number;
@@ -58,44 +59,6 @@ interface MobileFiltersPanelProps {
     usePortal?: boolean;
 }
 
-const FUEL_TYPES: Record<string, number> = {
-    'Benzinë': 1,
-    'Dizel': 2,
-    'Hibrid': 3,
-    'Elektrik': 4,
-    'Gaz': 5
-};
-
-const TRANSMISSIONS: Record<string, number> = {
-    'Automatik': 1,
-    'Manual': 2,
-    'CVT': 3
-};
-
-const BODY_TYPES: Record<string, number> = {
-    'Sedan': 1,
-    'SUV': 2,
-    'Hatchback': 3,
-    'Wagon': 4,
-    'Coupe': 5,
-    'Convertible': 6,
-    'Van': 7,
-    'Truck': 8
-};
-
-const COLORS: Record<string, number> = {
-    'E zezë': 1,
-    'E bardhë': 2,
-    'Gri': 3,
-    'Argjend': 4,
-    'Blu': 5,
-    'E kuqe': 6,
-    'Kafe': 7,
-    'Jeshile': 8,
-    'Portokalli': 9,
-    'Ari': 10
-};
-
 const DRIVE_TYPES = ['2WD', '4WD', 'AWD'];
 const STEERING_POSITIONS = ['Majtas', 'Djathtas'];
 
@@ -115,6 +78,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     className,
     usePortal = false
 }) => {
+    // Fetch dynamic filter options from database
+    const { data: filterOptions, isLoading: filterOptionsLoading } = useEncarFilterOptions();
 
     const handleChange = useCallback((key: string, value: string) => {
         const actualValue = value === '' || value === 'all' ? undefined : value;
@@ -435,39 +400,47 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         {/* Fuel Type */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Karburanti</label>
-                            <div className="flex flex-wrap gap-2">
-                                {Object.entries(FUEL_TYPES).map(([label, value]) => (
-                                    <button
-                                        key={value}
-                                        onClick={() => handleChange('fuel_type', filters.fuel_type === value.toString() ? '' : value.toString())}
-                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === value.toString()
-                                            ? 'bg-primary text-primary-foreground border-primary'
-                                            : 'bg-background border-border hover:bg-muted'
-                                            }`}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
+                            {filterOptionsLoading ? (
+                                <div className="text-xs text-muted-foreground">Duke ngarkuar...</div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {filterOptions?.fuelTypes.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => handleChange('fuel_type', filters.fuel_type === option.value ? '' : option.value)}
+                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === option.value
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background border-border hover:bg-muted'
+                                                }`}
+                                        >
+                                            {option.label} {option.count ? `(${option.count})` : ''}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Transmission */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Transmisioni</label>
-                            <div className="flex flex-wrap gap-2">
-                                {Object.entries(TRANSMISSIONS).map(([label, value]) => (
-                                    <button
-                                        key={value}
-                                        onClick={() => handleChange('transmission', filters.transmission === value.toString() ? '' : value.toString())}
-                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === value.toString()
-                                            ? 'bg-primary text-primary-foreground border-primary'
-                                            : 'bg-background border-border hover:bg-muted'
-                                            }`}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
+                            {filterOptionsLoading ? (
+                                <div className="text-xs text-muted-foreground">Duke ngarkuar...</div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {filterOptions?.transmissions.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => handleChange('transmission', filters.transmission === option.value ? '' : option.value)}
+                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === option.value
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background border-border hover:bg-muted'
+                                                }`}
+                                        >
+                                            {option.label} {option.count ? `(${option.count})` : ''}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Body Type */}
@@ -477,10 +450,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 value={filters.body_type || ''}
                                 onChange={(e) => handleChange('body_type', e.target.value)}
                                 className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                disabled={filterOptionsLoading}
                             >
                                 <option value="">Të gjitha</option>
-                                {Object.entries(BODY_TYPES).map(([label, value]) => (
-                                    <option key={value} value={value}>{label}</option>
+                                {filterOptions?.bodyTypes.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label} {option.count ? `(${option.count})` : ''}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -492,10 +468,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 value={filters.color || ''}
                                 onChange={(e) => handleChange('color', e.target.value)}
                                 className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
+                                disabled={filterOptionsLoading}
                             >
                                 <option value="">Të gjitha</option>
-                                {Object.entries(COLORS).map(([label, value]) => (
-                                    <option key={value} value={value}>{label}</option>
+                                {filterOptions?.colors.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label} {option.count ? `(${option.count})` : ''}
+                                    </option>
                                 ))}
                             </select>
                         </div>
