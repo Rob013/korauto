@@ -634,11 +634,33 @@ export const fetchFilterCounts = async (filters: APIFilters = {}, manufacturers:
       years: {} as Record<string, number>,
     };
     
-    // If we have manufacturer data with car counts, use it directly
+    // Get real manufacturer counts by querying for each manufacturer
     if (manufacturers && manufacturers.length > 0) {
-      manufacturers.forEach((m: any) => {
-        if (m.name && (m.car_count || m.cars_qty)) {
-          counts.manufacturers[m.name] = m.car_count || m.cars_qty || 0;
+      // Query each manufacturer to get real car counts
+      const manufacturerCountPromises = manufacturers.map(async (m: any) => {
+        if (!m.id || !m.name) return { name: '', count: 0 };
+        
+        try {
+          const data = await makeSecureAPICall('cars', {
+            manufacturer_id: m.id,
+            per_page: '1', // Only need count, not actual cars
+            simple_paginate: '0'
+          });
+          
+          return {
+            name: m.name,
+            count: data.total || 0
+          };
+        } catch (error) {
+          console.warn(`Failed to get count for ${m.name}:`, error);
+          return { name: m.name, count: 0 };
+        }
+      });
+      
+      const manufacturerCounts = await Promise.all(manufacturerCountPromises);
+      manufacturerCounts.forEach(({ name, count }) => {
+        if (name) {
+          counts.manufacturers[name] = count;
         }
       });
     }
