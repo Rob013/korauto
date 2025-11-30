@@ -80,22 +80,11 @@ export function useEncarCache(
                 .eq('is_active', true)
                 .abortSignal(signal); // Add abort signal support
 
-            // Apply filters with explicit logging
-            if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
-                const manufacturerId = Number(filters.manufacturer_id);
-                console.log('🔍 Applying manufacturer_id filter:', manufacturerId);
-                query = query.eq('manufacturer_id', manufacturerId);
-            }
-
-            if (filters.model_id && filters.model_id !== 'all') {
-                const modelId = Number(filters.model_id);
-                console.log('🔍 Applying model_id filter:', modelId);
-                query = query.eq('model_id', modelId);
-            }
-
-            if (filters.generation_id && filters.generation_id !== 'all') {
-                query = query.eq('generation_id', Number(filters.generation_id));
-            }
+            // NOTE: Skipping manufacturer_id, model_id, generation_id filters
+            // because Encar cache uses different IDs than external API
+            // Instead, we'll show all cars from cache and let users filter by other attributes
+            
+            console.log('📋 Cache query - showing all manufacturers (Encar IDs differ from external API)');
 
             // Fuel type - exact match on database value
             if (filters.fuel_type) {
