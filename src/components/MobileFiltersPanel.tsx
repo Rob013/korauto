@@ -85,8 +85,9 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     // Fetch dynamic filter options from database
     const { data: filterOptions, isLoading: filterOptionsLoading } = useEncarFilterOptions();
 
-    // Sync local filters when parent filters change
+    // Sync local filters when parent filters change - INSTANT update
     useEffect(() => {
+        console.log('🔄 Syncing filters from parent:', filters);
         setLocalFilters(filters);
     }, [filters]);
 
@@ -207,15 +208,15 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         return { popular, others };
     }, [manufacturers]);
 
-    // Get models for selected manufacturer with STRICT filtering
+    // Get models for selected manufacturer with STRICT filtering - use filters prop for instant display
     const modelsList = useMemo(() => {
-        if (!localFilters.manufacturer_id) return [];
+        if (!filters.manufacturer_id) return [];
 
         return models
             .filter(m => {
                 // Strict check: if model has manufacturer_id, it MUST match the selected one
                 if (m.manufacturer_id !== undefined) {
-                    return m.manufacturer_id.toString() === localFilters.manufacturer_id;
+                    return m.manufacturer_id.toString() === filters.manufacturer_id;
                 }
                 // If no manufacturer_id on model, assume it's correct (legacy behavior)
                 return true;
@@ -226,7 +227,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 name: m.name,
                 count: m.cars_qty || 0
             }));
-    }, [localFilters.manufacturer_id, models]);
+    }, [filters.manufacturer_id, models]);
 
     // Generate years
     const currentYear = new Date().getFullYear();
@@ -269,16 +270,16 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <label className="block text-sm font-medium">Marka</label>
-                            {localFilters.manufacturer_id && manufacturers.find(m => m.id.toString() === localFilters.manufacturer_id)?.image && (
+                            {filters.manufacturer_id && manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.image && (
                                 <img
-                                    src={manufacturers.find(m => m.id.toString() === localFilters.manufacturer_id)?.image}
+                                    src={manufacturers.find(m => m.id.toString() === filters.manufacturer_id)?.image}
                                     alt="Brand Logo"
                                     className="h-5 w-auto object-contain"
                                 />
                             )}
                         </div>
                         <select
-                            value={localFilters.manufacturer_id || ''}
+                            value={filters.manufacturer_id || ''}
                             onChange={(e) => handleChange('manufacturer_id', e.target.value)}
                             className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                         >
@@ -303,13 +304,13 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                     <div>
                         <label className="block text-sm font-medium mb-2">Modeli</label>
                         <select
-                            value={localFilters.model_id || ''}
+                            value={filters.model_id || ''}
                             onChange={(e) => handleChange('model_id', e.target.value)}
-                            disabled={!localFilters.manufacturer_id}
+                            disabled={!filters.manufacturer_id}
                             className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background disabled:opacity-50 transition-colors"
                         >
                             <option value="">
-                                {localFilters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
+                                {filters.manufacturer_id ? 'Të gjithë modelet' : 'Zgjidhni markën së pari'}
                             </option>
                             {modelsList.map(m => (
                                 <option key={m.id} value={m.id}>
