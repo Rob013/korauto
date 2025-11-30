@@ -79,7 +79,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     className,
     usePortal = false
 }) => {
-    // Local state for immediate UI updates without triggering full catalog re-render
+    // Local state for immediate UI updates
     const [localFilters, setLocalFilters] = useState(filters);
     
     // Fetch dynamic filter options from database
@@ -90,14 +90,17 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         setLocalFilters(filters);
     }, [filters]);
 
-    // Debounced filter change for non-critical filters (300ms delay)
-    const debouncedFilterChange = useRef(
-        debounce((newFilters: APIFilters) => {
+    // Memoized debounced function that's stable across renders
+    const debouncedFilterChange = useMemo(
+        () => debounce((newFilters: APIFilters) => {
+            console.log('🔄 Applying debounced filter change:', newFilters);
             onFiltersChange(newFilters);
-        }, 300)
-    ).current;
+        }, 300),
+        [onFiltersChange]
+    );
 
     const handleChange = useCallback((key: string, value: string) => {
+        console.log('🎯 Filter change:', { key, value });
         const actualValue = value === '' || value === 'all' ? undefined : value;
         const newFilters = { ...localFilters, [key]: actualValue };
 
@@ -105,7 +108,6 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         setLocalFilters(newFilters);
 
         // Critical filters (manufacturer, model, generation) need immediate update
-        // because they affect other filter options
         if (key === 'manufacturer_id') {
             if (onManufacturerChange) {
                 onManufacturerChange(actualValue || '');
@@ -131,10 +133,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 onFiltersChange(resetFilters);
             }
         } else {
-            // Non-critical filters use debouncing to prevent UI freezing
-            debouncedFilterChange(newFilters);
+            // Non-critical filters: apply immediately without debounce to ensure responsiveness
+            onFiltersChange(newFilters);
         }
-    }, [localFilters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange, debouncedFilterChange]);
+    }, [localFilters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
 
     const handleSliderChange = useCallback((key: string, values: number[]) => {
         let newFilters = { ...localFilters };
@@ -156,7 +158,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         // Update local state immediately
         setLocalFilters(newFilters);
         
-        // Debounce the actual filter change to prevent freezing
+        // Use debounce for sliders to prevent too many updates while dragging
         debouncedFilterChange(newFilters);
     }, [localFilters, debouncedFilterChange]);
 
