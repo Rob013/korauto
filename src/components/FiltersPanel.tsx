@@ -88,8 +88,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const { data: gradesData, isLoading: gradesLoading } = useGrades(filters.model);
   const { data: trimsData, isLoading: trimsLoading } = useTrims(filters.model);
 
-  // INSTANT search - no debounce for immediate filter response
-  const debouncedSearchTerm = useDebounce(searchTerm, 0);
+  // Fast but stable debounce - 50ms prevents excessive updates while feeling instant
+  const debouncedSearchTerm = useDebounce(searchTerm, 50);
 
   // Update search filter when term changes
   useEffect(() => {

@@ -171,15 +171,15 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: options.staleTime ?? 60 * 60 * 1000, // 60 minutes - cached data stays fresh longer
-        gcTime: options.cacheTime ?? 120 * 60 * 1000, // 120 minutes - keep in memory longer
+        staleTime: options.staleTime ?? 10 * 1000, // 10 seconds - refetch when filters change
+        gcTime: options.cacheTime ?? 5 * 60 * 1000, // 5 minutes cache time
         refetchOnWindowFocus: false,
         refetchOnMount: false,
         refetchOnReconnect: false,
-        // Instant cache reads - no loading state for cached data
-        placeholderData: (previousData) => previousData,
         // Network waterfall optimization
         networkMode: 'online',
+        // Retry on error
+        retry: 1,
     });
 }
 

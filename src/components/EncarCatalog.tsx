@@ -524,8 +524,8 @@ const EncarCatalog = ({
     setHasUserSelectedSort(false);
     setSortBy("");
 
-    // INSTANT filter changes - no loading state for cached data
-    // setIsFilterLoading(true); // REMOVED for instant response
+    // Fast, smooth filter changes - minimal loading state
+    setIsFilterLoading(true);
     setFilters(newFilters);
 
     setShowAllCars(false);
@@ -539,6 +539,11 @@ const EncarCatalog = ({
     const searchParams = filtersToURLParams(normalizedFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
+    
+    // Clear loading state quickly for cache mode
+    if (source === 'cache') {
+      setTimeout(() => setIsFilterLoading(false), 100);
+    }
   }, [
     currentFiltersSignature,
     scheduleFetchCars,
@@ -548,7 +553,8 @@ const EncarCatalog = ({
     setShowAllCars,
     setAllCarsData,
     setHasUserSelectedSort,
-    setSortBy
+    setSortBy,
+    source
   ]);
 
   const handleClearFilters = useCallback(() => {
@@ -726,9 +732,8 @@ const EncarCatalog = ({
     setFilters(newFilters);
     setLoadedPages(1);
     
-    // INSTANT updates - no loading state for cache mode
-    const isCacheMode = source === 'cache';
-    // REMOVED: setIsLoading for instant filter response
+    // Fast loading state - show briefly for UX feedback
+    setIsLoading(true);
     
     try {
       if (!manufacturerId) {
@@ -775,8 +780,9 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
     } finally {
-      // INSTANT updates - removed loading states
-      setIsFilterLoading(false);
+      // Fast state clearing for smooth UX
+      setIsLoading(false);
+      setTimeout(() => setIsFilterLoading(false), source === 'cache' ? 100 : 300);
     }
   };
 
@@ -802,9 +808,8 @@ const EncarCatalog = ({
     setLoadedPages(1);
     setGenerations([]);
 
-    // INSTANT updates - no loading state for cache mode
-    const isCacheMode = source === 'cache';
-    // REMOVED: setIsLoading for instant filter response
+    // Fast loading state - show briefly for UX feedback
+    setIsLoading(true);
     
     try {
       // Fetch cars with neutral sorting (user can re-apply a sort after filters)
@@ -830,8 +835,9 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
     } finally {
-      // INSTANT updates - removed loading states
-      setIsFilterLoading(false);
+      // Fast state clearing for smooth UX
+      setIsLoading(false);
+      setTimeout(() => setIsFilterLoading(false), source === 'cache' ? 100 : 300);
     }
   };
 
