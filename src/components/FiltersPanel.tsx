@@ -89,7 +89,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const { data: trimsData, isLoading: trimsLoading } = useTrims(filters.model);
 
   // Fast but stable debounce - 50ms prevents excessive updates while feeling instant
-  const debouncedSearchTerm = useDebounce(searchTerm, 50);
+  const debouncedSearchTerm = useDebounce(searchTerm, 0); // Instant response
 
   // Update search filter when term changes
   useEffect(() => {
