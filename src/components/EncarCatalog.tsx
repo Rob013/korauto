@@ -757,7 +757,7 @@ const EncarCatalog = ({
       // Fetch cars with neutral sorting (user can re-apply a sort after filters)
       const filtersForCars = {
         ...newFilters,
-        per_page: "50"
+        per_page: "100" // Reduced from 50 for better balance
       };
       await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
         console.log(`[handleManufacturerChange] Setting models to:`, modelData);
@@ -1048,26 +1048,53 @@ const EncarCatalog = ({
     };
   }, []); // Remove dependencies to prevent unnecessary re-binding
 
-  // OPTIMIZED: Load filter counts with reduced API calls and better debouncing
+  // OPTIMIZED: Use manufacturer counts from loaded data instead of fetching separately
   useEffect(() => {
-    const loadFilterCounts = async () => {
-      if (manufacturers.length > 0) {
-        setLoadingCounts(true);
-        try {
-          const counts = await fetchFilterCounts(filters, manufacturers);
-          setFilterCounts(counts);
-        } catch (error) {
-          console.error('Error loading filter counts:', error);
-        } finally {
-          setLoadingCounts(false);
+    // Set manufacturer counts immediately from manufacturers data
+    if (manufacturers.length > 0) {
+      const manufacturerCounts: Record<string, number> = {};
+      manufacturers.forEach(m => {
+        if (m.name && (m.car_count || m.cars_qty)) {
+          manufacturerCounts[m.name] = m.car_count || m.cars_qty || 0;
         }
-      }
-    };
+      });
+      
+      setFilterCounts((prev: any) => ({
+        ...prev,
+        manufacturers: manufacturerCounts
+      }));
+    }
+  }, [manufacturers]);
 
-    // PERFORMANCE: Longer debounce and only load when necessary
-    const timeoutId = setTimeout(loadFilterCounts, 500);
-    return () => clearTimeout(timeoutId);
-  }, [filters, manufacturers.length]); // Only depend on manufacturers.length, not the full array
+  // OPTIMIZED: Extract filter counts from currently loaded cars for instant display
+  useEffect(() => {
+    if (cars.length > 0) {
+      const counts = {
+        models: {} as Record<string, number>,
+        generations: {} as Record<string, number>,
+        colors: {} as Record<string, number>,
+        fuelTypes: {} as Record<string, number>,
+        transmissions: {} as Record<string, number>,
+        bodyTypes: {} as Record<string, number>,
+        years: {} as Record<string, number>,
+      };
+      
+      cars.forEach((car: any) => {
+        if (car.model?.name) counts.models[car.model.name] = (counts.models[car.model.name] || 0) + 1;
+        if (car.generation?.name) counts.generations[car.generation.name] = (counts.generations[car.generation.name] || 0) + 1;
+        if (car.color?.name) counts.colors[car.color.name] = (counts.colors[car.color.name] || 0) + 1;
+        if (car.fuel?.name) counts.fuelTypes[car.fuel.name] = (counts.fuelTypes[car.fuel.name] || 0) + 1;
+        if (car.transmission?.name) counts.transmissions[car.transmission.name] = (counts.transmissions[car.transmission.name] || 0) + 1;
+        if (car.body_type?.name) counts.bodyTypes[car.body_type.name] = (counts.bodyTypes[car.body_type.name] || 0) + 1;
+        if (car.year) counts.years[car.year.toString()] = (counts.years[car.year.toString()] || 0) + 1;
+      });
+      
+      setFilterCounts((prev: any) => ({
+        ...prev,
+        ...counts
+      }));
+    }
+  }, [cars]);
 
   // OPTIMIZED: Load initial counts only once when manufacturers are first loaded
   useEffect(() => {

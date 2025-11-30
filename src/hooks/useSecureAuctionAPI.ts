@@ -4,7 +4,7 @@ import { getBrandLogo } from '@/data/brandLogos';
 
 // Simple memory cache for the session only
 const apiCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 60000; // 60 seconds
+const CACHE_DURATION = 300000; // 5 minutes (increased from 60 seconds for better performance)
 const MAX_API_RETRIES = 2;
 const API_RETRY_BASE_DELAY = 300;
 let lastFetchTime = 0;
@@ -289,7 +289,7 @@ export const useSecureAuctionAPI = () => {
       const apiFilters = {
         ...newFilters,
         page: page.toString(),
-        per_page: newFilters.per_page || "200", // Show 200 cars per page
+        per_page: newFilters.per_page || "100", // Reduced from 200 for faster initial load
         simple_paginate: "0",
       };
 
@@ -436,7 +436,7 @@ export const useSecureAuctionAPI = () => {
     try {
       const apiFilters = {
         ...currentFilters,
-        per_page: "1000",
+        per_page: "500", // Reduced from 1000 for faster response
         simple_paginate: "0",
       };
       delete apiFilters.grade_iaai;
@@ -492,9 +492,10 @@ export const useSecureAuctionAPI = () => {
 
 export const fetchManufacturers = async (): Promise<Manufacturer[]> => {
   try {
-    const data = await getCachedApiCall("manufacturers/cars", { per_page: "1000", simple_paginate: "0" },
+    // Use short cache for manufacturers since they change rarely
+    const data = await getCachedApiCall("manufacturers/cars", { per_page: "200", simple_paginate: "0" },
       () => makeSecureAPICall("manufacturers/cars", {
-        per_page: "1000",
+        per_page: "200", // Reduced from 1000 for faster response
         simple_paginate: "0"
       })
     );
@@ -508,6 +509,9 @@ export const fetchManufacturers = async (): Promise<Manufacturer[]> => {
         car_count: manufacturer.car_count || manufacturer.cars_qty || 0,
         image: manufacturer.image || getBrandLogo(manufacturer.name)
       }));
+      
+      // Sort by car count descending to show most popular first
+      manufacturers.sort((a: any, b: any) => (b.car_count || 0) - (a.car_count || 0));
     }
     return manufacturers;
   } catch (err) {
@@ -518,9 +522,10 @@ export const fetchManufacturers = async (): Promise<Manufacturer[]> => {
 
 export const fetchModels = async (manufacturerId: string): Promise<Model[]> => {
   try {
-    const data = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "1000", simple_paginate: "0" },
+    // Reduced page size for faster response
+    const data = await getCachedApiCall(`models/${manufacturerId}/cars`, { per_page: "200", simple_paginate: "0" },
       () => makeSecureAPICall(`models/${manufacturerId}/cars`, {
-        per_page: "1000",
+        per_page: "200",
         simple_paginate: "0"
       })
     );
@@ -617,31 +622,7 @@ export const fetchEngines = async (manufacturerId?: string, modelId?: string, ge
 
 export const fetchFilterCounts = async (filters: APIFilters = {}, manufacturers: any[] = []): Promise<any> => {
   try {
-    // For manufacturer counts: fetch all cars without any filters to show total per manufacturer
-    // For other counts: apply appropriate parent filters
-    
-    // Fetch manufacturer counts (no filters - show total cars per manufacturer)
-    const manufacturerCountsPromise = makeSecureAPICall('cars', {
-      per_page: '1000',
-      simple_paginate: '0'
-    });
-    
-    // Fetch counts with current filters for models, colors, etc.
-    const filteredCountsPromise = makeSecureAPICall('cars', {
-      ...filters,
-      per_page: '1000',
-      simple_paginate: '0'
-    });
-    
-    const [manufacturerData, filteredData] = await Promise.all([
-      manufacturerCountsPromise,
-      filteredCountsPromise
-    ]);
-    
-    const allCars = manufacturerData.data || [];
-    const filteredCars = filteredData.data || [];
-    
-    // Extract counts from actual car data
+    // Use manufacturer data that's already loaded to show counts instantly
     const counts = {
       manufacturers: {} as Record<string, number>,
       models: {} as Record<string, number>,
@@ -653,58 +634,72 @@ export const fetchFilterCounts = async (filters: APIFilters = {}, manufacturers:
       years: {} as Record<string, number>,
     };
     
-    // Count manufacturers from all cars (unfiltered)
-    allCars.forEach((car: Car) => {
-      if (car.manufacturer?.name) {
-        const name = car.manufacturer.name;
-        counts.manufacturers[name] = (counts.manufacturers[name] || 0) + 1;
-      }
-    });
+    // If we have manufacturer data with car counts, use it directly
+    if (manufacturers && manufacturers.length > 0) {
+      manufacturers.forEach((m: any) => {
+        if (m.name && (m.car_count || m.cars_qty)) {
+          counts.manufacturers[m.name] = m.car_count || m.cars_qty || 0;
+        }
+      });
+    }
     
-    // Count everything else from filtered cars
-    filteredCars.forEach((car: Car) => {
-      // Count models
-      if (car.model?.name) {
-        const name = car.model.name;
-        counts.models[name] = (counts.models[name] || 0) + 1;
-      }
+    // For other filters, fetch a reasonable sample to show counts
+    // Use smaller page size for faster response
+    if (filters.manufacturer_id || filters.model_id) {
+      const apiFilters = {
+        ...filters,
+        per_page: '500', // Reduced from 1000 for faster response
+        simple_paginate: '0'
+      };
       
-      // Count generations
-      if (car.generation?.name) {
-        const name = car.generation.name;
-        counts.generations[name] = (counts.generations[name] || 0) + 1;
-      }
+      const data = await makeSecureAPICall('cars', apiFilters);
+      const filteredCars = data.data || [];
       
-      // Count colors
-      if (car.color?.name) {
-        const name = car.color.name;
-        counts.colors[name] = (counts.colors[name] || 0) + 1;
-      }
-      
-      // Count fuel types
-      if (car.fuel?.name) {
-        const name = car.fuel.name;
-        counts.fuelTypes[name] = (counts.fuelTypes[name] || 0) + 1;
-      }
-      
-      // Count transmissions
-      if (car.transmission?.name) {
-        const name = car.transmission.name;
-        counts.transmissions[name] = (counts.transmissions[name] || 0) + 1;
-      }
-      
-      // Count body types
-      if (car.body_type?.name) {
-        const name = car.body_type.name;
-        counts.bodyTypes[name] = (counts.bodyTypes[name] || 0) + 1;
-      }
-      
-      // Count years
-      if (car.year) {
-        const yearStr = car.year.toString();
-        counts.years[yearStr] = (counts.years[yearStr] || 0) + 1;
-      }
-    });
+      // Count from filtered cars
+      filteredCars.forEach((car: Car) => {
+        // Count models
+        if (car.model?.name) {
+          const name = car.model.name;
+          counts.models[name] = (counts.models[name] || 0) + 1;
+        }
+        
+        // Count generations
+        if (car.generation?.name) {
+          const name = car.generation.name;
+          counts.generations[name] = (counts.generations[name] || 0) + 1;
+        }
+        
+        // Count colors
+        if (car.color?.name) {
+          const name = car.color.name;
+          counts.colors[name] = (counts.colors[name] || 0) + 1;
+        }
+        
+        // Count fuel types
+        if (car.fuel?.name) {
+          const name = car.fuel.name;
+          counts.fuelTypes[name] = (counts.fuelTypes[name] || 0) + 1;
+        }
+        
+        // Count transmissions
+        if (car.transmission?.name) {
+          const name = car.transmission.name;
+          counts.transmissions[name] = (counts.transmissions[name] || 0) + 1;
+        }
+        
+        // Count body types
+        if (car.body_type?.name) {
+          const name = car.body_type.name;
+          counts.bodyTypes[name] = (counts.bodyTypes[name] || 0) + 1;
+        }
+        
+        // Count years
+        if (car.year) {
+          const yearStr = car.year.toString();
+          counts.years[yearStr] = (counts.years[yearStr] || 0) + 1;
+        }
+      });
+    }
     
     return counts;
   } catch (err) {
