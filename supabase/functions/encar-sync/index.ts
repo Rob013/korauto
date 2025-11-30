@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
         .eq('status', 'running')
         .order('sync_started_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       if (existingSync) {
         const syncAge = Date.now() - new Date(existingSync.sync_started_at).getTime()
@@ -260,32 +260,32 @@ Deno.serve(async (req) => {
 
     // Create new sync record if not resuming
     if (!syncRecord) {
-    const { data: syncRecord, error: syncError } = await supabase
-      .from('encar_sync_status')
-      .insert({
-        sync_type: syncType,
-        status: 'running',
-        started_at: new Date().toISOString(),
-        current_page: 1,
-        total_pages: 1,
-        records_processed: 0,
-        cars_processed: 0,
-        last_activity_at: new Date().toISOString()
-      })
-      .select()
-      .single()
+      const { data: newSyncRecord, error: syncError } = await supabase
+        .from('encar_sync_status')
+        .insert({
+          status: 'running',
+          sync_started_at: new Date().toISOString(),
+          cars_processed: 0,
+          cars_added: 0,
+          cars_updated: 0,
+          cars_removed: 0
+        })
+        .select()
+        .single()
 
-    if (syncError) {
-      throw new Error(`Failed to create sync record: ${syncError.message}`)
+      if (syncError) {
+        throw new Error(`Failed to create sync record: ${syncError.message}`)
+      }
+
+      syncRecord = newSyncRecord
+      console.log(`✅ Created new sync record: ${syncRecord.id}`)
     }
-
-    console.log(`✅ Created sync record: ${syncRecord.id}`)
 
     // Use environment variable for API key or fallback to default
     const API_KEY = Deno.env.get('AUCTIONS_API_KEY') || 'd00985c77981fe8d26be16735f932ed1'
     const BASE_URL = 'https://auctionsapi.com/api'
 
-    let totalCarsProcessed = 0
+    let totalCarsProcessed = syncRecord?.cars_processed || 0
     let totalArchivedProcessed = 0
     const errors: string[] = []
 
@@ -295,12 +295,12 @@ Deno.serve(async (req) => {
       console.log(`📡 Fetching active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
 
       // Resume from last processed page
-      let currentPage = Math.floor((syncRecord.cars_processed || 0) / PAGE_SIZE) + 1
+      let currentPage = Math.floor(totalCarsProcessed / PAGE_SIZE) + 1
       let hasMorePages = true
       let consecutiveErrors = 0
       const MAX_CONSECUTIVE_ERRORS = 3
 
-      console.log(`📍 Starting from page ${currentPage} (${syncRecord.cars_processed || 0} cars already processed)`)
+      console.log(`📍 Starting from page ${currentPage} (${totalCarsProcessed} cars already processed)`)
 
       while (hasMorePages && currentPage <= MAX_PAGES && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
         // Build URL per page following API guide: /api/cars?minutes=60&page=X&per_page=250
@@ -403,16 +403,14 @@ Deno.serve(async (req) => {
           consecutiveErrors = 0 // Reset error counter on success
 
           // Update progress in database
-          const updatedCarsCount = (syncRecord.cars_processed || 0) + processedThisPage
+          totalCarsProcessed += processedThisPage
           await supabase
             .from('encar_sync_status')
             .update({
-              cars_processed: updatedCarsCount,
+              cars_processed: totalCarsProcessed,
               cars_updated: (syncRecord.cars_updated || 0) + processedThisPage
             })
             .eq('id', syncRecord.id)
-          
-          syncRecord.cars_processed = updatedCarsCount
 
           currentPage++
 
