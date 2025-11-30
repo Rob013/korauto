@@ -61,10 +61,8 @@ export function useEncarCachedFilters(manufacturerId?: string): EncarCachedFilte
         `)
         .eq('is_active', true);
 
-      // Filter by manufacturer if specified
-      if (manufacturerId && manufacturerId !== 'all') {
-        query = query.eq('manufacturer_id', Number(manufacturerId));
-      }
+      // Don't filter by manufacturer - load ALL cached data for comprehensive filters
+      // This ensures the filter panel shows all available options
 
       const { data, error } = await query;
 
