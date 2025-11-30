@@ -4,100 +4,39 @@
 
 The cache system is now ready but **NOT YET ACTIVE**. Follow these steps to integrate:
 
-### Step 1: Add Cache Status Indicator (Optional but Recommended)
+### Step 1: Deploy Database & Functions
 
-In `src/pages/Catalog.tsx`, add the status component to the header:
+1. **Deploy Database Migration** (if not already done):
+   Run the SQL migration `supabase/migrations/20251124_create_encar_cache_tables.sql` in your Supabase dashboard.
 
-```tsx
-import { EncarCacheStatus } from '@/components/EncarCacheStatus';
+2. **Deploy Edge Function**:
+   Deploy the updated `encar-sync` function:
+   ```bash
+   supabase functions deploy encar-sync
+   ```
 
-// Inside the component, near the header
-<div className="flex items-center justify-between mb-4">
-  <h1>Car Catalog</h1>
-  <EncarCacheStatus />  {/* Shows cache health */}
-</div>
+### Step 2: Run Initial Sync
+
+You have two options to run the initial sync:
+
+**Option A: Run Local Script (Recommended for first run)**
+```bash
+npm run sync-encar
 ```
 
-### Step 2: Switch to Hybrid Data Hook (Recommended Approach)
-
-In `src/components/EncarCatalog.tsx`, replace the data fetching hook:
-
-**BEFORE:**
-```tsx
-import { useSecureAuctionAPI } from '@/hooks/useSecureAuctionAPI';
-
-const {
-  cars,
-  loading,
-  error,
-  totalCount,
-  // ...other methods
-} = useSecureAuctionAPI();
+**Option B: Trigger Edge Function**
+```bash
+npm run trigger-sync
 ```
 
-**AFTER:**
-```tsx
-import { useHybridEncarData } from '@/hooks/useHybridEncarData';
+### Step 3: Verify Data
 
-const {
-  cars,
-  loading,
-  error,
-  totalCount,
-  source, // 'cache' | 'api' | 'none'
-  cacheHealth,
-  isStale,
-  // ...other methods
-} = useHybridEncarData(filters, currentPage, 200);
-
-// Optional: Show indicator if using cache
-{source === 'cache' && (
-  <Badge variant="outline" className="ml-2">
-    <Database className="h-3 w-3 mr-1" />
-    Cached Data
-  </Badge>
-)}
+Check if data is correctly populated in the cache table:
+```bash
+npm run verify-sync
 ```
 
-### Step 3: Alternative - Use Cache Only
-
-If you want to **only use cache** and disable API fallback:
-
-```tsx
-import { useCachedEncarData } from '@/hooks/useHybridEncarData';
-
-const {
-  cars,
-  loading,
-  error,
-  totalCount
-} = useCachedEncarData(filters, currentPage, 200);
-```
-
-### Step 4: Alternative - Use API Only
-
-To keep using the API without cache:
-
-```tsx
-import { useLiveEncarData } from '@/hooks/useHybridEncarData';
-
-const {
-  cars,
-  loading,
-  error,
-  totalCount
-} = useLiveEncarData(filters, currentPage, 200);
-```
-
-## Important Notes
-
-### ⚠️ Don't Deploy Yet!
-
-The cache hooks will work, but the database tables don't exist yet. You need to:
-
-1. ✅ Deploy the SQL migration first (in Supabase)
-2. ✅ Run initial sync (`npm run sync-encar`)
-3. ✅ Then update the frontend code
+### Step 4: Add Cache Status Indicator (Optional but Recommended)
 
 ### How the Hybrid Hook Works
 

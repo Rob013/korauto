@@ -632,7 +632,7 @@ Deno.serve(async (req) => {
                 car_data: raw,
                 lot_data: lotData,
                 last_api_sync: new Date().toISOString(),
-                sale_status: lotStatus === 3 ? 'sold' : (lotStatus === 2 ? 'pending' : 'active')
+                sale_status: Number(lotStatus) === 3 ? 'sold' : (Number(lotStatus) === 2 ? 'pending' : 'active')
               } as any;
 
               const { error } = await supabaseClient
@@ -744,7 +744,7 @@ Deno.serve(async (req) => {
     let encarCount = 0;
     let kbchachaCount = 0;
     let hasMorePages = true;
-    const syncBatchId = `${syncType}-${Date.now()}`;
+    const syncBatchId = crypto.randomUUID();
 
     while (hasMorePages && page <= pagesLimit) {
       console.log(`📄 Fetching page ${page}...`);

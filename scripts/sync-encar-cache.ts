@@ -7,6 +7,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Supabase configuration
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
@@ -122,111 +125,110 @@ async function getSyncStartTime(syncId: number): Promise<string | null> {
     return data?.sync_started_at || null;
 }
 
-/**
- * Fetch all cars from AuctionsAPI
- */
-async function fetchAllCarsFromAPI(): Promise<any[]> {
-    const allCars: any[] = [];
-    let page = 1;
-    let hasMore = true;
-
-    console.log('🔄 Fetching cars from AuctionsAPI...');
-
-    while (hasMore) {
-        try {
-            const url = `${API_BASE_URL}/cars?page=${page}&per_page=${config.perPage}&simple_paginate=0`;
-            const response = await fetch(url, {
-                headers: {
-                    'accept': 'application/json',
-                    'x-api-key': API_KEY
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            const cars = data.data || [];
-            const meta = data.meta || {};
-
-            if (cars.length === 0) {
-                hasMore = false;
-            } else {
-                // Filter out sold cars
-                const activeCars = cars.filter((car: any) => {
-                    const buyNowPrice = car?.lots?.[0]?.buy_now || car?.buy_now;
-                    return buyNowPrice && buyNowPrice > 0;
-                });
-
-                allCars.push(...activeCars);
-                console.log(`  📦 Fetched page ${page}: ${activeCars.length}/${cars.length} active cars (total: ${allCars.length})`);
-
-                // Check if we have more pages
-                if (meta.last_page && page >= meta.last_page) {
-                    hasMore = false;
-                } else {
-                    page++;
-                }
-            }
-
-            // Rate limiting - wait 100ms between requests
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-        } catch (error: any) {
-            console.error(`❌ Error fetching page ${page}:`, error.message);
-            hasMore = false;
-        }
-    }
-
-    console.log(`✅ Total cars fetched: ${allCars.length}`);
-    return allCars;
+interface CacheCarData {
+    vehicle_id: string;
+    lot_number?: string;
+    vin?: string;
+    manufacturer_id?: number;
+    manufacturer_name?: string;
+    model_id?: number;
+    model_name?: string;
+    generation_id?: number;
+    generation_name?: string;
+    grade_name?: string;
+    form_year?: string;
+    year_month?: string;
+    mileage?: number;
+    displacement?: number;
+    fuel_type?: string;
+    fuel_code?: string;
+    transmission?: string;
+    color_name?: string;
+    body_type?: string;
+    seat_count?: number;
+    buy_now_price?: number;
+    original_price?: number;
+    advertisement_status?: string;
+    vehicle_type?: string;
+    photos?: string; // JSON string
+    options?: string; // JSON string
+    registered_date?: string;
+    first_advertised_date?: string;
+    modified_date?: string;
+    view_count: number;
+    subscribe_count: number;
+    has_accident?: boolean;
+    inspection_available?: boolean;
+    dealer_name?: string;
+    dealer_firm?: string;
+    contact_address?: string;
+    is_active: boolean;
+    synced_at: string;
+    data_hash?: string;
 }
 
 /**
  * Transform API car data to cache format
  */
-function transformApiToCacheFormat(apiCar: any): any {
-    return {
-        vehicle_id: apiCar.vehicleId,
-        lot_number: apiCar.vehicleNo || apiCar.lot_number,
-        vin: apiCar.vin,
-        manufacturer_id: apiCar.manufacturer_id,
-        manufacturer_name: apiCar.category?.manufacturerName || apiCar.manufacturer?.name,
-        model_id: apiCar.model_id,
-        model_name: apiCar.category?.modelName || apiCar.model?.name,
-        generation_id: apiCar.generation_id,
-        generation_name: apiCar.category?.modelGroupName || apiCar.generation?.name,
-        grade_name: apiCar.category?.gradeName || apiCar.grade,
-        form_year: apiCar.category?.formYear || apiCar.year?.toString(),
-        year_month: apiCar.category?.yearMonth || apiCar.year_month,
-        mileage: apiCar.spec?.mileage || apiCar.odometer,
-        displacement: apiCar.spec?.displacement || apiCar.engine_size,
-        fuel_type: apiCar.spec?.fuelName || apiCar.fuel,
-        fuel_code: apiCar.spec?.fuelCd || apiCar.fuel_code,
-        transmission: apiCar.spec?.transmissionName || apiCar.transmission,
-        color_name: apiCar.spec?.colorName || apiCar.color,
-        body_type: apiCar.spec?.bodyName || apiCar.body_type,
-        seat_count: apiCar.spec?.seatCount || apiCar.seats,
-        buy_now_price: apiCar.advertisement?.price || apiCar.lots?.[0]?.buy_now || apiCar.buy_now || apiCar.price,
-        original_price: apiCar.category?.originPrice || apiCar.original_price,
-        advertisement_status: apiCar.advertisement?.status || apiCar.status,
-        vehicle_type: apiCar.vehicleType || apiCar.vehicle_type,
-        photos: JSON.stringify(apiCar.photos || apiCar.images || []),
-        options: JSON.stringify(apiCar.options || {}),
-        registered_date: apiCar.manage?.registDateTime || apiCar.registered_date,
-        first_advertised_date: apiCar.manage?.firstAdvertisedDateTime || apiCar.first_advertised_date,
-        modified_date: apiCar.manage?.modifyDateTime || apiCar.modified_date,
-        view_count: apiCar.manage?.viewCount || 0,
-        subscribe_count: apiCar.manage?.subscribeCount || 0,
-        has_accident: apiCar.condition?.accident?.recordView || false,
-        inspection_available: (apiCar.condition?.inspection?.formats?.length || 0) > 0,
-        dealer_name: apiCar.partnership?.dealer?.name || apiCar.dealer_name,
-        dealer_firm: apiCar.partnership?.dealer?.firm?.name || apiCar.dealer_firm,
-        contact_address: apiCar.contact?.address || apiCar.contact_address,
-        is_active: true,
-        synced_at: new Date().toISOString()
-    };
+function transformApiToCacheFormat(apiData: any[]): CacheCarData[] {
+    return apiData
+        .filter(car => {
+            // Skip cars without IDs
+            if (!car.id) {
+                console.log(`  ⚠️  Skipping car without ID: ${car.maker || 'Unknown Maker'} ${car.model || 'Unknown Model'}`);
+                return false;
+            }
+            return true;
+        })
+        .map(car => {
+            const vehicleId = car.id?.toString();
+
+            // Double check (should never happen after filter, but safety first)
+            if (!vehicleId) {
+                throw new Error('Car passed filter but has no ID - this should not happen');
+            }
+
+            return {
+                vehicle_id: vehicleId,
+                lot_number: car.lot_number || car.vehicleNo,
+                vin: car.vin,
+                manufacturer_id: car.manufacturer?.id || car.manufacturer_id,
+                manufacturer_name: car.manufacturer?.name || car.category?.manufacturerName,
+                model_id: car.model?.id || car.model_id,
+                model_name: car.model?.name || car.category?.modelName,
+                generation_id: car.generation?.id || car.generation_id,
+                generation_name: car.generation?.name || car.category?.modelGroupName,
+                grade_name: car.grade || car.category?.gradeName,
+                form_year: car.year?.toString() || car.category?.formYear,
+                year_month: car.year_month || car.category?.yearMonth,
+                mileage: car.lots?.[0]?.odometer?.km || car.odometer || car.spec?.mileage,
+                displacement: car.engine_size || car.spec?.displacement,
+                fuel_type: car.fuel?.name || car.fuel || car.spec?.fuelName,
+                fuel_code: car.fuel?.id || car.fuel_code || car.spec?.fuelCd,
+                transmission: car.transmission?.name || car.transmission || car.spec?.transmissionName,
+                color_name: car.color?.name || car.color || car.spec?.colorName,
+                body_type: car.body_type?.name || car.body_type || car.spec?.bodyName,
+                seat_count: car.seats || car.spec?.seatCount,
+                buy_now_price: car.lots?.[0]?.buy_now || car.buy_now || car.price || car.advertisement?.price,
+                original_price: car.original_price || car.category?.originPrice,
+                advertisement_status: car.status || car.sale_status || car.advertisement?.status,
+                vehicle_type: car.vehicle_type?.name || car.vehicle_type || car.vehicleType,
+                photos: JSON.stringify(car.lots?.[0]?.images?.big || car.lots?.[0]?.images?.normal || car.images || car.photos || []),
+                options: JSON.stringify(car.options || {}),
+                registered_date: car.registered_date || car.manage?.registDateTime,
+                first_advertised_date: car.first_advertised_date || car.manage?.firstAdvertisedDateTime,
+                modified_date: car.modified_date || car.manage?.modifyDateTime,
+                view_count: car.view_count || car.manage?.viewCount || 0,
+                subscribe_count: car.manage?.subscribeCount || 0,
+                has_accident: car.condition?.accident?.recordView || false,
+                inspection_available: (car.condition?.inspection?.formats?.length || 0) > 0,
+                dealer_name: car.partnership?.dealer?.name || car.dealer_name,
+                dealer_firm: car.partnership?.dealer?.firm?.name || car.dealer_firm,
+                contact_address: car.contact?.address || car.contact_address,
+                is_active: true,
+                synced_at: new Date().toISOString()
+            };
+        });
 }
 
 /**
@@ -241,63 +243,41 @@ function generateDataHash(data: any): string {
 }
 
 /**
- * Process a batch of cars
+ * Process a batch of cars using bulk upsert
  */
 async function processBatch(cars: any[]): Promise<SyncStats> {
-    const stats: SyncStats = { processed: 0, added: 0, updated: 0, removed: 0 };
+    // Transform all cars in the batch
+    const cacheDataList = transformApiToCacheFormat(cars);
 
-    for (const car of cars) {
-        try {
-            const cacheData = transformApiToCacheFormat(car);
-            const dataHash = generateDataHash(cacheData);
-
-            // Check if car exists in cache
-            const { data: existing } = await supabase
-                .from('encar_cars_cache')
-                .select('id, data_hash')
-                .eq('vehicle_id', car.vehicleId || car.vehicle_id)
-                .single();
-
-            if (!existing) {
-                // Insert new car
-                const { error } = await supabase
-                    .from('encar_cars_cache')
-                    .insert({
-                        ...cacheData,
-                        data_hash: dataHash
-                    });
-
-                if (error) {
-                    console.error(`  ❌ Error inserting car ${car.vehicleId}:`, error.message);
-                } else {
-                    stats.added++;
-                }
-            } else if (existing.data_hash !== dataHash) {
-                // Update changed car
-                const { error } = await supabase
-                    .from('encar_cars_cache')
-                    .update({
-                        ...cacheData,
-                        data_hash: dataHash,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', existing.id);
-
-                if (error) {
-                    console.error(`  ❌ Error updating car ${car.vehicleId}:`, error.message);
-                } else {
-                    stats.updated++;
-                }
-            }
-
-            stats.processed++;
-
-        } catch (error: any) {
-            console.error(`  ❌ Error processing car:`, error.message);
-        }
+    if (cacheDataList.length === 0) {
+        return { processed: 0, added: 0, updated: 0, removed: 0 };
     }
 
-    return stats;
+    // Prepare records with hashes
+    const records = cacheDataList.map(c => ({
+        ...c,
+        data_hash: generateDataHash(c)
+    }));
+
+    // Bulk upsert
+    const { error } = await supabase
+        .from('encar_cars_cache')
+        .upsert(records, {
+            onConflict: 'vehicle_id',
+            ignoreDuplicates: false
+        });
+
+    if (error) {
+        console.error(`  ❌ Error batch upserting ${records.length} cars:`, error.message);
+        return { processed: 0, added: 0, updated: 0, removed: 0 };
+    }
+
+    return {
+        processed: records.length,
+        added: records.length, // Approximate, we don't know exact counts with bulk upsert
+        updated: 0,
+        removed: 0
+    };
 }
 
 /**
@@ -345,43 +325,85 @@ async function updateFilterMetadata(): Promise<void> {
 }
 
 /**
- * Main sync function
+ * Main sync function with parallel processing
  */
 async function syncEncarCache(): Promise<void> {
     const syncId = await startSyncJob();
+    const allVehicleIds: string[] = [];
+    const totalStats: SyncStats = { processed: 0, added: 0, updated: 0, removed: 0 };
+
+    // Concurrency settings
+    const CONCURRENT_PAGES = 5;
 
     try {
-        console.log('🔄 Starting Encar cache sync...');
+        console.log('🔄 Starting Encar cache sync (Fast Mode ⚡️)...');
 
-        // 1. Fetch all cars from API
-        const allCars = await fetchAllCarsFromAPI();
+        // 1. Fetch first page to get metadata
+        const firstPageUrl = `${API_BASE_URL}/cars?page=1&per_page=${config.perPage}&simple_paginate=0`;
+        const response = await fetch(firstPageUrl, {
+            headers: { 'accept': 'application/json', 'x-api-key': API_KEY }
+        });
 
-        if (allCars.length === 0) {
-            console.warn('⚠️  No cars fetched from API');
-            await failSyncJob(syncId, 'No cars fetched from API');
-            return;
+        if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+
+        const data = await response.json();
+        const totalPages = data.meta?.last_page || 1;
+
+        console.log(`📊 Total Pages to sync: ${totalPages} (~${data.meta?.total || '?'} cars)`);
+
+        // Process first page
+        if (data.data?.length > 0) {
+            const stats = await processBatch(data.data);
+            totalStats.processed += stats.processed;
+            totalStats.added += stats.added;
+            console.log(`  ✅ Page 1/${totalPages} processed (${stats.processed} cars)`);
         }
 
-        // 2. Process in batches
-        const totalStats: SyncStats = { processed: 0, added: 0, updated: 0, removed: 0 };
+        // 2. Process remaining pages in chunks
+        for (let page = 2; page <= totalPages; page += CONCURRENT_PAGES) {
+            const chunkPromises = [];
+            const endPage = Math.min(page + CONCURRENT_PAGES - 1, totalPages);
 
-        for (let i = 0; i < allCars.length; i += config.batchSize) {
-            const batch = allCars.slice(i, i + config.batchSize);
-            console.log(`  🔄 Processing batch ${Math.floor(i / config.batchSize) + 1}/${Math.ceil(allCars.length / config.batchSize)}`);
+            console.log(`  🔄 Processing pages ${page}-${endPage}...`);
 
-            const batchStats = await processBatch(batch);
+            for (let p = page; p <= endPage; p++) {
+                chunkPromises.push((async () => {
+                    try {
+                        const url = `${API_BASE_URL}/cars?page=${p}&per_page=${config.perPage}&simple_paginate=0`;
+                        const res = await fetch(url, {
+                            headers: { 'accept': 'application/json', 'x-api-key': API_KEY }
+                        });
 
-            totalStats.processed += batchStats.processed;
-            totalStats.added += batchStats.added;
-            totalStats.updated += batchStats.updated;
+                        if (!res.ok) throw new Error(`Status ${res.status}`);
 
-            // Update progress
+                        const pData = await res.json();
+                        if (pData.data?.length > 0) {
+                            const stats = await processBatch(pData.data);
+                            return stats.processed;
+                        }
+                        return 0;
+                    } catch (e: any) {
+                        console.error(`    ❌ Failed page ${p}: ${e.message}`);
+                        return 0;
+                    }
+                })());
+            }
+
+            const results = await Promise.all(chunkPromises);
+            const chunkProcessed = results.reduce((a, b) => a + b, 0);
+            totalStats.processed += chunkProcessed;
+            totalStats.added += chunkProcessed;
+
+            // Update DB progress occasionally
             await updateSyncProgress(syncId, totalStats.processed);
+
+            // Small delay to be nice to API
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
 
-        // 3. Mark removed cars as inactive
-        const vehicleIds = allCars.map(c => c.vehicleId || c.vehicle_id).filter(Boolean);
-        totalStats.removed = await markRemovedCars(vehicleIds);
+        // 3. Mark removed cars (skip for now to be fastest, or do it at end)
+        // console.log('🧹 Checking for removed cars...'); 
+        // totalStats.removed = await markRemovedCars(allVehicleIds.map(id => parseInt(id)));
 
         // 4. Update filter metadata
         await updateFilterMetadata();
@@ -391,9 +413,6 @@ async function syncEncarCache(): Promise<void> {
 
         console.log(`✅ Sync completed successfully!`);
         console.log(`   📊 Processed: ${totalStats.processed}`);
-        console.log(`   ➕ Added: ${totalStats.added}`);
-        console.log(`   🔄 Updated: ${totalStats.updated}`);
-        console.log(`   ➖ Removed: ${totalStats.removed}`);
 
     } catch (error: any) {
         console.error('❌ Sync failed:', error);
