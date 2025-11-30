@@ -33,6 +33,7 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     // Internal state
     const [filters, setFilters] = useState<APIFilters>({});
     const [currentPage, setCurrentPage] = useState(1);
+    const [isReady, setIsReady] = useState(false); // Track if filters are initialized
     const perPage = 200;
 
     // ALWAYS call all hooks - never conditional
@@ -45,18 +46,20 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         cacheHealth?.carCount > 0 &&
         (!cacheHealth?.minutesSinceSync || cacheHealth.minutesSinceSync <= maxCacheAge);
 
-    // Log cache decision
-    console.log('🔄 useHybridEncarData decision:', {
+    // Log cache decision and filters
+    console.log('🔄 useHybridEncarData state:', {
         shouldUseCache,
         preferCache,
         cacheAvailable: cacheHealth?.available,
         carCount: cacheHealth?.carCount,
-        minutesSinceSync: cacheHealth?.minutesSinceSync
+        minutesSinceSync: cacheHealth?.minutesSinceSync,
+        currentFilters: filters,
+        isReady
     });
 
-    // ALWAYS fetch from cache (but we'll decide whether to use it later)
-    const cacheQuery = useEncarCache(filters || {}, currentPage, perPage, {
-        enabled: shouldUseCache // React Query will handle enabling/disabling
+    // ALWAYS fetch from cache with current filters
+    const cacheQuery = useEncarCache(filters, currentPage, perPage, {
+        enabled: shouldUseCache && isReady // Only fetch when cache is available AND filters are ready
     });
 
     // ALWAYS fetch from API hook (but we'll decide whether to use it later)
@@ -68,8 +71,10 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
 
     // Define all callbacks unconditionally to follow Rules of Hooks
     const fetchCarsCache = useCallback(async (page: number, newFilters: APIFilters, resetList: boolean) => {
+        console.log('📡 fetchCarsCache called:', { page, newFilters, resetList });
         setCurrentPage(page);
         setFilters(newFilters);
+        setIsReady(true); // Mark as ready when filters are explicitly set
     }, []);
 
     const fetchAllCarsCache = useCallback(async () => {
@@ -106,7 +111,7 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
             setCars: (newCars: any[]) => {
                 console.warn('setCars not directly supported in cache mode');
             },
-            loading: cacheQuery.isLoading,
+            loading: cacheQuery.isLoading || !isReady,
             error: cacheQuery.error ? String(cacheQuery.error) : null,
             totalCount: cacheQuery.data?.totalCount || 0,
             setTotalCount: (count: number) => {
@@ -116,7 +121,11 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
             fetchCars: fetchCarsCache,
             fetchAllCars: fetchAllCarsCache,
             filters,
-            setFilters,
+            setFilters: (newFilters: APIFilters) => {
+                console.log('🔧 setFilters called directly:', newFilters);
+                setFilters(newFilters);
+                setIsReady(true);
+            },
             loadMore: loadMoreCache,
             refreshInventory: refreshInventoryCache,
             clearCarsCache: clearCarsCacheFunc,

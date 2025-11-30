@@ -171,7 +171,7 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: 0, // Always refetch when filters change
+        staleTime: 5 * 1000, // 5 seconds - quick refetch for filter changes
         gcTime: 5 * 60 * 1000, // 5 minutes cache time
         refetchOnWindowFocus: false,
         refetchOnMount: true, // Always refetch on mount to get fresh data

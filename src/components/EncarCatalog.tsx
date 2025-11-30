@@ -540,10 +540,8 @@ const EncarCatalog = ({
     searchParams.set('page', '1');
     setSearchParams(searchParams);
     
-    // Clear loading state quickly for cache mode
-    if (source === 'cache') {
-      setTimeout(() => setIsFilterLoading(false), 100);
-    }
+    // Clear loading state instantly for cache mode (data arrives immediately)
+    setTimeout(() => setIsFilterLoading(false), 50);
   }, [
     currentFiltersSignature,
     scheduleFetchCars,
@@ -780,9 +778,9 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
     } finally {
-      // Fast state clearing for smooth UX
+      // Instant state clearing for cache mode
       setIsLoading(false);
-      setTimeout(() => setIsFilterLoading(false), source === 'cache' ? 100 : 300);
+      setTimeout(() => setIsFilterLoading(false), 50);
     }
   };
 
@@ -835,9 +833,9 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
     } finally {
-      // Fast state clearing for smooth UX
+      // Instant state clearing for cache mode
       setIsLoading(false);
-      setTimeout(() => setIsFilterLoading(false), source === 'cache' ? 100 : 300);
+      setTimeout(() => setIsFilterLoading(false), 50);
     }
   };
 
