@@ -50,8 +50,8 @@ export interface EncarCachedCar {
     vehicle_type?: string;
 
     // Images
-    photos?: string | any[];
-    photos_small?: string | any[];
+    photos?: any; // Json type from DB
+    photos_small?: any; // Json type from DB
     images_id?: number;
     options?: string | any;
 
@@ -384,7 +384,6 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
         final_price: cached.buy_now_price,
         domain: { name: 'Encar' },
         source_api: 'encar',
-        _cache_source: 'encar_cars_cache',
 
         // Metadata
         options: options,
@@ -421,12 +420,6 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
         contact: {
             address: cached.contact_address
         },
-
-        // Source/domain for badge display
-        domain: {
-            name: 'Encar'
-        },
-        source_api: 'encar',
 
         // Cache metadata
         _cached: true,
