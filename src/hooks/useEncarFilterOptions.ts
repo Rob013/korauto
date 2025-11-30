@@ -94,40 +94,55 @@ export function useEncarFilterOptions() {
         queryFn: async (): Promise<FilterOptions> => {
             console.log('🔍 Fetching filter options from Encar cache');
 
-            // Fetch distinct values for each filter type
-            const [fuelTypesData, transmissionsData, bodyTypesData, colorsData] = await Promise.all([
-                // Fuel types
-                supabase
-                    .from('encar_cars_cache')
-                    .select('fuel_type')
-                    .eq('is_active', true)
-                    .not('fuel_type', 'is', null)
-                    .then(res => res.data || []),
-                
-                // Transmissions
-                supabase
-                    .from('encar_cars_cache')
-                    .select('transmission')
-                    .eq('is_active', true)
-                    .not('transmission', 'is', null)
-                    .then(res => res.data || []),
-                
-                // Body types
-                supabase
-                    .from('encar_cars_cache')
-                    .select('body_type')
-                    .eq('is_active', true)
-                    .not('body_type', 'is', null)
-                    .then(res => res.data || []),
-                
-                // Colors
-                supabase
-                    .from('encar_cars_cache')
-                    .select('color_name')
-                    .eq('is_active', true)
-                    .not('color_name', 'is', null)
-                    .then(res => res.data || [])
-            ]);
+            try {
+                // Fetch distinct values for each filter type
+                const [fuelTypesResult, transmissionsResult, bodyTypesResult, colorsResult] = await Promise.all([
+                    // Fuel types
+                    supabase
+                        .from('encar_cars_cache')
+                        .select('fuel_type')
+                        .eq('is_active', true)
+                        .not('fuel_type', 'is', null),
+                    
+                    // Transmissions
+                    supabase
+                        .from('encar_cars_cache')
+                        .select('transmission')
+                        .eq('is_active', true)
+                        .not('transmission', 'is', null),
+                    
+                    // Body types
+                    supabase
+                        .from('encar_cars_cache')
+                        .select('body_type')
+                        .eq('is_active', true)
+                        .not('body_type', 'is', null),
+                    
+                    // Colors
+                    supabase
+                        .from('encar_cars_cache')
+                        .select('color_name')
+                        .eq('is_active', true)
+                        .not('color_name', 'is', null)
+                ]);
+
+                // Check for errors
+                if (fuelTypesResult.error) throw fuelTypesResult.error;
+                if (transmissionsResult.error) throw transmissionsResult.error;
+                if (bodyTypesResult.error) throw bodyTypesResult.error;
+                if (colorsResult.error) throw colorsResult.error;
+
+                const fuelTypesData = fuelTypesResult.data || [];
+                const transmissionsData = transmissionsResult.data || [];
+                const bodyTypesData = bodyTypesResult.data || [];
+                const colorsData = colorsResult.data || [];
+
+                console.log('📊 Raw filter data:', {
+                    fuelTypes: fuelTypesData.length,
+                    transmissions: transmissionsData.length,
+                    bodyTypes: bodyTypesData.length,
+                    colors: colorsData.length
+                });
 
             // Process fuel types
             const fuelTypeMap = new Map<string, number>();
@@ -193,21 +208,27 @@ export function useEncarFilterOptions() {
                 }))
                 .sort((a, b) => b.count - a.count);
 
-            console.log('✅ Filter options loaded:', {
-                fuelTypes: fuelTypes.length,
-                transmissions: transmissions.length,
-                bodyTypes: bodyTypes.length,
-                colors: colors.length
-            });
+                console.log('✅ Filter options loaded:', {
+                    fuelTypes: fuelTypes.length,
+                    transmissions: transmissions.length,
+                    bodyTypes: bodyTypes.length,
+                    colors: colors.length
+                });
 
-            return {
-                fuelTypes,
-                transmissions,
-                bodyTypes,
-                colors
-            };
+                return {
+                    fuelTypes,
+                    transmissions,
+                    bodyTypes,
+                    colors
+                };
+            } catch (error) {
+                console.error('❌ Error fetching filter options:', error);
+                throw error;
+            }
         },
-        staleTime: 30 * 60 * 1000, // 30 minutes
-        gcTime: 60 * 60 * 1000, // 60 minutes
+        staleTime: 5 * 60 * 1000, // 5 minutes - refresh more often
+        gcTime: 10 * 60 * 1000, // 10 minutes
+        retry: 3,
+        retryDelay: 1000
     });
 }
