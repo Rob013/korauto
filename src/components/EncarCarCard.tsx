@@ -283,7 +283,7 @@ const EncarCarCard = ({
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-xl sm:text-2xl font-bold text-primary">
-              {price ? (
+              {price > 0 ? (
                 <>€{price.toLocaleString()}</>
               ) : (
                 <span className="text-muted-foreground text-base sm:text-lg">Çmimi në kërkesë</span>
