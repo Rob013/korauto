@@ -3,6 +3,7 @@
  * 
  * React Query hook for fetching cached Encar car data from Supabase
  * Provides instant loading with automatic refetching and error handling
+ * Optimized for performance with cached data
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -73,15 +74,25 @@ export function useEncarCache(
         queryKey: ['encar-cache', filters, page, perPage],
         queryFn: async () => {
             console.log('🔍 Fetching from Encar cache:', { filters, page, perPage });
+            
+            // Log cache query details
+            console.log('📊 Cache query state:', {
+                hasFilters: Object.keys(filters).length > 0,
+                filterKeys: Object.keys(filters),
+                isActive: true
+            });
 
             let query = supabase
                 .from('encar_cars_cache')
                 .select('*', { count: 'exact' })
                 .eq('is_active', true);
 
-            // Apply filters
+            // Apply filters (only if explicitly set, empty object means show all)
             if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
-                query = query.eq('manufacturer_id', Number(filters.manufacturer_id));
+                const manufacturerId = Number(filters.manufacturer_id);
+                if (!isNaN(manufacturerId) && manufacturerId > 0) {
+                    query = query.eq('manufacturer_id', manufacturerId);
+                }
             }
 
             if (filters.model_id && filters.model_id !== 'all') {
@@ -170,11 +181,15 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: options.staleTime ?? 30 * 60 * 1000, // 30 minutes - keep data fresh longer
-        gcTime: options.cacheTime ?? 60 * 60 * 1000, // 60 minutes - cache in memory longer
+        staleTime: 5 * 1000, // 5 seconds - quick refetch for filter changes
+        gcTime: 5 * 60 * 1000, // 5 minutes cache time
         refetchOnWindowFocus: false,
-        refetchOnMount: false,
-        refetchOnReconnect: false
+        refetchOnMount: true, // Always refetch on mount to get fresh data
+        refetchOnReconnect: false,
+        // Network waterfall optimization
+        networkMode: 'online',
+        // Retry on error
+        retry: 1,
     });
 }
 
