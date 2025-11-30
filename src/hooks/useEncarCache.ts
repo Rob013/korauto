@@ -74,15 +74,25 @@ export function useEncarCache(
         queryKey: ['encar-cache', filters, page, perPage],
         queryFn: async () => {
             console.log('🔍 Fetching from Encar cache:', { filters, page, perPage });
+            
+            // Log cache query details
+            console.log('📊 Cache query state:', {
+                hasFilters: Object.keys(filters).length > 0,
+                filterKeys: Object.keys(filters),
+                isActive: true
+            });
 
             let query = supabase
                 .from('encar_cars_cache')
                 .select('*', { count: 'exact' })
                 .eq('is_active', true);
 
-            // Apply filters
+            // Apply filters (only if explicitly set, empty object means show all)
             if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
-                query = query.eq('manufacturer_id', Number(filters.manufacturer_id));
+                const manufacturerId = Number(filters.manufacturer_id);
+                if (!isNaN(manufacturerId) && manufacturerId > 0) {
+                    query = query.eq('manufacturer_id', manufacturerId);
+                }
             }
 
             if (filters.model_id && filters.model_id !== 'all') {
