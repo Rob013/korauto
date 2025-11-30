@@ -3,167 +3,143 @@
  * 
  * Intelligently switches between Supabase cache and direct API calls
  * Falls back to API if cache is unavailable or stale
- * 
- * Provides the same interface as useSecureAuctionAPI for backward compatibility
  */
 
-import { useState, useCallback, useEffect } from 'react';
 import { useEncarCache, useEncarCacheHealth } from './useEncarCache';
 import { useSecureAuctionAPI } from './useSecureAuctionAPI';
 import { APIFilters } from '@/utils/catalog-filter';
 
 interface UseHybridEncarDataOptions {
-    preferCache?: boolean; // Default: false (prefer API)
-    maxCacheAge?: number; // Minutes, default: 60
-    fallbackToAPI?: boolean; // Default: true (enable API fallback)
+    preferCache?: boolean; // Default: true
+    maxCacheAge?: number; // Minutes, default: 30
+    fallbackToAPI?: boolean; // Default: true
 }
 
 /**
  * Hook that provides car data from cache OR API
  * Automatically falls back to API if cache is unavailable
- * Manages its own state to match useSecureAuctionAPI interface
  */
-export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
+export function useHybridEncarData(
+    filters: APIFilters = {},
+    page: number = 1,
+    perPage: number = 200,
+    options: UseHybridEncarDataOptions = {}
+) {
     const {
-        preferCache = false, // Prefer API by default
-        maxCacheAge = 360, // 6 hours - match sync schedule
-        fallbackToAPI = true // Enable API fallback by default
+        preferCache = true,
+        maxCacheAge = 30,
+        fallbackToAPI = true
     } = options;
 
-    // Internal state
-    const [filters, setFilters] = useState<APIFilters>({});
-    const [currentPage, setCurrentPage] = useState(1);
-    const perPage = 200;
-
-    // ALWAYS call all hooks - never conditional
     // Check cache health
     const { data: cacheHealth } = useEncarCacheHealth();
 
-    // ALWAYS fetch from cache (React Query will handle caching)
-    const cacheQuery = useEncarCache(filters || {}, currentPage, perPage, {
-        enabled: true, // Always enabled
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        cacheTime: 10 * 60 * 1000 // 10 minutes
+    // Determine if we should use cache
+    const shouldUseCache = preferCache &&
+        cacheHealth?.available &&
+        cacheHealth?.carCount > 0 &&
+        (!cacheHealth?.minutesSinceSync || cacheHealth.minutesSinceSync <= maxCacheAge);
+
+    // Fetch from cache
+    const cacheQuery = useEncarCache(filters, page, perPage, {
+        enabled: shouldUseCache
     });
 
-    // ALWAYS fetch from API hook (but we'll decide whether to use it later)
+    // Fetch from API (old method)
     const apiHook = useSecureAuctionAPI();
-
-    // Determine if we should use cache
-    // Simplified: use cache if we prefer it AND it has data
-    const hasCacheData = cacheQuery.data?.cars && cacheQuery.data.cars.length > 0;
-    const shouldUseCache = preferCache && (hasCacheData || (cacheHealth?.carCount || 0) > 0);
 
     // Determine which source to use
     const usingCache = shouldUseCache && !cacheQuery.isError;
     const usingAPI = !usingCache && fallbackToAPI;
 
-    // Define all callbacks unconditionally to follow Rules of Hooks
-    const fetchCarsCache = useCallback(async (page: number, newFilters: APIFilters, resetList: boolean) => {
-        setCurrentPage(page);
-        setFilters(newFilters);
-    }, []);
-
-    const fetchAllCarsCache = useCallback(async () => {
-        return cacheQuery?.data?.cars || [];
-    }, [cacheQuery?.data?.cars]);
-
-    const loadMoreCache = useCallback(async () => {
-        setCurrentPage(prev => prev + 1);
-    }, []);
-
-    const refreshInventoryCache = useCallback(() => {
-        return () => {
-            cacheQuery?.refetch?.();
-        };
-    }, [cacheQuery?.refetch]);
-
-    const clearCarsCacheFunc = useCallback(() => {
-        setCurrentPage(1);
-        setFilters({});
-    }, []);
-
-    useEffect(() => {
-        if (usingCache) {
-            console.log(`📦 Using Supabase cache (${cacheHealth?.carCount} cars, last sync: ${cacheHealth?.minutesSinceSync}min ago)`);
-        } else if (usingAPI) {
-            console.log(`🌐 Using external API (live data)`);
-        }
-    }, [usingCache, usingAPI, cacheHealth]);
-
-    // Return based on mode
     if (usingCache) {
+        console.log(`📦 Using Supabase cache (${cacheHealth?.carCount} cars, last sync: ${cacheHealth?.minutesSinceSync}min ago)`);
+
         return {
             cars: cacheQuery.data?.cars || [],
-            setCars: (newCars: any[]) => {
-                console.warn('setCars not directly supported in cache mode');
-            },
             loading: cacheQuery.isLoading,
-            error: cacheQuery.error ? String(cacheQuery.error) : null,
+            error: cacheQuery.error,
             totalCount: cacheQuery.data?.totalCount || 0,
-            setTotalCount: (count: number) => {
-                console.warn('setTotalCount not supported in cache mode');
-            },
             hasMorePages: (cacheQuery.data?.page || 0) < (cacheQuery.data?.totalPages || 0),
-            fetchCars: fetchCarsCache,
-            fetchAllCars: fetchAllCarsCache,
-            filters,
-            setFilters,
-            loadMore: loadMoreCache,
-            refreshInventory: refreshInventoryCache,
-            clearCarsCache: clearCarsCacheFunc,
             source: 'cache' as const,
             cacheHealth,
-            isStale: cacheHealth?.isStale || false
+            isStale: cacheHealth?.isStale || false,
+
+            // Pass through other API methods (not applicable to cache)
+            setCars: () => console.warn('setCars not available in cache mode'),
+            setTotalCount: () => console.warn('setTotalCount not available in cache mode'),
+            fetchCars: () => Promise.resolve(),
+            fetchAllCars: () => Promise.resolve([]),
+            filters,
+            setFilters: () => console.warn('setFilters not available in cache mode - use component state'),
+            loadMore: () => console.warn('loadMore not available in cache mode - use pagination'),
+            refreshInventory: () => () => { },
+            clearCarsCache: () => console.warn('clearCarsCache not available in cache mode')
         };
     }
 
     if (usingAPI) {
+        console.log(`🌐 Using Encar API (cache unavailable or disabled)`);
+
         return {
             ...apiHook,
             source: 'api' as const,
-            cacheHealth: null,
+            cacheHealth,
             isStale: false
         };
     }
 
+    // No data source available
+    console.error('❌ No data source available (cache disabled and API fallback disabled)');
+
     return {
         cars: [],
-        setCars: () => { },
         loading: false,
-        error: 'No data source available',
+        error: new Error('No data source available'),
         totalCount: 0,
-        setTotalCount: () => { },
         hasMorePages: false,
-        fetchCars: async () => { },
-        fetchAllCars: async () => [],
-        filters: {},
-        setFilters: () => { },
-        loadMore: async () => { },
-        refreshInventory: () => () => { },
-        clearCarsCache: () => { },
         source: 'none' as const,
-        cacheHealth: null,
-        isStale: false
+        cacheHealth,
+        isStale: true,
+
+        setCars: () => { },
+        setTotalCount: () => { },
+        fetchCars: () => Promise.resolve(),
+        fetchAllCars: () => Promise.resolve([]),
+        filters,
+        setFilters: () => { },
+        loadMore: () => { },
+        refreshInventory: () => () => { },
+        clearCarsCache: () => { }
     };
 }
 
 /**
- * Hook that ONLY uses cache (no API fallback)
- * Useful when you want to ensure data comes from cache
+ * Simple hook that always uses cache (no API fallback)
+ * Useful for components that only need cached data
  */
 export function useCachedEncarData(
     filters: APIFilters = {},
     page: number = 1,
     perPage: number = 200
 ) {
-    return useHybridEncarData({ preferCache: true, fallbackToAPI: false });
+    return useHybridEncarData(filters, page, perPage, {
+        preferCache: true,
+        fallbackToAPI: false
+    });
 }
 
 /**
- * Hook that ONLY uses the live API (no cache)
+ * Simple hook that always uses API (no cache)
  * Useful for real-time data requirements
  */
-export function useLiveEncarData() {
-    return useHybridEncarData({ preferCache: false, fallbackToAPI: true });
+export function useLiveEncarData(
+    filters: APIFilters = {},
+    page: number = 1,
+    perPage: number = 200
+) {
+    return useHybridEncarData(filters, page, perPage, {
+        preferCache: false,
+        fallbackToAPI: true
+    });
 }

@@ -3491,10 +3491,10 @@ const CarInspectionReport = () => {
                 totalLoss: (car?.encarRecordSummary?.totalLossCnt || 0) > 0,
                 flooding: (car?.encarRecordSummary?.floodTotalLossCnt || 0) > 0,
                 theft: (car?.encarRecordSummary?.robberCnt || 0) > 0,
-                commercial: typeof car?.encarRecord?.use === 'string' && car.encarRecord.use.toLowerCase().includes('business') || false,
-                taxi: typeof car?.encarRecord?.use === 'string' && car.encarRecord.use.toLowerCase().includes('taxi') || false,
+                commercial: car?.encarRecord?.use?.toLowerCase().includes('business') || false,
+                taxi: car?.encarRecord?.use?.toLowerCase().includes('taxi') || false,
                 police: false,
-                rental: typeof car?.encarRecord?.use === 'string' && car.encarRecord.use.toLowerCase().includes('rental') || false
+                rental: car?.encarRecord?.use?.toLowerCase().includes('rental') || false
               }}
             />
 

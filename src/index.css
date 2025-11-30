@@ -332,7 +332,6 @@ html.theme-transitioning *::after {
    DESIGN TOKENS - iOS-Inspired Color System
    ============================================================================ */
 
-/* Chat styling is handled by the embedded provider; Smartsupp overrides were removed. */
 @layer base {
   :root {
     /* Original black and white color scheme */
@@ -469,6 +468,55 @@ html.theme-transitioning *::after {
     --sidebar-accent-foreground: 0 0% 95.9%;
     --sidebar-border: 0 0% 15.9%;
     --sidebar-ring: 0 0% 83.1%;
+  }
+}
+
+/* Ensure Smartsupp chat widget stays above floating UI elements */
+#smartsupp-widget-container,
+.smartsupp-widget-container {
+  z-index: 99999 !important;
+}
+
+@media (max-width: 768px) {
+
+  #smartsupp-widget-container,
+  .smartsupp-widget-container {
+    right: 1rem !important;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #smartsupp-widget-bubble,
+  .smartsupp-widget-bubble {
+    right: 1rem !important;
+    /* Moved higher to avoid conflicts with bottom widgets */
+    bottom: calc(8rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+body.car-details-page #smartsupp-widget-container,
+body.car-details-page .smartsupp-widget-container {
+  right: calc(env(safe-area-inset-right, 0px) + clamp(0.75rem, 2vw, 1.5rem)) !important;
+}
+
+@media (max-width: 1023.98px) {
+
+  body.car-details-page #smartsupp-widget-container,
+  body.car-details-page .smartsupp-widget-container {
+    bottom: calc(11rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.car-details-page #smartsupp-widget-bubble,
+  body.car-details-page .smartsupp-widget-bubble {
+    bottom: calc(13rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  body.car-details-page #smartsupp-widget-container,
+  body.car-details-page .smartsupp-widget-container {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: calc(env(safe-area-inset-right, 0px) + clamp(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem), 6rem)) !important;
   }
 }
 

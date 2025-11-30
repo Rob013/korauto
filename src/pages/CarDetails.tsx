@@ -100,7 +100,6 @@ import {
   fetchEncarsVehicle,
   type EncarsVehicleResponse,
 } from "@/services/encarApi";
-import { useCarDetails } from "@/hooks/useCarDetails";
 import { createPortal } from "react-dom";
 import {
   buildUsageHighlights,
@@ -1629,14 +1628,6 @@ const CarDetails = memo(() => {
   const { exchangeRate } = useCurrencyAPI();
   const { getOptionName } = useKoreaOptions();
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
-  
-  // Use hybrid car details hook
-  const { 
-    car: hybridCar, 
-    loading: hybridLoading, 
-    error: hybridError,
-    source: dataSource 
-  } = useCarDetails(lot, { preferCache: true, fallbackToAPI: true });
   const { theme } = useTheme();
   const [car, setCar] = useState<CarDetails | null>(null);
   const [prefetchedSummary, setPrefetchedSummary] =
@@ -3310,7 +3301,6 @@ const CarDetails = memo(() => {
     const uniqueParts: string[] = [];
 
     rawParts.forEach((part) => {
-      if (typeof part !== 'string') return;
       const normalized = part.toLowerCase();
       if (!normalized) {
         return;
@@ -3461,7 +3451,6 @@ const CarDetails = memo(() => {
     const sanitizeList = (list: string[]): string[] => {
       const seen = new Set<string>();
       return list.filter((item) => {
-        if (typeof item !== 'string') return false;
         const normalized = item.trim().toLowerCase();
         if (!normalized || exclusionValues.has(normalized)) {
           return false;
@@ -3530,7 +3519,7 @@ const CarDetails = memo(() => {
 
     if (Array.isArray(car.features)) {
       const fuelFeature = car.features.find((feature) =>
-        typeof feature === 'string' && feature.toLowerCase().startsWith("karburanti"),
+        feature.toLowerCase().startsWith("karburanti"),
       );
       if (fuelFeature) {
         const value = fuelFeature.split(":").slice(1).join(":").trim();

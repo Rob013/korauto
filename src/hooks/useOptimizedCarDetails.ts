@@ -136,76 +136,18 @@ export const useOptimizedCarDetails = ({ carId, prefetch = true }: OptimizedCarD
         setLoading(true);
         setError(null);
 
-        // Try both tables: encar_cars_cache (Encar) and cars_cache (old data)
-        
-        // First try encar_cars_cache with vehicle_id (convert string ID to number for Encar)
-        const vehicleIdNum = parseInt(id, 10);
-        if (!isNaN(vehicleIdNum)) {
-          const encarResult = await supabase
-            .from('encar_cars_cache')
-            .select('*')
-            .eq('vehicle_id', vehicleIdNum)
-            .maybeSingle();
-          
-          if (encarResult.data) {
-            const data = encarResult.data;
-            // Transform Encar cached car to expected format
-            const transformedEncar = {
-              id: String(data.vehicle_id),
-              year: parseInt(data.form_year || '0'),
-              manufacturer: data.manufacturer_name,
-              model: data.model_name,
-              generation: data.generation_name,
-              grade: data.grade_name,
-              mileage: data.mileage,
-              transmission: data.transmission,
-              fuel: data.fuel_type,
-              color: data.color_name,
-              body_type: data.body_type,
-              // Price conversion: 만원 (10,000 KRW units) to EUR
-              price: data.buy_now_price 
-                ? Math.round((Number(data.buy_now_price) * 10000) / 1400) + 2500 
-                : null,
-              images: data.photos ? 
-                (typeof data.photos === 'string' ? JSON.parse(data.photos) : data.photos)
-                : [],
-              details: {
-                seats_count: data.seat_count,
-                badge: data.grade_name,
-                displacement: data.displacement,
-              },
-              insurance_v2: {
-                accidentCnt: data.has_accident ? 1 : 0,
-              },
-              dealer_name: data.dealer_name,
-              dealer_firm: data.dealer_firm,
-              contact: {
-                address: data.contact_address
-              },
-              _cached: true,
-              _source: 'encar_cars_cache'
-            };
-            
-            memoryCache.set(id, transformedEncar);
-            writeToSessionCache(id, transformedEncar);
-            setCar(transformedEncar);
-            return transformedEncar;
-          }
-        }
-        
-        // Fallback to old cars_cache table
-        const oldCacheResult = await supabase
+        const { data: cacheData, error: cacheError } = await supabase
           .from('cars_cache')
           .select('id, car_data, updated_at')
           .eq('id', id)
-          .maybeSingle();
+          .single();
 
-        if (oldCacheResult.error) throw oldCacheResult.error;
-        if (!oldCacheResult.data) {
+        if (cacheError) throw cacheError;
+        if (!cacheData) {
           throw new Error('Car not found');
         }
 
-        const transformedCar = transformCachedCarRecord(oldCacheResult.data);
+        const transformedCar = transformCachedCarRecord(cacheData);
 
         memoryCache.set(id, transformedCar);
         writeToSessionCache(id, transformedCar);

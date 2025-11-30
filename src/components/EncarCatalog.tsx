@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Grid3X3, List } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels, fetchFilterCounts, fetchGrades, fetchTrimLevels, fetchEngines } from "@/hooks/useSecureAuctionAPI";
-import { useEncarFilterData } from "@/hooks/useEncarFilterData";
+import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels, fetchManufacturers, fetchModels, fetchGenerations, fetchAllGenerationsForManufacturer, fetchFilterCounts, fetchGrades, fetchTrimLevels, fetchEngines } from "@/hooks/useSecureAuctionAPI";
 import { useHybridEncarData } from "@/hooks/useHybridEncarData";
 import { EncarCacheStatus } from "@/components/EncarCacheStatus";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
@@ -31,7 +30,6 @@ import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
@@ -55,14 +53,7 @@ const EncarCatalog = ({
   const {
     restorePageState
   } = useNavigation();
-  const { isAdmin } = useAdminCheck();
-  // Use hybrid hook - PREFER CACHE with extended tolerance for better performance
-  const {
-    fetchManufacturers,
-    fetchModels,
-    fetchGenerations
-  } = useEncarFilterData();
-
+  // Use hybrid hook - automatically switches between cache and API
   const {
     cars,
     setCars,
@@ -81,11 +72,7 @@ const EncarCatalog = ({
     source,
     cacheHealth,
     isStale
-  } = useHybridEncarData({
-    preferCache: true, // Show cache first for instant load
-    maxCacheAge: 360,
-    fallbackToAPI: true // Then load live API data
-  });
+  } = useHybridEncarData();
   const {
     convertUSDtoEUR,
     exchangeRate
@@ -122,7 +109,7 @@ const EncarCatalog = ({
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
-  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  const [isApplyingFilters, startApplyingFilters] = useTransition();
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
 
@@ -185,47 +172,36 @@ const EncarCatalog = ({
     // Handle case where filters might be undefined during initial render
     if (!filters) return true;
 
-    const f = filters as APIFilters;
     // Default state means no meaningful filters are applied OR manufacturer is explicitly set to "all"
-    return (!f.manufacturer_id || f.manufacturer_id === 'all') && !f.model_id && !f.generation_id && !f.color && !f.fuel_type && !f.transmission && !f.body_type && !f.odometer_from_km && !f.odometer_to_km && !f.from_year && !f.to_year && !f.buy_now_price_from && !f.buy_now_price_to && !f.search && !f.seats_count && (!f.grade_iaai || f.grade_iaai === 'all');
+    return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && !filters.model_id && !filters.generation_id && !filters.color && !filters.fuel_type && !filters.transmission && !filters.body_type && !filters.odometer_from_km && !filters.odometer_to_km && !filters.from_year && !filters.to_year && !filters.buy_now_price_from && !filters.buy_now_price_to && !filters.search && !filters.seats_count && (!filters.grade_iaai || filters.grade_iaai === 'all');
   }, [filters]);
 
   // Memoized client-side grade and engine filtering for better performance
   const filteredCars = useMemo(() => {
-    if (error || !cars || cars.length === 0) return [];
+    // Use fallback data when there's an error and no cars loaded
+    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
+    const cleanedCars = filterOutTestCars(sourceCars || []);
 
-    const f = filters as APIFilters;
-    let filtered = cars;
+    // Apply grade filter
+    const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
 
-    // Apply grade filtering
-    if (f.grade_iaai && f.grade_iaai !== 'all') {
-      filtered = filtered.filter(car => {
-        if (!car.lots || !Array.isArray(car.lots) || car.lots.length === 0) return false;
-        return car.lots.some(lot => {
-          const gradeMatch = lot.grade_iaai?.trim().toLowerCase() === f.grade_iaai?.toLowerCase();
-          const badgeMatch = lot.details?.badge?.trim().toLowerCase() === f.grade_iaai?.toLowerCase();
-          return gradeMatch || badgeMatch;
-        });
-      });
-    }
-
-    // Apply engine spec filtering (if provided)
+    // Apply engine filter if specified
     const engineSpec = (filters as any)?.engine_spec;
-    const engineFiltered = engineSpec && engineSpec !== 'all'
-      ? filtered.filter(car => car.engine?.name?.toLowerCase().includes(engineSpec.toLowerCase()))
-      : filtered;
+    const engineFiltered = engineSpec
+      ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec))
+      : gradeFiltered;
 
+    // Filter to show only cars with real buy_now pricing data
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [cars, filters, error]);
+  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
 
   // Extract engine variants from filtered cars for the dropdown
   const engineVariants = useMemo(() => {
-    const f = filters as APIFilters;
-    if (!f.model_id || filteredCars.length === 0) {
+    if (!filters?.model_id || filteredCars.length === 0) {
       return [];
     }
     return extractUniqueEngineSpecs(filteredCars);
-  }, [filteredCars, filters]);
+  }, [filteredCars, filters?.model_id]);
 
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -246,12 +222,11 @@ const EncarCatalog = ({
 
   // Apply filters on merged list
   const mergedFilteredCars = useMemo(() => {
-    const f = filters as APIFilters;
-    const gradeFiltered = applyGradeFilter(mergedCars, f.grade_iaai) || [];
+    const gradeFiltered = applyGradeFilter(mergedCars, filters?.grade_iaai) || [];
     const engineSpec = (filters as any)?.engine_spec;
     const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [mergedCars, filters]);
+  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec]);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
@@ -316,7 +291,7 @@ const EncarCatalog = ({
       }),
     [smoothCarsToDisplay],
   );
-  const [searchTerm, setSearchTerm] = useState((filters as APIFilters).search || "");
+  const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{
     id: number;
@@ -532,7 +507,9 @@ const EncarCatalog = ({
     setSortBy("");
 
     setIsFilterLoading(true);
-    setFilters(newFilters);
+    startApplyingFilters(() => {
+      setFilters(newFilters);
+    });
 
     setShowAllCars(false);
     setAllCarsData([]);
@@ -550,6 +527,7 @@ const EncarCatalog = ({
     scheduleFetchCars,
     setSearchParams,
     clearGlobalSorting,
+    startApplyingFilters,
     setFilters,
     setShowAllCars,
     setAllCarsData,
@@ -617,9 +595,8 @@ const EncarCatalog = ({
       const allCars = await fetchAllCars(filters);
 
       // Apply the same client-side filtering as the current filtered cars
-      const f = filters as APIFilters;
       const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, f.grade_iaai);
+        return matchesGradeFilter(car, filters.grade_iaai);
       });
       setAllCarsData(filteredAllCars);
       setShowAllCars(true);
@@ -638,9 +615,8 @@ const EncarCatalog = ({
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
-    const f = filters as APIFilters;
     // Create a unique key for current sort parameters to prevent duplicate calls
-    const sortKey = `${totalCount}-${sortBy}-${f.grade_iaai || ''}-${f.manufacturer_id || ''}-${f.model_id || ''}-${f.generation_id || ''}-${f.from_year || ''}-${f.to_year || ''}`;
+    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${filters.generation_id || ''}-${filters.from_year || ''}-${filters.to_year || ''}`;
     if (fetchingSortRef.current) {
       console.log(`⏳ Already fetching sort data, skipping duplicate request`);
       return;
@@ -669,9 +645,8 @@ const EncarCatalog = ({
       const allCars = await fetchAllCars(filters);
 
       // Apply the same client-side filtering as the current filtered cars - using utility
-      const f = filters as APIFilters;
       const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, f.grade_iaai);
+        return matchesGradeFilter(car, filters.grade_iaai);
       });
 
       // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
@@ -696,36 +671,35 @@ const EncarCatalog = ({
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, (filters as APIFilters).grade_iaai, (filters as APIFilters).manufacturer_id, (filters as APIFilters).model_id, (filters as APIFilters).generation_id, (filters as APIFilters).from_year, (filters as APIFilters).to_year, sortBy,
+  }, [totalCount, fetchAllCars, filters?.grade_iaai, filters?.manufacturer_id, filters?.model_id, filters?.generation_id, filters?.from_year, filters?.to_year, sortBy,
     // Remove filteredCars from dependencies as it's computed and can cause infinite loops
     // filteredCars,
     totalPages || 0, currentPage, setSearchParams]);
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
 
-    // Reset sorting to default when manufacturer changes
+    // Reset sorting to neutral when manufacturer changes
     setHasUserSelectedSort(false);
-    setSortBy("recently_added");
+    setSortBy("");
 
     // Create new filters immediately for faster UI response
-    const f = filters as APIFilters;
     const newFilters: APIFilters = {
       manufacturer_id: manufacturerId,
       model_id: undefined,
       generation_id: undefined,
       grade_iaai: undefined,
-      color: f.color,
-      fuel_type: f.fuel_type,
-      transmission: f.transmission,
-      body_type: f.body_type,
-      odometer_from_km: f.odometer_from_km,
-      odometer_to_km: f.odometer_to_km,
-      from_year: f.from_year,
-      to_year: f.to_year,
-      buy_now_price_from: f.buy_now_price_from,
-      buy_now_price_to: f.buy_now_price_to,
-      seats_count: f.seats_count,
-      search: f.search
+      color: filters.color,
+      fuel_type: filters.fuel_type,
+      transmission: filters.transmission,
+      body_type: filters.body_type,
+      odometer_from_km: filters.odometer_from_km,
+      odometer_to_km: filters.odometer_to_km,
+      from_year: filters.from_year,
+      to_year: filters.to_year,
+      buy_now_price_from: filters.buy_now_price_from,
+      buy_now_price_to: filters.buy_now_price_to,
+      seats_count: filters.seats_count,
+      search: filters.search
     };
     setFilters(newFilters);
     setLoadedPages(1);
@@ -757,7 +731,7 @@ const EncarCatalog = ({
       // Fetch cars with neutral sorting (user can re-apply a sort after filters)
       const filtersForCars = {
         ...newFilters,
-        per_page: "100" // Reduced from 50 for better balance
+        per_page: "50"
       };
       await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
         console.log(`[handleManufacturerChange] Setting models to:`, modelData);
@@ -785,9 +759,9 @@ const EncarCatalog = ({
     console.log(`[EncarCatalog] Models state updated:`, models);
   }, [models]);
   const handleModelChange = async (modelId: string) => {
-    // Reset sorting to default when model changes
+    // Reset sorting to neutral when model changes
     setHasUserSelectedSort(false);
-    setSortBy("recently_added");
+    setSortBy("");
 
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
@@ -838,17 +812,17 @@ const EncarCatalog = ({
     return entries.some(([key, value]) => !!value && value !== 'all');
   }, [filters]);
 
-  // Always default to recently_added sort
+  // Adjust sort depending on filter presence
   useEffect(() => {
     if (hasUserSelectedSort) {
       return;
     }
 
     setSortBy((currentSort) => {
-      const desiredSort: SortOption = "recently_added";
+      const desiredSort: SortOption = anyFilterApplied ? "" : "recently_added";
       return currentSort === desiredSort ? currentSort : desiredSort;
     });
-  }, [hasUserSelectedSort]);
+  }, [anyFilterApplied, hasUserSelectedSort]);
 
   // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
@@ -1048,53 +1022,26 @@ const EncarCatalog = ({
     };
   }, []); // Remove dependencies to prevent unnecessary re-binding
 
-  // OPTIMIZED: Use manufacturer counts from loaded data instead of fetching separately
+  // OPTIMIZED: Load filter counts with reduced API calls and better debouncing
   useEffect(() => {
-    // Set manufacturer counts immediately from manufacturers data
-    if (manufacturers.length > 0) {
-      const manufacturerCounts: Record<string, number> = {};
-      manufacturers.forEach(m => {
-        if (m.name && (m.car_count || m.cars_qty)) {
-          manufacturerCounts[m.name] = m.car_count || m.cars_qty || 0;
+    const loadFilterCounts = async () => {
+      if (manufacturers.length > 0) {
+        setLoadingCounts(true);
+        try {
+          const counts = await fetchFilterCounts(filters, manufacturers);
+          setFilterCounts(counts);
+        } catch (error) {
+          console.error('Error loading filter counts:', error);
+        } finally {
+          setLoadingCounts(false);
         }
-      });
-      
-      setFilterCounts((prev: any) => ({
-        ...prev,
-        manufacturers: manufacturerCounts
-      }));
-    }
-  }, [manufacturers]);
+      }
+    };
 
-  // OPTIMIZED: Extract filter counts from currently loaded cars for instant display
-  useEffect(() => {
-    if (cars.length > 0) {
-      const counts = {
-        models: {} as Record<string, number>,
-        generations: {} as Record<string, number>,
-        colors: {} as Record<string, number>,
-        fuelTypes: {} as Record<string, number>,
-        transmissions: {} as Record<string, number>,
-        bodyTypes: {} as Record<string, number>,
-        years: {} as Record<string, number>,
-      };
-      
-      cars.forEach((car: any) => {
-        if (car.model?.name) counts.models[car.model.name] = (counts.models[car.model.name] || 0) + 1;
-        if (car.generation?.name) counts.generations[car.generation.name] = (counts.generations[car.generation.name] || 0) + 1;
-        if (car.color?.name) counts.colors[car.color.name] = (counts.colors[car.color.name] || 0) + 1;
-        if (car.fuel?.name) counts.fuelTypes[car.fuel.name] = (counts.fuelTypes[car.fuel.name] || 0) + 1;
-        if (car.transmission?.name) counts.transmissions[car.transmission.name] = (counts.transmissions[car.transmission.name] || 0) + 1;
-        if (car.body_type?.name) counts.bodyTypes[car.body_type.name] = (counts.bodyTypes[car.body_type.name] || 0) + 1;
-        if (car.year) counts.years[car.year.toString()] = (counts.years[car.year.toString()] || 0) + 1;
-      });
-      
-      setFilterCounts((prev: any) => ({
-        ...prev,
-        ...counts
-      }));
-    }
-  }, [cars]);
+    // PERFORMANCE: Longer debounce and only load when necessary
+    const timeoutId = setTimeout(loadFilterCounts, 500);
+    return () => clearTimeout(timeoutId);
+  }, [filters, manufacturers.length]); // Only depend on manufacturers.length, not the full array
 
   // OPTIMIZED: Load initial counts only once when manufacturers are first loaded
   useEffect(() => {
@@ -1152,45 +1099,36 @@ const EncarCatalog = ({
 
   // Track when categories are selected 
   useEffect(() => {
-    const f = filters as APIFilters;
-    const hasCategories = f.manufacturer_id && f.model_id;
+    const hasCategories = filters?.manufacturer_id && filters?.model_id;
     setHasSelectedCategories(!!hasCategories);
-  }, [(filters as APIFilters).manufacturer_id, (filters as APIFilters).model_id]);
+  }, [filters?.manufacturer_id, filters?.model_id]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
-    if (!highlightCarId || cars.length === 0) return;
+    if (highlightCarId && cars.length > 0) {
+      setTimeout(() => {
+        // Find the car by lot number or ID and scroll to it
+        const targetCar = cars.find(car => car.lot_number === highlightCarId || car.id === highlightCarId);
+        if (targetCar) {
+          const lotNumber = targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
+          setHighlightedCarId(lotNumber || targetCar.id);
 
-    let highlightTimer: ReturnType<typeof setTimeout> | undefined;
-    let clearHighlightTimer: ReturnType<typeof setTimeout> | undefined;
+          // Scroll to the car
+          const carElement = document.getElementById(`car-${targetCar.id}`);
+          if (carElement) {
+            carElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center"
+            });
+          }
 
-    highlightTimer = setTimeout(() => {
-      // Find the car by lot number or ID and scroll to it
-      const targetCar = cars.find(car => car.lot_number === highlightCarId || car.id === highlightCarId);
-      if (targetCar) {
-        const lotNumber = targetCar.lot_number || targetCar.lots?.[0]?.lot || "";
-        setHighlightedCarId(lotNumber || targetCar.id);
-
-        // Scroll to the car
-        const carElement = document.getElementById(`car-${targetCar.id}`);
-        if (carElement) {
-          carElement.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-          });
+          // Remove highlight after 3 seconds
+          setTimeout(() => {
+            setHighlightedCarId(null);
+          }, 3000);
         }
-
-        // Remove highlight after 3 seconds
-        clearHighlightTimer = setTimeout(() => {
-          setHighlightedCarId(null);
-        }, 3000);
-      }
-    }, 1000);
-
-    return () => {
-      if (highlightTimer) clearTimeout(highlightTimer);
-      if (clearHighlightTimer) clearTimeout(clearHighlightTimer);
-    };
+      }, 1000);
+    }
   }, [highlightCarId, cars]);
 
   // Clear filter loading state when main loading completes
@@ -1410,7 +1348,7 @@ const EncarCatalog = ({
               ) : (
                 <>
                   <span className="font-semibold text-foreground">{animatedTotalCount.toLocaleString()}</span> vetura të disponueshme
-                  {isAdmin && source === 'cache' && isStale && (
+                  {source === 'cache' && isStale && (
                     <span className="ml-2 text-yellow-600 text-xs">(data may be outdated)</span>
                   )}
                 </>
@@ -1421,7 +1359,7 @@ const EncarCatalog = ({
 
         {/* Error State */}
         {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-          <p className="text-destructive font-medium">Error: {String(error)}</p>
+          <p className="text-destructive font-medium">Error: {error instanceof Error ? error.message : String(error)}</p>
         </div>}
 
         {/* Loading State - Only for initial load, not for filters */}
@@ -1480,24 +1418,9 @@ const EncarCatalog = ({
           >
             {renderableCars.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
-              // Calculate price based on data source
-              // For API data: buy_now is in USD, convert to EUR with markup
-              // For Encar cache: price is in KRW (만원), convert to EUR with markup
-              const rawPrice = lot?.buy_now || 0;
-              
-              let priceInEUR = 0;
-              if (rawPrice > 0) {
-                if (car.price_eur) {
-                  // Already converted in carsForSorting
-                  priceInEUR = car.price_eur;
-                } else {
-                  // Convert USD to EUR with markup (approximate rate: 1 USD = 0.92 EUR)
-                  const usdToEur = exchangeRate?.rate || 0.92;
-                  priceInEUR = calculateFinalPriceEUR(rawPrice, usdToEur);
-                }
-              }
-              
-              const price = priceInEUR;
+              // Only use buy_now price, no fallbacks
+              const usdPrice = lot?.buy_now;
+              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
               const lotNumber = car.lot_number || lot?.lot || "";
               return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
                 <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined

@@ -196,17 +196,25 @@ const EncarCarCard = ({
               CERTIFIED
             </Badge>
           )}
+          {insurance_v2 && typeof insurance_v2.accidentCnt === 'number' && (
+            <>
+              {insurance_v2.accidentCnt === 0 ? (
+                <div className="bg-green-600/95 text-white px-2 py-1 rounded text-xs font-semibold shadow-lg flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" />
+                  <span>Clean</span>
+                </div>
+              ) : (
+                <div className="bg-orange-600/95 text-white px-2 py-1 rounded text-xs font-semibold shadow-lg flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Accident</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Accident Badge - Small Circle on Right */}
-        {insurance_v2 && typeof insurance_v2.accidentCnt === 'number' && insurance_v2.accidentCnt === 0 && (
-          <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shadow-lg">
-            <ShieldCheck className="h-4 w-4 text-white" />
-          </div>
-        )}
-
         {/* Modern Action buttons */}
-        <div className="absolute top-12 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+        <div className="absolute top-3 right-3 flex gap-2 opacity-0 transition-all duration-300 transform translate-y-2">
           <Button
             size="sm"
             variant="secondary"
@@ -283,7 +291,7 @@ const EncarCarCard = ({
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-xl sm:text-2xl font-bold text-primary">
-              {price > 0 ? (
+              {price ? (
                 <>€{price.toLocaleString()}</>
               ) : (
                 <span className="text-muted-foreground text-base sm:text-lg">Çmimi në kërkesë</span>
