@@ -3,6 +3,7 @@
  * 
  * React Query hook for fetching cached Encar car data from Supabase
  * Provides instant loading with automatic refetching and error handling
+ * Optimized for performance with cached data
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -170,11 +171,15 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: options.staleTime ?? 30 * 60 * 1000, // 30 minutes - keep data fresh longer
-        gcTime: options.cacheTime ?? 60 * 60 * 1000, // 60 minutes - cache in memory longer
+        staleTime: options.staleTime ?? 60 * 60 * 1000, // 60 minutes - cached data stays fresh longer
+        gcTime: options.cacheTime ?? 120 * 60 * 1000, // 120 minutes - keep in memory longer
         refetchOnWindowFocus: false,
         refetchOnMount: false,
-        refetchOnReconnect: false
+        refetchOnReconnect: false,
+        // Instant cache reads - no loading state for cached data
+        placeholderData: (previousData) => previousData,
+        // Network waterfall optimization
+        networkMode: 'online',
     });
 }
 

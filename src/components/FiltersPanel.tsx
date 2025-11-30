@@ -88,8 +88,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const { data: gradesData, isLoading: gradesLoading } = useGrades(filters.model);
   const { data: trimsData, isLoading: trimsLoading } = useTrims(filters.model);
 
-  // Debounce search term with 250ms delay as specified
-  const debouncedSearchTerm = useDebounce(searchTerm, 250);
+  // Faster debounce for cached data - 100ms instead of 250ms
+  const debouncedSearchTerm = useDebounce(searchTerm, 100);
 
   // Update search filter when debounced term changes
   useEffect(() => {
@@ -102,7 +102,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       console.error('Error updating search filter:', error);
       setValidationError('Gabim në kërkim');
     }
-  }, [debouncedSearchTerm, filters.search, onFiltersChange]);
+  }, [debouncedSearchTerm]);
 
   const currentYearRange = useMemo(() => {
     try {
@@ -203,7 +203,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       yearMin: selectedMin,
       yearMax: filters.yearMax !== undefined || adjustedMax !== data.yearRange.max ? adjustedMax : undefined
     });
-  }, [filters.yearMax, data.yearRange.max, onFiltersChange]);
+  }, [filters.yearMax, data.yearRange.max]);
 
   const handleYearMaxChange = useCallback((value: string) => {
     const selectedMax = value === 'any' ? undefined : Number(value);
@@ -214,7 +214,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       yearMin: filters.yearMin !== undefined || adjustedMin !== data.yearRange.min ? adjustedMin : undefined,
       yearMax: selectedMax,
     });
-  }, [filters.yearMin, data.yearRange.min, onFiltersChange]);
+  }, [filters.yearMin, data.yearRange.min]);
 
   const handlePriceMinChange = useCallback((value: string) => {
     const selectedMin = value === 'any' ? undefined : Number(value);
@@ -225,7 +225,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       priceMin: selectedMin,
       priceMax: filters.priceMax !== undefined || adjustedMax !== data.priceRange.max ? adjustedMax : undefined,
     });
-  }, [filters.priceMax, data.priceRange.max, onFiltersChange]);
+  }, [filters.priceMax, data.priceRange.max]);
 
   const handlePriceMaxChange = useCallback((value: string) => {
     const selectedMax = value === 'any' ? undefined : Number(value);
@@ -236,7 +236,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       priceMin: filters.priceMin !== undefined || adjustedMin !== data.priceRange.min ? adjustedMin : undefined,
       priceMax: selectedMax,
     });
-  }, [filters.priceMin, data.priceRange.min, onFiltersChange]);
+  }, [filters.priceMin, data.priceRange.min]);
 
   const handleMileageMinChange = useCallback((value: string) => {
     const selectedMin = value === 'any' ? undefined : Number(value);
@@ -247,7 +247,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       mileageMin: selectedMin,
       mileageMax: filters.mileageMax !== undefined || adjustedMax !== data.mileageRange.max ? adjustedMax : undefined,
     });
-  }, [filters.mileageMax, data.mileageRange.max, onFiltersChange]);
+  }, [filters.mileageMax, data.mileageRange.max]);
 
   const handleMileageMaxChange = useCallback((value: string) => {
     const selectedMax = value === 'any' ? undefined : Number(value);
@@ -258,7 +258,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       mileageMin: filters.mileageMin !== undefined || adjustedMin !== data.mileageRange.min ? adjustedMin : undefined,
       mileageMax: selectedMax,
     });
-  }, [filters.mileageMin, data.mileageRange.min, onFiltersChange]);
+  }, [filters.mileageMin, data.mileageRange.min]);
 
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
@@ -798,4 +798,4 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   );
 };
 
-export default FiltersPanel;
+export default React.memo(FiltersPanel);
