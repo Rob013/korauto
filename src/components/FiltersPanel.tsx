@@ -203,7 +203,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       yearMin: selectedMin,
       yearMax: filters.yearMax !== undefined || adjustedMax !== data.yearRange.max ? adjustedMax : undefined
     });
-  }, [filters.yearMax, data.yearRange.max]);
+  }, [filters.yearMax, data.yearRange.max, onFiltersChange]);
 
   const handleYearMaxChange = useCallback((value: string) => {
     const selectedMax = value === 'any' ? undefined : Number(value);
@@ -214,7 +214,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       yearMin: filters.yearMin !== undefined || adjustedMin !== data.yearRange.min ? adjustedMin : undefined,
       yearMax: selectedMax,
     });
-  }, [filters.yearMin, data.yearRange.min]);
+  }, [filters.yearMin, data.yearRange.min, onFiltersChange]);
 
   const handlePriceMinChange = useCallback((value: string) => {
     const selectedMin = value === 'any' ? undefined : Number(value);
@@ -225,7 +225,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       priceMin: selectedMin,
       priceMax: filters.priceMax !== undefined || adjustedMax !== data.priceRange.max ? adjustedMax : undefined,
     });
-  }, [filters.priceMax, data.priceRange.max]);
+  }, [filters.priceMax, data.priceRange.max, onFiltersChange]);
 
   const handlePriceMaxChange = useCallback((value: string) => {
     const selectedMax = value === 'any' ? undefined : Number(value);
@@ -236,7 +236,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       priceMin: filters.priceMin !== undefined || adjustedMin !== data.priceRange.min ? adjustedMin : undefined,
       priceMax: selectedMax,
     });
-  }, [filters.priceMin, data.priceRange.min]);
+  }, [filters.priceMin, data.priceRange.min, onFiltersChange]);
 
   const handleMileageMinChange = useCallback((value: string) => {
     const selectedMin = value === 'any' ? undefined : Number(value);
@@ -247,7 +247,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       mileageMin: selectedMin,
       mileageMax: filters.mileageMax !== undefined || adjustedMax !== data.mileageRange.max ? adjustedMax : undefined,
     });
-  }, [filters.mileageMax, data.mileageRange.max]);
+  }, [filters.mileageMax, data.mileageRange.max, onFiltersChange]);
 
   const handleMileageMaxChange = useCallback((value: string) => {
     const selectedMax = value === 'any' ? undefined : Number(value);
@@ -258,7 +258,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       mileageMin: filters.mileageMin !== undefined || adjustedMin !== data.mileageRange.min ? adjustedMin : undefined,
       mileageMax: selectedMax,
     });
-  }, [filters.mileageMin, data.mileageRange.min]);
+  }, [filters.mileageMin, data.mileageRange.min, onFiltersChange]);
 
   // Get available models based on selected brand
   const availableModels = useMemo(() => {
