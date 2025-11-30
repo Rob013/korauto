@@ -71,13 +71,14 @@ export function useEncarCache(
 ) {
     return useQuery({
         queryKey: ['encar-cache', filters, page, perPage],
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             console.log('🔍 Fetching from Encar cache:', { filters, page, perPage });
 
             let query = supabase
                 .from('encar_cars_cache')
                 .select('*', { count: 'exact' })
-                .eq('is_active', true);
+                .eq('is_active', true)
+                .abortSignal(signal); // Add abort signal support
 
             // Apply filters
             if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
@@ -185,11 +186,14 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: options.staleTime ?? 30 * 60 * 1000, // 30 minutes - keep data fresh longer
-        gcTime: options.cacheTime ?? 60 * 60 * 1000, // 60 minutes - cache in memory longer
+        staleTime: options.staleTime ?? 30 * 60 * 1000, // 30 minutes
+        gcTime: options.cacheTime ?? 60 * 60 * 1000, // 60 minutes
         refetchOnWindowFocus: false,
         refetchOnMount: false,
-        refetchOnReconnect: false
+        refetchOnReconnect: false,
+        placeholderData: (previousData) => previousData, // Keep previous data while loading
+        retry: 1, // Only retry once on failure
+        retryDelay: 1000 // Wait 1 second before retry
     });
 }
 

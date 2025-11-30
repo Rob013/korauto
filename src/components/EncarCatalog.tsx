@@ -696,6 +696,12 @@ const EncarCatalog = ({
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
 
+    // Prevent concurrent manufacturer changes
+    if (isLoading) {
+      console.log('[handleManufacturerChange] Already loading, ignoring request');
+      return;
+    }
+
     // Reset sorting to default when manufacturer changes
     setHasUserSelectedSort(false);
     setSortBy("recently_added");
@@ -720,16 +726,22 @@ const EncarCatalog = ({
       seats_count: f.seats_count,
       search: f.search
     };
-    setFilters(newFilters);
+    
     setLoadedPages(1);
     setModels([]);
     setGenerations([]);
 
-    // Only show loading for cars
+    // Set loading BEFORE updating filters to prevent race conditions
     setIsLoading(true);
+    setIsFilterLoading(true);
+    
+    // Update filters after setting loading state
+    setFilters(newFilters);
+    
     try {
       if (!manufacturerId) {
         setIsLoading(false);
+        setIsFilterLoading(false);
         return;
       }
 
@@ -752,10 +764,15 @@ const EncarCatalog = ({
         ...newFilters,
         per_page: "50"
       };
-      await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
-        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-        setModels(modelData);
-      }).catch(err => console.warn('Failed to load models:', err))]);
+      
+      console.log('[handleManufacturerChange] Starting parallel fetch of models and cars');
+      await Promise.all([
+        fetchCars(1, filtersForCars, true),
+        modelPromise.then(modelData => {
+          console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+          setModels(modelData);
+        }).catch(err => console.warn('Failed to load models:', err))
+      ]);
 
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -765,6 +782,8 @@ const EncarCatalog = ({
         }
       });
       setSearchParams(paramsToSet);
+      
+      console.log('[handleManufacturerChange] Completed successfully');
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
     } finally {
