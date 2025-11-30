@@ -23,13 +23,14 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('status', 'running')
       .order('sync_started_at', { ascending: false })
-      .limit(1);
+      .limit(1)
+      .maybeSingle();
 
     if (findError) {
       throw findError;
     }
 
-    if (!runningSyncs || runningSyncs.length === 0) {
+    if (!runningSyncs) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const runningSync = runningSyncs[0];
+    const runningSync = runningSyncs;
     const syncAge = Date.now() - new Date(runningSync.sync_started_at).getTime();
     const syncAgeMinutes = Math.floor(syncAge / 60000);
 
