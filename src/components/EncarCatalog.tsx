@@ -81,10 +81,8 @@ const EncarCatalog = ({
     fallbackToAPI: false
   });
 
-  // Extract filter metadata from cached cars dynamically
-  const cachedFilters = useEncarCachedFilters(
-    (filters as APIFilters)?.manufacturer_id ? String((filters as APIFilters).manufacturer_id) : undefined
-  );
+  // Extract filter metadata from cached cars dynamically - fetch ALL cached data
+  const cachedFilters = useEncarCachedFilters();
   
   // Wrapper to log filter changes
   const setFilters = useCallback((newFilters: APIFilters) => {
@@ -1276,6 +1274,10 @@ const EncarCatalog = ({
           filters={filters}
           manufacturers={cachedFilters.manufacturers.length > 0 ? cachedFilters.manufacturers : manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
           models={cachedFilters.models.length > 0 ? cachedFilters.models : models}
+          fuelTypes={cachedFilters.fuelTypes}
+          transmissions={cachedFilters.transmissions}
+          bodyTypes={cachedFilters.bodyTypes}
+          colors={cachedFilters.colors}
           filterCounts={filterCounts}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
@@ -1298,6 +1300,10 @@ const EncarCatalog = ({
             filters={filters}
             manufacturers={cachedFilters.manufacturers.length > 0 ? cachedFilters.manufacturers : manufacturers}
             models={cachedFilters.models.length > 0 ? cachedFilters.models : models}
+            fuelTypes={cachedFilters.fuelTypes}
+            transmissions={cachedFilters.transmissions}
+            bodyTypes={cachedFilters.bodyTypes}
+            colors={cachedFilters.colors}
             filterCounts={filterCounts}
             onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
