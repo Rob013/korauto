@@ -33,12 +33,12 @@ Deno.serve(async (req) => {
 
     console.log('✅ Encar sync completed:', syncData);
 
-    // 2. Delete ALL cars without valid buy_now_price (null or below realistic threshold)
-    console.log('🗑️ Cleaning up cars with invalid/missing prices...');
+    // 2. Delete ONLY cars with NULL or zero prices (keep all other prices, even low ones)
+    console.log('🗑️ Cleaning up cars with NULL or zero prices...');
     const { data: deletedPricelessCars, error: pricelessDeleteError } = await supabase
       .from('encar_cars_cache')
       .delete()
-      .or('buy_now_price.is.null,buy_now_price.eq.0,buy_now_price.lt.1000000')
+      .or('buy_now_price.is.null,buy_now_price.eq.0')
       .select('count', { count: 'exact', head: true });
 
     if (pricelessDeleteError) {
