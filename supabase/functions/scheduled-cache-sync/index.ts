@@ -17,12 +17,12 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Trigger Encar sync to refresh cache with new cars
+    // 1. Trigger Encar sync to refresh cache with new cars (full sync, no page limit)
     console.log('📥 Triggering Encar sync...');
     const { data: syncData, error: syncError } = await supabase.functions.invoke('encar-sync', {
       body: { 
-        scheduled: true,
-        maxPages: 50 // Limit to 50 pages for scheduled sync
+        scheduled: true
+        // No maxPages limit - sync all available cars
       }
     });
 
