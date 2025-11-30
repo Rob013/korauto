@@ -76,7 +76,7 @@ const EncarCatalog = ({
     isStale
   } = useHybridEncarData({
     preferCache: true,
-    maxCacheAge: 120,
+    maxCacheAge: 360, // 6 hours - match the sync schedule
     fallbackToAPI: false
   });
   const {
