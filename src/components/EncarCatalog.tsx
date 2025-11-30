@@ -696,9 +696,9 @@ const EncarCatalog = ({
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
 
-    // Reset sorting to neutral when manufacturer changes
+    // Reset sorting to default when manufacturer changes
     setHasUserSelectedSort(false);
-    setSortBy("");
+    setSortBy("recently_added");
 
     // Create new filters immediately for faster UI response
     const f = filters as APIFilters;
@@ -778,9 +778,9 @@ const EncarCatalog = ({
     console.log(`[EncarCatalog] Models state updated:`, models);
   }, [models]);
   const handleModelChange = async (modelId: string) => {
-    // Reset sorting to neutral when model changes
+    // Reset sorting to default when model changes
     setHasUserSelectedSort(false);
-    setSortBy("");
+    setSortBy("recently_added");
 
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
@@ -831,17 +831,17 @@ const EncarCatalog = ({
     return entries.some(([key, value]) => !!value && value !== 'all');
   }, [filters]);
 
-  // Adjust sort depending on filter presence
+  // Always default to recently_added sort
   useEffect(() => {
     if (hasUserSelectedSort) {
       return;
     }
 
     setSortBy((currentSort) => {
-      const desiredSort: SortOption = anyFilterApplied ? "" : "recently_added";
+      const desiredSort: SortOption = "recently_added";
       return currentSort === desiredSort ? currentSort : desiredSort;
     });
-  }, [anyFilterApplied, hasUserSelectedSort]);
+  }, [hasUserSelectedSort]);
 
   // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
