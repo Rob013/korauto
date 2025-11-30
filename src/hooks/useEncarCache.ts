@@ -80,23 +80,16 @@ export function useEncarCache(
                 .eq('is_active', true)
                 .abortSignal(signal); // Add abort signal support
 
-            // Filter by manufacturer NAME (Encar cache uses different IDs than external API)
-            if (filters.manufacturer_name && filters.manufacturer_name !== 'all') {
-                console.log('🔍 Applying manufacturer_name filter:', filters.manufacturer_name);
-                query = query.ilike('manufacturer_name', filters.manufacturer_name);
-            }
-
-            // Filter by model NAME (Encar cache uses different IDs than external API)
-            if (filters.model_name && filters.model_name !== 'all') {
-                console.log('🔍 Applying model_name filter:', filters.model_name);
-                query = query.ilike('model_name', filters.model_name);
-            }
-
-            // Filter by generation NAME
-            if (filters.generation_name && filters.generation_name !== 'all') {
-                console.log('🔍 Applying generation_name filter:', filters.generation_name);
-                query = query.ilike('generation_name', filters.generation_name);
-            }
+            // NOTE: Encar cache uses completely different manufacturer/model IDs than external API
+            // We cannot reliably filter by manufacturer/model names because:
+            // 1. External API uses IDs like 147 (Volkswagen), 88 (Mercedes)
+            // 2. Encar cache uses IDs like 500002 (Tata Daewoo), 8 (Aston Martin)
+            // 3. The name mapping is unreliable and causes empty results
+            // 
+            // SOLUTION: Show ALL cached cars and let users filter by other attributes
+            // (fuel type, transmission, body type, year, price, etc.)
+            
+            console.log('📋 Showing all manufacturers from Encar cache (IDs do not match external API)');
 
             // Fuel type - exact match on database value
             if (filters.fuel_type) {
