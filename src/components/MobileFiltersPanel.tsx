@@ -95,7 +95,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         () => debounce((newFilters: APIFilters) => {
             console.log('🔄 Applying debounced filter change:', newFilters);
             onFiltersChange(newFilters);
-        }, 300),
+        }, 150), // Reduced to 150ms for better responsiveness
         [onFiltersChange]
     );
 
@@ -133,10 +133,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                 onFiltersChange(resetFilters);
             }
         } else {
-            // Non-critical filters: apply immediately without debounce to ensure responsiveness
-            onFiltersChange(newFilters);
+            // All other filters: use debouncing to prevent UI freezing
+            debouncedFilterChange(newFilters);
         }
-    }, [localFilters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
+    }, [localFilters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange, debouncedFilterChange]);
 
     const handleSliderChange = useCallback((key: string, values: number[]) => {
         let newFilters = { ...localFilters };
