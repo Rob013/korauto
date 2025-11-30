@@ -82,9 +82,9 @@ const EncarCatalog = ({
     cacheHealth,
     isStale
   } = useHybridEncarData({
-    preferCache: false, // Use external API directly
+    preferCache: true, // Show cache first for instant load
     maxCacheAge: 360,
-    fallbackToAPI: true // Enable API fallback
+    fallbackToAPI: true // Then load live API data
   });
   const {
     convertUSDtoEUR,
