@@ -11,6 +11,7 @@ import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
 import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels, fetchManufacturers, fetchModels, fetchGenerations, fetchAllGenerationsForManufacturer, fetchFilterCounts, fetchGrades, fetchTrimLevels, fetchEngines } from "@/hooks/useSecureAuctionAPI";
 import { useHybridEncarData } from "@/hooks/useHybridEncarData";
+import { useEncarCachedFilters } from "@/hooks/useEncarCachedFilters";
 import { EncarCacheStatus } from "@/components/EncarCacheStatus";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
 import { fetchSourceCounts } from "@/hooks/useSecureAuctionAPI";
@@ -79,6 +80,11 @@ const EncarCatalog = ({
     maxCacheAge: 120,
     fallbackToAPI: false
   });
+
+  // Extract filter metadata from cached cars dynamically
+  const cachedFilters = useEncarCachedFilters(
+    (filters as APIFilters)?.manufacturer_id ? String((filters as APIFilters).manufacturer_id) : undefined
+  );
   
   // Wrapper to log filter changes
   const setFilters = useCallback((newFilters: APIFilters) => {
@@ -912,20 +918,8 @@ const EncarCatalog = ({
       setLoadedPages(urlLoadedPages);
       setCurrentPage(urlCurrentPage);
       try {
-        // PERFORMANCE OPTIMIZATION: Load only essential data first
-        // Load manufacturers immediately (they're cached)
-        const manufacturersData = await fetchManufacturers();
-        setManufacturers(manufacturersData);
-
-        // Load dependent data only if filters exist, in sequence to avoid race conditions
-        if (urlFilters.manufacturer_id) {
-          const modelsData = await fetchModels(urlFilters.manufacturer_id);
-          setModels(modelsData);
-          if (urlFilters.model_id) {
-            const generationsData = await fetchGenerations(urlFilters.model_id);
-            setGenerations(generationsData);
-          }
-        }
+        // PERFORMANCE OPTIMIZATION: Manufacturers and models are now loaded from cache
+        // No need to fetch separately - cachedFilters hook handles this automatically
 
         // Load cars last - this is the most expensive operation
         const initialFilters = {
@@ -1280,23 +1274,17 @@ const EncarCatalog = ({
       {isMobile && showFilters && (
         <MobileFiltersPanel
           filters={filters}
-          manufacturers={manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
-          models={models}
+          manufacturers={cachedFilters.manufacturers.length > 0 ? cachedFilters.manufacturers : manufacturers.length > 0 ? manufacturers : createFallbackManufacturers()}
+          models={cachedFilters.models.length > 0 ? cachedFilters.models : models}
           filterCounts={filterCounts}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
           onApply={() => {
             const effectiveSort = hasUserSelectedSort ? sortBy : anyFilterApplied ? '' : 'recently_added';
             const searchFilters = effectiveSort ? { ...filters, per_page: "200", sort_by: effectiveSort } : { ...filters, per_page: "200" };
-            fetchCars(1, searchFilters, true);
+            fetchCars(currentPage, searchFilters, true);
             setShowFilters(false);
             setHasExplicitlyClosed(true);
-            // Recenter main content after applying filters
-            setTimeout(() => {
-              if (mainContentRef.current) {
-                mainContentRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-              }
-            }, 300);
           }}
           onManufacturerChange={handleManufacturerChange}
           usePortal={true}
@@ -1308,8 +1296,8 @@ const EncarCatalog = ({
         {!isMobile && (
           <MobileFiltersPanel
             filters={filters}
-            manufacturers={manufacturers}
-            models={models}
+            manufacturers={cachedFilters.manufacturers.length > 0 ? cachedFilters.manufacturers : manufacturers}
+            models={cachedFilters.models.length > 0 ? cachedFilters.models : models}
             filterCounts={filterCounts}
             onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
