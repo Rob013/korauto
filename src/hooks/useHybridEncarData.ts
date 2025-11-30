@@ -80,29 +80,29 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         const fetchCars = useCallback(async (page: number, newFilters: APIFilters, resetList: boolean) => {
             setCurrentPage(page);
             setFilters(newFilters);
-        }, []);
+        }, [setCurrentPage, setFilters]);
 
         const fetchAllCars = useCallback(async () => {
             // For cache, we'd need to fetch all pages - simplified for now
             return cacheQuery.data?.cars || [];
-        }, [cacheQuery.data?.cars]);
+        }, [cacheQuery?.data?.cars]);
 
         const loadMore = useCallback(async () => {
             setCurrentPage(prev => prev + 1);
-        }, []);
+        }, [setCurrentPage]);
 
         const refreshInventory = useCallback(() => {
             return () => {
                 // Invalidate and refetch
-                cacheQuery.refetch();
+                cacheQuery?.refetch?.();
             };
-        }, [cacheQuery]);
+        }, [cacheQuery?.refetch]);
 
         const clearCarsCache = useCallback(() => {
             // For cache mode, we can just reset to page 1
             setCurrentPage(1);
             setFilters({});
-        }, []);
+        }, [setCurrentPage, setFilters]);
 
         return {
             cars: cacheQuery.data?.cars || [],
