@@ -1453,10 +1453,23 @@ const EncarCatalog = ({
           >
             {renderableCars.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
-              // Encar cars use KRW prices, convert directly to EUR
-              const rawPrice = lot?.buy_now;
-              // KRW to EUR conversion (approximate rate: 1 EUR = 1400 KRW)
-              const priceInEUR = rawPrice ? Math.round(rawPrice / 1400) + 2500 : 0;
+              // Calculate price based on data source
+              // For API data: buy_now is in USD, convert to EUR with markup
+              // For Encar cache: price is in KRW (만원), convert to EUR with markup
+              const rawPrice = lot?.buy_now || 0;
+              
+              let priceInEUR = 0;
+              if (rawPrice > 0) {
+                if (car.price_eur) {
+                  // Already converted in carsForSorting
+                  priceInEUR = car.price_eur;
+                } else {
+                  // Convert USD to EUR with markup (approximate rate: 1 USD = 0.92 EUR)
+                  const usdToEur = exchangeRate?.rate || 0.92;
+                  priceInEUR = calculateFinalPriceEUR(rawPrice, usdToEur);
+                }
+              }
+              
               const price = priceInEUR;
               const lotNumber = car.lot_number || lot?.lot || "";
               return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
