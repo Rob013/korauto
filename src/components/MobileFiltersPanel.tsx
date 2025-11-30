@@ -81,7 +81,20 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     // Fetch dynamic filter options from database
     const { data: filterOptions, isLoading: filterOptionsLoading } = useEncarFilterOptions();
 
+    // Debug: Log filter options when they change
+    useEffect(() => {
+        if (filterOptions) {
+            console.log('📋 Filter options loaded:', {
+                fuelTypes: filterOptions.fuelTypes?.length || 0,
+                transmissions: filterOptions.transmissions?.length || 0,
+                bodyTypes: filterOptions.bodyTypes?.length || 0,
+                colors: filterOptions.colors?.length || 0
+            });
+        }
+    }, [filterOptions]);
+
     const handleChange = useCallback((key: string, value: string) => {
+        console.log('🔄 Filter change:', { key, value, currentFilters: filters });
         const actualValue = value === '' || value === 'all' ? undefined : value;
 
         if (key === 'manufacturer_id') {
@@ -404,24 +417,26 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 <div className="text-xs text-muted-foreground py-2">Duke ngarkuar opsionet...</div>
                             ) : filterOptions?.fuelTypes && filterOptions.fuelTypes.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
-                                    {filterOptions.fuelTypes.map((option) => (
-                                        <button
-                                            key={option.value}
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleChange('fuel_type', filters.fuel_type === option.value ? '' : option.value);
-                                            }}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none ${
-                                                filters.fuel_type === option.value
-                                                    ? 'bg-primary text-primary-foreground border-primary'
-                                                    : 'bg-background border-border hover:bg-muted active:scale-95'
-                                            }`}
-                                        >
-                                            {option.label} {option.count ? `(${option.count})` : ''}
-                                        </button>
-                                    ))}
+                                    {filterOptions.fuelTypes.map((option) => {
+                                        const isSelected = filters.fuel_type === option.value;
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    console.log('🔵 Fuel type clicked:', option.value, 'Current:', filters.fuel_type);
+                                                    handleChange('fuel_type', isSelected ? '' : option.value);
+                                                }}
+                                                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none touch-manipulation ${
+                                                    isSelected
+                                                        ? 'bg-primary text-primary-foreground border-primary'
+                                                        : 'bg-background border-border hover:bg-muted active:scale-95'
+                                                }`}
+                                            >
+                                                {option.label} {option.count ? `(${option.count})` : ''}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="text-xs text-muted-foreground py-2">Nuk ka opsione të disponueshme</div>
@@ -435,24 +450,26 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 <div className="text-xs text-muted-foreground py-2">Duke ngarkuar opsionet...</div>
                             ) : filterOptions?.transmissions && filterOptions.transmissions.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
-                                    {filterOptions.transmissions.map((option) => (
-                                        <button
-                                            key={option.value}
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleChange('transmission', filters.transmission === option.value ? '' : option.value);
-                                            }}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none ${
-                                                filters.transmission === option.value
-                                                    ? 'bg-primary text-primary-foreground border-primary'
-                                                    : 'bg-background border-border hover:bg-muted active:scale-95'
-                                            }`}
-                                        >
-                                            {option.label} {option.count ? `(${option.count})` : ''}
-                                        </button>
-                                    ))}
+                                    {filterOptions.transmissions.map((option) => {
+                                        const isSelected = filters.transmission === option.value;
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    console.log('🔵 Transmission clicked:', option.value, 'Current:', filters.transmission);
+                                                    handleChange('transmission', isSelected ? '' : option.value);
+                                                }}
+                                                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none touch-manipulation ${
+                                                    isSelected
+                                                        ? 'bg-primary text-primary-foreground border-primary'
+                                                        : 'bg-background border-border hover:bg-muted active:scale-95'
+                                                }`}
+                                            >
+                                                {option.label} {option.count ? `(${option.count})` : ''}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="text-xs text-muted-foreground py-2">Nuk ka opsione të disponueshme</div>
@@ -464,7 +481,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <label className="block text-sm font-medium mb-2">Karroceria</label>
                             <select
                                 value={filters.body_type || ''}
-                                onChange={(e) => handleChange('body_type', e.target.value)}
+                                onChange={(e) => {
+                                    console.log('🔵 Body type changed:', e.target.value);
+                                    handleChange('body_type', e.target.value);
+                                }}
                                 className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors cursor-pointer"
                                 disabled={filterOptionsLoading || !filterOptions?.bodyTypes || filterOptions.bodyTypes.length === 0}
                             >
@@ -485,7 +505,10 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <label className="block text-sm font-medium mb-2">Ngjyra</label>
                             <select
                                 value={filters.color || ''}
-                                onChange={(e) => handleChange('color', e.target.value)}
+                                onChange={(e) => {
+                                    console.log('🔵 Color changed:', e.target.value);
+                                    handleChange('color', e.target.value);
+                                }}
                                 className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors cursor-pointer"
                                 disabled={filterOptionsLoading || !filterOptions?.colors || filterOptions.colors.length === 0}
                             >
