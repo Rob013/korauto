@@ -38,7 +38,7 @@ async function upsertCarsBatch(
   for (const chunk of chunkArray(records, UPSERT_BATCH_SIZE)) {
     if (chunk.length === 0) continue
 
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await (supabase as any)
       .from('encar_cars_cache')
       .upsert(chunk, {
         onConflict: 'vehicle_id',
@@ -52,7 +52,7 @@ async function upsertCarsBatch(
 
       for (const record of chunk) {
         const carId = (record as { id?: string | number }).id
-        const { error: singleError } = await supabase
+        const { error: singleError } = await (supabase as any)
           .from('encar_cars_cache')
           .upsert(record, {
             onConflict: 'vehicle_id',
@@ -85,7 +85,7 @@ async function applyArchivedUpdates(
   for (const chunk of chunkArray(records, ARCHIVE_BATCH_SIZE)) {
     if (chunk.length === 0) continue
 
-    const { error: archiveError } = await supabase
+    const { error: archiveError } = await (supabase as any)
       .from('encar_cars_cache')
       .upsert(chunk, {
         onConflict: 'vehicle_id',
@@ -99,7 +99,7 @@ async function applyArchivedUpdates(
 
       for (const record of chunk) {
         const carId = (record as { id?: string | number }).id
-        const { error: singleError } = await supabase
+        const { error: singleError } = await (supabase as any)
           .from('encar_cars_cache')
           .upsert(record, {
             onConflict: 'vehicle_id',

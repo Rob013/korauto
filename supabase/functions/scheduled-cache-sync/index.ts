@@ -38,17 +38,17 @@ Deno.serve(async (req) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const { data: deletedCars, error: deleteError } = await supabase
+    const { count: deletedCount, error: deleteError } = await supabase
       .from('encar_cars_cache')
       .delete()
       .eq('is_active', false)
       .lt('updated_at', thirtyDaysAgo.toISOString())
-      .select('count', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true });
 
     if (deleteError) {
       console.error('❌ Failed to delete archived cars:', deleteError);
     } else {
-      console.log(`✅ Deleted ${deletedCars?.length || 0} archived cars`);
+      console.log(`✅ Deleted ${deletedCount || 0} archived cars`);
     }
 
     // 3. Update sync schedule record
@@ -74,18 +74,18 @@ Deno.serve(async (req) => {
         success: true,
         message: 'Cache sync completed successfully',
         syncResults: syncData,
-        deletedCount: deletedCars?.length || 0,
+        deletedCount: deletedCount || 0,
         nextSync: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Scheduled sync error:', error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error?.message || 'Unknown error'
       }),
       { 
         status: 500,
