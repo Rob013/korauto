@@ -53,7 +53,7 @@ const EncarCatalog = ({
   const {
     restorePageState
   } = useNavigation();
-  // Use hybrid hook - automatically switches between cache and API
+  // Use hybrid hook - PREFER CACHE with extended tolerance for better performance
   const {
     cars,
     setCars,
@@ -72,7 +72,11 @@ const EncarCatalog = ({
     source,
     cacheHealth,
     isStale
-  } = useHybridEncarData();
+  } = useHybridEncarData({
+    preferCache: true,        // Always prefer cache when available
+    maxCacheAge: 120,         // Accept cache up to 2 hours old (extended from default 60min)
+    fallbackToAPI: true       // Fall back to API only if cache truly unavailable
+  });
   const {
     convertUSDtoEUR,
     exchangeRate

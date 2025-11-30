@@ -183,11 +183,15 @@ export function useEncarCache(
  */
 function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
     // Parse JSON fields
-    const photos = typeof cached.photos === 'string' ? JSON.parse(cached.photos) : cached.photos;
-    const options = typeof cached.options === 'string' ? JSON.parse(cached.options) : cached.options;
+    const photos = typeof cached.photos === 'string' ? JSON.parse(cached.photos) : (cached.photos || []);
+    const options = typeof cached.options === 'string' ? JSON.parse(cached.options) : (cached.options || {});
+
+    // Extract image arrays - Encar typically has photo URLs in array
+    const photoArray = Array.isArray(photos) ? photos : [];
 
     return {
         // Core identifiers
+        id: String(cached.vehicle_id), // Important: string ID for React keys
         vehicleId: cached.vehicle_id,
         vehicle_id: cached.vehicle_id,
         lot_number: cached.lot_number,
@@ -198,6 +202,22 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
         manufacturer_id: cached.manufacturer_id,
         model_id: cached.model_id,
         generation_id: cached.generation_id,
+
+        // Nested objects with .name property (required by catalog)
+        manufacturer: {
+            id: cached.manufacturer_id,
+            name: cached.manufacturer_name || 'Unknown'
+        },
+        model: {
+            id: cached.model_id,
+            name: cached.model_name || 'Unknown'
+        },
+        transmission: {
+            name: cached.transmission || 'Unknown'
+        },
+        color: {
+            name: cached.color_name
+        },
 
         // Category
         category: {
@@ -224,10 +244,9 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
 
         // For compatibility with existing code
         year: cached.form_year ? parseInt(cached.form_year) : null,
+        title: `${cached.form_year || ''} ${cached.manufacturer_name || ''} ${cached.model_name || ''}`.trim(),
         odometer: cached.mileage,
         fuel: cached.fuel_type,
-        transmission: cached.transmission,
-        color: cached.color_name,
         body_type: cached.body_type,
         seats: cached.seat_count,
 
@@ -236,19 +255,50 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
             price: cached.buy_now_price,
             status: cached.advertisement_status
         },
-        lots: [{
-            buy_now: cached.buy_now_price
-        }],
         buy_now: cached.buy_now_price,
         price: cached.buy_now_price,
+
+        // CRITICAL: Lots array structure (catalog expects this!)
+        lots: [{
+            lot: cached.lot_number,
+            buy_now: cached.buy_now_price,
+
+            // Images in proper structure for catalog
+            images: {
+                normal: photoArray,  // All photos as "normal" size
+                big: photoArray      // Same photos as "big" size (Encar doesn't distinguish)
+            },
+
+            // Odometer in proper structure
+            odometer: {
+                km: cached.mileage || 0,
+                mi: cached.mileage ? Math.round(cached.mileage * 0.621371) : 0
+            },
+
+            // Insurance/accident info
+            insurance_v2: {
+                accidentCnt: cached.has_accident ? 1 : 0,
+                hasAccident: cached.has_accident
+            },
+
+            // Additional details
+            details: {
+                seats_count: cached.seat_count,
+                badge: cached.grade_name,
+                inspection_available: cached.inspection_available
+            },
+
+            status: cached.advertisement_status,
+            sale_status: cached.advertisement_status
+        }],
+
+        // Also provide images at top level for backward compatibility
+        photos: photoArray,
+        images: photoArray,
 
         // Status
         status: cached.advertisement_status,
         vehicleType: cached.vehicle_type,
-
-        // Images
-        photos: photos,
-        images: photos,
 
         // Options
         options: options,
@@ -265,10 +315,12 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
         // Condition
         condition: {
             accident: {
-                recordView: cached.has_accident
+                recordView: cached.has_accident,
+                count: cached.has_accident ? 1 : 0
             },
             inspection: {
-                formats: cached.inspection_available ? ['available'] : []
+                formats: cached.inspection_available ? ['available'] : [],
+                available: cached.inspection_available
             }
         },
 
@@ -289,9 +341,16 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
             address: cached.contact_address
         },
 
+        // Source/domain for badge display
+        domain: {
+            name: 'Encar'
+        },
+        source_api: 'encar',
+
         // Cache metadata
         _cached: true,
-        _synced_at: cached.synced_at
+        _synced_at: cached.synced_at,
+        _cache_source: 'encar_cars_cache'
     };
 }
 
