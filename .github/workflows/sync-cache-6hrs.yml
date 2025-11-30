@@ -1,0 +1,19 @@
+name: Scheduled Cache Sync (Every 6 Hours)
+
+on:
+  schedule:
+    # Run every 6 hours at :00 minutes
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Supabase Edge Function
+        run: |
+          curl -X POST \
+            'https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/scheduled-cache-sync' \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            --max-time 300

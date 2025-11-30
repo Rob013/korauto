@@ -504,28 +504,21 @@ const LazyCarCard = memo(({
         onClick={handleCardClick}
       >
         <div className="flex flex-row gap-2 p-2">
-          <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-md w-20 h-16 sm:w-24 sm:h-20">
-            {(sourceBadgeLabel || isClean || hasAccident) && (
-              <div className={badgeStyles.container}>
-                {sourceBadgeLabel && (
-                  <Badge variant="outline" className={badgeStyles.source}>
-                    {sourceBadgeLabel}
-                  </Badge>
-                )}
-                {isClean && (
-                  <div className={badgeStyles.clean}>
-                    <ShieldCheck className="h-2 w-2" />
-                    <span>Accident Free</span>
-                  </div>
-                )}
-                {hasAccident && (
-                  <div className={badgeStyles.accident}>
-                    <AlertTriangle className="h-2 w-2" />
-                    <span>Accident</span>
-                  </div>
-                )}
-              </div>
-            )}
+      <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-md w-20 h-16 sm:w-24 sm:h-20">
+        {sourceBadgeLabel && (
+          <div className={badgeStyles.container}>
+            <Badge variant="outline" className={badgeStyles.source}>
+              {sourceBadgeLabel}
+            </Badge>
+          </div>
+        )}
+        
+        {/* Accident Badge - Small Circle on Right */}
+        {isClean && (
+          <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center shadow-lg z-10">
+            <ShieldCheck className="h-3 w-3 text-white" />
+          </div>
+        )}
             {image || (images && images.length > 0) ? (
               <img
                 src={image || images?.[0]}
@@ -635,25 +628,18 @@ const LazyCarCard = memo(({
       onClick={handleCardClick}
     >
       <div className="relative bg-muted overflow-hidden flex-shrink-0 rounded-lg aspect-[4/3] w-full">
-        {(sourceBadgeLabel || isClean || hasAccident) && (
+        {sourceBadgeLabel && (
           <div className={badgeStyles.container}>
-            {sourceBadgeLabel && (
-              <Badge variant="outline" className={`${badgeStyles.source}`}>
-                {sourceBadgeLabel}
-              </Badge>
-            )}
-            {isClean && (
-              <div className={badgeStyles.clean}>
-                <ShieldCheck className={isListView ? "h-2 w-2" : "h-3 w-3"} />
-                <span>Accident Free</span>
-              </div>
-            )}
-            {hasAccident && (
-              <div className={badgeStyles.accident}>
-                <AlertTriangle className={isListView ? "h-2 w-2" : "h-3 w-3"} />
-                <span>Accident</span>
-              </div>
-            )}
+            <Badge variant="outline" className={`${badgeStyles.source}`}>
+              {sourceBadgeLabel}
+            </Badge>
+          </div>
+        )}
+        
+        {/* Accident Badge - Small Circle on Right */}
+        {isClean && (
+          <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-green-600 flex items-center justify-center shadow-lg z-10">
+            <ShieldCheck className="h-4 w-4 text-white" />
           </div>
         )}
         {/* Always show single image - swipe functionality removed from car cards */}
