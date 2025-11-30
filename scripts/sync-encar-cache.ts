@@ -184,8 +184,9 @@ function transformApiToCacheFormat(apiData: any[]): CacheCarData[] {
             const vehicleId = car.id?.toString();
 
             // Double check (should never happen after filter, but safety first)
-            if (!vehicleId) {
-                throw new Error('Car passed filter but has no ID - this should not happen');
+            if (!vehicleId || vehicleId === 'undefined' || vehicleId === 'null') {
+                console.warn(`  ⚠️  Skipping car with invalid ID: ${vehicleId} (Maker: ${car.maker || 'Unknown'}, Model: ${car.model || 'Unknown'})`);
+                return null;
             }
 
             return {
@@ -228,7 +229,8 @@ function transformApiToCacheFormat(apiData: any[]): CacheCarData[] {
                 is_active: true,
                 synced_at: new Date().toISOString()
             };
-        });
+        })
+        .filter(item => item !== null) as CacheCarData[];
 }
 
 /**

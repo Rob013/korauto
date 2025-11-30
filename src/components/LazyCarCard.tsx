@@ -605,9 +605,17 @@ const LazyCarCard = memo(({
             </div>
 
             <div className="flex items-end justify-between gap-2">
-              <div>
-                <div className="text-sm font-semibold text-primary">
-                  €{price.toLocaleString()}
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground line-through">
+                    €{price.toLocaleString()}
+                  </span>
+                  <Badge className="bg-red-500 text-white text-[8px] px-1 py-0 h-auto">
+                    -€200
+                  </Badge>
+                </div>
+                <div className="text-sm font-bold text-primary">
+                  €{(price - 200).toLocaleString()}
                 </div>
                 <p className="text-[10px] text-muted-foreground leading-tight">
                   port Durrës
@@ -739,9 +747,17 @@ const LazyCarCard = memo(({
         {/* Pricing Section - Better aligned */}
         <div className="mt-auto">
           <div className="space-y-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="card-price text-lg font-bold text-primary">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm text-muted-foreground line-through">
                 €{price.toLocaleString()}
+              </span>
+              <Badge className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 h-auto font-semibold">
+                -€200
+              </Badge>
+            </div>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="card-price text-xl font-bold text-primary">
+                €{(price - 200).toLocaleString()}
               </span>
               <span className="text-xs font-medium text-muted-foreground text-right flex-shrink-0">
                 KORAUTO

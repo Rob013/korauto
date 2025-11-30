@@ -45,8 +45,17 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         cacheHealth?.carCount > 0 &&
         (!cacheHealth?.minutesSinceSync || cacheHealth.minutesSinceSync <= maxCacheAge);
 
+    // Log cache decision
+    console.log('🔄 useHybridEncarData decision:', {
+        shouldUseCache,
+        preferCache,
+        cacheAvailable: cacheHealth?.available,
+        carCount: cacheHealth?.carCount,
+        minutesSinceSync: cacheHealth?.minutesSinceSync
+    });
+
     // ALWAYS fetch from cache (but we'll decide whether to use it later)
-    const cacheQuery = useEncarCache(filters, currentPage, perPage, {
+    const cacheQuery = useEncarCache(filters || {}, currentPage, perPage, {
         enabled: shouldUseCache // React Query will handle enabling/disabling
     });
 

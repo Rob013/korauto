@@ -44,11 +44,6 @@ const CarCard = memo(({ car }: CarCardProps) => {
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 €{price.toLocaleString()}
               </span>
-              {car.is_live && (
-                <Badge variant="destructive" className="animate-pulse">
-                  Live
-                </Badge>
-              )}
             </div>
           </div>
 
@@ -74,19 +69,6 @@ const CarCard = memo(({ car }: CarCardProps) => {
               </div>
             )}
           </div>
-
-          {car.source_api && (
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" className="text-xs">
-                {car.source_api === 'auctions_api' ? 'Auctions API' :
-                  car.source_api === 'auctionapis' ? 'Auction APIs' :
-                    car.source_api === 'encar' ? 'Encar' : car.source_api}
-              </Badge>
-              {car.lot_number && (
-                <span className="text-xs text-gray-500">#{car.lot_number}</span>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>

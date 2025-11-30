@@ -51,25 +51,25 @@ const corsHeaders = {
 function checkRateLimit(clientIP) {
   const now = Date.now();
   const windowStart = Math.floor(now / 60000) * 60000; // 1-minute window
-  
+
   if (!rateLimitStore.has(clientIP)) {
     rateLimitStore.set(clientIP, { count: 1, window: windowStart });
     return { allowed: true, remaining: RATE_LIMIT_PER_MINUTE - 1 };
   }
-  
+
   const record = rateLimitStore.get(clientIP);
-  
+
   // Reset if new window
   if (record.window !== windowStart) {
     rateLimitStore.set(clientIP, { count: 1, window: windowStart });
     return { allowed: true, remaining: RATE_LIMIT_PER_MINUTE - 1 };
   }
-  
+
   // Check if limit exceeded
   if (record.count >= RATE_LIMIT_PER_MINUTE) {
     return { allowed: false, remaining: 0 };
   }
-  
+
   // Increment count
   record.count++;
   return { allowed: true, remaining: RATE_LIMIT_PER_MINUTE - record.count };
@@ -81,17 +81,17 @@ function checkRateLimit(clientIP) {
 function buildForm(query) {
   // Parse query to extract chassis/VIN and year if provided
   const formData = new FormData();
-  
+
   // Check if query contains year pattern (4 digits)
   const yearMatch = query.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : '';
-  
+
   // Remove year from chassis if found
   let chassis = query.replace(/\b(19|20)\d{2}\b/, '').trim();
-  
+
   // Clean up chassis - remove any extra whitespace and ensure uppercase
   chassis = chassis.replace(/\s+/g, '').toUpperCase();
-  
+
   if (USE_POST) {
     // For POST requests - match CIG Shipping form parameters
     // Based on typical cargo tracking forms, common field names are:
@@ -100,18 +100,18 @@ function buildForm(query) {
     formData.append('chassisNo', chassis); // Alternative field name
     formData.append('vin', chassis); // VIN field
     formData.append('keyword', chassis); // Generic keyword field
-    
+
     if (year) {
       formData.append('year', year);
       formData.append('YEAR', year);
     }
-    
+
     // Add common form fields that CIG might expect
     formData.append('searchType', 'cargo');
     formData.append('searchBy', 'chassis');
     formData.append('submit', 'Search');
   }
-  
+
   return { chassis, year, formData };
 }
 
@@ -128,10 +128,11 @@ export default {
 
     try {
       const url = new URL(request.url);
-      
+
       // Only handle /api/cig-track routes
       if (!url.pathname.startsWith('/api/cig-track')) {
-        return new Response('Not Found', { status: 404 });
+        // Pass through to the origin/next worker for all other routes (SPA handling)
+        return fetch(request);
       }
 
       // Only allow GET requests
@@ -146,18 +147,18 @@ export default {
       }
 
       // Rate limiting
-      const clientIP = request.headers.get('CF-Connecting-IP') || 
-                      request.headers.get('X-Forwarded-For') || 
-                      '127.0.0.1';
-      
+      const clientIP = request.headers.get('CF-Connecting-IP') ||
+        request.headers.get('X-Forwarded-For') ||
+        '127.0.0.1';
+
       const rateLimit = checkRateLimit(clientIP);
       if (!rateLimit.allowed) {
         return new Response(
           JSON.stringify({ error: 'Rate limit exceeded. Please try again in a minute.' }),
           {
             status: 429,
-            headers: { 
-              ...corsHeaders, 
+            headers: {
+              ...corsHeaders,
               'Content-Type': 'application/json',
               'X-RateLimit-Limit': RATE_LIMIT_PER_MINUTE.toString(),
               'X-RateLimit-Remaining': '0',
@@ -195,7 +196,7 @@ export default {
       }
 
       const trimmedQuery = query.trim();
-      
+
       // Basic validation for query format
       if (trimmedQuery.length < 5) {
         return new Response(
@@ -222,7 +223,7 @@ export default {
 
       // Fetch tracking data from CIG Shipping
       const trackingData = await fetchTrackingData(trimmedQuery);
-      
+
       // Convert to widget format
       const widgetResponse = formatAsWidget(trackingData, trimmedQuery);
 
@@ -230,8 +231,8 @@ export default {
         JSON.stringify(widgetResponse),
         {
           status: 200,
-          headers: { 
-            ...corsHeaders, 
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
             'X-RateLimit-Limit': RATE_LIMIT_PER_MINUTE.toString(),
             'X-RateLimit-Remaining': rateLimit.remaining.toString()
@@ -241,7 +242,7 @@ export default {
 
     } catch (error) {
       console.error('Worker error:', error);
-      
+
       return new Response(
         JSON.stringify({
           error: 'Internal server error',
@@ -291,7 +292,7 @@ function checkAuthentication(request) {
   // - Verify JWT token
   // - Check session in database
   // - Call your auth service API
-  
+
   // For now, just check if cookie exists (placeholder)
   return { authenticated: true, user: { session: sessionCookie } };
 }
@@ -302,7 +303,7 @@ function checkAuthentication(request) {
 async function fetchTrackingData(query) {
   const { chassis, year, formData } = buildForm(query);
   let cigUrl;
-  
+
   if (USE_POST) {
     // Use POST endpoint for CIG Shipping
     cigUrl = CIG_API_ENDPOINT;
@@ -313,10 +314,10 @@ async function fetchTrackingData(query) {
       cigUrl = `${CIG_ENDPOINT}?chassis=${encodeURIComponent(chassis)}&year=${year}`;
     }
   }
-  
+
   try {
     let response;
-    
+
     if (USE_POST) {
       // Primary method: POST request with form data
       response = await fetch(cigUrl, {
@@ -358,7 +359,7 @@ async function fetchTrackingData(query) {
     let rows = [];
     let html = '';
     const contentType = response.headers.get('content-type') || '';
-    
+
     if (contentType.includes('application/json')) {
       // Handle JSON response (if CIG ever returns JSON)
       const data = await response.json();
@@ -366,10 +367,10 @@ async function fetchTrackingData(query) {
     } else {
       // Handle HTML response (most common)
       html = await response.text();
-      
+
       // Parse the HTML to extract tracking information
       rows = parseTrackingTable(html);
-      
+
       // If parsing finds zero rows, try alternate parsing methods
       if (rows.length === 0) {
         console.log('No rows found with standard parsing, trying alternate methods...');
@@ -381,22 +382,22 @@ async function fetchTrackingData(query) {
           rows = parseAlternativeStructures(html);
         }
       }
-      
+
       // Extract and add metadata from HTML
       const metadata = extractTrackingMetadata(html);
       if (Object.keys(metadata).length > 0) {
         rows.unshift({ ...metadata, type: 'metadata' });
       }
     }
-    
+
     // Dedupe near-identical rows
     const deduped = deduplicateRows(rows);
-    
+
     // If still no results, throw error to trigger fallback in frontend
     if (deduped.length === 0) {
       throw new Error('No tracking data found for the provided query');
     }
-    
+
     return {
       query,
       rows: deduped
@@ -414,17 +415,17 @@ async function fetchTrackingData(query) {
  */
 function parseTrackingTable(html) {
   const rows = [];
-  
+
   try {
     // Look for table rows with tracking data - be tolerant of different HTML structures
     // This regex looks for table rows that might contain tracking information
     const tableRowRegex = /<tr[^>]*>(.*?)<\/tr>/gis;
     const cellRegex = /<t[dh][^>]*>(.*?)<\/t[dh]>/gis;
-    
+
     let match;
     while ((match = tableRowRegex.exec(html)) !== null) {
       const rowHtml = match[1];
-      
+
       // Extract cells from this row
       const cells = [];
       let cellMatch;
@@ -435,12 +436,12 @@ function parseTrackingTable(html) {
           .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
           .replace(/\s+/g, ' ') // Normalize whitespace
           .trim();
-        
+
         if (cellText) {
           cells.push(cellText);
         }
       }
-      
+
       // If we have cells, try to map them to our expected structure
       if (cells.length >= 2) {
         // Try to identify date, event, location, vessel from cells
@@ -460,7 +461,7 @@ function parseTrackingTable(html) {
 
     // Extract additional metadata from the page
     const metadata = extractTrackingMetadata(html);
-    
+
     // If we have metadata, add it as the first "row"
     if (metadata && Object.keys(metadata).length > 0) {
       rows.unshift({
@@ -473,7 +474,7 @@ function parseTrackingTable(html) {
     console.error('Error parsing tracking table:', error);
     // Return empty array on parsing errors
   }
-  
+
   return rows;
 }
 
@@ -482,7 +483,7 @@ function parseTrackingTable(html) {
  */
 function extractTrackingMetadata(html) {
   const metadata = {};
-  
+
   try {
     // Extract container number
     const containerPatterns = [
@@ -490,7 +491,7 @@ function extractTrackingMetadata(html) {
       /Container[:\s]*([A-Z]{4}\d{7})/gi,
       /([A-Z]{4}\d{7})/g // Standard container number format
     ];
-    
+
     for (const pattern of containerPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -498,14 +499,14 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract B/L (Bill of Lading) number
     const blPatterns = [
       /<[^>]*>B\/L\s*(?:No\.?|Number)?[:\s]*([A-Z0-9\-]+)<\/[^>]*>/gi,
       /B\/L[:\s]*([A-Z0-9\-]{6,})/gi,
       /Bill\s+of\s+Lading[:\s]*([A-Z0-9\-]+)/gi
     ];
-    
+
     for (const pattern of blPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -513,14 +514,14 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract vessel name (more comprehensive)
     const vesselPatterns = [
       /<[^>]*>Vessel[:\s]*([^<]+)<\/[^>]*>/gi,
       /Vessel[:\s]*([A-Z\s\-]+(?:VESSEL|SHIP|EXPRESS|LINE|STAR|OCEAN|SEA))/gi,
       /Ship[:\s]*([^<\n\r]+)/gi
     ];
-    
+
     for (const pattern of vesselPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -528,13 +529,13 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract voyage number
     const voyagePatterns = [
       /<[^>]*>Voyage[:\s]*([A-Z0-9\-]+)<\/[^>]*>/gi,
       /Voyage[:\s]*([A-Z0-9\-]+)/gi
     ];
-    
+
     for (const pattern of voyagePatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -542,14 +543,14 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract port of loading
     const polPatterns = [
       /<[^>]*>Port\s+of\s+Loading[:\s]*([^<]+)<\/[^>]*>/gi,
       /POL[:\s]*([^<\n\r]+)/gi,
       /Loading\s+Port[:\s]*([^<\n\r]+)/gi
     ];
-    
+
     for (const pattern of polPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -557,14 +558,14 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract port of discharge
     const podPatterns = [
       /<[^>]*>Port\s+of\s+Discharge[:\s]*([^<]+)<\/[^>]*>/gi,
       /POD[:\s]*([^<\n\r]+)/gi,
       /Discharge\s+Port[:\s]*([^<\n\r]+)/gi
     ];
-    
+
     for (const pattern of podPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -572,14 +573,14 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract estimated arrival date
     const etaPatterns = [
       /<[^>]*>ETA[:\s]*([^<]+)<\/[^>]*>/gi,
       /Estimated\s+Arrival[:\s]*([^<\n\r]+)/gi,
       /ETA[:\s]*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/gi
     ];
-    
+
     for (const pattern of etaPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -587,13 +588,13 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract shipping line
     const linePatterns = [
       /<[^>]*>Shipping\s+Line[:\s]*([^<]+)<\/[^>]*>/gi,
       /Line[:\s]*([A-Z\s]+(?:LINE|SHIPPING|LOGISTICS))/gi
     ];
-    
+
     for (const pattern of linePatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -601,7 +602,7 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract shipper information
     const shipperPatterns = [
       /<[^>]*>Shipper[:\s]*([^<]+)<\/[^>]*>/gi,
@@ -610,7 +611,7 @@ function extractTrackingMetadata(html) {
       /발송인[:\s]*([^<\n\r]+)/gi, // Korean for shipper
       /수출자[:\s]*([^<\n\r]+)/gi  // Korean for exporter
     ];
-    
+
     for (const pattern of shipperPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -618,7 +619,7 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract model/year information
     const modelPatterns = [
       /<[^>]*>Model\s*\(Year\)[:\s]*([^<]+)<\/[^>]*>/gi,
@@ -627,7 +628,7 @@ function extractTrackingMetadata(html) {
       /<[^>]*>Model[:\s]*([^<]+)<\/[^>]*>/gi,
       /Model[:\s]*([A-Z0-9\s\-\(\)]+)/gi
     ];
-    
+
     for (const pattern of modelPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -635,7 +636,7 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract chassis/VIN number (enhanced for VIN tracking)
     const chassisPatterns = [
       /<[^>]*>Chassis[:\s]*([^<]+)<\/[^>]*>/gi,
@@ -647,7 +648,7 @@ function extractTrackingMetadata(html) {
       /차대번호[:\s]*([A-Z0-9]+)/gi, // Korean for chassis number
       /([A-HJ-NPR-Z0-9]{17})/g // Look for any 17-character VIN pattern in the text
     ];
-    
+
     for (const pattern of chassisPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -655,7 +656,7 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
     // Extract on board date
     const onBoardPatterns = [
       /<[^>]*>On\s+Board[:\s]*([^<]+)<\/[^>]*>/gi,
@@ -664,7 +665,7 @@ function extractTrackingMetadata(html) {
       /선적일[:\s]*([^<\n\r]+)/gi, // Korean for loading date
       /적재일[:\s]*([^<\n\r]+)/gi  // Korean for loading date
     ];
-    
+
     for (const pattern of onBoardPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
@@ -672,11 +673,11 @@ function extractTrackingMetadata(html) {
         break;
       }
     }
-    
+
   } catch (error) {
     console.error('Error extracting metadata:', error);
   }
-  
+
   return metadata;
 }
 
@@ -686,12 +687,12 @@ function extractTrackingMetadata(html) {
 function mapCellsToRow(cells) {
   // Try to identify which cell contains what information
   // This is heuristic-based and may need adjustment
-  
+
   const row = {};
-  
+
   for (let i = 0; i < cells.length; i++) {
     const cell = cells[i];
-    
+
     // Try to identify date (various formats)
     if (isDateLike(cell)) {
       row.date = cell;
@@ -721,12 +722,12 @@ function mapCellsToRow(cells) {
       row.event = cell;
     }
   }
-  
+
   // Only return row if it has some meaningful content
   if (row.date || row.event || row.location || row.vessel || row.status || row.containerNumber) {
     return row;
   }
-  
+
   return null;
 }
 
@@ -765,7 +766,7 @@ function isStatusLike(text) {
     /released/i,
     /cleared/i
   ];
-  
+
   return statusPatterns.some(pattern => pattern.test(text));
 }
 
@@ -780,7 +781,7 @@ function isDateLike(text) {
     /\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i, // DD Mon
     /\w+\s+\d{1,2},?\s+\d{4}/ // Month DD, YYYY
   ];
-  
+
   return datePatterns.some(pattern => pattern.test(text));
 }
 
@@ -794,7 +795,7 @@ function isVesselLike(text) {
     /^(MV|MS|SS)\s+/i, // Ship prefixes
     /\d{3,}/  // IMO numbers or similar
   ];
-  
+
   return vesselPatterns.some(pattern => pattern.test(text));
 }
 
@@ -821,7 +822,7 @@ function isLocationLike(text) {
     /pier\s+\d+/i,
     /berth\s+\d+/i
   ];
-  
+
   return locationPatterns.some(pattern => pattern.test(text));
 }
 
@@ -830,20 +831,20 @@ function isLocationLike(text) {
  */
 function parseAlternativeStructures(html) {
   const rows = [];
-  
+
   // Try to find div-based layouts or other structures
   // This is a fallback when standard table parsing doesn't work
-  
+
   // Look for div containers that might have tracking info
   const divRegex = /<div[^>]*class="[^"]*track[^"]*"[^>]*>(.*?)<\/div>/gis;
   let match;
-  
+
   while ((match = divRegex.exec(html)) !== null) {
     const content = match[1]
       .replace(/<[^>]*>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    
+
     if (content.length > 10) { // Only consider substantial content
       rows.push({
         event: content.substring(0, 100), // Limit length
@@ -853,7 +854,7 @@ function parseAlternativeStructures(html) {
       });
     }
   }
-  
+
   return rows;
 }
 
@@ -862,14 +863,14 @@ function parseAlternativeStructures(html) {
  */
 function formatAsWidget(trackingData, originalQuery) {
   const { chassis, year } = buildForm(originalQuery);
-  
+
   // Extract metadata from the first row if it exists
   const metadata = trackingData.rows.find(row => row.type === 'metadata') || {};
-  
+
   // Determine overall shipping status based on events
   const events = trackingData.rows.filter(row => row.type !== 'metadata');
   const overallStatus = determineShippingStatus(events);
-  
+
   // Create shipping status steps
   const shippingSteps = [
     { name: "In Port", active: hasEventType(events, ['port', 'arrived']) },
@@ -878,7 +879,7 @@ function formatAsWidget(trackingData, originalQuery) {
     { name: "Loaded", active: hasEventType(events, ['loaded', 'onboard']) },
     { name: "Arrival", active: hasEventType(events, ['arrival', 'discharged', 'delivered']) }
   ];
-  
+
   return {
     query: {
       chassis: chassis || originalQuery,
@@ -995,10 +996,10 @@ function findETA(events) {
  */
 async function tryAlternateEndpoint(query) {
   console.log('tryAlternateEndpoint called for query:', query);
-  
+
   try {
     const { chassis, year, formData } = buildForm(query);
-    
+
     if (USE_POST) {
       // Try POST request to API endpoint
       const response = await fetch(CIG_API_ENDPOINT, {
@@ -1013,13 +1014,13 @@ async function tryAlternateEndpoint(query) {
         },
         body: formData
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         return parseAPIResponse(data);
       }
     }
-    
+
     // Fallback: Try GET with specific selectors
     const cigUrl = `${CIG_ENDPOINT}?chassis=${encodeURIComponent(chassis)}${year ? `&year=${year}` : ''}`;
     const response = await fetch(cigUrl, {
@@ -1031,16 +1032,16 @@ async function tryAlternateEndpoint(query) {
         'Pragma': 'no-cache'
       }
     });
-    
+
     if (response.ok) {
       const html = await response.text();
       return parseWithSpecificSelectors(html);
     }
-    
+
   } catch (error) {
     console.error('Error in tryAlternateEndpoint:', error);
   }
-  
+
   return [];
 }
 
@@ -1049,7 +1050,7 @@ async function tryAlternateEndpoint(query) {
  */
 function parseAPIResponse(data) {
   const rows = [];
-  
+
   if (data.results && Array.isArray(data.results)) {
     data.results.forEach(result => {
       rows.push({
@@ -1061,7 +1062,7 @@ function parseAPIResponse(data) {
       });
     });
   }
-  
+
   return rows;
 }
 
@@ -1070,7 +1071,7 @@ function parseAPIResponse(data) {
  */
 function parseWithSpecificSelectors(html) {
   const rows = [];
-  
+
   try {
     // Look for specific table or div containers with IDs/classes
     // These selectors should be updated based on actual CIG site inspection
@@ -1082,12 +1083,12 @@ function parseWithSpecificSelectors(html) {
       /<div[^>]*class=["'][^"']*status-wrap["'][^>]*>(.*?)<\/div>/gis,
       /<ul[^>]*class=["'][^"']*status[^"']*["'][^>]*>(.*?)<\/ul>/gis
     ];
-    
+
     for (const pattern of patterns) {
       let match;
       while ((match = pattern.exec(html)) !== null) {
         const content = match[1];
-        
+
         // Parse table rows
         if (pattern.source.includes('table')) {
           const tableRows = parseTableRows(content);
@@ -1105,11 +1106,11 @@ function parseWithSpecificSelectors(html) {
         }
       }
     }
-    
+
   } catch (error) {
     console.error('Error parsing with specific selectors:', error);
   }
-  
+
   return rows;
 }
 
@@ -1119,7 +1120,7 @@ function parseWithSpecificSelectors(html) {
 function parseTableRows(tableContent) {
   const rows = [];
   const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gis;
-  
+
   let match;
   while ((match = rowRegex.exec(tableContent)) !== null) {
     const cells = extractTableCells(match[1]);
@@ -1130,7 +1131,7 @@ function parseTableRows(tableContent) {
       }
     }
   }
-  
+
   return rows;
 }
 
@@ -1140,14 +1141,14 @@ function parseTableRows(tableContent) {
 function parseStatusList(listContent) {
   const rows = [];
   const itemRegex = /<li[^>]*class=["'][^"']*\bon\b[^"']*["'][^>]*>(.*?)<\/li>/gis;
-  
+
   let match;
   while ((match = itemRegex.exec(listContent)) !== null) {
     const itemText = match[1]
       .replace(/<[^>]*>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    
+
     if (itemText) {
       rows.push({
         event: itemText,
@@ -1158,7 +1159,7 @@ function parseStatusList(listContent) {
       });
     }
   }
-  
+
   return rows;
 }
 
@@ -1167,17 +1168,17 @@ function parseStatusList(listContent) {
  */
 function parseDivContent(divContent) {
   const rows = [];
-  
+
   // Look for structured data in divs
   const dataRegex = /<div[^>]*class=["'][^"']*track[^"']*["'][^>]*>(.*?)<\/div>/gis;
-  
+
   let match;
   while ((match = dataRegex.exec(divContent)) !== null) {
     const content = match[1]
       .replace(/<[^>]*>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    
+
     if (content.length > 10) {
       rows.push({
         event: content,
@@ -1188,7 +1189,7 @@ function parseDivContent(divContent) {
       });
     }
   }
-  
+
   return rows;
 }
 
@@ -1198,7 +1199,7 @@ function parseDivContent(divContent) {
 function extractTableCells(rowHtml) {
   const cells = [];
   const cellRegex = /<t[dh][^>]*>(.*?)<\/t[dh]>/gis;
-  
+
   let match;
   while ((match = cellRegex.exec(rowHtml)) !== null) {
     const cellText = match[1]
@@ -1206,12 +1207,12 @@ function extractTableCells(rowHtml) {
       .replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    
+
     if (cellText) {
       cells.push(cellText);
     }
   }
-  
+
   return cells;
 }
 
@@ -1221,7 +1222,7 @@ function extractTableCells(rowHtml) {
 function deduplicateRows(rows) {
   const unique = [];
   const seen = new Set();
-  
+
   for (const row of rows) {
     // Create a signature for deduplication
     const signature = [
@@ -1230,12 +1231,12 @@ function deduplicateRows(rows) {
       row.location || '',
       row.vessel || ''
     ].join('|').toLowerCase();
-    
+
     if (!seen.has(signature)) {
       seen.add(signature);
       unique.push(row);
     }
   }
-  
+
   return unique;
 }
