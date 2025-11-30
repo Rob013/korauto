@@ -74,6 +74,32 @@ export function useEncarCache(
         queryFn: async () => {
             console.log('🔍 Fetching from Encar cache:', { filters, page, perPage });
 
+            // Mapping from numeric IDs to Korean database values
+            const FUEL_TYPE_MAP: Record<string, string[]> = {
+                '1': ['가솔린', 'Gasoline'],
+                '2': ['디젤', 'Diesel'],
+                '3': ['하이브리드', 'Hybrid'],
+                '4': ['전기', 'Electric'],
+                '5': ['LPG', 'LPG']
+            };
+
+            const TRANSMISSION_MAP: Record<string, string[]> = {
+                '1': ['자동', 'Automatic', 'Auto'],
+                '2': ['수동', 'Manual'],
+                '3': ['CVT', 'CVT']
+            };
+
+            const BODY_TYPE_MAP: Record<string, string[]> = {
+                '1': ['세단', 'Sedan'],
+                '2': ['SUV', 'SUV'],
+                '3': ['해치백', 'Hatchback'],
+                '4': ['왜건', 'Wagon'],
+                '5': ['쿠페', 'Coupe'],
+                '6': ['컨버터블', 'Convertible'],
+                '7': ['밴', 'Van'],
+                '8': ['트럭', 'Truck']
+            };
+
             let query = supabase
                 .from('encar_cars_cache')
                 .select('*', { count: 'exact' })
@@ -92,48 +118,70 @@ export function useEncarCache(
                 query = query.eq('generation_id', Number(filters.generation_id));
             }
 
+            // Fuel type - convert numeric ID to Korean text
             if (filters.fuel_type) {
-                query = query.eq('fuel_type', filters.fuel_type);
+                const fuelValues = FUEL_TYPE_MAP[filters.fuel_type];
+                if (fuelValues && fuelValues.length > 0) {
+                    query = query.in('fuel_type', fuelValues);
+                }
             }
 
+            // Transmission - convert numeric ID to Korean text
             if (filters.transmission) {
-                query = query.eq('transmission', filters.transmission);
+                const transValues = TRANSMISSION_MAP[filters.transmission];
+                if (transValues && transValues.length > 0) {
+                    query = query.in('transmission', transValues);
+                }
             }
 
-            if (filters.color) {
-                query = query.eq('color_name', filters.color);
-            }
-
+            // Body type - convert numeric ID to Korean text
             if (filters.body_type) {
-                query = query.eq('body_type', filters.body_type);
+                const bodyValues = BODY_TYPE_MAP[filters.body_type];
+                if (bodyValues && bodyValues.length > 0) {
+                    query = query.in('body_type', bodyValues);
+                }
             }
+
+            // Color - skip for now as it requires more complex mapping
+            // TODO: Add color mapping when we have the database values
 
             if (filters.seats_count) {
                 query = query.eq('seat_count', Number(filters.seats_count));
             }
 
-            // Year range
+            // Year range - convert to number for proper comparison
             if (filters.from_year) {
-                query = query.gte('form_year', filters.from_year);
+                const yearNum = parseInt(filters.from_year);
+                if (!isNaN(yearNum)) {
+                    query = query.gte('form_year', yearNum.toString());
+                }
             }
             if (filters.to_year) {
-                query = query.lte('form_year', filters.to_year);
+                const yearNum = parseInt(filters.to_year);
+                if (!isNaN(yearNum)) {
+                    query = query.lte('form_year', yearNum.toString());
+                }
             }
 
-            // Price range
+            // Price range - convert from EUR to KRW (1 EUR ≈ 1400 KRW)
+            // Database prices are in KRW, filter values are in EUR
             if (filters.buy_now_price_from) {
-                query = query.gte('buy_now_price', filters.buy_now_price_from);
+                const priceEUR = Number(filters.buy_now_price_from);
+                const priceKRW = Math.round(priceEUR * 1400);
+                query = query.gte('buy_now_price', priceKRW);
             }
             if (filters.buy_now_price_to) {
-                query = query.lte('buy_now_price', filters.buy_now_price_to);
+                const priceEUR = Number(filters.buy_now_price_to);
+                const priceKRW = Math.round(priceEUR * 1400);
+                query = query.lte('buy_now_price', priceKRW);
             }
 
             // Odometer range
             if (filters.odometer_from_km) {
-                query = query.gte('mileage', filters.odometer_from_km);
+                query = query.gte('mileage', Number(filters.odometer_from_km));
             }
             if (filters.odometer_to_km) {
-                query = query.lte('mileage', filters.odometer_to_km);
+                query = query.lte('mileage', Number(filters.odometer_to_km));
             }
 
             // Search
