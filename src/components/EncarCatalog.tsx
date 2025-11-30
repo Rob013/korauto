@@ -1444,9 +1444,11 @@ const EncarCatalog = ({
           >
             {renderableCars.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
-              // Only use buy_now price, no fallbacks
-              const usdPrice = lot?.buy_now;
-              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+              // Encar cars use KRW prices, convert directly to EUR
+              const rawPrice = lot?.buy_now;
+              // KRW to EUR conversion (approximate rate: 1 EUR = 1400 KRW)
+              const priceInEUR = rawPrice ? Math.round(rawPrice / 1400) + 2500 : 0;
+              const price = priceInEUR;
               const lotNumber = car.lot_number || lot?.lot || "";
               return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
                 <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
