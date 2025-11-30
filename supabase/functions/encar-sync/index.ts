@@ -29,7 +29,7 @@ const chunkArray = <T>(items: T[], size: number): T[][] => {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function upsertCarsBatch(
-  supabase: SupabaseClient<any>,
+  supabase: SupabaseClient,
   records: Record<string, unknown>[],
   errors: string[],
 ): Promise<number> {
@@ -76,7 +76,7 @@ async function upsertCarsBatch(
 }
 
 async function applyArchivedUpdates(
-  supabase: SupabaseClient<any>,
+  supabase: SupabaseClient,
   records: Record<string, unknown>[],
   errors: string[],
 ): Promise<number> {

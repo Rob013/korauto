@@ -172,36 +172,47 @@ const EncarCatalog = ({
     // Handle case where filters might be undefined during initial render
     if (!filters) return true;
 
+    const f = filters as APIFilters;
     // Default state means no meaningful filters are applied OR manufacturer is explicitly set to "all"
-    return (!filters.manufacturer_id || filters.manufacturer_id === 'all') && !filters.model_id && !filters.generation_id && !filters.color && !filters.fuel_type && !filters.transmission && !filters.body_type && !filters.odometer_from_km && !filters.odometer_to_km && !filters.from_year && !filters.to_year && !filters.buy_now_price_from && !filters.buy_now_price_to && !filters.search && !filters.seats_count && (!filters.grade_iaai || filters.grade_iaai === 'all');
+    return (!f.manufacturer_id || f.manufacturer_id === 'all') && !f.model_id && !f.generation_id && !f.color && !f.fuel_type && !f.transmission && !f.body_type && !f.odometer_from_km && !f.odometer_to_km && !f.from_year && !f.to_year && !f.buy_now_price_from && !f.buy_now_price_to && !f.search && !f.seats_count && (!f.grade_iaai || f.grade_iaai === 'all');
   }, [filters]);
 
   // Memoized client-side grade and engine filtering for better performance
   const filteredCars = useMemo(() => {
-    // Use fallback data when there's an error and no cars loaded
-    const sourceCars = error && cars.length === 0 ? fallbackCars : cars;
-    const cleanedCars = filterOutTestCars(sourceCars || []);
+    if (error || !cars || cars.length === 0) return [];
 
-    // Apply grade filter
-    const gradeFiltered = applyGradeFilter(cleanedCars, filters?.grade_iaai) || [];
+    const f = filters as APIFilters;
+    let filtered = cars;
 
-    // Apply engine filter if specified
+    // Apply grade filtering
+    if (f.grade_iaai && f.grade_iaai !== 'all') {
+      filtered = filtered.filter(car => {
+        if (!car.lots || !Array.isArray(car.lots) || car.lots.length === 0) return false;
+        return car.lots.some(lot => {
+          const gradeMatch = lot.grade_iaai?.trim().toLowerCase() === f.grade_iaai?.toLowerCase();
+          const badgeMatch = lot.details?.badge?.trim().toLowerCase() === f.grade_iaai?.toLowerCase();
+          return gradeMatch || badgeMatch;
+        });
+      });
+    }
+
+    // Apply engine spec filtering (if provided)
     const engineSpec = (filters as any)?.engine_spec;
-    const engineFiltered = engineSpec
-      ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec))
-      : gradeFiltered;
+    const engineFiltered = engineSpec && engineSpec !== 'all'
+      ? filtered.filter(car => car.engine?.name?.toLowerCase().includes(engineSpec.toLowerCase()))
+      : filtered;
 
-    // Filter to show only cars with real buy_now pricing data
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [cars, filters?.grade_iaai, (filters as any)?.engine_spec, error]);
+  }, [cars, (filters as APIFilters).grade_iaai, (filters as any)?.engine_spec, error]);
 
   // Extract engine variants from filtered cars for the dropdown
   const engineVariants = useMemo(() => {
-    if (!filters?.model_id || filteredCars.length === 0) {
+    const f = filters as APIFilters;
+    if (!f.model_id || filteredCars.length === 0) {
       return [];
     }
     return extractUniqueEngineSpecs(filteredCars);
-  }, [filteredCars, filters?.model_id]);
+  }, [filteredCars, (filters as APIFilters).model_id]);
 
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -222,11 +233,12 @@ const EncarCatalog = ({
 
   // Apply filters on merged list
   const mergedFilteredCars = useMemo(() => {
-    const gradeFiltered = applyGradeFilter(mergedCars, filters?.grade_iaai) || [];
+    const f = filters as APIFilters;
+    const gradeFiltered = applyGradeFilter(mergedCars, f.grade_iaai) || [];
     const engineSpec = (filters as any)?.engine_spec;
     const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [mergedCars, filters?.grade_iaai, (filters as any)?.engine_spec]);
+  }, [mergedCars, (filters as APIFilters).grade_iaai, (filters as any)?.engine_spec]);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
@@ -291,7 +303,7 @@ const EncarCatalog = ({
       }),
     [smoothCarsToDisplay],
   );
-  const [searchTerm, setSearchTerm] = useState(filters.search || "");
+  const [searchTerm, setSearchTerm] = useState((filters as APIFilters).search || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [manufacturers, setManufacturers] = useState<{
     id: number;
@@ -595,8 +607,9 @@ const EncarCatalog = ({
       const allCars = await fetchAllCars(filters);
 
       // Apply the same client-side filtering as the current filtered cars
+      const f = filters as APIFilters;
       const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, filters.grade_iaai);
+        return matchesGradeFilter(car, f.grade_iaai);
       });
       setAllCarsData(filteredAllCars);
       setShowAllCars(true);
@@ -615,8 +628,9 @@ const EncarCatalog = ({
 
   // Function to fetch all cars for sorting across all pages
   const fetchAllCarsForSorting = useCallback(async () => {
+    const f = filters as APIFilters;
     // Create a unique key for current sort parameters to prevent duplicate calls
-    const sortKey = `${totalCount}-${sortBy}-${filters.grade_iaai || ''}-${filters.manufacturer_id || ''}-${filters.model_id || ''}-${filters.generation_id || ''}-${filters.from_year || ''}-${filters.to_year || ''}`;
+    const sortKey = `${totalCount}-${sortBy}-${f.grade_iaai || ''}-${f.manufacturer_id || ''}-${f.model_id || ''}-${f.generation_id || ''}-${f.from_year || ''}-${f.to_year || ''}`;
     if (fetchingSortRef.current) {
       console.log(`⏳ Already fetching sort data, skipping duplicate request`);
       return;
@@ -645,8 +659,9 @@ const EncarCatalog = ({
       const allCars = await fetchAllCars(filters);
 
       // Apply the same client-side filtering as the current filtered cars - using utility
+      const f = filters as APIFilters;
       const filteredAllCars = allCars.filter((car: any) => {
-        return matchesGradeFilter(car, filters.grade_iaai);
+        return matchesGradeFilter(car, f.grade_iaai);
       });
 
       // setAllCarsForSorting(filteredAllCars); // Handled by global sorting hook
@@ -671,7 +686,7 @@ const EncarCatalog = ({
       setIsLoading(false);
       fetchingSortRef.current = false;
     }
-  }, [totalCount, fetchAllCars, filters?.grade_iaai, filters?.manufacturer_id, filters?.model_id, filters?.generation_id, filters?.from_year, filters?.to_year, sortBy,
+  }, [totalCount, fetchAllCars, (filters as APIFilters).grade_iaai, (filters as APIFilters).manufacturer_id, (filters as APIFilters).model_id, (filters as APIFilters).generation_id, (filters as APIFilters).from_year, (filters as APIFilters).to_year, sortBy,
     // Remove filteredCars from dependencies as it's computed and can cause infinite loops
     // filteredCars,
     totalPages || 0, currentPage, setSearchParams]);
@@ -683,23 +698,24 @@ const EncarCatalog = ({
     setSortBy("");
 
     // Create new filters immediately for faster UI response
+    const f = filters as APIFilters;
     const newFilters: APIFilters = {
       manufacturer_id: manufacturerId,
       model_id: undefined,
       generation_id: undefined,
       grade_iaai: undefined,
-      color: filters.color,
-      fuel_type: filters.fuel_type,
-      transmission: filters.transmission,
-      body_type: filters.body_type,
-      odometer_from_km: filters.odometer_from_km,
-      odometer_to_km: filters.odometer_to_km,
-      from_year: filters.from_year,
-      to_year: filters.to_year,
-      buy_now_price_from: filters.buy_now_price_from,
-      buy_now_price_to: filters.buy_now_price_to,
-      seats_count: filters.seats_count,
-      search: filters.search
+      color: f.color,
+      fuel_type: f.fuel_type,
+      transmission: f.transmission,
+      body_type: f.body_type,
+      odometer_from_km: f.odometer_from_km,
+      odometer_to_km: f.odometer_to_km,
+      from_year: f.from_year,
+      to_year: f.to_year,
+      buy_now_price_from: f.buy_now_price_from,
+      buy_now_price_to: f.buy_now_price_to,
+      seats_count: f.seats_count,
+      search: f.search
     };
     setFilters(newFilters);
     setLoadedPages(1);
@@ -1099,9 +1115,10 @@ const EncarCatalog = ({
 
   // Track when categories are selected 
   useEffect(() => {
-    const hasCategories = filters?.manufacturer_id && filters?.model_id;
+    const f = filters as APIFilters;
+    const hasCategories = f.manufacturer_id && f.model_id;
     setHasSelectedCategories(!!hasCategories);
-  }, [filters?.manufacturer_id, filters?.model_id]);
+  }, [(filters as APIFilters).manufacturer_id, (filters as APIFilters).model_id]);
 
   // Effect to highlight and scroll to specific car by lot number
   useEffect(() => {
@@ -1367,7 +1384,7 @@ const EncarCatalog = ({
 
         {/* Error State */}
         {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-          <p className="text-destructive font-medium">Error: {error instanceof Error ? error.message : String(error)}</p>
+          <p className="text-destructive font-medium">Error: {String(error)}</p>
         </div>}
 
         {/* Loading State - Only for initial load, not for filters */}
