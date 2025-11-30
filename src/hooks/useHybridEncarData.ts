@@ -39,10 +39,20 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     // Check cache health
     const { data: cacheHealth } = useEncarCacheHealth();
 
+    // ALWAYS fetch from cache (React Query will handle caching)
+    const cacheQuery = useEncarCache(filters || {}, currentPage, perPage, {
+        enabled: true, // Always enabled
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        cacheTime: 10 * 60 * 1000 // 10 minutes
+    });
+
+    // ALWAYS fetch from API hook (but we'll decide whether to use it later)
+    const apiHook = useSecureAuctionAPI();
+
     // Determine if we should use cache
-    // Simplified: use cache if we prefer it AND it has data OR if API fallback is disabled
+    // Simplified: use cache if we prefer it AND it has data
     const hasCacheData = cacheQuery.data?.cars && cacheQuery.data.cars.length > 0;
-    const shouldUseCache = preferCache && (hasCacheData || cacheHealth?.carCount > 0);
+    const shouldUseCache = preferCache && (hasCacheData || (cacheHealth?.carCount || 0) > 0);
 
     // Determine which source to use
     const usingCache = shouldUseCache && !cacheQuery.isError;
