@@ -66,6 +66,31 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     const usingCache = shouldUseCache && !cacheQuery.isError && cacheQuery.data;
     const usingAPI = !usingCache && fallbackToAPI;
 
+    // Define all callbacks unconditionally to follow Rules of Hooks
+    const fetchCarsCache = useCallback(async (page: number, newFilters: APIFilters, resetList: boolean) => {
+        setCurrentPage(page);
+        setFilters(newFilters);
+    }, []);
+
+    const fetchAllCarsCache = useCallback(async () => {
+        return cacheQuery?.data?.cars || [];
+    }, [cacheQuery?.data?.cars]);
+
+    const loadMoreCache = useCallback(async () => {
+        setCurrentPage(prev => prev + 1);
+    }, []);
+
+    const refreshInventoryCache = useCallback(() => {
+        return () => {
+            cacheQuery?.refetch?.();
+        };
+    }, [cacheQuery?.refetch]);
+
+    const clearCarsCacheFunc = useCallback(() => {
+        setCurrentPage(1);
+        setFilters({});
+    }, []);
+
     useEffect(() => {
         if (usingCache) {
             console.log(`📦 Using Supabase cache (${cacheHealth?.carCount} cars, last sync: ${cacheHealth?.minutesSinceSync}min ago)`);
@@ -74,36 +99,8 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         }
     }, [usingCache, usingAPI, cacheHealth]);
 
-    // Unified interface
+    // Return based on mode
     if (usingCache) {
-        // Cache mode - provide API-compatible interface
-        const fetchCars = useCallback(async (page: number, newFilters: APIFilters, resetList: boolean) => {
-            setCurrentPage(page);
-            setFilters(newFilters);
-        }, [setCurrentPage, setFilters]);
-
-        const fetchAllCars = useCallback(async () => {
-            // For cache, we'd need to fetch all pages - simplified for now
-            return cacheQuery.data?.cars || [];
-        }, [cacheQuery?.data?.cars]);
-
-        const loadMore = useCallback(async () => {
-            setCurrentPage(prev => prev + 1);
-        }, [setCurrentPage]);
-
-        const refreshInventory = useCallback(() => {
-            return () => {
-                // Invalidate and refetch
-                cacheQuery?.refetch?.();
-            };
-        }, [cacheQuery?.refetch]);
-
-        const clearCarsCache = useCallback(() => {
-            // For cache mode, we can just reset to page 1
-            setCurrentPage(1);
-            setFilters({});
-        }, [setCurrentPage, setFilters]);
-
         return {
             cars: cacheQuery.data?.cars || [],
             setCars: (newCars: any[]) => {
@@ -116,20 +113,19 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
                 console.warn('setTotalCount not supported in cache mode');
             },
             hasMorePages: (cacheQuery.data?.page || 0) < (cacheQuery.data?.totalPages || 0),
-            fetchCars,
-            fetchAllCars,
+            fetchCars: fetchCarsCache,
+            fetchAllCars: fetchAllCarsCache,
             filters,
             setFilters,
-            loadMore,
-            refreshInventory,
-            clearCarsCache,
+            loadMore: loadMoreCache,
+            refreshInventory: refreshInventoryCache,
+            clearCarsCache: clearCarsCacheFunc,
             source: 'cache' as const,
             cacheHealth,
             isStale: cacheHealth?.isStale || false
         };
     }
 
-    // API mode - pass through the API hook
     if (usingAPI) {
         return {
             ...apiHook,
@@ -139,7 +135,6 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         };
     }
 
-    // No source available
     return {
         cars: [],
         setCars: () => { },
