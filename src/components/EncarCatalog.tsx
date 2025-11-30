@@ -249,24 +249,21 @@ const EncarCatalog = ({
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
     return mergedFilteredCars.map(car => {
-      // Calculate EUR price using current exchange rate
-      const priceUSD = Number(car.lots?.[0]?.buy_now || car.buy_now || 0);
-      const priceEUR = priceUSD > 0 ? calculateFinalPriceEUR(priceUSD, exchangeRate.rate) : 0;
+      // Price is already in EUR from cache transformation or API
+      const priceEUR = Number(car.lots?.[0]?.buy_now || car.buy_now || car.price || 0);
       return {
         ...car,
         price_eur: priceEUR,
-        // Add calculated EUR price
         status: String(car.status || ""),
         lot_number: String(car.lot_number || ""),
         cylinders: Number(car.cylinders || 0),
         year: Number(car.year || 2000),
-        // Ensure year is a number for FlexibleCar interface
         engine: {
           name: car.engine?.name || "Unknown"
-        } // Ensure engine has required name property
+        }
       };
     });
-  }, [mergedFilteredCars, exchangeRate.rate]);
+  }, [mergedFilteredCars]);
 
   // Always call useSortedCars hook (hooks must be called unconditionally)
   const sortedResults = useSortedCars(carsForSorting, sortBy);

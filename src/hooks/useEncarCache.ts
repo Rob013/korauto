@@ -213,6 +213,10 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
     // Extract image arrays - Encar typically has photo URLs in array
     const photoArray = Array.isArray(photos) ? photos : [];
 
+    // Convert KRW to EUR (1 EUR ≈ 1400 KRW) + add 2500 EUR markup
+    const priceKRW = cached.buy_now_price || 0;
+    const priceEUR = priceKRW > 0 ? Math.round(priceKRW / 1400) + 2500 : 0;
+
     return {
         // Core identifiers
         id: String(cached.vehicle_id), // Important: string ID for React keys
@@ -274,18 +278,18 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
         body_type: cached.body_type,
         seats: cached.seat_count,
 
-        // Pricing - format for existing components
+        // Pricing - prices converted from KRW to EUR with markup
         advertisement: {
-            price: cached.buy_now_price,
+            price: priceEUR,
             status: cached.advertisement_status
         },
-        buy_now: cached.buy_now_price,
-        price: cached.buy_now_price,
+        buy_now: priceEUR,
+        price: priceEUR,
 
         // CRITICAL: Lots array structure (catalog expects this!)
         lots: [{
             lot: cached.lot_number,
-            buy_now: cached.buy_now_price,
+            buy_now: priceEUR,
 
             // Images in proper structure for catalog
             images: {
