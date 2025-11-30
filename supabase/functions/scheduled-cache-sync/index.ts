@@ -51,19 +51,19 @@ Deno.serve(async (req) => {
       console.log(`✅ Deleted ${deletedCars?.length || 0} archived cars`);
     }
 
-    // 3. Delete cars without buy_now_price (priceless cars cleanup)
-    console.log('🗑️ Cleaning up cars without buy_now_price...');
+    // 3. Delete cars without buy_now_price or with invalid prices (priceless cars cleanup)
+    console.log('🗑️ Cleaning up cars with invalid prices...');
     const { data: deletedPricelessCars, error: pricelessDeleteError } = await supabase
       .from('encar_cars_cache')
       .delete()
-      .or('buy_now_price.is.null,buy_now_price.lte.0')
+      .or('buy_now_price.is.null,buy_now_price.lte.5000')
       .select('count', { count: 'exact', head: true });
 
     if (pricelessDeleteError) {
-      console.error('❌ Failed to delete priceless cars:', pricelessDeleteError);
+      console.error('❌ Failed to delete invalid price cars:', pricelessDeleteError);
     } else {
       const pricelessCount = deletedPricelessCars?.length || 0;
-      console.log(`✅ Deleted ${pricelessCount} cars without buy_now_price`);
+      console.log(`✅ Deleted ${pricelessCount} cars with invalid prices`);
     }
 
     // 4. Delete sold/archived cars from API
