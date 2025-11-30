@@ -37,12 +37,15 @@ export const calculateFinalPriceEUR = (basePriceUSD: number, usdToEurRate: numbe
 
 /**
  * Convert KRW price to EUR with markup
- * @param priceKRW - The price in Korean Won from Encar API
+ * @param priceKRW - The price in Korean Won from Encar API (in 만원 units)
+ * @param isManWon - Whether the price is in 만원 (10,000 KRW) units
  * @returns Final price in EUR (KRW converted at 1400:1 + 2500 EUR markup)
  */
-export const convertKRWtoEUR = (priceKRW: number): number => {
+export const convertKRWtoEUR = (priceKRW: number, isManWon: boolean = true): number => {
   if (!priceKRW || priceKRW <= 0) return 0;
-  const priceEUR = Math.round(priceKRW / 1400); // 1400 KRW = 1 EUR
+  // Convert 만원 to actual KRW if needed
+  const actualKRW = isManWon ? priceKRW * 10000 : priceKRW;
+  const priceEUR = Math.round(actualKRW / 1400); // 1400 KRW = 1 EUR
   return priceEUR + 2500; // Add 2500 EUR markup
 };
 

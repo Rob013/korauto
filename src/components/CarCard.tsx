@@ -527,15 +527,15 @@ const CarCard = ({
           <div className="flex items-end justify-between">
             <span className="text-lg font-bold text-primary">
               {(() => {
-                // For Encar cached cars, price is in KRW - convert to EUR
-                if (price && price > 100000) { // If price > 100k, it's likely KRW
-                  const priceEUR = Math.round(price / 1400) + 2500; // 1400 KRW = 1 EUR + 2500 EUR markup
-                  return `€${priceEUR.toLocaleString()}`;
+                // Encar prices are in "만원" (10,000 KRW units)
+                // Example: 12273 = 122,730,000 KRW
+                if (price && price > 0) {
+                  const priceKRW = price * 10000; // Convert 만원 to KRW
+                  const priceEUR = Math.round(priceKRW / 1400); // 1400 KRW = 1 EUR  
+                  const finalPrice = priceEUR + 2500; // Add 2500 EUR markup
+                  return `€${finalPrice.toLocaleString()}`;
                 }
-                // For other prices (already in EUR or lower values)
-                return typeof price === 'number' && isFinite(price) && price > 0 
-                  ? `€${price.toLocaleString()}` 
-                  : 'Çmimi në kërkesë';
+                return 'Çmimi në kërkesë';
               })()}
             </span>
           </div>
