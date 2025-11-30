@@ -524,7 +524,8 @@ const EncarCatalog = ({
     setHasUserSelectedSort(false);
     setSortBy("");
 
-    setIsFilterLoading(true);
+    // INSTANT filter changes - no loading state for cached data
+    // setIsFilterLoading(true); // REMOVED for instant response
     setFilters(newFilters);
 
     setShowAllCars(false);
@@ -725,11 +726,9 @@ const EncarCatalog = ({
     setFilters(newFilters);
     setLoadedPages(1);
     
-    // No loading state for cached data - instant filtering
+    // INSTANT updates - no loading state for cache mode
     const isCacheMode = source === 'cache';
-    if (!isCacheMode) {
-      setIsLoading(true);
-    }
+    // REMOVED: setIsLoading for instant filter response
     
     try {
       if (!manufacturerId) {
@@ -776,9 +775,7 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
     } finally {
-      if (!isCacheMode) {
-        setIsLoading(false);
-      }
+      // INSTANT updates - removed loading states
       setIsFilterLoading(false);
     }
   };
@@ -805,11 +802,9 @@ const EncarCatalog = ({
     setLoadedPages(1);
     setGenerations([]);
 
-    // No loading state for cached data - instant filtering
+    // INSTANT updates - no loading state for cache mode
     const isCacheMode = source === 'cache';
-    if (!isCacheMode) {
-      setIsLoading(true);
-    }
+    // REMOVED: setIsLoading for instant filter response
     
     try {
       // Fetch cars with neutral sorting (user can re-apply a sort after filters)
@@ -835,9 +830,7 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
     } finally {
-      if (!isCacheMode) {
-        setIsLoading(false);
-      }
+      // INSTANT updates - removed loading states
       setIsFilterLoading(false);
     }
   };
@@ -1417,10 +1410,7 @@ const EncarCatalog = ({
           </div>
         </div>
 
-        {/* Error State */}
-        {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
-          <p className="text-destructive font-medium">Error: {String(error)}</p>
-        </div>}
+        {/* Error State - Removed for cleaner UX */}
 
         {/* Loading State - Only for initial load, not for filters */}
         {loading && cars.length === 0 || isRestoringState ? <div className="flex flex-col items-center justify-center py-12 space-y-4">

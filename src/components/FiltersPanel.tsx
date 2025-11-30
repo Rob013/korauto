@@ -88,10 +88,10 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const { data: gradesData, isLoading: gradesLoading } = useGrades(filters.model);
   const { data: trimsData, isLoading: trimsLoading } = useTrims(filters.model);
 
-  // Faster debounce for cached data - 100ms instead of 250ms
-  const debouncedSearchTerm = useDebounce(searchTerm, 100);
+  // INSTANT search - no debounce for immediate filter response
+  const debouncedSearchTerm = useDebounce(searchTerm, 0);
 
-  // Update search filter when debounced term changes
+  // Update search filter when term changes
   useEffect(() => {
     try {
       if (debouncedSearchTerm !== filters.search) {
