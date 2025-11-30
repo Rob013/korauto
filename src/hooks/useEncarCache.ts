@@ -213,9 +213,10 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
     // Extract image arrays - Encar typically has photo URLs in array
     const photoArray = Array.isArray(photos) ? photos : [];
 
-    // Convert KRW to EUR (1 EUR ≈ 1400 KRW) + add 2500 EUR markup
+    // Convert KRW to EUR with proper exchange rate + 2500 EUR markup
+    // Current KRW to EUR rate: ~1500 KRW = 1 EUR
     const priceKRW = cached.buy_now_price || 0;
-    const priceEUR = priceKRW > 0 ? Math.round(priceKRW / 1400) + 2500 : 0;
+    const priceEUR = priceKRW > 0 ? Math.round(priceKRW / 1500) + 2500 : 0;
 
     return {
         // Core identifiers

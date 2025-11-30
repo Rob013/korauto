@@ -51,12 +51,12 @@ Deno.serve(async (req) => {
       console.log(`✅ Deleted ${deletedCars?.length || 0} archived cars`);
     }
 
-    // 3. Delete cars with invalid/unrealistic prices (below 700,000 KRW / ~3,000 EUR)
+    // 3. Delete cars with invalid/unrealistic prices (below 1,000,000 KRW / ~3,200 EUR)
     console.log('🗑️ Cleaning up cars with invalid prices...');
     const { data: deletedPricelessCars, error: pricelessDeleteError } = await supabase
       .from('encar_cars_cache')
       .delete()
-      .or('buy_now_price.is.null,buy_now_price.lt.700000')
+      .or('buy_now_price.is.null,buy_now_price.lt.1000000')
       .select('count', { count: 'exact', head: true });
 
     if (pricelessDeleteError) {
