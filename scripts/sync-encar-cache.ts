@@ -34,7 +34,7 @@ interface SyncConfig {
 
 const config: SyncConfig = {
     batchSize: 50,  // Process 50 cars at a time
-    maxConcurrent: 5, // Max concurrent API requests
+    maxConcurrent: 10, // Max concurrent API requests (increased for speed)
     perPage: 200  // Cars per API request
 };
 
@@ -372,7 +372,7 @@ async function syncEncarCache(): Promise<void> {
     const totalStats: SyncStats = { processed: 0, added: 0, updated: 0, removed: 0 };
 
     // Concurrency settings
-    const CONCURRENT_PAGES = 5;
+    const CONCURRENT_PAGES = 10; // Increased for faster sync
 
     try {
         console.log('🔄 Starting Encar cache sync (Fast Mode ⚡️)...');
