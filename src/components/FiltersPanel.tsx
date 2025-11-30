@@ -88,10 +88,10 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   const { data: gradesData, isLoading: gradesLoading } = useGrades(filters.model);
   const { data: trimsData, isLoading: trimsLoading } = useTrims(filters.model);
 
-  // Fast but stable debounce - 50ms prevents excessive updates while feeling instant
-  const debouncedSearchTerm = useDebounce(searchTerm, 0); // Instant response
+  // Debounce search term with 250ms delay as specified
+  const debouncedSearchTerm = useDebounce(searchTerm, 250);
 
-  // Update search filter when term changes
+  // Update search filter when debounced term changes
   useEffect(() => {
     try {
       if (debouncedSearchTerm !== filters.search) {
@@ -102,7 +102,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
       console.error('Error updating search filter:', error);
       setValidationError('Gabim në kërkim');
     }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, filters.search, onFiltersChange]);
 
   const currentYearRange = useMemo(() => {
     try {
@@ -798,4 +798,4 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
   );
 };
 
-export default React.memo(FiltersPanel);
+export default FiltersPanel;

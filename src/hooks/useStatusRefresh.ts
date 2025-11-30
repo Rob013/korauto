@@ -34,8 +34,8 @@ export const useStatusRefresh = (options: StatusRefreshOptions = {}) => {
         return;
       }
 
-      // NOTE: Archiving sold cars is temporarily disabled due to performance issues
-      // await archiveOldSoldCars();
+      // Archive cars that have been sold for more than 24 hours
+      await archiveOldSoldCars();
 
       console.log('✅ Car status refresh completed:', data);
       
@@ -46,12 +46,6 @@ export const useStatusRefresh = (options: StatusRefreshOptions = {}) => {
 
   const archiveOldSoldCars = useCallback(async () => {
     try {
-      // DISABLED: This query causes statement timeouts on large datasets
-      // Will need to be reimplemented with better indexing or batch processing
-      console.log('⏸️ Archiving sold cars temporarily disabled to prevent timeouts');
-      return;
-      
-      /* ORIGINAL CODE - DISABLED DUE TO TIMEOUT ISSUES
       // Use a more efficient query with limit to avoid timeouts
       // Process in smaller batches to prevent database timeout
       const batchSize = 100;
@@ -75,7 +69,6 @@ export const useStatusRefresh = (options: StatusRefreshOptions = {}) => {
       }
 
       console.log('🗂️ Archived old sold cars (batch):', data);
-      */
     } catch (error) {
       console.error('❌ Error in archiveOldSoldCars:', error);
     }

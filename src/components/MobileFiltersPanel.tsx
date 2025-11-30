@@ -48,10 +48,6 @@ interface MobileFiltersPanelProps {
     generations?: Generation[];
     variants?: Variant[];
     filterCounts?: FilterCounts;
-    fuelTypes?: Array<{ id: string; name: string; count?: number }>;
-    transmissions?: Array<{ id: string; name: string; count?: number }>;
-    bodyTypes?: Array<{ id: string; name: string; count?: number }>;
-    colors?: Array<{ id: string; name: string; count?: number }>;
     onFiltersChange: (filters: any) => void;
     onClearFilters: () => void;
     onApply: () => void;
@@ -110,10 +106,6 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     generations = [],
     variants = [],
     filterCounts,
-    fuelTypes = [],
-    transmissions = [],
-    bodyTypes = [],
-    colors = [],
     onFiltersChange,
     onClearFilters,
     onApply,
@@ -444,33 +436,18 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Karburanti</label>
                             <div className="flex flex-wrap gap-2">
-                                {fuelTypes.length > 0 ? (
-                                    fuelTypes.map((fuel) => (
-                                        <button
-                                            key={fuel.id}
-                                            onClick={() => handleChange('fuel_type', filters.fuel_type === fuel.name ? '' : fuel.name)}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === fuel.name
-                                                ? 'bg-primary text-primary-foreground border-primary'
-                                                : 'bg-background border-border hover:bg-muted'
-                                                }`}
-                                        >
-                                            {fuel.name} {fuel.count ? `(${fuel.count})` : ''}
-                                        </button>
-                                    ))
-                                ) : (
-                                    Object.entries(FUEL_TYPES).map(([label, value]) => (
-                                        <button
-                                            key={value}
-                                            onClick={() => handleChange('fuel_type', filters.fuel_type === value.toString() ? '' : value.toString())}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === value.toString()
-                                                ? 'bg-primary text-primary-foreground border-primary'
-                                                : 'bg-background border-border hover:bg-muted'
-                                                }`}
-                                        >
-                                            {label}
-                                        </button>
-                                    ))
-                                )}
+                                {Object.entries(FUEL_TYPES).map(([label, value]) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => handleChange('fuel_type', filters.fuel_type === value.toString() ? '' : value.toString())}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === value.toString()
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background border-border hover:bg-muted'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -478,33 +455,18 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Transmisioni</label>
                             <div className="flex flex-wrap gap-2">
-                                {transmissions.length > 0 ? (
-                                    transmissions.map((trans) => (
-                                        <button
-                                            key={trans.id}
-                                            onClick={() => handleChange('transmission', filters.transmission === trans.name ? '' : trans.name)}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === trans.name
-                                                ? 'bg-primary text-primary-foreground border-primary'
-                                                : 'bg-background border-border hover:bg-muted'
-                                                }`}
-                                        >
-                                            {trans.name} {trans.count ? `(${trans.count})` : ''}
-                                        </button>
-                                    ))
-                                ) : (
-                                    Object.entries(TRANSMISSIONS).map(([label, value]) => (
-                                        <button
-                                            key={value}
-                                            onClick={() => handleChange('transmission', filters.transmission === value.toString() ? '' : value.toString())}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === value.toString()
-                                                ? 'bg-primary text-primary-foreground border-primary'
-                                                : 'bg-background border-border hover:bg-muted'
-                                                }`}
-                                        >
-                                            {label}
-                                        </button>
-                                    ))
-                                )}
+                                {Object.entries(TRANSMISSIONS).map(([label, value]) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => handleChange('transmission', filters.transmission === value.toString() ? '' : value.toString())}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === value.toString()
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background border-border hover:bg-muted'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -517,17 +479,9 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             >
                                 <option value="">Të gjitha</option>
-                                {bodyTypes.length > 0 ? (
-                                    bodyTypes.map((body) => (
-                                        <option key={body.id} value={body.name}>
-                                            {body.name} {body.count ? `(${body.count})` : ''}
-                                        </option>
-                                    ))
-                                ) : (
-                                    Object.entries(BODY_TYPES).map(([label, value]) => (
-                                        <option key={value} value={value}>{label}</option>
-                                    ))
-                                )}
+                                {Object.entries(BODY_TYPES).map(([label, value]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
                             </select>
                         </div>
 
@@ -540,17 +494,9 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             >
                                 <option value="">Të gjitha</option>
-                                {colors.length > 0 ? (
-                                    colors.map((color) => (
-                                        <option key={color.id} value={color.name}>
-                                            {color.name} {color.count ? `(${color.count})` : ''}
-                                        </option>
-                                    ))
-                                ) : (
-                                    Object.entries(COLORS).map(([label, value]) => (
-                                        <option key={value} value={value}>{label}</option>
-                                    ))
-                                )}
+                                {Object.entries(COLORS).map(([label, value]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
                             </select>
                         </div>
 
