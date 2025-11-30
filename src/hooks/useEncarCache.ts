@@ -170,10 +170,11 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: options.staleTime ?? 5 * 60 * 1000, // 5 minutes
-        gcTime: options.cacheTime ?? 15 * 60 * 1000, // 15 minutes (renamed from cacheTime in React Query v5)
+        staleTime: options.staleTime ?? 30 * 60 * 1000, // 30 minutes - keep data fresh longer
+        gcTime: options.cacheTime ?? 60 * 60 * 1000, // 60 minutes - cache in memory longer
         refetchOnWindowFocus: false,
-        refetchOnMount: false
+        refetchOnMount: false,
+        refetchOnReconnect: false
     });
 }
 

@@ -15,7 +15,7 @@ import { APIFilters } from '@/utils/catalog-filter';
 interface UseHybridEncarDataOptions {
     preferCache?: boolean; // Default: true
     maxCacheAge?: number; // Minutes, default: 60
-    fallbackToAPI?: boolean; // Default: true
+    fallbackToAPI?: boolean; // Default: false (cache-only for instant performance)
 }
 
 /**
@@ -26,8 +26,8 @@ interface UseHybridEncarDataOptions {
 export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     const {
         preferCache = true,
-        maxCacheAge = 60,
-        fallbackToAPI = true
+        maxCacheAge = 360, // 6 hours - match sync schedule
+        fallbackToAPI = false // Cache-only by default for instant performance
     } = options;
 
     // Internal state
@@ -40,10 +40,11 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     const { data: cacheHealth } = useEncarCacheHealth();
 
     // Determine if we should use cache
+    // When fallbackToAPI is false, ALWAYS use cache if available (cache-only mode)
     const shouldUseCache = preferCache &&
         cacheHealth?.available &&
         cacheHealth?.carCount > 0 &&
-        (!cacheHealth?.minutesSinceSync || cacheHealth.minutesSinceSync <= maxCacheAge);
+        (fallbackToAPI === false || !cacheHealth?.minutesSinceSync || cacheHealth.minutesSinceSync <= maxCacheAge);
 
     // Log cache decision
     console.log('🔄 useHybridEncarData decision:', {

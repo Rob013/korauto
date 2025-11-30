@@ -262,7 +262,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="p-4 space-y-4">
+                <div className="p-4 space-y-4 bg-muted/20 dark:bg-black">
                     {/* Manufacturer Select */}
                     <div>
                         <div className="flex items-center gap-2 mb-2">

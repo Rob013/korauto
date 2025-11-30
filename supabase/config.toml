@@ -3,6 +3,9 @@ project_id = "qtyyiqimkysmjnaocswe"
 [functions.api-cache-sync]
 verify_jwt = false
 
+[functions.scheduled-cache-sync]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321

@@ -31,6 +31,7 @@ import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
@@ -54,6 +55,7 @@ const EncarCatalog = ({
   const {
     restorePageState
   } = useNavigation();
+  const { isAdmin } = useAdminCheck();
   // Use hybrid hook - PREFER CACHE with extended tolerance for better performance
   const {
     fetchManufacturers,
@@ -80,9 +82,9 @@ const EncarCatalog = ({
     cacheHealth,
     isStale
   } = useHybridEncarData({
-    preferCache: true,        // Always prefer cache when available
-    maxCacheAge: 120,         // Accept cache up to 2 hours old (extended from default 60min)
-    fallbackToAPI: true       // Fall back to API only if cache truly unavailable
+    preferCache: true,
+    maxCacheAge: 360, // 6 hours - match the sync schedule
+    fallbackToAPI: false
   });
   const {
     convertUSDtoEUR,
@@ -701,9 +703,9 @@ const EncarCatalog = ({
   const handleManufacturerChange = async (manufacturerId: string) => {
     console.log(`[handleManufacturerChange] Called with manufacturerId: ${manufacturerId}`);
 
-    // Reset sorting to neutral when manufacturer changes
+    // Reset sorting to default when manufacturer changes
     setHasUserSelectedSort(false);
-    setSortBy("");
+    setSortBy("recently_added");
 
     // Create new filters immediately for faster UI response
     const f = filters as APIFilters;
@@ -783,9 +785,9 @@ const EncarCatalog = ({
     console.log(`[EncarCatalog] Models state updated:`, models);
   }, [models]);
   const handleModelChange = async (modelId: string) => {
-    // Reset sorting to neutral when model changes
+    // Reset sorting to default when model changes
     setHasUserSelectedSort(false);
-    setSortBy("");
+    setSortBy("recently_added");
 
     // Create new filters immediately for faster UI response
     const newFilters: APIFilters = {
@@ -836,17 +838,17 @@ const EncarCatalog = ({
     return entries.some(([key, value]) => !!value && value !== 'all');
   }, [filters]);
 
-  // Adjust sort depending on filter presence
+  // Always default to recently_added sort
   useEffect(() => {
     if (hasUserSelectedSort) {
       return;
     }
 
     setSortBy((currentSort) => {
-      const desiredSort: SortOption = anyFilterApplied ? "" : "recently_added";
+      const desiredSort: SortOption = "recently_added";
       return currentSort === desiredSort ? currentSort : desiredSort;
     });
-  }, [anyFilterApplied, hasUserSelectedSort]);
+  }, [hasUserSelectedSort]);
 
   // Initialize filters from URL params on component mount - OPTIMIZED
   useEffect(() => {
@@ -1381,7 +1383,7 @@ const EncarCatalog = ({
               ) : (
                 <>
                   <span className="font-semibold text-foreground">{animatedTotalCount.toLocaleString()}</span> vetura të disponueshme
-                  {source === 'cache' && isStale && (
+                  {isAdmin && source === 'cache' && isStale && (
                     <span className="ml-2 text-yellow-600 text-xs">(data may be outdated)</span>
                   )}
                 </>
@@ -1451,9 +1453,11 @@ const EncarCatalog = ({
           >
             {renderableCars.map((car: CarWithRank | any) => {
               const lot = car.lots?.[0];
-              // Only use buy_now price, no fallbacks
-              const usdPrice = lot?.buy_now;
-              const price = calculateFinalPriceEUR(usdPrice, exchangeRate.rate);
+              // Encar cars use KRW prices, convert directly to EUR
+              const rawPrice = lot?.buy_now;
+              // KRW to EUR conversion (approximate rate: 1 EUR = 1400 KRW)
+              const priceInEUR = rawPrice ? Math.round(rawPrice / 1400) + 2500 : 0;
+              const price = priceInEUR;
               const lotNumber = car.lot_number || lot?.lot || "";
               return <div key={car.id} id={`car-${car.id}`} data-lot-id={`car-lot-${lotNumber}`}>
                 <LazyCarCard id={car.id} make={car.manufacturer?.name || "Unknown"} model={car.model?.name || "Unknown"} year={car.year} price={price} image={lot?.images?.normal?.[0] || lot?.images?.big?.[0]} images={[...(lot?.images?.normal || []), ...(lot?.images?.big || [])].filter(Boolean)} // Combine normal and big images, filter out undefined
