@@ -875,6 +875,11 @@ const EncarCatalog = ({
         }
       }
 
+      // Default to Audi if no manufacturer is specified in URL
+      if (!urlFilters.manufacturer_id) {
+        urlFilters.manufacturer_id = "1"; // Audi's ID
+      }
+
       // Set search term from URL
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
@@ -910,6 +915,15 @@ const EncarCatalog = ({
           } : {})
         };
         await fetchCars(urlCurrentPage, initialFilters, true);
+        
+        // Update URL to reflect default Audi filter
+        const paramsToSet: any = {};
+        Object.entries(urlFilters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            paramsToSet[key] = value.toString();
+          }
+        });
+        setSearchParams(paramsToSet, { replace: true });
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
