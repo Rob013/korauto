@@ -1,7 +1,6 @@
 /**
  * Comprehensive performance optimization utilities
  * Inspired by encar.com and premium Korean e-commerce sites
- * Optimized for cached data operations
  */
 
 const transitionsStyleId = 'performance-transitions-style';
@@ -13,10 +12,6 @@ const optimizedImages = new WeakSet<HTMLImageElement>();
 const optimizedCards = new WeakSet<HTMLElement>();
 let routeObserver: MutationObserver | null = null;
 let pageHideCleanupRegistered = false;
-
-// Performance tracking
-let lastOptimizationTime = 0;
-const OPTIMIZATION_THROTTLE = 100; // ms
 
 /**
  * Anti-flickering initialization
@@ -294,13 +289,6 @@ const applyOptimizations = () => {
 };
 
 const scheduleDeferredOptimizations = () => {
-  // Throttle optimizations to prevent excessive calls
-  const now = Date.now();
-  if (now - lastOptimizationTime < OPTIMIZATION_THROTTLE) {
-    return;
-  }
-  lastOptimizationTime = now;
-
   const run = () => {
     optimizeImages();
     preventLayoutShift();
@@ -313,12 +301,12 @@ const scheduleDeferredOptimizations = () => {
     }).requestIdleCallback;
 
     if (typeof idleCallback === 'function') {
-      idleCallback(run, { timeout: 200 }); // Reduced from 300ms
+      idleCallback(run, { timeout: 300 });
       return;
     }
   }
 
-  setTimeout(run, 16); // Reduced from 32ms - one frame at 60fps
+  setTimeout(run, 32);
 };
 
 const ensureRouteObserver = () => {

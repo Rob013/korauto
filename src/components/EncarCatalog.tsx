@@ -67,7 +67,7 @@ const EncarCatalog = ({
     fetchCars,
     fetchAllCars,
     filters,
-    setFilters: setHybridFilters,
+    setFilters,
     loadMore,
     refreshInventory,
     clearCarsCache,
@@ -79,12 +79,6 @@ const EncarCatalog = ({
     maxCacheAge: 120,
     fallbackToAPI: false
   });
-  
-  // Wrapper to log filter changes
-  const setFilters = useCallback((newFilters: APIFilters) => {
-    console.log('🔧 Setting filters in catalog:', newFilters);
-    setHybridFilters(newFilters);
-  }, [setHybridFilters]);
   const {
     convertUSDtoEUR,
     exchangeRate
@@ -185,7 +179,7 @@ const EncarCatalog = ({
     if (!filters) return true;
 
     const f = filters as APIFilters;
-    // Show all cars by default - no manufacturer filter needed
+    // Default state means no meaningful filters are applied OR manufacturer is explicitly set to "all"
     return (!f.manufacturer_id || f.manufacturer_id === 'all') && !f.model_id && !f.generation_id && !f.color && !f.fuel_type && !f.transmission && !f.body_type && !f.odometer_from_km && !f.odometer_to_km && !f.from_year && !f.to_year && !f.buy_now_price_from && !f.buy_now_price_to && !f.search && !f.seats_count && (!f.grade_iaai || f.grade_iaai === 'all');
   }, [filters]);
 
@@ -530,7 +524,6 @@ const EncarCatalog = ({
     setHasUserSelectedSort(false);
     setSortBy("");
 
-    // Fast, smooth filter changes - minimal loading state
     setIsFilterLoading(true);
     setFilters(newFilters);
 
@@ -545,9 +538,6 @@ const EncarCatalog = ({
     const searchParams = filtersToURLParams(normalizedFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
-    
-    // Clear loading state instantly for cache mode (data arrives immediately)
-    setTimeout(() => setIsFilterLoading(false), 50);
   }, [
     currentFiltersSignature,
     scheduleFetchCars,
@@ -557,8 +547,7 @@ const EncarCatalog = ({
     setShowAllCars,
     setAllCarsData,
     setHasUserSelectedSort,
-    setSortBy,
-    source
+    setSortBy
   ]);
 
   const handleClearFilters = useCallback(() => {
@@ -731,14 +720,13 @@ const EncarCatalog = ({
       seats_count: f.seats_count,
       search: f.search
     };
-    
-    // Batch state updates to prevent multiple re-renders
     setFilters(newFilters);
     setLoadedPages(1);
-    
-    // Fast loading state - show briefly for UX feedback
+    setModels([]);
+    setGenerations([]);
+
+    // Only show loading for cars
     setIsLoading(true);
-    
     try {
       if (!manufacturerId) {
         setIsLoading(false);
@@ -764,14 +752,10 @@ const EncarCatalog = ({
         ...newFilters,
         per_page: "50"
       };
-      
-      await Promise.all([
-        fetchCars(1, filtersForCars, true), 
-        modelPromise.then(modelData => {
-          console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-          setModels(modelData);
-        }).catch(err => console.warn('Failed to load models:', err))
-      ]);
+      await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
+        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+        setModels(modelData);
+      }).catch(err => console.warn('Failed to load models:', err))]);
 
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -784,9 +768,8 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
     } finally {
-      // Instant state clearing for cache mode
       setIsLoading(false);
-      setTimeout(() => setIsFilterLoading(false), 50);
+      setIsFilterLoading(false);
     }
   };
 
@@ -806,15 +789,12 @@ const EncarCatalog = ({
       generation_id: undefined,
       grade_iaai: undefined
     };
-    
-    // Batch updates
     setFilters(newFilters);
     setLoadedPages(1);
     setGenerations([]);
 
-    // Fast loading state - show briefly for UX feedback
+    // Only show loading for cars
     setIsLoading(true);
-    
     try {
       // Fetch cars with neutral sorting (user can re-apply a sort after filters)
       const filtersForCars = {
@@ -839,9 +819,8 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
     } finally {
-      // Instant state clearing for cache mode
       setIsLoading(false);
-      setTimeout(() => setIsFilterLoading(false), 50);
+      setIsFilterLoading(false);
     }
   };
 
@@ -896,12 +875,6 @@ const EncarCatalog = ({
         }
       }
 
-      // Default to show all cars if no manufacturer is specified in URL
-      // Remove Audi default to show full catalog
-      // if (!urlFilters.manufacturer_id) {
-      //   urlFilters.manufacturer_id = "1"; // Audi's ID
-      // }
-
       // Set search term from URL
       if (urlFilters.search) {
         setSearchTerm(urlFilters.search);
@@ -937,15 +910,6 @@ const EncarCatalog = ({
           } : {})
         };
         await fetchCars(urlCurrentPage, initialFilters, true);
-        
-        // Update URL to reflect default Audi filter
-        const paramsToSet: any = {};
-        Object.entries(urlFilters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            paramsToSet[key] = value.toString();
-          }
-        });
-        setSearchParams(paramsToSet, { replace: true });
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
@@ -1421,7 +1385,10 @@ const EncarCatalog = ({
           </div>
         </div>
 
-        {/* Error State - Removed for cleaner UX */}
+        {/* Error State */}
+        {error && <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-8">
+          <p className="text-destructive font-medium">Error: {String(error)}</p>
+        </div>}
 
         {/* Loading State - Only for initial load, not for filters */}
         {loading && cars.length === 0 || isRestoringState ? <div className="flex flex-col items-center justify-center py-12 space-y-4">
@@ -1444,22 +1411,13 @@ const EncarCatalog = ({
         </div>}
 
         {/* No Results State */}
-        {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && <div className="text-center py-12 space-y-4">
-          <Car className="h-16 w-16 mx-auto text-muted-foreground/50" />
-          <div>
-            <p className="text-lg font-medium text-foreground mb-2">
-              No cars found matching your filters
-            </p>
-            <p className="text-sm text-muted-foreground mb-4">
-              {source === 'cache' ? 
-                `Cache: ${cacheHealth?.carCount || 0} total cars, last synced ${cacheHealth?.minutesSinceSync || 0} minutes ago` :
-                source === 'api' ? 'Using live API' : 'No data source available'
-              }
-            </p>
-            <Button variant="outline" onClick={handleClearFilters}>
-              Clear Filters
-            </Button>
-          </div>
+        {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            No cars found matching your filters.
+          </p>
+          <Button variant="outline" onClick={handleClearFilters} className="mt-4">
+            Clear Filters
+          </Button>
         </div>}
 
         {/* Filter Loading State - Only when no cars and not in main loading */}
