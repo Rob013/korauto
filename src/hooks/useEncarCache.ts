@@ -171,10 +171,10 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: options.staleTime ?? 10 * 1000, // 10 seconds - refetch when filters change
-        gcTime: options.cacheTime ?? 5 * 60 * 1000, // 5 minutes cache time
+        staleTime: 0, // Always refetch when filters change
+        gcTime: 5 * 60 * 1000, // 5 minutes cache time
         refetchOnWindowFocus: false,
-        refetchOnMount: false,
+        refetchOnMount: true, // Always refetch on mount to get fresh data
         refetchOnReconnect: false,
         // Network waterfall optimization
         networkMode: 'online',
