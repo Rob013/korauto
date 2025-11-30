@@ -30,9 +30,10 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         fallbackToAPI = false // Cache-only by default for instant performance
     } = options;
 
-    // Internal state
+    // Internal state - initialize with empty filters to show all cars
     const [filters, setFilters] = useState<APIFilters>({});
     const [currentPage, setCurrentPage] = useState(1);
+    const [isInitialized, setIsInitialized] = useState(false);
     const perPage = 200;
 
     // ALWAYS call all hooks - never conditional
@@ -56,9 +57,18 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     });
 
     // ALWAYS fetch from cache with current filters
+    // Enable cache query immediately to show all cars by default
     const cacheQuery = useEncarCache(filters, currentPage, perPage, {
-        enabled: shouldUseCache // Fetch when cache is available
+        enabled: shouldUseCache
     });
+    
+    // Initialize on first mount
+    useEffect(() => {
+        if (!isInitialized && shouldUseCache) {
+            console.log('🎬 Initializing cache with all cars');
+            setIsInitialized(true);
+        }
+    }, [shouldUseCache, isInitialized]);
 
     // ALWAYS fetch from API hook (but we'll decide whether to use it later)
     const apiHook = useSecureAuctionAPI();
@@ -72,6 +82,10 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         console.log('📡 fetchCarsCache called:', { page, newFilters, resetList });
         setCurrentPage(page);
         setFilters(newFilters);
+        
+        // Wait for the query to complete with new filters
+        // This ensures EncarCatalog loading states work properly
+        await new Promise(resolve => setTimeout(resolve, 100));
     }, []);
 
     const fetchAllCarsCache = useCallback(async () => {

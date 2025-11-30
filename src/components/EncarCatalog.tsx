@@ -67,7 +67,7 @@ const EncarCatalog = ({
     fetchCars,
     fetchAllCars,
     filters,
-    setFilters,
+    setFilters: setHybridFilters,
     loadMore,
     refreshInventory,
     clearCarsCache,
@@ -79,6 +79,12 @@ const EncarCatalog = ({
     maxCacheAge: 120,
     fallbackToAPI: false
   });
+  
+  // Wrapper to log filter changes
+  const setFilters = useCallback((newFilters: APIFilters) => {
+    console.log('🔧 Setting filters in catalog:', newFilters);
+    setHybridFilters(newFilters);
+  }, [setHybridFilters]);
   const {
     convertUSDtoEUR,
     exchangeRate
@@ -179,7 +185,7 @@ const EncarCatalog = ({
     if (!filters) return true;
 
     const f = filters as APIFilters;
-    // Default state means no meaningful filters are applied OR manufacturer is explicitly set to "all"
+    // Show all cars by default - no manufacturer filter needed
     return (!f.manufacturer_id || f.manufacturer_id === 'all') && !f.model_id && !f.generation_id && !f.color && !f.fuel_type && !f.transmission && !f.body_type && !f.odometer_from_km && !f.odometer_to_km && !f.from_year && !f.to_year && !f.buy_now_price_from && !f.buy_now_price_to && !f.search && !f.seats_count && (!f.grade_iaai || f.grade_iaai === 'all');
   }, [filters]);
 
@@ -890,10 +896,11 @@ const EncarCatalog = ({
         }
       }
 
-      // Default to Audi if no manufacturer is specified in URL
-      if (!urlFilters.manufacturer_id) {
-        urlFilters.manufacturer_id = "1"; // Audi's ID
-      }
+      // Default to show all cars if no manufacturer is specified in URL
+      // Remove Audi default to show full catalog
+      // if (!urlFilters.manufacturer_id) {
+      //   urlFilters.manufacturer_id = "1"; // Audi's ID
+      // }
 
       // Set search term from URL
       if (urlFilters.search) {
@@ -1437,13 +1444,22 @@ const EncarCatalog = ({
         </div>}
 
         {/* No Results State */}
-        {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            No cars found matching your filters.
-          </p>
-          <Button variant="outline" onClick={handleClearFilters} className="mt-4">
-            Clear Filters
-          </Button>
+        {shouldShowCars && !loading && !isRestoringState && !isFilterLoading && cars.length === 0 && <div className="text-center py-12 space-y-4">
+          <Car className="h-16 w-16 mx-auto text-muted-foreground/50" />
+          <div>
+            <p className="text-lg font-medium text-foreground mb-2">
+              No cars found matching your filters
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              {source === 'cache' ? 
+                `Cache: ${cacheHealth?.carCount || 0} total cars, last synced ${cacheHealth?.minutesSinceSync || 0} minutes ago` :
+                source === 'api' ? 'Using live API' : 'No data source available'
+              }
+            </p>
+            <Button variant="outline" onClick={handleClearFilters}>
+              Clear Filters
+            </Button>
+          </div>
         </div>}
 
         {/* Filter Loading State - Only when no cars and not in main loading */}
