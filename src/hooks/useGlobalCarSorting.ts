@@ -11,11 +11,11 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { APIFilters } from '@/utils/catalog-filter';
 import { SortOption } from '@/hooks/useSortedCars';
 import { GlobalSortingService, GlobalSortingState } from '@/services/globalSortingService';
-import { 
-  CarWithRank, 
-  getCarsForPage, 
+import {
+  CarWithRank,
+  getCarsForPage,
   ChronologicalRankingResult,
-  validateChronologicalRanking 
+  validateChronologicalRanking
 } from '@/utils/chronologicalRanking';
 
 interface UseGlobalCarSortingOptions {
@@ -31,20 +31,20 @@ interface UseGlobalCarSortingOptions {
 interface UseGlobalCarSortingReturn {
   // State
   globalSortingState: GlobalSortingState;
-  
+
   // Actions
   initializeGlobalSorting: (sortBy: SortOption) => Promise<void>;
   getCarsForCurrentPage: (pageNumber: number) => CarWithRank[];
   clearGlobalSorting: () => void;
   refreshGlobalSorting: (sortBy: SortOption) => Promise<void>;
-  
+
   // Utilities
   shouldUseGlobalSorting: () => boolean;
   isGlobalSortingReady: () => boolean;
-  getPageInfo: (pageNumber: number) => { 
-    hasPage: boolean; 
-    totalPages: number; 
-    carsOnPage: number; 
+  getPageInfo: (pageNumber: number) => {
+    hasPage: boolean;
+    totalPages: number;
+    carsOnPage: number;
   };
 }
 
@@ -61,12 +61,12 @@ export const useGlobalCarSorting = ({
   enableCaching = true,
   validationEnabled = false
 }: UseGlobalCarSortingOptions): UseGlobalCarSortingReturn => {
-  
+
   console.warn('⚠️ useGlobalCarSorting is deprecated. Use fetchCarsWithKeyset from @/services/carsApi instead.');
-  
+
   // Service instance
   const sortingService = useRef(new GlobalSortingService());
-  
+
   // State
   const [globalSortingState, setGlobalSortingState] = useState<GlobalSortingState>({
     isGlobalSorting: false,
@@ -95,9 +95,9 @@ export const useGlobalCarSorting = ({
    * Checks if global sorting is ready to use
    */
   const isGlobalSortingReady = useCallback((): boolean => {
-    return globalSortingState.isGlobalSorting && 
-           globalSortingState.rankedCars.length > 0 && 
-           !globalSortingState.isLoading;
+    return globalSortingState.isGlobalSorting &&
+      globalSortingState.rankedCars.length > 0 &&
+      !globalSortingState.isLoading;
   }, [globalSortingState]);
 
   /**
@@ -111,7 +111,7 @@ export const useGlobalCarSorting = ({
 
     // Create process key
     const processKey = `${JSON.stringify(filters)}_${sortBy}_${totalCount}`;
-    
+
     if (processKey === lastProcessedKey.current && isGlobalSortingReady()) {
       console.log('✅ Global sorting already completed for current parameters');
       return;
@@ -144,7 +144,7 @@ export const useGlobalCarSorting = ({
       // For small datasets, use current cars
       try {
         const result = await sortingService.current.sortAllCars(currentCars, filters, sortBy, carsPerPage);
-        
+
         setGlobalSortingState(prev => ({
           ...prev,
           isGlobalSorting: true,
@@ -157,7 +157,7 @@ export const useGlobalCarSorting = ({
           error: null,
           lastFetchKey: processKey
         }));
-        
+
         lastProcessedKey.current = processKey;
       } catch (error) {
         console.error('❌ Error in small dataset global sorting:', error);
@@ -171,7 +171,7 @@ export const useGlobalCarSorting = ({
     }
 
     fetchingRef.current = true;
-    
+
     setGlobalSortingState(prev => ({
       ...prev,
       isLoading: true,
@@ -181,13 +181,13 @@ export const useGlobalCarSorting = ({
 
     try {
       console.log(`🔄 Fetching all ${totalCount} cars for global sorting with ${sortBy}`);
-      
+
       // Fetch all cars
       const allCars = await fetchAllCars(filters);
-      
+
       // Apply global sorting with chronological ranking
       const result = await sortingService.current.sortAllCars(allCars, filters, sortBy, carsPerPage);
-      
+
       // Validate results if enabled
       if (validationEnabled) {
         const isValid = validateChronologicalRanking(result.rankedCars, sortBy);
@@ -195,7 +195,7 @@ export const useGlobalCarSorting = ({
           console.warn('⚠️ Chronological ranking validation failed');
         }
       }
-      
+
       setGlobalSortingState(prev => ({
         ...prev,
         isGlobalSorting: true,
@@ -208,14 +208,14 @@ export const useGlobalCarSorting = ({
         error: null,
         lastFetchKey: processKey
       }));
-      
+
       lastProcessedKey.current = processKey;
-      
+
       console.log(`✅ Global sorting initialized: ${result.totalCars} cars across ${result.totalPages} pages`);
-      
+
     } catch (error) {
       console.error('❌ Error in global sorting initialization:', error);
-      
+
       setGlobalSortingState(prev => ({
         ...prev,
         isGlobalSorting: false,
@@ -227,7 +227,7 @@ export const useGlobalCarSorting = ({
     } finally {
       fetchingRef.current = false;
     }
-  }, [filters, totalCount, shouldUseGlobalSorting, fetchAllCars, currentCars, carsPerPage, enableCaching, validationEnabled, isGlobalSortingReady]);
+  }, [filters, totalCount, shouldUseGlobalSorting, fetchAllCars, currentCars, carsPerPage, enableCaching, validationEnabled]);
 
   /**
    * Gets cars for a specific page from the globally sorted results
@@ -238,9 +238,9 @@ export const useGlobalCarSorting = ({
     }
 
     const carsForPage = getCarsForPage(globalSortingState.rankedCars, pageNumber, carsPerPage);
-    
+
     console.log(`📄 Retrieved ${carsForPage.length} cars for page ${pageNumber} (global sorting)`);
-    
+
     return carsForPage;
   }, [globalSortingState.rankedCars, carsPerPage, isGlobalSortingReady]);
 
@@ -249,7 +249,7 @@ export const useGlobalCarSorting = ({
    */
   const clearGlobalSorting = useCallback(() => {
     console.log('🗑️ Clearing global sorting state');
-    
+
     setGlobalSortingState({
       isGlobalSorting: false,
       allCars: [],
@@ -261,10 +261,10 @@ export const useGlobalCarSorting = ({
       error: null,
       lastFetchKey: ''
     });
-    
+
     lastProcessedKey.current = '';
     fetchingRef.current = false;
-    
+
     if (enableCaching) {
       sortingService.current.clearCache();
     }
@@ -275,10 +275,10 @@ export const useGlobalCarSorting = ({
    */
   const refreshGlobalSorting = useCallback(async (sortBy: SortOption): Promise<void> => {
     console.log('🔄 Refreshing global sorting');
-    
+
     // Clear current state
     lastProcessedKey.current = '';
-    
+
     // Reinitialize
     await initializeGlobalSorting(sortBy);
   }, [initializeGlobalSorting]);
@@ -303,9 +303,9 @@ export const useGlobalCarSorting = ({
   // Auto-clear when filters change significantly
   useEffect(() => {
     const currentFiltersKey = JSON.stringify(filters);
-    const shouldClear = lastProcessedKey.current && 
-                       !lastProcessedKey.current.includes(currentFiltersKey);
-    
+    const shouldClear = lastProcessedKey.current &&
+      !lastProcessedKey.current.includes(currentFiltersKey);
+
     if (shouldClear) {
       console.log('🔄 Filters changed significantly, clearing global sorting');
       clearGlobalSorting();
