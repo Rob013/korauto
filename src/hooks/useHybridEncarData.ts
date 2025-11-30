@@ -13,9 +13,9 @@ import { useSecureAuctionAPI } from './useSecureAuctionAPI';
 import { APIFilters } from '@/utils/catalog-filter';
 
 interface UseHybridEncarDataOptions {
-    preferCache?: boolean; // Default: true
+    preferCache?: boolean; // Default: false (prefer API)
     maxCacheAge?: number; // Minutes, default: 60
-    fallbackToAPI?: boolean; // Default: false (cache-only for instant performance)
+    fallbackToAPI?: boolean; // Default: true (enable API fallback)
 }
 
 /**
@@ -25,9 +25,9 @@ interface UseHybridEncarDataOptions {
  */
 export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     const {
-        preferCache = true,
+        preferCache = false, // Prefer API by default
         maxCacheAge = 360, // 6 hours - match sync schedule
-        fallbackToAPI = false // Cache-only by default for instant performance
+        fallbackToAPI = true // Enable API fallback by default
     } = options;
 
     // Internal state
@@ -87,7 +87,7 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
         if (usingCache) {
             console.log(`📦 Using Supabase cache (${cacheHealth?.carCount} cars, last sync: ${cacheHealth?.minutesSinceSync}min ago)`);
         } else if (usingAPI) {
-            console.log(`🌐 Using live API (cache not available or stale)`);
+            console.log(`🌐 Using external API (live data)`);
         }
     }, [usingCache, usingAPI, cacheHealth]);
 
