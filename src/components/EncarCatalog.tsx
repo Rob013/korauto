@@ -519,7 +519,6 @@ const EncarCatalog = ({
     setSortBy("");
 
     setIsFilterLoading(true);
-    setIsFilterLoading(true);
     setFilters(newFilters);
 
     setShowAllCars(false);
