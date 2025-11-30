@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -109,7 +109,7 @@ const EncarCatalog = ({
   const [allCarsData, setAllCarsData] = useState<any[]>([]); // Store all cars when fetched
   const isMobile = useIsMobile();
   const [sourceCounts, setSourceCounts] = useState<{ encar: number; kbc: number; all?: number }>({ encar: 0, kbc: 0 });
-  const [isApplyingFilters, startApplyingFilters] = useTransition();
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
   const { cars: gridCars, isLoading: gridLoading, error: gridError, fetchGrid, fetchFromLink } = useAuctionsApiGrid();
   const KBC_DOMAINS = ['kbchachacha', 'kbchacha', 'kb_chachacha', 'kbc', 'kbcchachacha'];
 
@@ -519,9 +519,8 @@ const EncarCatalog = ({
     setSortBy("");
 
     setIsFilterLoading(true);
-    startApplyingFilters(() => {
-      setFilters(newFilters);
-    });
+    setIsFilterLoading(true);
+    setFilters(newFilters);
 
     setShowAllCars(false);
     setAllCarsData([]);
@@ -539,7 +538,6 @@ const EncarCatalog = ({
     scheduleFetchCars,
     setSearchParams,
     clearGlobalSorting,
-    startApplyingFilters,
     setFilters,
     setShowAllCars,
     setAllCarsData,
