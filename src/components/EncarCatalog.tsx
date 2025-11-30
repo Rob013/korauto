@@ -720,13 +720,17 @@ const EncarCatalog = ({
       seats_count: f.seats_count,
       search: f.search
     };
+    
+    // Batch state updates to prevent multiple re-renders
     setFilters(newFilters);
     setLoadedPages(1);
-    setModels([]);
-    setGenerations([]);
-
-    // Only show loading for cars
-    setIsLoading(true);
+    
+    // No loading state for cached data - instant filtering
+    const isCacheMode = source === 'cache';
+    if (!isCacheMode) {
+      setIsLoading(true);
+    }
+    
     try {
       if (!manufacturerId) {
         setIsLoading(false);
@@ -752,10 +756,14 @@ const EncarCatalog = ({
         ...newFilters,
         per_page: "50"
       };
-      await Promise.all([fetchCars(1, filtersForCars, true), modelPromise.then(modelData => {
-        console.log(`[handleManufacturerChange] Setting models to:`, modelData);
-        setModels(modelData);
-      }).catch(err => console.warn('Failed to load models:', err))]);
+      
+      await Promise.all([
+        fetchCars(1, filtersForCars, true), 
+        modelPromise.then(modelData => {
+          console.log(`[handleManufacturerChange] Setting models to:`, modelData);
+          setModels(modelData);
+        }).catch(err => console.warn('Failed to load models:', err))
+      ]);
 
       // Update URL after successful data fetch
       const paramsToSet: any = {};
@@ -768,7 +776,9 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleManufacturerChange] Error:', error);
     } finally {
-      setIsLoading(false);
+      if (!isCacheMode) {
+        setIsLoading(false);
+      }
       setIsFilterLoading(false);
     }
   };
@@ -789,12 +799,18 @@ const EncarCatalog = ({
       generation_id: undefined,
       grade_iaai: undefined
     };
+    
+    // Batch updates
     setFilters(newFilters);
     setLoadedPages(1);
     setGenerations([]);
 
-    // Only show loading for cars
-    setIsLoading(true);
+    // No loading state for cached data - instant filtering
+    const isCacheMode = source === 'cache';
+    if (!isCacheMode) {
+      setIsLoading(true);
+    }
+    
     try {
       // Fetch cars with neutral sorting (user can re-apply a sort after filters)
       const filtersForCars = {
@@ -819,7 +835,9 @@ const EncarCatalog = ({
     } catch (error) {
       console.error('[handleModelChange] Error:', error);
     } finally {
-      setIsLoading(false);
+      if (!isCacheMode) {
+        setIsLoading(false);
+      }
       setIsFilterLoading(false);
     }
   };
