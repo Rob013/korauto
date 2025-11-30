@@ -203,7 +203,7 @@ const EncarCatalog = ({
       : filtered;
 
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [cars, (filters as APIFilters).grade_iaai, (filters as any)?.engine_spec, error]);
+  }, [cars, filters, error]);
 
   // Extract engine variants from filtered cars for the dropdown
   const engineVariants = useMemo(() => {
@@ -212,7 +212,7 @@ const EncarCatalog = ({
       return [];
     }
     return extractUniqueEngineSpecs(filteredCars);
-  }, [filteredCars, (filters as APIFilters).model_id]);
+  }, [filteredCars, filters]);
 
   // console.log(`📊 Filter Results: ${filteredCars.length} cars match (total loaded: ${cars.length}, total count from API: ${totalCount}, grade filter: ${filters.grade_iaai || 'none'})`);
 
@@ -238,7 +238,7 @@ const EncarCatalog = ({
     const engineSpec = (filters as any)?.engine_spec;
     const engineFiltered = engineSpec ? gradeFiltered.filter(car => matchesEngineFilter(car, engineSpec)) : gradeFiltered;
     return filterCarsWithBuyNowPricing(engineFiltered);
-  }, [mergedCars, (filters as APIFilters).grade_iaai, (filters as any)?.engine_spec]);
+  }, [mergedCars, filters]);
 
   // Memoized cars for sorting to prevent unnecessary re-computations
   const carsForSorting = useMemo(() => {
