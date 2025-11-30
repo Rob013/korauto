@@ -70,6 +70,7 @@ export function useHybridEncarData(options: UseHybridEncarDataOptions = {}) {
     // Define all callbacks unconditionally to follow Rules of Hooks
     const fetchCarsCache = useCallback(async (page: number, newFilters: APIFilters, resetList: boolean) => {
         console.log('📦 fetchCarsCache called:', { page, resetList, filterKeys: Object.keys(newFilters) });
+        console.log('📦 Filter values:', newFilters);
         setCurrentPage(page);
         setFilters(newFilters);
     }, []);

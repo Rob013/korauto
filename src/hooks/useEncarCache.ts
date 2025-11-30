@@ -80,13 +80,17 @@ export function useEncarCache(
                 .eq('is_active', true)
                 .abortSignal(signal); // Add abort signal support
 
-            // Apply filters
+            // Apply filters with explicit logging
             if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
-                query = query.eq('manufacturer_id', Number(filters.manufacturer_id));
+                const manufacturerId = Number(filters.manufacturer_id);
+                console.log('🔍 Applying manufacturer_id filter:', manufacturerId);
+                query = query.eq('manufacturer_id', manufacturerId);
             }
 
             if (filters.model_id && filters.model_id !== 'all') {
-                query = query.eq('model_id', Number(filters.model_id));
+                const modelId = Number(filters.model_id);
+                console.log('🔍 Applying model_id filter:', modelId);
+                query = query.eq('model_id', modelId);
             }
 
             if (filters.generation_id && filters.generation_id !== 'all') {

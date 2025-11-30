@@ -302,11 +302,14 @@ const EncarCatalog = ({
   });
 
   const renderableCars = useMemo(
-    () =>
-      smoothCarsToDisplay.filter((car: CarWithRank | any) => {
+    () => {
+      const filtered = smoothCarsToDisplay.filter((car: CarWithRank | any) => {
         const lot = car?.lots?.[0];
         return lot?.buy_now && lot.buy_now > 0;
-      }),
+      });
+      console.log(`🎨 Renderable cars: ${filtered.length} out of ${smoothCarsToDisplay.length} (filtered out ${smoothCarsToDisplay.length - filtered.length} without price)`);
+      return filtered;
+    },
     [smoothCarsToDisplay],
   );
   const [searchTerm, setSearchTerm] = useState((filters as APIFilters).search || "");
@@ -899,27 +902,31 @@ const EncarCatalog = ({
         setSearchTerm(urlFilters.search);
       }
 
-      // Set filters and pagination immediately for faster UI response
+      // Load manufacturers first (they're cached)
+      const manufacturersData = await fetchManufacturers();
+      setManufacturers(manufacturersData);
+
+      // Load dependent data if filters exist
+      if (urlFilters.manufacturer_id) {
+        const modelsData = await fetchModels(urlFilters.manufacturer_id);
+        setModels(modelsData);
+        if (urlFilters.model_id) {
+          const generationsData = await fetchGenerations(urlFilters.model_id);
+          setGenerations(generationsData);
+        }
+      }
+
+      // Set filters AFTER loading related data to trigger cache query with correct context
+      console.log('🎯 Setting initial filters:', urlFilters);
       setFilters(urlFilters);
       setLoadedPages(urlLoadedPages);
       setCurrentPage(urlCurrentPage);
+      
+      // Small delay to ensure filters are applied before fetching cars
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       try {
-        // PERFORMANCE OPTIMIZATION: Load only essential data first
-        // Load manufacturers immediately (they're cached)
-        const manufacturersData = await fetchManufacturers();
-        setManufacturers(manufacturersData);
-
-        // Load dependent data only if filters exist, in sequence to avoid race conditions
-        if (urlFilters.manufacturer_id) {
-          const modelsData = await fetchModels(urlFilters.manufacturer_id);
-          setModels(modelsData);
-          if (urlFilters.model_id) {
-            const generationsData = await fetchGenerations(urlFilters.model_id);
-            setGenerations(generationsData);
-          }
-        }
-
-        // Load cars last - this is the most expensive operation
+        // Load cars with the URL filters
         const initialFilters = {
           ...urlFilters,
           per_page: "200",
@@ -928,6 +935,7 @@ const EncarCatalog = ({
             sort_by: sortBy
           } : {})
         };
+        console.log('🎯 Fetching cars with filters:', initialFilters);
         await fetchCars(urlCurrentPage, initialFilters, true);
       } catch (error) {
         console.error('Error loading initial data:', error);
