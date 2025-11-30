@@ -30,6 +30,7 @@ import { useSearchParams } from "react-router-dom";
 import { useSortedCars, getEncarSortOptions, SortOption } from "@/hooks/useSortedCars";
 import { useCurrencyAPI } from "@/hooks/useCurrencyAPI";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 import { useGlobalCarSorting } from "@/hooks/useGlobalCarSorting";
 import { useSmoothListTransition } from "@/hooks/useSmoothListTransition";
@@ -53,6 +54,7 @@ const EncarCatalog = ({
   const {
     restorePageState
   } = useNavigation();
+  const { isAdmin } = useAdminCheck();
   // Use hybrid hook - PREFER CACHE with extended tolerance for better performance
   const {
     cars,
@@ -1374,7 +1376,7 @@ const EncarCatalog = ({
               ) : (
                 <>
                   <span className="font-semibold text-foreground">{animatedTotalCount.toLocaleString()}</span> vetura të disponueshme
-                  {source === 'cache' && isStale && (
+                  {isAdmin && source === 'cache' && isStale && (
                     <span className="ml-2 text-yellow-600 text-xs">(data may be outdated)</span>
                   )}
                 </>

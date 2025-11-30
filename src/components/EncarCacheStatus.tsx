@@ -6,6 +6,7 @@
  */
 
 import { useEncarCacheHealth, useEncarSyncStatus } from '@/hooks/useEncarCache';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -18,8 +19,14 @@ interface EncarCacheStatusProps {
 }
 
 export function EncarCacheStatus({ source, compact = false }: EncarCacheStatusProps) {
+    const { isAdmin, isLoading: adminLoading } = useAdminCheck();
     const { data: cacheHealth, isLoading: healthLoading } = useEncarCacheHealth();
     const { data: syncStatus, isLoading: syncLoading } = useEncarSyncStatus();
+
+    // Only show to admins
+    if (!isAdmin && !adminLoading) {
+        return null;
+    }
 
     if (healthLoading || syncLoading) {
         return (
