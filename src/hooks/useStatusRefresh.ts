@@ -78,10 +78,8 @@ export const useStatusRefresh = (options: StatusRefreshOptions = {}) => {
   useEffect(() => {
     if (!enabled) return;
 
-    // Initial refresh
-    refreshCarStatuses();
-
-    // Set up interval (convert hours to milliseconds)
+    // Don't run initial refresh on page load to avoid timeouts
+    // Only run on interval
     const intervalMs = intervalHours * 60 * 60 * 1000;
     const interval = setInterval(refreshCarStatuses, intervalMs);
 
