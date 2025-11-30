@@ -11,7 +11,7 @@ const MAX_RETRIES = 2 // Reduced retries since we have longer delays
 const BACKOFF_MULTIPLIER = 3 // More aggressive backoff
 const PAGE_SIZE = 250 // Optimal page size per API docs
 const REQUEST_TIMEOUT = 45000 // Longer timeout for large pages
-const MAX_PAGES = 500 // Safety limit for full syncs
+const MAX_PAGES = 10000 // Increased to handle full syncs of all cars
 const UPSERT_BATCH_SIZE = 50 // Number of cars to upsert per batch
 const ARCHIVE_BATCH_SIZE = 50 // Number of archived cars to process per batch
 
