@@ -1,11 +1,9 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { X, Search } from "lucide-react";
 import { APIFilters } from "@/utils/catalog-filter";
 import { Slider } from "@/components/ui/slider";
-import { useEncarFilterOptions } from "@/hooks/useEncarFilterOptions";
-import { debounce } from "@/utils/performance";
 
 interface Manufacturer {
     id: number;
@@ -60,6 +58,44 @@ interface MobileFiltersPanelProps {
     usePortal?: boolean;
 }
 
+const FUEL_TYPES: Record<string, number> = {
+    'Benzinë': 1,
+    'Dizel': 2,
+    'Hibrid': 3,
+    'Elektrik': 4,
+    'Gaz': 5
+};
+
+const TRANSMISSIONS: Record<string, number> = {
+    'Automatik': 1,
+    'Manual': 2,
+    'CVT': 3
+};
+
+const BODY_TYPES: Record<string, number> = {
+    'Sedan': 1,
+    'SUV': 2,
+    'Hatchback': 3,
+    'Wagon': 4,
+    'Coupe': 5,
+    'Convertible': 6,
+    'Van': 7,
+    'Truck': 8
+};
+
+const COLORS: Record<string, number> = {
+    'E zezë': 1,
+    'E bardhë': 2,
+    'Gri': 3,
+    'Argjend': 4,
+    'Blu': 5,
+    'E kuqe': 6,
+    'Kafe': 7,
+    'Jeshile': 8,
+    'Portokalli': 9,
+    'Ari': 10
+};
+
 const DRIVE_TYPES = ['2WD', '4WD', 'AWD'];
 const STEERING_POSITIONS = ['Majtas', 'Djathtas'];
 
@@ -79,89 +115,50 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
     className,
     usePortal = false
 }) => {
-    // Local state for immediate UI updates
-    const [localFilters, setLocalFilters] = useState(filters);
-    
-    // Fetch dynamic filter options from database
-    const { data: filterOptions, isLoading: filterOptionsLoading } = useEncarFilterOptions();
-
-    // Sync local filters when parent filters change - INSTANT update
-    useEffect(() => {
-        console.log('🔄 Syncing filters from parent:', filters);
-        setLocalFilters(filters);
-    }, [filters]);
-
-    // Memoized debounced function that's stable across renders
-    const debouncedFilterChange = useMemo(
-        () => debounce((newFilters: APIFilters) => {
-            console.log('🔄 Applying debounced filter change:', newFilters);
-            onFiltersChange(newFilters);
-        }, 150), // Reduced to 150ms for better responsiveness
-        [onFiltersChange]
-    );
 
     const handleChange = useCallback((key: string, value: string) => {
-        console.log('🎯 Filter change:', { key, value });
         const actualValue = value === '' || value === 'all' ? undefined : value;
-        const newFilters = { ...localFilters, [key]: actualValue };
 
-        // Update local state immediately for instant UI feedback
-        setLocalFilters(newFilters);
-
-        // Critical filters (manufacturer, model, generation) need immediate update
         if (key === 'manufacturer_id') {
+            // If onManufacturerChange is provided, use it exclusively to handle logic (fetching models, etc.)
             if (onManufacturerChange) {
                 onManufacturerChange(actualValue || '');
             } else {
-                const resetFilters = { ...newFilters, model_id: undefined, generation_id: undefined, grade_iaai: undefined };
-                setLocalFilters(resetFilters);
-                onFiltersChange(resetFilters);
+                // Fallback for when onManufacturerChange is not provided
+                onFiltersChange({ ...filters, manufacturer_id: actualValue, model_id: undefined, generation_id: undefined, grade_iaai: undefined });
             }
         } else if (key === 'model_id') {
             if (onModelChange) {
                 onModelChange(actualValue || '');
             } else {
-                const resetFilters = { ...newFilters, generation_id: undefined, grade_iaai: undefined };
-                setLocalFilters(resetFilters);
-                onFiltersChange(resetFilters);
+                onFiltersChange({ ...filters, model_id: actualValue, generation_id: undefined, grade_iaai: undefined });
             }
         } else if (key === 'generation_id') {
             if (onGenerationChange) {
                 onGenerationChange(actualValue || '');
             } else {
-                const resetFilters = { ...newFilters, grade_iaai: undefined };
-                setLocalFilters(resetFilters);
-                onFiltersChange(resetFilters);
+                onFiltersChange({ ...filters, generation_id: actualValue, grade_iaai: undefined });
             }
         } else {
-            // All other filters: use debouncing to prevent UI freezing
-            debouncedFilterChange(newFilters);
+            onFiltersChange({ ...filters, [key]: actualValue });
         }
-    }, [localFilters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange, debouncedFilterChange]);
+    }, [filters, onFiltersChange, onManufacturerChange, onModelChange, onGenerationChange]);
 
     const handleSliderChange = useCallback((key: string, values: number[]) => {
-        let newFilters = { ...localFilters };
-        
         if (key === 'mileage') {
-            newFilters = {
-                ...newFilters,
+            onFiltersChange({
+                ...filters,
                 odometer_from_km: values[0].toString(),
                 odometer_to_km: values[1].toString()
-            };
+            });
         } else if (key === 'price') {
-            newFilters = {
-                ...newFilters,
+            onFiltersChange({
+                ...filters,
                 buy_now_price_from: values[0].toString(),
                 buy_now_price_to: values[1].toString()
-            };
+            });
         }
-        
-        // Update local state immediately
-        setLocalFilters(newFilters);
-        
-        // Use debounce for sliders to prevent too many updates while dragging
-        debouncedFilterChange(newFilters);
-    }, [localFilters, debouncedFilterChange]);
+    }, [filters, onFiltersChange]);
 
     // Popular brands (in order)
     const POPULAR_BRANDS = ['AUDI', 'MERCEDES-BENZ', 'VOLKSWAGEN', 'BMW'];
@@ -208,7 +205,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
         return { popular, others };
     }, [manufacturers]);
 
-    // Get models for selected manufacturer with STRICT filtering - use filters prop for instant display
+    // Get models for selected manufacturer with STRICT filtering
     const modelsList = useMemo(() => {
         if (!filters.manufacturer_id) return [];
 
@@ -237,20 +234,20 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
 
     // Get display values
     const getMileageValue = useCallback(() => {
-        if (localFilters.odometer_from_km && localFilters.odometer_to_km)
-            return `${localFilters.odometer_from_km} - ${localFilters.odometer_to_km} km`;
-        if (localFilters.odometer_from_km) return `${localFilters.odometer_from_km}+ km`;
-        if (localFilters.odometer_to_km) return `deri ${localFilters.odometer_to_km} km`;
+        if (filters.odometer_from_km && filters.odometer_to_km)
+            return `${filters.odometer_from_km} - ${filters.odometer_to_km} km`;
+        if (filters.odometer_from_km) return `${filters.odometer_from_km}+ km`;
+        if (filters.odometer_to_km) return `deri ${filters.odometer_to_km} km`;
         return 'Të gjitha';
-    }, [localFilters.odometer_from_km, localFilters.odometer_to_km]);
+    }, [filters.odometer_from_km, filters.odometer_to_km]);
 
     const getPriceValue = useCallback(() => {
-        if (localFilters.buy_now_price_from && localFilters.buy_now_price_to)
-            return `€${localFilters.buy_now_price_from} - €${localFilters.buy_now_price_to}`;
-        if (localFilters.buy_now_price_from) return `€${localFilters.buy_now_price_from}+`;
-        if (localFilters.buy_now_price_to) return `deri €${localFilters.buy_now_price_to}`;
+        if (filters.buy_now_price_from && filters.buy_now_price_to)
+            return `€${filters.buy_now_price_from} - €${filters.buy_now_price_to}`;
+        if (filters.buy_now_price_from) return `€${filters.buy_now_price_from}+`;
+        if (filters.buy_now_price_to) return `deri €${filters.buy_now_price_to}`;
         return 'Të gjitha';
-    }, [localFilters.buy_now_price_from, localFilters.buy_now_price_to]);
+    }, [filters.buy_now_price_from, filters.buy_now_price_to]);
 
     const content = (
         <div className={className || "fixed inset-y-0 right-0 flex flex-col w-full md:w-80 bg-white dark:bg-black z-[9999] overflow-y-auto touch-action-manipulation shadow-2xl"}>
@@ -328,7 +325,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 <button
                                     key={year}
                                     onClick={() => handleChange('from_year', year.toString())}
-                                    className={`flex-shrink-0 px-2.5 py-1.5 text-[10px] font-medium rounded-lg border transition-all ${localFilters.from_year === year.toString()
+                                    className={`flex-shrink-0 px-2.5 py-1.5 text-[10px] font-medium rounded-lg border transition-all ${filters.from_year === year.toString()
                                         ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                                         : 'bg-background border-border hover:bg-muted'
                                         }`}
@@ -339,7 +336,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <select
-                                value={localFilters.from_year || ''}
+                                value={filters.from_year || ''}
                                 onChange={(e) => handleChange('from_year', e.target.value)}
                                 className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             >
@@ -349,7 +346,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                 ))}
                             </select>
                             <select
-                                value={localFilters.to_year || ''}
+                                value={filters.to_year || ''}
                                 onChange={(e) => handleChange('to_year', e.target.value)}
                                 className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             >
@@ -372,8 +369,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             max={300000}
                             step={5000}
                             value={[
-                                parseInt(localFilters.odometer_from_km || '0'),
-                                parseInt(localFilters.odometer_to_km || '300000')
+                                parseInt(filters.odometer_from_km || '0'),
+                                parseInt(filters.odometer_to_km || '300000')
                             ]}
                             onValueChange={(values) => handleSliderChange('mileage', values)}
                             className="mb-2"
@@ -382,14 +379,14 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <input
                                 type="number"
                                 placeholder="0"
-                                value={localFilters.odometer_from_km || ''}
+                                value={filters.odometer_from_km || ''}
                                 onChange={(e) => handleChange('odometer_from_km', e.target.value)}
                                 className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             />
                             <input
                                 type="number"
                                 placeholder="300000"
-                                value={localFilters.odometer_to_km || ''}
+                                value={filters.odometer_to_km || ''}
                                 onChange={(e) => handleChange('odometer_to_km', e.target.value)}
                                 className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             />
@@ -407,8 +404,8 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             max={100000}
                             step={1000}
                             value={[
-                                parseInt(localFilters.buy_now_price_from || '0'),
-                                parseInt(localFilters.buy_now_price_to || '100000')
+                                parseInt(filters.buy_now_price_from || '0'),
+                                parseInt(filters.buy_now_price_to || '100000')
                             ]}
                             onValueChange={(values) => handleSliderChange('price', values)}
                             className="mb-2"
@@ -417,14 +414,14 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <input
                                 type="number"
                                 placeholder="0"
-                                value={localFilters.buy_now_price_from || ''}
+                                value={filters.buy_now_price_from || ''}
                                 onChange={(e) => handleChange('buy_now_price_from', e.target.value)}
                                 className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             />
                             <input
                                 type="number"
                                 placeholder="100000"
-                                value={localFilters.buy_now_price_to || ''}
+                                value={filters.buy_now_price_to || ''}
                                 onChange={(e) => handleChange('buy_now_price_to', e.target.value)}
                                 className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             />
@@ -438,111 +435,69 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                         {/* Fuel Type */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Karburanti</label>
-                            {filterOptionsLoading ? (
-                                <div className="text-xs text-muted-foreground py-2">Duke ngarkuar opsionet...</div>
-                            ) : filterOptions?.fuelTypes && filterOptions.fuelTypes.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
-                                    {filterOptions.fuelTypes.map((option) => {
-                                        const isSelected = localFilters.fuel_type === option.value;
-                                        return (
-                                            <button
-                                                key={option.value}
-                                                type="button"
-                                                onClick={() => {
-                                                    handleChange('fuel_type', isSelected ? '' : option.value);
-                                                }}
-                                                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none touch-manipulation ${
-                                                    isSelected
-                                                        ? 'bg-primary text-primary-foreground border-primary'
-                                                        : 'bg-background border-border hover:bg-muted active:scale-95'
-                                                }`}
-                                            >
-                                                {option.label} {option.count ? `(${option.count})` : ''}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="text-xs text-muted-foreground py-2">Nuk ka opsione të disponueshme</div>
-                            )}
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(FUEL_TYPES).map(([label, value]) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => handleChange('fuel_type', filters.fuel_type === value.toString() ? '' : value.toString())}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.fuel_type === value.toString()
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background border-border hover:bg-muted'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Transmission */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Transmisioni</label>
-                            {filterOptionsLoading ? (
-                                <div className="text-xs text-muted-foreground py-2">Duke ngarkuar opsionet...</div>
-                            ) : filterOptions?.transmissions && filterOptions.transmissions.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
-                                    {filterOptions.transmissions.map((option) => {
-                                        const isSelected = localFilters.transmission === option.value;
-                                        return (
-                                            <button
-                                                key={option.value}
-                                                type="button"
-                                                onClick={() => {
-                                                    handleChange('transmission', isSelected ? '' : option.value);
-                                                }}
-                                                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none touch-manipulation ${
-                                                    isSelected
-                                                        ? 'bg-primary text-primary-foreground border-primary'
-                                                        : 'bg-background border-border hover:bg-muted active:scale-95'
-                                                }`}
-                                            >
-                                                {option.label} {option.count ? `(${option.count})` : ''}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="text-xs text-muted-foreground py-2">Nuk ka opsione të disponueshme</div>
-                            )}
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(TRANSMISSIONS).map(([label, value]) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => handleChange('transmission', filters.transmission === value.toString() ? '' : value.toString())}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${filters.transmission === value.toString()
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background border-border hover:bg-muted'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Body Type */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Karroceria</label>
                             <select
-                                value={localFilters.body_type || ''}
-                                onChange={(e) => {
-                                    handleChange('body_type', e.target.value);
-                                }}
-                                className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors cursor-pointer"
-                                disabled={filterOptionsLoading || !filterOptions?.bodyTypes || filterOptions.bodyTypes.length === 0}
+                                value={filters.body_type || ''}
+                                onChange={(e) => handleChange('body_type', e.target.value)}
+                                className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             >
                                 <option value="">Të gjitha</option>
-                                {filterOptions?.bodyTypes && filterOptions.bodyTypes.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label} {option.count ? `(${option.count})` : ''}
-                                    </option>
+                                {Object.entries(BODY_TYPES).map(([label, value]) => (
+                                    <option key={value} value={value}>{label}</option>
                                 ))}
                             </select>
-                            {!filterOptionsLoading && (!filterOptions?.bodyTypes || filterOptions.bodyTypes.length === 0) && (
-                                <div className="text-xs text-muted-foreground mt-1">Nuk ka opsione të disponueshme</div>
-                            )}
                         </div>
 
                         {/* Color */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2">Ngjyra</label>
                             <select
-                                value={localFilters.color || ''}
-                                onChange={(e) => {
-                                    handleChange('color', e.target.value);
-                                }}
-                                className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors cursor-pointer"
-                                disabled={filterOptionsLoading || !filterOptions?.colors || filterOptions.colors.length === 0}
+                                value={filters.color || ''}
+                                onChange={(e) => handleChange('color', e.target.value)}
+                                className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                             >
                                 <option value="">Të gjitha</option>
-                                {filterOptions?.colors && filterOptions.colors.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label} {option.count ? `(${option.count})` : ''}
-                                    </option>
+                                {Object.entries(COLORS).map(([label, value]) => (
+                                    <option key={value} value={value}>{label}</option>
                                 ))}
                             </select>
-                            {!filterOptionsLoading && (!filterOptions?.colors || filterOptions.colors.length === 0) && (
-                                <div className="text-xs text-muted-foreground mt-1">Nuk ka opsione të disponueshme</div>
-                            )}
                         </div>
 
                         {/* Drive Type & Steering */}
@@ -550,7 +505,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <div>
                                 <label className="block text-sm font-medium mb-2">Tërheqja</label>
                                 <select
-                                    value={localFilters.drive_type || ''}
+                                    value={filters.drive_type || ''}
                                     onChange={(e) => handleChange('drive_type', e.target.value)}
                                     className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                                 >
@@ -563,7 +518,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <div>
                                 <label className="block text-sm font-medium mb-2">Timoni</label>
                                 <select
-                                    value={localFilters.steering_position || ''}
+                                    value={filters.steering_position || ''}
                                     onChange={(e) => handleChange('steering_position', e.target.value)}
                                     className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                                 >
@@ -580,7 +535,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <label className="block text-sm font-medium mb-2">Motorri (cc)</label>
                             <div className="grid grid-cols-2 gap-2">
                                 <select
-                                    value={localFilters.engine_from || ''}
+                                    value={filters.engine_from || ''}
                                     onChange={(e) => handleChange('engine_from', e.target.value)}
                                     className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                                 >
@@ -590,7 +545,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                                     ))}
                                 </select>
                                 <select
-                                    value={localFilters.engine_to || ''}
+                                    value={filters.engine_to || ''}
                                     onChange={(e) => handleChange('engine_to', e.target.value)}
                                     className="h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                                 >
@@ -607,7 +562,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <div>
                                 <label className="block text-sm font-medium mb-2">Ulëse</label>
                                 <select
-                                    value={localFilters.seats_count || ''}
+                                    value={filters.seats_count || ''}
                                     onChange={(e) => handleChange('seats_count', e.target.value)}
                                     className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                                 >
@@ -621,7 +576,7 @@ export const MobileFiltersPanel: React.FC<MobileFiltersPanelProps> = ({
                             <div>
                                 <label className="block text-sm font-medium mb-2">Dyer</label>
                                 <select
-                                    value={localFilters.doors_count || ''}
+                                    value={filters.doors_count || ''}
                                     onChange={(e) => handleChange('doors_count', e.target.value)}
                                     className="w-full h-11 px-3 text-sm border border-border rounded-lg bg-background transition-colors"
                                 >

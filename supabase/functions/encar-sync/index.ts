@@ -205,11 +205,7 @@ Deno.serve(async (req) => {
       minutes = parseInt(url.searchParams.get('minutes') || '60') // Default hourly
     }
 
-    const { data: requestBody } = await req.json().catch(() => ({ data: {} }))
-    const maxPages = requestBody?.maxPages || (syncType === 'full' ? MAX_PAGES : 50)
-    const scheduled = requestBody?.scheduled || false
-
-    console.log(`📋 Sync parameters: type=${syncType}, maxPages=${maxPages}, scheduled=${scheduled}, minutes=${minutes}`)
+    console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
     // Check for force parameter to override stuck syncs
     const forceSync = url.searchParams.get('force') === 'true'
@@ -221,10 +217,10 @@ Deno.serve(async (req) => {
       .update({
         status: 'failed',
         error_message: 'Sync timeout - cleaned up automatically after 15 minutes',
-        sync_completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString()
       })
       .eq('status', 'running')
-      .lt('sync_started_at', fifteenMinutesAgo)
+      .lt('started_at', fifteenMinutesAgo)
 
     if (cleanupError) {
       console.warn('⚠️ Error cleaning up stuck syncs:', cleanupError)
@@ -234,12 +230,12 @@ Deno.serve(async (req) => {
     if (!forceSync) {
       const { data: existingSync } = await supabase
         .from('encar_sync_status')
-        .select('id, sync_started_at')
+        .select('id, started_at')
         .eq('status', 'running')
         .single()
 
       if (existingSync) {
-        const syncAge = Date.now() - new Date(existingSync.sync_started_at).getTime()
+        const syncAge = Date.now() - new Date(existingSync.started_at).getTime()
         const syncAgeMinutes = Math.floor(syncAge / 60000)
 
         console.log(`⚠️ Sync already running: ${existingSync.id} (running for ${syncAgeMinutes} minutes)`)
@@ -264,7 +260,7 @@ Deno.serve(async (req) => {
         .update({
           status: 'failed',
           error_message: 'Terminated by forced sync',
-          sync_completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString()
         })
         .eq('status', 'running')
     }
@@ -273,12 +269,14 @@ Deno.serve(async (req) => {
     const { data: syncRecord, error: syncError } = await supabase
       .from('encar_sync_status')
       .insert({
+        sync_type: syncType,
         status: 'running',
-        sync_started_at: new Date().toISOString(),
+        started_at: new Date().toISOString(),
+        current_page: 1,
+        total_pages: 1,
+        records_processed: 0,
         cars_processed: 0,
-        cars_added: 0,
-        cars_updated: 0,
-        cars_removed: 0
+        last_activity_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -407,11 +405,15 @@ Deno.serve(async (req) => {
           hasMorePages = carsData.meta?.current_page < carsData.meta?.last_page
           consecutiveErrors = 0 // Reset error counter on success
 
-          // Update progress in database (using correct column names)
+          // Update progress in database
           await supabase
             .from('encar_sync_status')
             .update({
-              cars_processed: totalCarsProcessed
+              current_page: currentPage,
+              total_pages: carsData.meta?.last_page || currentPage,
+              cars_processed: totalCarsProcessed,
+              last_activity_at: new Date().toISOString(),
+              last_cars_sync_at: new Date().toISOString()
             })
             .eq('id', syncRecord.id)
 
@@ -512,7 +514,9 @@ Deno.serve(async (req) => {
           await supabase
             .from('encar_sync_status')
             .update({
-              cars_removed: totalArchivedProcessed
+              archived_lots_processed: totalArchivedProcessed,
+              last_activity_at: new Date().toISOString(),
+              last_archived_sync_at: new Date().toISOString()
             })
             .eq('id', syncRecord.id)
 
@@ -553,21 +557,16 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Complete sync with correct column names
+      // Complete sync
       const completedAt = new Date().toISOString()
-      const startedAt = new Date(syncRecord.sync_started_at).getTime()
-      const durationSeconds = Math.floor((Date.now() - startedAt) / 1000)
-      
       await supabase
         .from('encar_sync_status')
         .update({
           status: 'completed',
-          sync_completed_at: completedAt,
+          completed_at: completedAt,
+          records_processed: totalCarsProcessed + totalArchivedProcessed,
           cars_processed: totalCarsProcessed,
-          cars_added: totalCarsProcessed, // All processed cars are considered new/updated
-          cars_removed: totalArchivedProcessed,
-          cars_updated: 0,
-          duration_seconds: durationSeconds,
+          archived_lots_processed: totalArchivedProcessed,
           error_message: errors.length > 0 ? errors.slice(0, 5).join('; ') : null
         })
         .eq('id', syncRecord.id)
@@ -581,10 +580,11 @@ Deno.serve(async (req) => {
         JSON.stringify({
           success: true,
           sync_id: syncRecord.id,
-          carsProcessed: totalCarsProcessed,
-          carsAdded: totalCarsProcessed,
-          carsRemoved: totalArchivedProcessed,
+          sync_type: syncType,
+          cars_processed: totalCarsProcessed,
+          archived_lots_processed: totalArchivedProcessed,
           total_processed: totalCarsProcessed + totalArchivedProcessed,
+          cleanup_result: cleanupResult,
           errors_count: errors.length,
           errors: errors.slice(0, 5),
           completed_at: completedAt
@@ -598,15 +598,15 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error(`💥 Sync error:`, error)
 
-      // Mark sync as failed with correct column names
+      // Mark sync as failed
       await supabase
         .from('encar_sync_status')
         .update({
           status: 'failed',
-          sync_completed_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
           error_message: error instanceof Error ? error.message : String(error),
           cars_processed: totalCarsProcessed,
-          cars_removed: totalArchivedProcessed
+          archived_lots_processed: totalArchivedProcessed
         })
         .eq('id', syncRecord.id)
 
@@ -616,7 +616,7 @@ Deno.serve(async (req) => {
           error: error instanceof Error ? error.message : String(error),
           sync_id: syncRecord.id,
           cars_processed: totalCarsProcessed,
-          cars_removed: totalArchivedProcessed
+          archived_lots_processed: totalArchivedProcessed
         }),
         {
           status: 500,

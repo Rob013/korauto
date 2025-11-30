@@ -71,83 +71,69 @@ export function useEncarCache(
 ) {
     return useQuery({
         queryKey: ['encar-cache', filters, page, perPage],
-        queryFn: async ({ signal }) => {
+        queryFn: async () => {
             console.log('🔍 Fetching from Encar cache:', { filters, page, perPage });
 
             let query = supabase
                 .from('encar_cars_cache')
                 .select('*', { count: 'exact' })
-                .eq('is_active', true)
-                .abortSignal(signal); // Add abort signal support
+                .eq('is_active', true);
 
-            // NOTE: Encar cache uses completely different manufacturer/model IDs than external API
-            // We cannot reliably filter by manufacturer/model names because:
-            // 1. External API uses IDs like 147 (Volkswagen), 88 (Mercedes)
-            // 2. Encar cache uses IDs like 500002 (Tata Daewoo), 8 (Aston Martin)
-            // 3. The name mapping is unreliable and causes empty results
-            // 
-            // SOLUTION: Show ALL cached cars and let users filter by other attributes
-            // (fuel type, transmission, body type, year, price, etc.)
-            
-            console.log('📋 Showing all manufacturers from Encar cache (IDs do not match external API)');
+            // Apply filters
+            if (filters.manufacturer_id && filters.manufacturer_id !== 'all') {
+                query = query.eq('manufacturer_id', Number(filters.manufacturer_id));
+            }
 
-            // Fuel type - exact match on database value
+            if (filters.model_id && filters.model_id !== 'all') {
+                query = query.eq('model_id', Number(filters.model_id));
+            }
+
+            if (filters.generation_id && filters.generation_id !== 'all') {
+                query = query.eq('generation_id', Number(filters.generation_id));
+            }
+
             if (filters.fuel_type) {
                 query = query.eq('fuel_type', filters.fuel_type);
             }
 
-            // Transmission - exact match on database value
             if (filters.transmission) {
                 query = query.eq('transmission', filters.transmission);
             }
 
-            // Body type - exact match on database value
-            if (filters.body_type) {
-                query = query.eq('body_type', filters.body_type);
-            }
-
-            // Color - exact match on database value
             if (filters.color) {
                 query = query.eq('color_name', filters.color);
+            }
+
+            if (filters.body_type) {
+                query = query.eq('body_type', filters.body_type);
             }
 
             if (filters.seats_count) {
                 query = query.eq('seat_count', Number(filters.seats_count));
             }
 
-            // Year range - convert to number for proper comparison
+            // Year range
             if (filters.from_year) {
-                const yearNum = parseInt(filters.from_year);
-                if (!isNaN(yearNum)) {
-                    query = query.gte('form_year', yearNum.toString());
-                }
+                query = query.gte('form_year', filters.from_year);
             }
             if (filters.to_year) {
-                const yearNum = parseInt(filters.to_year);
-                if (!isNaN(yearNum)) {
-                    query = query.lte('form_year', yearNum.toString());
-                }
+                query = query.lte('form_year', filters.to_year);
             }
 
-            // Price range - convert from EUR to KRW (1 EUR ≈ 1400 KRW)
-            // Database prices are in KRW, filter values are in EUR
+            // Price range
             if (filters.buy_now_price_from) {
-                const priceEUR = Number(filters.buy_now_price_from);
-                const priceKRW = Math.round(priceEUR * 1400);
-                query = query.gte('buy_now_price', priceKRW);
+                query = query.gte('buy_now_price', filters.buy_now_price_from);
             }
             if (filters.buy_now_price_to) {
-                const priceEUR = Number(filters.buy_now_price_to);
-                const priceKRW = Math.round(priceEUR * 1400);
-                query = query.lte('buy_now_price', priceKRW);
+                query = query.lte('buy_now_price', filters.buy_now_price_to);
             }
 
             // Odometer range
             if (filters.odometer_from_km) {
-                query = query.gte('mileage', Number(filters.odometer_from_km));
+                query = query.gte('mileage', filters.odometer_from_km);
             }
             if (filters.odometer_to_km) {
-                query = query.lte('mileage', Number(filters.odometer_to_km));
+                query = query.lte('mileage', filters.odometer_to_km);
             }
 
             // Search
@@ -184,14 +170,11 @@ export function useEncarCache(
             };
         },
         enabled: options.enabled !== false,
-        staleTime: options.staleTime ?? 30 * 60 * 1000, // 30 minutes
-        gcTime: options.cacheTime ?? 60 * 60 * 1000, // 60 minutes
+        staleTime: options.staleTime ?? 30 * 60 * 1000, // 30 minutes - keep data fresh longer
+        gcTime: options.cacheTime ?? 60 * 60 * 1000, // 60 minutes - cache in memory longer
         refetchOnWindowFocus: false,
         refetchOnMount: false,
-        refetchOnReconnect: false,
-        placeholderData: (previousData) => previousData, // Keep previous data while loading
-        retry: 1, // Only retry once on failure
-        retryDelay: 1000 // Wait 1 second before retry
+        refetchOnReconnect: false
     });
 }
 
@@ -206,11 +189,6 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
 
     // Extract image arrays - Encar typically has photo URLs in array
     const photoArray = Array.isArray(photos) ? photos : [];
-
-    // Convert KRW to EUR with proper exchange rate + 2500 EUR markup
-    // Current KRW to EUR rate: ~1500 KRW = 1 EUR
-    const priceKRW = cached.buy_now_price || 0;
-    const priceEUR = priceKRW > 0 ? Math.round(priceKRW / 1500) + 2500 : 0;
 
     return {
         // Core identifiers
@@ -273,18 +251,18 @@ function transformCachedCarToAPIFormat(cached: EncarCachedCar): any {
         body_type: cached.body_type,
         seats: cached.seat_count,
 
-        // Pricing - prices converted from KRW to EUR with markup
+        // Pricing - format for existing components
         advertisement: {
-            price: priceEUR,
+            price: cached.buy_now_price,
             status: cached.advertisement_status
         },
-        buy_now: priceEUR,
-        price: priceEUR,
+        buy_now: cached.buy_now_price,
+        price: cached.buy_now_price,
 
         // CRITICAL: Lots array structure (catalog expects this!)
         lots: [{
             lot: cached.lot_number,
-            buy_now: priceEUR,
+            buy_now: cached.buy_now_price,
 
             // Images in proper structure for catalog
             images: {

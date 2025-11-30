@@ -33,51 +33,25 @@ Deno.serve(async (req) => {
 
     console.log('✅ Encar sync completed:', syncData);
 
-    // 2. Delete ONLY cars with NULL or zero prices (keep all other prices, even low ones)
-    console.log('🗑️ Cleaning up cars with NULL or zero prices...');
-    const { data: deletedPricelessCars, error: pricelessDeleteError } = await supabase
-      .from('encar_cars_cache')
-      .delete()
-      .or('buy_now_price.is.null,buy_now_price.eq.0')
-      .select('count', { count: 'exact', head: true });
+    // 2. Delete archived/inactive cars older than 30 days
+    console.log('🗑️ Cleaning up archived cars...');
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    if (pricelessDeleteError) {
-      console.error('❌ Failed to delete invalid price cars:', pricelessDeleteError);
-    } else {
-      const pricelessCount = deletedPricelessCars?.length || 0;
-      console.log(`✅ Deleted ${pricelessCount} cars with invalid/missing prices`);
-    }
-
-    // 3. Delete ALL archived/inactive cars (regardless of age)
-    console.log('🗑️ Cleaning up archived/inactive cars...');
-    const { data: deletedInactiveCars, error: inactiveDeleteError } = await supabase
+    const { data: deletedCars, error: deleteError } = await supabase
       .from('encar_cars_cache')
       .delete()
       .eq('is_active', false)
+      .lt('updated_at', thirtyDaysAgo.toISOString())
       .select('count', { count: 'exact', head: true });
 
-    if (inactiveDeleteError) {
-      console.error('❌ Failed to delete inactive cars:', inactiveDeleteError);
+    if (deleteError) {
+      console.error('❌ Failed to delete archived cars:', deleteError);
     } else {
-      console.log(`✅ Deleted ${deletedInactiveCars?.length || 0} inactive cars`);
+      console.log(`✅ Deleted ${deletedCars?.length || 0} archived cars`);
     }
 
-    // 4. Delete ALL sold/archived cars by status (immediate removal)
-    console.log('🗑️ Cleaning up sold/archived cars by status...');
-    const { data: deletedSoldCars, error: soldDeleteError } = await supabase
-      .from('encar_cars_cache')
-      .delete()
-      .in('advertisement_status', ['SOLD', 'ARCHIVED', 'COMPLETED', 'INACTIVE', 'CLOSED', 'FINISHED', '판매완료', '삭제됨'])
-      .select('count', { count: 'exact', head: true });
-
-    if (soldDeleteError) {
-      console.error('❌ Failed to delete sold/archived cars:', soldDeleteError);
-    } else {
-      const soldCount = deletedSoldCars?.length || 0;
-      console.log(`✅ Deleted ${soldCount} sold/archived cars`);
-    }
-
-    // 5. Update sync schedule record
+    // 3. Update sync schedule record
     const { error: scheduleError } = await supabase
       .from('sync_schedule')
       .upsert({
@@ -100,9 +74,7 @@ Deno.serve(async (req) => {
         success: true,
         message: 'Cache sync completed successfully',
         syncResults: syncData,
-        deletedPricelessCount: deletedPricelessCars?.length || 0,
-        deletedInactiveCount: deletedInactiveCars?.length || 0,
-        deletedSoldCount: deletedSoldCars?.length || 0,
+        deletedCount: deletedCars?.length || 0,
         nextSync: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
