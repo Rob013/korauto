@@ -207,65 +207,59 @@ Deno.serve(async (req) => {
 
     console.log(`📋 Sync Details: ${syncType} sync for last ${minutes} minutes`)
 
-    // Check for force parameter to override stuck syncs
+    // Check for resume parameter to continue existing sync
+    const resumeSync = url.searchParams.get('resume') === 'true'
     const forceSync = url.searchParams.get('force') === 'true'
 
-    // Clean up stuck syncs older than 15 minutes (more aggressive)
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-    const { error: cleanupError } = await supabase
+    // Clean up stuck syncs older than 2 hours
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+    await supabase
       .from('encar_sync_status')
       .update({
         status: 'failed',
-        error_message: 'Sync timeout - cleaned up automatically after 15 minutes',
-        completed_at: new Date().toISOString()
+        error_message: 'Sync timeout - cleaned up automatically after 2 hours',
+        sync_completed_at: new Date().toISOString()
       })
       .eq('status', 'running')
-      .lt('started_at', fifteenMinutesAgo)
+      .lt('sync_started_at', twoHoursAgo)
 
-    if (cleanupError) {
-      console.warn('⚠️ Error cleaning up stuck syncs:', cleanupError)
-    }
+    let syncRecord: any
 
-    // Check for existing running sync (unless force flag is set)
-    if (!forceSync) {
+    // Try to resume existing sync or create new one
+    if (resumeSync || !forceSync) {
       const { data: existingSync } = await supabase
         .from('encar_sync_status')
-        .select('id, started_at')
+        .select('*')
         .eq('status', 'running')
+        .order('sync_started_at', { ascending: false })
+        .limit(1)
         .single()
 
       if (existingSync) {
-        const syncAge = Date.now() - new Date(existingSync.started_at).getTime()
+        const syncAge = Date.now() - new Date(existingSync.sync_started_at).getTime()
         const syncAgeMinutes = Math.floor(syncAge / 60000)
 
-        console.log(`⚠️ Sync already running: ${existingSync.id} (running for ${syncAgeMinutes} minutes)`)
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: `Sync already in progress (running for ${syncAgeMinutes} minutes). Add ?force=true to override.`,
-            existing_sync_id: existingSync.id,
-            sync_age_minutes: syncAgeMinutes
-          }),
-          {
-            status: 409,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        )
+        if (syncAgeMinutes < 120 && !forceSync) {
+          // Resume existing sync
+          console.log(`🔄 Resuming sync ${existingSync.id} from page ${existingSync.cars_processed || 0}`)
+          syncRecord = existingSync
+        } else if (forceSync) {
+          // Force mode: Mark old sync as failed and create new
+          console.log('🔄 Force mode: terminating existing sync...')
+          await supabase
+            .from('encar_sync_status')
+            .update({
+              status: 'failed',
+              error_message: 'Terminated by forced sync',
+              sync_completed_at: new Date().toISOString()
+            })
+            .eq('id', existingSync.id)
+        }
       }
-    } else {
-      // Force mode: Mark any existing running syncs as failed
-      console.log('🔄 Force mode enabled - terminating any existing syncs...')
-      await supabase
-        .from('encar_sync_status')
-        .update({
-          status: 'failed',
-          error_message: 'Terminated by forced sync',
-          completed_at: new Date().toISOString()
-        })
-        .eq('status', 'running')
     }
 
-    // Create new sync record
+    // Create new sync record if not resuming
+    if (!syncRecord) {
     const { data: syncRecord, error: syncError } = await supabase
       .from('encar_sync_status')
       .insert({
@@ -300,10 +294,13 @@ Deno.serve(async (req) => {
       // Following API Integration Guide: Use ?minutes=X for incremental updates
       console.log(`📡 Fetching active cars (${syncType === 'full' ? 'full sync' : `last ${minutes} minutes`})`)
 
-      let currentPage = 1
+      // Resume from last processed page
+      let currentPage = Math.floor((syncRecord.cars_processed || 0) / PAGE_SIZE) + 1
       let hasMorePages = true
       let consecutiveErrors = 0
       const MAX_CONSECUTIVE_ERRORS = 3
+
+      console.log(`📍 Starting from page ${currentPage} (${syncRecord.cars_processed || 0} cars already processed)`)
 
       while (hasMorePages && currentPage <= MAX_PAGES && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
         // Build URL per page following API guide: /api/cars?minutes=60&page=X&per_page=250
@@ -406,16 +403,16 @@ Deno.serve(async (req) => {
           consecutiveErrors = 0 // Reset error counter on success
 
           // Update progress in database
+          const updatedCarsCount = (syncRecord.cars_processed || 0) + processedThisPage
           await supabase
             .from('encar_sync_status')
             .update({
-              current_page: currentPage,
-              total_pages: carsData.meta?.last_page || currentPage,
-              cars_processed: totalCarsProcessed,
-              last_activity_at: new Date().toISOString(),
-              last_cars_sync_at: new Date().toISOString()
+              cars_processed: updatedCarsCount,
+              cars_updated: (syncRecord.cars_updated || 0) + processedThisPage
             })
             .eq('id', syncRecord.id)
+          
+          syncRecord.cars_processed = updatedCarsCount
 
           currentPage++
 

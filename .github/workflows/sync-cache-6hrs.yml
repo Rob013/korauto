@@ -10,10 +10,43 @@ jobs:
   sync-cache:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Supabase Edge Function
+      - name: Trigger Initial Sync
         run: |
           curl -X POST \
             'https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/scheduled-cache-sync' \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            --max-time 300
+      
+      - name: Wait for sync to process
+        run: sleep 60
+      
+      - name: Continue sync if needed (iteration 1)
+        run: |
+          curl -X POST \
+            'https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync-continue' \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            --max-time 300
+      
+      - name: Wait for continuation
+        run: sleep 60
+      
+      - name: Continue sync if needed (iteration 2)
+        run: |
+          curl -X POST \
+            'https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync-continue' \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            --max-time 300
+      
+      - name: Wait for continuation
+        run: sleep 60
+      
+      - name: Continue sync if needed (iteration 3)
+        run: |
+          curl -X POST \
+            'https://qtyyiqimkysmjnaocswe.supabase.co/functions/v1/encar-sync-continue' \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
             --max-time 300
