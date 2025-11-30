@@ -73,9 +73,9 @@ const EncarCatalog = ({
     cacheHealth,
     isStale
   } = useHybridEncarData({
-    preferCache: true,        // Always prefer cache when available
-    maxCacheAge: 120,         // Accept cache up to 2 hours old (extended from default 60min)
-    fallbackToAPI: true       // Fall back to API only if cache truly unavailable
+    preferCache: true,
+    maxCacheAge: 120,
+    fallbackToAPI: false
   });
   const {
     convertUSDtoEUR,
