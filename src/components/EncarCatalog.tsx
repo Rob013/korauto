@@ -512,21 +512,45 @@ const EncarCatalog = ({
       return;
     }
 
+    // Enrich filters with names for cache filtering
+    const enrichedFilters = { ...normalizedFilters };
+    if (normalizedFilters.manufacturer_id && manufacturers.length > 0) {
+      const manufacturer = manufacturers.find(m => m.id.toString() === normalizedFilters.manufacturer_id);
+      if (manufacturer) {
+        enrichedFilters.manufacturer_name = manufacturer.name;
+        console.log('📝 Enriched filters with manufacturer_name:', manufacturer.name);
+      }
+    }
+    if (normalizedFilters.model_id && models.length > 0) {
+      const model = models.find(m => m.id.toString() === normalizedFilters.model_id);
+      if (model) {
+        enrichedFilters.model_name = model.name;
+        console.log('📝 Enriched filters with model_name:', model.name);
+      }
+    }
+    if (normalizedFilters.generation_id && generations.length > 0) {
+      const generation = generations.find(g => g.id.toString() === normalizedFilters.generation_id);
+      if (generation) {
+        enrichedFilters.generation_name = generation.name;
+        console.log('📝 Enriched filters with generation_name:', generation.name);
+      }
+    }
+
     setHasUserSelectedSort(false);
     setSortBy("");
 
     setIsFilterLoading(true);
-    setFilters(newFilters);
+    setFilters(enrichedFilters);
 
     setShowAllCars(false);
     setAllCarsData([]);
     clearGlobalSorting();
 
-    const filtersWithPagination = addPaginationToFilters(normalizedFilters, 200, 1);
+    const filtersWithPagination = addPaginationToFilters(enrichedFilters, 200, 1);
     scheduleFetchCars(1, filtersWithPagination, true);
     setCurrentPage(1);
 
-    const searchParams = filtersToURLParams(normalizedFilters);
+    const searchParams = filtersToURLParams(enrichedFilters);
     searchParams.set('page', '1');
     setSearchParams(searchParams);
   }, [
@@ -538,7 +562,10 @@ const EncarCatalog = ({
     setShowAllCars,
     setAllCarsData,
     setHasUserSelectedSort,
-    setSortBy
+    setSortBy,
+    manufacturers,
+    models,
+    generations
   ]);
 
   const handleClearFilters = useCallback(() => {
@@ -904,9 +931,19 @@ const EncarCatalog = ({
         }
       }
 
+      // Enrich filters with manufacturer/model names for cache filtering
+      const enrichedFilters = { ...urlFilters };
+      if (urlFilters.manufacturer_id && manufacturersData.length > 0) {
+        const manufacturer = manufacturersData.find(m => m.id.toString() === urlFilters.manufacturer_id);
+        if (manufacturer) {
+          enrichedFilters.manufacturer_name = manufacturer.name;
+          console.log('📝 Enriched with manufacturer_name:', manufacturer.name);
+        }
+      }
+
       // Set filters AFTER loading related data to trigger cache query with correct context
-      console.log('🎯 Setting initial filters:', urlFilters);
-      setFilters(urlFilters);
+      console.log('🎯 Setting initial filters:', enrichedFilters);
+      setFilters(enrichedFilters);
       setLoadedPages(urlLoadedPages);
       setCurrentPage(urlCurrentPage);
       
@@ -916,7 +953,7 @@ const EncarCatalog = ({
       try {
         // Load cars with the URL filters
         const initialFilters = {
-          ...urlFilters,
+          ...enrichedFilters,
           per_page: "200",
           page: urlCurrentPage.toString(),
           ...(hasUserSelectedSort && sortBy ? {

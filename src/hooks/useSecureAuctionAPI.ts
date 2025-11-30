@@ -217,8 +217,11 @@ export interface Generation {
 
 export interface APIFilters {
   manufacturer_id?: string;
+  manufacturer_name?: string; // Name for cache filtering
   model_id?: string;
+  model_name?: string; // Name for cache filtering
   generation_id?: string;
+  generation_name?: string; // Name for cache filtering
   grade_iaai?: string;
   trim_level?: string;
   color?: string;
