@@ -9,7 +9,8 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { Loader2, Search, ArrowLeft, ArrowUpDown, Car, Filter, X, PanelLeftOpen, PanelLeftClose, Grid3X3, List } from "lucide-react";
 import LoadingLogo from "@/components/LoadingLogo";
 import LazyCarCard from "@/components/LazyCarCard";
-import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels, fetchManufacturers, fetchModels, fetchGenerations, fetchAllGenerationsForManufacturer, fetchFilterCounts, fetchGrades, fetchTrimLevels, fetchEngines } from "@/hooks/useSecureAuctionAPI";
+import { useSecureAuctionAPI, createFallbackManufacturers, createFallbackModels, fetchFilterCounts, fetchGrades, fetchTrimLevels, fetchEngines } from "@/hooks/useSecureAuctionAPI";
+import { useEncarFilterData } from "@/hooks/useEncarFilterData";
 import { useHybridEncarData } from "@/hooks/useHybridEncarData";
 import { EncarCacheStatus } from "@/components/EncarCacheStatus";
 import { useAuctionsApiGrid } from "@/hooks/useAuctionsApiGrid";
@@ -54,6 +55,12 @@ const EncarCatalog = ({
     restorePageState
   } = useNavigation();
   // Use hybrid hook - PREFER CACHE with extended tolerance for better performance
+  const {
+    fetchManufacturers,
+    fetchModels,
+    fetchGenerations
+  } = useEncarFilterData();
+
   const {
     cars,
     setCars,
